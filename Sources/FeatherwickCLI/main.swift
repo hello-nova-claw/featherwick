@@ -395,6 +395,9 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
     case .roostersSquabbling(let extra):
         return "The roosters were squabbling again. The hens are unsettled and laying less. "
             + "There \(extra == 1 ? "is 1 rooster" : "are \(extra) roosters") too many for this many hens (1 rooster per \(s.rules.hensPerRooster) hens, or just 1)."
+    case .roosterAdvice:
+        return "Tip: one rooster is plenty. Rehome a spare and a neighbour will adopt him for coins "
+            + "(rehome <name>; see what he's worth with value <name>) — or wait, and someone may offer a hen in trade."
     case .enteredInShow(let id, let cls):
         let who = id.flatMap { s.bird($0)?.name } ?? "your eggs"
         return "\(who) entered in the \(cls.name) class at the next county show (day \(s.nextShowDay))."

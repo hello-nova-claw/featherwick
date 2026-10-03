@@ -159,6 +159,8 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case birdRetired(UUID)
     /// The flock free-ranged overnight (door left open) and came back fed and foraged.
     case birdsForaged(count: Int)
+    /// First time rooster tension bites: a one-off tip on how to fix it (rehome a spare, or trade).
+    case roosterAdvice
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -776,7 +778,11 @@ public enum Engine {
         guard s.fedToday else { return [.noEggsHungry] }
         var ev: [GameEvent] = []
         let extra = s.rules.extraRoosters(inCoop: s.coop, onDay: s.day)
-        if extra > 0 { ev.append(.roostersSquabbling(extra: extra)) }
+        if extra > 0 {
+            ev.append(.roostersSquabbling(extra: extra))
+            // New-player nudge: the first time it bites, say how to fix it. Shown once.
+            if !s.roosterAdviceGiven { s.roosterAdviceGiven = true; ev.append(.roosterAdvice) }
+        }
         let calm = max(0, 1 - Double(extra) * s.rules.extraRoosterLayPenalty)
         // Premium feed and a night of foraging each lift the whole day's laying a little.
         let premium = s.fedPremiumToday ? (1 + s.rules.premiumFeedLayBonus) : 1

@@ -49,6 +49,19 @@ struct RoosterTensionTests {
         #expect(s.ownedBirds.count == 4)  // nobody hurt, nobody gone
     }
 
+    @Test func theRoosterNudgeIsShownOnce() {
+        var r = calmRules()
+        r.broodyChance = [:]
+        var (s, rng) = flock(roosters: 3, hens: 2, rules: r)  // 1 extra: tension flagged every night
+        var ev: [GameEvent] = []
+        for _ in 0..<10 { ev += night(&s, &rng) }
+        let squabbles = ev.filter { if case .roostersSquabbling = $0 { true } else { false } }.count
+        let nudges = ev.filter { $0 == .roosterAdvice }.count
+        #expect(squabbles > 1)   // the problem keeps being flagged
+        #expect(nudges == 1)     // but the how-to-fix tip shows only once
+        #expect(s.roosterAdviceGiven)
+    }
+
     @Test func rehomingTheExtraRoosterSettlesThem() {
         var r = calmRules()
         r.broodyChance = [:]
