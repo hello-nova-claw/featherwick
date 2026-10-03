@@ -116,7 +116,10 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         case .birdsBoarding: "You can't set eggs while a bird is staying with the neighbour. Make room first: rehome a bird or upgrade the coop."
         case .birdIsBusy: "She is sitting on eggs or caring for chicks. She can't go to a new home right now."
         case .coopAtMax: "The coop can't hold any more perches."
-        case .brooderFull(let room): "The brooder only has room for \(room) more chick\(room == 1 ? "" : "s"). Set fewer eggs."
+        case .brooderFull(let room):
+            room == 0
+                ? "The brooder is full. Make room first: rehome a bird or upgrade the coop so the brooder birds can move out."
+                : "The brooder only has room for \(room) more chick\(room == 1 ? "" : "s"). Set fewer eggs."
         }
     case .starterChosen(let id): return "You take \(name(id, s)) home and settle them under the heat lamp."
     case .fed: return "You fill the feeder and top up the water."

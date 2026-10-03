@@ -43,6 +43,18 @@ struct RoomTests {
         #expect(Engine.apply(.sit(hen: henID, count: 1), to: &s, using: &rng) == [.rejected(.birdsBoarding)])
     }
 
+    @Test func aFullBrooderBlocksIncubatingAndSitting() {
+        var (s, rng, henID) = crowdedGame()
+        for _ in 0..<(s.rules.broodyHatchDays + s.rules.brooderDays) { night(&s, &rng) }
+        s.boarding.removeAll()  // only the full brooder is in the way now
+        #expect(s.brooder.count == s.brooderSize)
+        s.incubatorSize = 6
+        #expect(Engine.apply(.incubate(count: 1), to: &s, using: &rng) == [.rejected(.brooderFull(room: 0))])
+        let i = s.coop.firstIndex { $0.id == henID }!
+        s.coop[i].broodyUntilDay = s.day + 5
+        #expect(Engine.apply(.sit(hen: henID, count: 1), to: &s, using: &rng) == [.rejected(.brooderFull(room: 0))])
+    }
+
     @Test func rehomingFreesAPerchAndBoardersComeHomeFirst() {
         var (s, rng, henID) = crowdedGame()
         for _ in 0..<(s.rules.broodyHatchDays + s.rules.brooderDays) { night(&s, &rng) }

@@ -177,16 +177,19 @@ public enum Engine {
             if !s.hasIncubator { return [.rejected(.noIncubator)] }
             if !s.boarding.isEmpty { return [.rejected(.birdsBoarding)] }
             if s.incubatorClutch != nil { return [.rejected(.incubatorBusy)] }
-            if count > s.incubatorSize { return [.rejected(.clutchTooBig(max: s.incubatorSize))] }
-            if let r = checkClutchSize(count, s) { return [.rejected(r)] }
             // Every egg set could hatch, so the brooder needs room for all of them.
             let room = s.brooderSize - s.brooder.count
+            if room <= 0 { return [.rejected(.brooderFull(room: 0))] }
+            if count > s.incubatorSize { return [.rejected(.clutchTooBig(max: s.incubatorSize))] }
+            if let r = checkClutchSize(count, s) { return [.rejected(r)] }
             if count > room { return [.rejected(.brooderFull(room: room))] }
             return setEggs(count: count, hen: nil, hatchDay: s.day + s.rules.incubatorHatchDays, &s)
 
         case .sit(let henID, let count):
             guard let i = s.coop.firstIndex(where: { $0.id == henID }) else { return [.rejected(.noSuchBird)] }
             if !s.boarding.isEmpty { return [.rejected(.birdsBoarding)] }
+            // Her chicks may need the brooder when grown, so a full brooder blocks hatching here too.
+            if s.brooder.count >= s.brooderSize { return [.rejected(.brooderFull(room: 0))] }
             if !s.coop[i].isBroody(onDay: s.day) { return [.rejected(.notBroody)] }
             if s.clutch(under: henID) != nil { return [.rejected(.henAlreadySitting)] }
             if let r = checkClutchSize(count, s) { return [.rejected(r)] }
