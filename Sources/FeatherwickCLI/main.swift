@@ -262,6 +262,9 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
             room == 0
                 ? "The brooder is full. Make room first: rehome a bird or upgrade the coop so the brooder birds can move out."
                 : "The brooder only has room for \(room) more chick\(room == 1 ? "" : "s"). Set fewer eggs."
+        case .notShowEligible: "Chicks are too young for the show, and only birds at home can be entered."
+        case .alreadyEntered: "That bird is already entered in the next show."
+        case .noMatchedPlate: "You need 3 matching eggs in your carton to enter the egg class. Collect and candle first."
         }
     case .starterChosen(let id): return "You take \(name(id, s)) home and settle them under the heat lamp."
     case .fed: return "You fill the feeder and top up the water."
@@ -366,6 +369,25 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
     case .roostersSquabbling(let extra):
         return "The roosters were squabbling again. The hens are unsettled and laying less. "
             + "There \(extra == 1 ? "is 1 rooster" : "are \(extra) roosters") too many for this many hens (1 rooster per \(s.rules.hensPerRooster) hens, or just 1)."
+    case .enteredInShow(let id, let cls):
+        let who = id.flatMap { s.bird($0)?.name } ?? "your eggs"
+        return "\(who) entered in the \(cls.name) class at the next county show (day \(s.nextShowDay))."
+    case .showDay(let day):
+        return "\n🎪 The Featherwick county show, day \(day)!"
+    case .showNoEntries:
+        return "The show came and went. You didn't enter anything this time — next one is day \(s.nextShowDay)."
+    case .showPlacing(let r):
+        let ribbon = switch r.placing {
+        case 1: "1st 🏆"
+        case 2: "2nd 🥈"
+        case 3: "3rd 🥉"
+        case 0: "not placed"
+        default: "\(r.placing)th"
+        }
+        return "  \(r.showClass.name): \(r.entrantName) — \(ribbon) of \(r.fieldSize) (\(r.score)/100)"
+            + (r.prize > 0 ? ", wins \(r.prize) coins!" : "")
+    case .showPrizesWon(let coins):
+        return "Prize money: \(coins) coins. 🎉"
     }
 }
 
@@ -431,6 +453,34 @@ func book(_ s: GameState) {
     }
 }
 
+func showsScreen(_ s: GameState) {
+    let r = s.rules
+    print("County show — next on day \(s.nextShowDay) (one every \(r.showIntervalDays) days).")
+    print("Entry fee \(r.showEntryFee) coins. Ribbons: 1st \(r.showPrizeFirst), 2nd \(r.showPrizeSecond), 3rd \(r.showPrizeThird) coins.")
+    if s.showEntries.isEmpty {
+        print("No entries yet. Enter a bird (enter <name>) or your best plate of eggs (enter eggs).")
+    } else {
+        print("Entered for day \(s.nextShowDay):")
+        for e in s.showEntries {
+            if let id = e.birdID, let b = s.bird(id) {
+                print("  \(b.name) — \(Engine.showClass(for: b, in: s).name) class")
+            } else if let first = e.eggs.first {
+                print("  a plate of \(first.speckled ? "speckled " : "")\(first.colour.rawValue) eggs")
+            }
+        }
+    }
+    let ribbons = s.firstPlaceRibbons
+    print("Trophy case: \(ribbons) first-place ribbon\(ribbons == 1 ? "" : "s").")
+    let recent = s.showResults.suffix(5)
+    if !recent.isEmpty {
+        print("Recent results:")
+        for r in recent {
+            let place = r.placing == 0 ? "unplaced" : "\(r.placing)/\(r.fieldSize)"
+            print("  day \(r.day) \(r.showClass.name): \(r.entrantName) \(place) (\(r.score)/100)" + (r.prize > 0 ? " · \(r.prize) coins" : ""))
+        }
+    }
+}
+
 let help = """
 Commands:
   look                 see your birds and supplies
@@ -453,6 +503,9 @@ Commands:
   give eggs            hand over the eggs someone asked for
   judge <name>         practice judging: breed class (purebred adults) and pet class
   judge eggs           practice judging: your best plate of 3 matched eggs
+  shows                the county show: schedule, your entries, and the trophy case
+  enter <name>         enter a bird in the next show (breed class, or pet class)
+  enter eggs           enter your best plate of 3 matched eggs
   rehome <name>        a neighbour adopts the bird and pays you (rarer birds pay more)
   shop                 see what Speckle & Down sells
   buy pullet|cockerel|egg   buy a young hen, a young rooster, or a fertile egg
@@ -613,6 +666,12 @@ while true {
         print("The judge looks over \(bird.name).")
         if bird.isPurebred { print(cardText(Judge.judge(bird, in: .breed(bird.breed), state: game.state))) }
         print(cardText(Judge.judge(bird, in: .pet, state: game.state)))
+    case "shows", "show": showsScreen(game.state)
+    case "enter":
+        guard words.count > 1 else { print("Use: enter <name>, or enter eggs"); break }
+        if words[1] == "eggs" { run(.enterEggs); break }
+        guard let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("There is no bird called \(words[1])."); break }
+        run(.enterShow(bird.id))
     case "upgrade":
         guard words.count > 1, words[1] == "coop" else { print("You can upgrade: coop"); break }
         run(.upgradeCoop)

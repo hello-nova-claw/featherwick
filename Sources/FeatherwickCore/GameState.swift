@@ -141,6 +141,10 @@ public struct GameState: Hashable, Codable, Sendable {
     public var breedBook: Set<BreedBookEntry> = []
     public var eggBook: Set<EggBookEntry> = []
 
+    /// County show (see ShowEvent.swift): entries held for the next show, and every past result.
+    public var showEntries: [ShowEntry] = []
+    public var showResults: [ShowResult] = []
+
     init(rules: Rules, phase: Phase) {
         self.rules = rules
         self.phase = phase
@@ -157,6 +161,17 @@ public struct GameState: Hashable, Codable, Sendable {
 
     public var cartonCapacity: Int { cartons * rules.cartonSize }
     public var nestCapacity: Int { nestBoxes * rules.eggsPerNestBox }
+
+    /// The day the next county show is held (see Rules.showIntervalDays).
+    public var nextShowDay: Int {
+        let interval = rules.showIntervalDays
+        guard interval > 0 else { return day }
+        return ((day / interval) + 1) * interval
+    }
+    /// True on the morning a show is held.
+    public var isShowDay: Bool { rules.showIntervalDays > 0 && day > 0 && day % rules.showIntervalDays == 0 }
+    /// First-place ribbons won so far: the trophy count.
+    public var firstPlaceRibbons: Int { showResults.filter { $0.placing == 1 }.count }
 
     /// Birds at home (brooder and coop). Lost birds are not fed.
     public var birdsAtHome: [Bird] { brooder + henChicks + coop }

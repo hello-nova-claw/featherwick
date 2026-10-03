@@ -30,6 +30,10 @@ public enum Command: Hashable, Codable, Sendable {
     case deliver(story: String)
     /// Buy a pullet of a breed a storyline has unlocked at Speckle & Down.
     case buyBreed(Breed)
+    /// Enter a bird in the next county show. It competes in its breed class, or the pet class.
+    case enterShow(UUID)
+    /// Enter your best matched plate of eggs in the next county show.
+    case enterEggs
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -70,6 +74,12 @@ public enum Rejection: Hashable, Codable, Sendable {
     case breedNotInShop
     case nameTaken
     case nameTooLong(max: Int)
+    /// A chick, or a bird not at home, cannot be shown.
+    case notShowEligible
+    /// That bird is already entered in the next show.
+    case alreadyEntered
+    /// No matched plate of 3 eggs in the carton to enter.
+    case noMatchedPlate
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -132,6 +142,13 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case handled(UUID, Handling)
     /// The bird moved up a friendliness band.
     case friendlierNow(UUID, Friendliness)
+    // County show (see ShowEvent.swift)
+    /// Entered in the next show. Bird id (nil for eggs) and the class it will compete in.
+    case enteredInShow(UUID?, ShowClass)
+    case showDay(day: Int)
+    case showNoEntries
+    case showPlacing(ShowResult)
+    case showPrizesWon(coins: Int)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -326,6 +343,12 @@ public enum Engine {
             s.coins -= cost
             s.perches = min(s.rules.maxPerches, s.perches + s.rules.perchesPerUpgrade)
             return [.coopUpgraded(perches: s.perches, cost: cost)]
+
+        case .enterShow(let id):
+            return enterShow(id, &s)
+
+        case .enterEggs:
+            return enterEggs(&s)
         }
     }
 
@@ -615,6 +638,9 @@ public enum Engine {
         // 9. Safety net: a rooster-only flock that can't afford a pullet gets a trade offer.
         ev += advanceStories(&s, &rng)
         ev += updateTradeOffer(&s, &rng)
+
+        // 9b. County show, on show days: entries are judged against a field and placed (see ShowEvent.swift).
+        ev += runShowIfToday(&s, &rng)
 
         // 10. Reset for the new day. The door is opened in the morning.
         s.fedToday = false
