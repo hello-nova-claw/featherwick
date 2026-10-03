@@ -24,6 +24,11 @@ public struct Egg: Identifiable, Hashable, Codable, Sendable {
     /// True once the player has held it up to a light. Only then does the player know if it is fertile.
     public var candled: Bool?
 
+    /// Egg shape score for egg shows, from the hen's egg-shape genes (0...max). Nil for old eggs.
+    public var shape: Int?
+    /// Shell quality for egg shows, 0...1, from the hen's age and care when she laid it. Nil for old eggs.
+    public var shell: Double?
+
     public var isFertile: Bool { embryo != nil }
     public var isCandled: Bool { candled == true }
 }

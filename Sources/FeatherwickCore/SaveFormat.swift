@@ -63,19 +63,32 @@ public enum SaveFormat {
         let version = probe.version ?? 0
         if version > currentVersion { throw LoadError.tooNew(version: version) }
 
-        var current = data
-        if version < currentVersion {
-            guard var root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-                  root["state"] != nil else { throw LoadError.notASave }
-            for v in version..<currentVersion {
-                guard let migrate = migrations[v] else { throw LoadError.noMigration(from: v) }
-                try migrate(&root)
-            }
-            root["version"] = currentVersion
-            current = try JSONSerialization.data(withJSONObject: root)
+        guard var root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              root["state"] is [String: Any] else { throw LoadError.notASave }
+        for v in version..<currentVersion {
+            guard let migrate = migrations[v] else { throw LoadError.noMigration(from: v) }
+            try migrate(&root)
         }
+        root["version"] = currentVersion
+        fillNewSettings(&root)
+        let current = try JSONSerialization.data(withJSONObject: root)
         guard let envelope = try? JSONDecoder().decode(Envelope.self, from: current) else { throw LoadError.notASave }
         return SaveGame(state: envelope.state, rng: envelope.rng)
+    }
+
+    /// A save made before a game-state field or a rule existed gets that field's starting value.
+    /// So adding a field to GameState or Rules needs no migration.
+    static func fillNewSettings(_ root: inout [String: Any]) {
+        guard var state = root["state"] as? [String: Any],
+              let fresh = try? JSONSerialization.jsonObject(
+                  with: JSONEncoder().encode(GameState(rules: .standard, phase: .playing))) as? [String: Any]
+        else { return }
+        for (key, value) in fresh where state[key] == nil { state[key] = value }
+        if var rules = state["rules"] as? [String: Any], let freshRules = fresh["rules"] as? [String: Any] {
+            for (key, value) in freshRules where rules[key] == nil { rules[key] = value }
+            state["rules"] = rules
+        }
+        root["state"] = state
     }
 
     /// Calls `change` on every JSON object, at any depth, that `match` accepts.

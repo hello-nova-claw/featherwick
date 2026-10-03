@@ -54,6 +54,15 @@ public struct LocusDefinition: Sendable, Identifiable {
         self.summary = summary
     }
 
+    /// A gene without its own allele enum. Used for the many small genes behind a quantitative trait.
+    public init(id: LocusID, inheritance: Inheritance = .autosomal, alleles: [String], defaultAllele: String, summary: String) {
+        self.id = id
+        self.inheritance = inheritance
+        self.alleles = alleles
+        self.defaultAllele = defaultAllele
+        self.summary = summary
+    }
+
     public func isValid(_ allele: String) -> Bool { alleles.contains(allele) }
 }
 
@@ -75,11 +84,12 @@ public enum Loci {
         LocusDefinition(BlueShell.self, "Blue eggshell. Dominant."),
         LocusDefinition(BrownShell.self, "Brown shell coating. Dominant."),
         LocusDefinition(Speckle.self, "Speckled eggs. Game-only, recessive."),
-    ]
+    ] + QuantitativeTrait.showType.loci + QuantitativeTrait.eggShape.loci
 
-    public static var all: [LocusDefinition] { zLinked + autosomal }
+    public static let all: [LocusDefinition] = zLinked + autosomal
 
-    public static func definition(_ id: LocusID) -> LocusDefinition? {
-        all.first { $0.id == id }
-    }
+    private static let byID: [LocusID: LocusDefinition] =
+        Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+
+    public static func definition(_ id: LocusID) -> LocusDefinition? { byID[id] }
 }

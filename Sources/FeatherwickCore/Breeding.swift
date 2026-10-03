@@ -45,6 +45,7 @@ public enum Breeding {
         var egg = Egg(id: makeID(using: &rng), layDay: day, motherID: mother.id,
                       colour: p.eggColour ?? .cream, speckled: p.eggIsSpeckled,
                       motherBreed: mother.breed, motherPurebred: mother.isPurebred)
+        egg.shape = QuantitativeTrait.eggShape.score(mother.genome)
         if let father, let embryo = try? cross(mother: mother.genome, father: father.genome, using: &rng) {
             egg.fatherID = father.id
             egg.fatherBreed = father.breed

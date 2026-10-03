@@ -88,6 +88,39 @@ func colourText(_ p: Phenotype) -> String {
 }
 
 /// Finds a bird by name, ignoring case. "chick 3" can be typed as "chick3" too.
+func noteText(_ n: JudgeNote) -> String {
+    switch n {
+    case .tooYoung: "too young to show"
+    case .notPurebred: "a cross: crosses can enter the pet class"
+    case .wrongBreedClass: "wrong class for this bird"
+    case .notAStandardColour(let c): "\(c) is not a standard colour for this breed"
+    case .wrongFeathering: "wrong feathering for the breed"
+    case .notMatched: "the eggs do not match"
+    case .plateNeeds(let n): "a plate needs \(n) eggs"
+    case .standardColour(let c): "\(c), a standard colour"
+    case .type(let b): "type \(b.rawValue)"
+    case .moulting: "moulting"
+    case .stressed: "still nervous after a fright"
+    case .broody: "broody and out of condition"
+    case .hungry: "not fed today"
+    case .inFineCondition: "in fine condition"
+    case .shape(let b): "shape \(b.rawValue)"
+    case .shell(let b): "shells \(b.rawValue)"
+    case .staleEggs(let n): "\(n) stale"
+    }
+}
+
+func cardText(_ c: JudgeCard) -> String {
+    let grade = switch c.grade {
+    case .disqualified: "not judged"
+    case .fair: "Fair"
+    case .good: "Good"
+    case .veryGood: "Very good"
+    case .excellent: "Excellent"
+    }
+    return "  \(c.showClass.name): \(grade) (\(c.score)/100) · " + c.notes.map(noteText).joined(separator: ", ")
+}
+
 func findBird(_ query: String, _ s: GameState) -> Bird? {
     let q = query.lowercased().replacingOccurrences(of: " ", with: "")
     return (s.birdsAtHome + s.boarding).first { $0.name.lowercased().replacingOccurrences(of: " ", with: "") == q }
@@ -286,6 +319,8 @@ Commands:
   sit <hen> <n>        candle n eggs; fertile ones go under a broody hen
   rename <name> <new>  rename a bird
   value <name>         what a neighbour would pay to adopt a bird
+  judge <name>         practice judging: breed class (purebred adults) and pet class
+  judge eggs           practice judging: your best plate of 3 matched eggs
   rehome <name>        a neighbour adopts the bird and pays you (rarer birds pay more)
   shop                 see what Speckle & Down sells
   buy pullet|cockerel|egg   buy a young hen, a young rooster, or a fertile egg
@@ -363,6 +398,18 @@ while true {
     case "value":
         guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("Use: value <name>"); break }
         print("A neighbour would pay \(game.state.rules.rehomeValue(of: bird, onDay: game.state.day)) coins for \(bird.name).")
+    case "judge":
+        guard words.count > 1 else { print("Use: judge <name> or judge eggs"); break }
+        if words[1] == "eggs" {
+            let plates = Judge.bestPlates(from: game.state.carton, state: game.state)
+            if plates.isEmpty { print("You need 3 matching eggs in your carton for a plate."); break }
+            for plate in plates { print(cardText(plate.card)) }
+            break
+        }
+        guard let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("There is no bird called \(words[1])."); break }
+        print("The judge looks over \(bird.name).")
+        if bird.isPurebred { print(cardText(Judge.judge(bird, in: .breed(bird.breed), state: game.state))) }
+        print(cardText(Judge.judge(bird, in: .pet, state: game.state)))
     case "upgrade":
         guard words.count > 1, words[1] == "coop" else { print("You can upgrade: coop"); break }
         run(.upgradeCoop)

@@ -117,7 +117,7 @@ public enum Engine {
                 id: makeID(using: &rng), name: "", breed: breed,
                 genome: breed.purebred(sex, variety: colour, barred: barred),
                 hatchDay: 0, origin: "Neighbour"
-            ))
+            ).withFounderQuality())
         }
         return GameState(rules: rules, phase: .choosingStarter(chicks))
     }
@@ -289,7 +289,7 @@ public enum Engine {
             id: makeID(using: &rng), name: sex == .hen ? "New pullet" : "New cockerel", breed: breed,
             genome: breed.purebred(sex, variety: colour), hatchDay: s.day - s.rules.growerAge,
             origin: origin, revealed: true
-        )
+        ).withFounderQuality()
     }
 
     static func buy<R: RandomNumberGenerator>(_ item: ShopItem, _ s: inout GameState, _ rng: inout R) -> [GameEvent] {
@@ -574,7 +574,7 @@ public enum Engine {
             genome: breed.purebred(.hen, variety: colour),
             hatchDay: s.day - s.rules.giftHenAge, origin: "Neighbour",
             revealed: true  // the neighbour tells you her breed and sex
-        )
+        ).withFounderQuality()
         s.giftHenGiven = true
         if s.brooder.count < s.brooderSize { s.brooder.append(hen) } else { s.coop.append(hen) }
         var ev: [GameEvent] = [.neighbourGaveHen(hen.id)]
@@ -605,7 +605,8 @@ public enum Engine {
             if !roosters.isEmpty, Double.roll(s.rules.fertileChance, using: &rng) {
                 father = roosters[Int.random(in: 0..<roosters.count, using: &rng)]
             }
-            let egg = Breeding.layEgg(mother: hen, father: father, day: s.day, using: &rng)
+            var egg = Breeding.layEgg(mother: hen, father: father, day: s.day, using: &rng)
+            egg.shell = Judge.shellQuality(of: hen, in: s)
             s.nest.append(egg)
             ev.append(.eggLaid(egg.id, by: hen.id))
             if egg.isFertile, !s.incubatorGiftGiven {

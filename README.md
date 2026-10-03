@@ -69,6 +69,27 @@ Append new breeds and genes at the END of their lists: seeded breeding draws in 
 Saves are `{ version, state, rng }` (`SaveFormat`). A migration is needed only when existing data
 changes shape. `Tests/.../Fixtures/save-v0.json` is a real old save; it must always load.
 
+## Shows (data layer)
+
+`Shows.swift`. Three kinds of class, as at a real poultry show:
+
+| Class | Who enters | Points |
+| --- | --- | --- |
+| Breed | Purebred adults | type 50 · colour 30 · condition 20 |
+| Pet chicken | Any grower or adult, crosses too | condition 100 (friendliness joins later) |
+| Eggs | A matched plate of 3 | match 30 · shape 30 · shell 20 · freshness 20 |
+
+- Standard colours come from the breed table: a colour is standard if one of the breed's varieties
+  makes it. A splash Orpington is not standard; a buff Wyandotte is shown as gold laced.
+- Show type and egg shape are quantitative traits (`QuantitativeTrait.swift`): many small genes,
+  half from each parent, score capped. Selective breeding works; nothing can exceed the maximum.
+  Birds from outside the flock get random quality genes from their own ID.
+- Condition and shell quality come from care: moult (autumn), frights, broodiness, hunger, heat, age.
+- Grades are absolute (fair → excellent). Placings against other entries come with show days.
+- CLI: `judge <name>`, `judge eggs`.
+
+Saves: missing GameState fields and rules load with their starting values (`fillNewSettings`).
+
 ## Realism rules (tested)
 
 - Lacing shows only on a gold (buff) ground ("gold laced"); barring shows only on black-based birds.
