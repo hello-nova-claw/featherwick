@@ -89,6 +89,20 @@ func friendlyText(_ f: Friendliness) -> String {
     }
 }
 
+func storyText(_ id: String, step: String?) -> String {
+    switch (id, step) {
+    case ("broodySilkie", nil):
+        return """
+        The neighbour leans over the fence, laughing. "My old Silkie has gone broody again. She's sitting on a golf ball! \
+        If you could spare 3 eggs you know are fertile, she'd hatch them for you." (Candle your eggs, then: give eggs)
+        """
+    case ("broodySilkie", "sitting"):
+        return "The Silkie settles onto your eggs with a happy grumble. Check back in a few days."
+    default:
+        return "Something is happening in Featherwick. Type: story"
+    }
+}
+
 func relatedText(_ r: Relatedness) -> String {
     switch r {
     case .unrelated: "not related"
@@ -213,6 +227,10 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         case .alreadyPettedToday: "You already gave that bird a cuddle today. Try again tomorrow."
         case .alreadyHadTreatToday: "That bird already had a treat today."
         case .noTreats: "Your treat bag is empty. Buy more: buy treats"
+        case .nothingToDeliver: "Nobody is waiting for anything from you right now. See: story"
+        case .needFertileEggs(let need, let have):
+            "You need \(need) eggs you KNOW are fertile in your carton (candle them first). You have \(have)."
+        case .breedNotInShop: "Speckle & Down doesn't sell that breed. Type shop to see what they have."
         case .brooderFull(let room):
             room == 0
                 ? "The brooder is full. Make room first: rehome a bird or upgrade the coop so the brooder birds can move out."
@@ -261,6 +279,21 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
             + "for \(name(offer.roosterID, s)): \(label(offer.hen, s)). To agree: accept trade"
     case .tradeAccepted(let rooster, let hen):
         return "\(name(rooster, s)) goes to his new flock, and \(name(hen, s)) moves into Henhaven."
+    case .storyStarted(let id), .storyStep(let id, _):
+        let step: String? = if case .storyStep(_, let st) = e { st } else { nil }
+        return storyText(id, step: step)
+    case .delivered:
+        return "You hand the eggs over the fence, carefully."
+    case .storyGiftWaitingForRoom:
+        return "The neighbour has a gift for you, but your coop has no free perch. Make room, and it arrives that night."
+    case .storyGift(_, let id):
+        return "The neighbour comes round with a basket. \"She hatched every one. Here, one of my own girls, to say thank you.\" \(name(id, s)) moves into Henhaven."
+    case .shopUnlocked(let breed):
+        return "Speckle & Down now sells \(breed.definition.displayName) pullets. Type: shop"
+    case .storyFinished:
+        return nil
+    case .boughtBreed(let id, let breed, let cost):
+        return "You buy \(name(id, s)), a \(breed.definition.displayName) pullet, for \(cost) coins."
     case .boughtTreats(let count, let cost):
         return "You buy a bag of \(count) mealworm treats for \(cost) coins. You have \(s.treats) treats."
     case .handled(let id, let kind):
@@ -389,6 +422,8 @@ Commands:
   kin <name> <name>    how closely related two birds are (plan your pairings)
   draw <name>          which art parts and colours make up this bird
   art                  the parts the artist needs to paint
+  story                what's happening in Featherwick
+  give eggs            hand over the eggs someone asked for
   judge <name>         practice judging: breed class (purebred adults) and pet class
   judge eggs           practice judging: your best plate of 3 matched eggs
   rehome <name>        a neighbour adopts the bird and pays you (rarer birds pay more)
@@ -442,6 +477,8 @@ while true {
         case "cockerel", "rooster": run(.buy(.cockerel))
         case "egg", "fertile": run(.buy(.fertileEgg))
         case "treats", "treat", "mealworms": run(.buy(.treats))
+        case let other where game.state.shopBreeds.contains(where: { $0.rawValue == other }):
+            run(.buyBreed(Breed(rawValue: other)))
         default: print("You can buy: pullet, cockerel, egg, treats, incubator. Basic feed is free.")
         }
     case "shop":
@@ -454,6 +491,9 @@ while true {
           incubator   holds \(r.bigIncubatorSize) eggs                   \(r.incubatorPrice) coins
           treats      \(r.treatBagSize) mealworms                        \(r.treatBagPrice) coins
         """)
+        for breed in game.state.shopBreeds.sorted(by: { $0.rawValue < $1.rawValue }) {
+            print("  \(breed.rawValue.padding(toLength: 11, withPad: " ", startingAt: 0)) a \(breed.definition.displayName) pullet          \(r.rareBreedPulletPrice) coins")
+        }
     case "accept":
         run(.acceptTrade)
     case "incubate":
@@ -500,6 +540,22 @@ while true {
         let keys = ArtChecklist.required(includePlanned: words.count > 1 && words[1] == "all")
         print("Parts to paint (\(keys.count)), each greyscale with flat mask layers:")
         for key in keys { print("  \(key): \(key.masks.map(\.rawValue).joined(separator: ", "))") }
+    case "story":
+        let s = game.state
+        if s.stories.isEmpty { print("Nothing yet. Keep caring for your flock."); break }
+        for story in Storylines.all {
+            guard let p = s.stories[story.id] else { continue }
+            if p.rewarded { print("✓ \(story.id): finished"); continue }
+            let step = p.step < story.steps.count ? story.steps[p.step] : nil
+            switch step?.goal {
+            case .deliverFertileEggs(let n)?: print("• \(story.id): bring \(n) eggs you know are fertile, then: give eggs")
+            case .waitDays?: print("• \(story.id): wait a few days")
+            default: print("• \(story.id): a gift is waiting for a free perch")
+            }
+        }
+    case "give":
+        guard let story = Engine.storyAwaitingDelivery(game.state) else { print("Nobody is waiting for anything from you right now."); break }
+        run(.deliver(story: story))
     case "judge":
         guard words.count > 1 else { print("Use: judge <name> or judge eggs"); break }
         if words[1] == "eggs" {

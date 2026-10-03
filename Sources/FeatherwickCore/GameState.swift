@@ -127,6 +127,12 @@ public struct GameState: Hashable, Codable, Sendable {
     public var rehomed: [Bird] = []
     /// Family-tree records for birds the player never owned, such as the parents of a bought egg.
     public var pedigree: [UUID: PedigreeRecord] = [:]
+    /// Storylines started in this game (see Story.swift).
+    public var stories: [String: StoryProgress] = [:]
+    /// One-off story notices already shown, so they are not repeated every night.
+    public var storyNotices: Set<String> = []
+    /// Extra breeds Speckle & Down sells, unlocked by storylines.
+    public var shopBreeds: Set<Breed> = []
     public var nest: [Egg] = []
     public var carton: [Egg] = []
 

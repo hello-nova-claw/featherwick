@@ -139,6 +139,21 @@ too) stay in the state; outside parents, such as those of a bought egg, are kept
   the coefficient (capped at 50%); show condition drops (capped at 0.3) with "lacks vigour".
 - CLI: `tree <name>`, `kin <name> <name>`.
 
+## Storylines
+
+`Story.swift`. Small puzzles told through Featherwick's people, which lead to gifts and unlocks.
+A storyline has a trigger, steps with goals, and rewards. Night goals (hatch chicks, wait days)
+are checked in `passNight`; delivery goals need the player (`deliver`). Rewards are given once;
+a gift bird waits for a free perch, so the coop never overfills. The engine holds IDs only; the
+words live in the UI.
+
+- **The broody Silkie** (first hatch): a neighbour's Silkie is sitting on a golf ball. Bring 3
+  eggs you know are fertile (candled). 4 days later she thanks you with a Silkie pullet, and
+  Speckle & Down starts selling Silkie pullets. Always solvable: the shop sells candled fertile eggs.
+- CLI: `story`, `give eggs`, `buy silkie` (once unlocked).
+
+To add one: one `Storyline` in `Storylines.all`, plus its words in the UI.
+
 ## Realism rules (tested)
 
 - Lacing shows only on a gold (buff) ground ("gold laced"); barring shows only on black-based birds.

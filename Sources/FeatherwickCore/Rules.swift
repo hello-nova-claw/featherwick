@@ -80,6 +80,7 @@ public struct Rules: Codable, Hashable, Sendable {
     public var maxLostTamenessLoss = 0.3
     public var treatBagSize = 10
     public var treatBagPrice = 5
+    public var rareBreedPulletPrice = 40     // a pullet of a breed unlocked by a storyline
     public var lapChickenRehomeBonus = 3     // people pay more for a bird that loves a cuddle
 
     // Inbreeding (see Pedigree.swift). Lay chance and show condition drop by the bird's coefficient, capped.

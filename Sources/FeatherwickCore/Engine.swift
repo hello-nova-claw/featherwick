@@ -26,6 +26,10 @@ public enum Command: Hashable, Codable, Sendable {
     case pet(UUID)
     /// Give a bird a treat from your hand. Uses one treat. Counts once a day per bird.
     case giveTreat(UUID)
+    /// Hand over what a storyline step asks for (for example, fertile eggs).
+    case deliver(story: String)
+    /// Buy a pullet of a breed a storyline has unlocked at Speckle & Down.
+    case buyBreed(Breed)
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -61,6 +65,9 @@ public enum Rejection: Hashable, Codable, Sendable {
     case alreadyPettedToday
     case alreadyHadTreatToday
     case noTreats
+    case nothingToDeliver
+    case needFertileEggs(need: Int, have: Int)
+    case breedNotInShop
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -112,6 +119,14 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case tradeOffered(rooster: UUID, hen: UUID)
     case tradeAccepted(rooster: UUID, hen: UUID)
     case boughtTreats(count: Int, cost: Int)
+    case storyStarted(String)
+    case storyStep(String, step: String)
+    case delivered(String)
+    case storyGiftWaitingForRoom(String)
+    case storyGift(String, UUID)
+    case shopUnlocked(Breed)
+    case storyFinished(String)
+    case boughtBreed(UUID, Breed, cost: Int)
     case handled(UUID, Handling)
     /// The bird moved up a friendliness band.
     case friendlierNow(UUID, Friendliness)
@@ -268,6 +283,22 @@ public enum Engine {
         case .giveTreat(let id):
             return handle(id, .treat, &s)
 
+        case .deliver(let story):
+            return deliver(story, &s)
+
+        case .buyBreed(let breed):
+            guard s.shopBreeds.contains(breed) else { return [.rejected(.breedNotInShop)] }
+            let cost = s.rules.rareBreedPulletPrice
+            if s.coins < cost { return [.rejected(.notEnoughCoins(needed: cost, have: s.coins))] }
+            if s.coop.count >= s.perches { return [.rejected(.noFreePerch)] }
+            let bird = youngBird(.hen, origin: "Speckle & Down", s, &rng, breed: breed)
+            s.coins -= cost
+            s.coop.append(bird)
+            var ev: [GameEvent] = [.boughtBreed(bird.id, breed, cost: cost)]
+            let entry = BreedBookEntry(bird)
+            if s.breedBook.insert(entry).inserted { ev.append(.newBreedBookEntry(entry)) }
+            return ev
+
         case .acceptTrade:
             guard let offer = s.tradeOffer else { return [.rejected(.noTradeOffer)] }
             let groups: [WritableKeyPath<GameState, [Bird]>] = [\.coop, \.brooder]
@@ -300,8 +331,9 @@ public enum Engine {
     // MARK: - Shop and safety net
 
     /// A young bird from a local flock: a starter breed, random colour, breed and sex known.
-    static func youngBird<R: RandomNumberGenerator>(_ sex: Sex, origin: String, _ s: GameState, _ rng: inout R) -> Bird {
-        let breed = Breed.starters.randomElement(using: &rng)!
+    static func youngBird<R: RandomNumberGenerator>(_ sex: Sex, origin: String, _ s: GameState, _ rng: inout R,
+                                                    breed chosen: Breed? = nil) -> Bird {
+        let breed = chosen ?? Breed.starters.randomElement(using: &rng)!
         let colour = breed.definition.varieties.randomElement(using: &rng)!
         return Bird(
             id: makeID(using: &rng), name: sex == .hen ? "New pullet" : "New cockerel", breed: breed,
@@ -566,6 +598,7 @@ public enum Engine {
         ev += maybeGoBroody(&s, &rng)
 
         // 9. Safety net: a rooster-only flock that can't afford a pullet gets a trade offer.
+        ev += advanceStories(&s, &rng)
         ev += updateTradeOffer(&s, &rng)
 
         // 10. Reset for the new day. The door is opened in the morning.
