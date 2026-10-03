@@ -25,7 +25,6 @@ func calmRules() -> Rules {
     var r = Rules.standard
     r.foxChance = 0
     r.layChance = [.spring: 1, .summer: 1, .autumn: 1, .winter: 1]
-    r.startFeed = 1000
     return r
 }
 

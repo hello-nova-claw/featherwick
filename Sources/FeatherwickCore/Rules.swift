@@ -47,9 +47,7 @@ public struct Rules: Codable, Hashable, Sendable {
 
     // Economy
     public var startCoins = 20
-    public var startFeed = 10        // feed units; 1 unit per bird per day
-    public var feedBagUnits = 20
-    public var feedBagPrice = 10
+    // Basic feed is free and unlimited. Feeding is still a daily task: unfed hens don't lay.
     public var creamEggPrice = 1
     public var brownEggPrice = 2
     public var blueEggPrice = 3

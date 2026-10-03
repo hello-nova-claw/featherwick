@@ -98,7 +98,6 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         case .noSuchChick: "There is no chick with that number. Pick 1, 2 or 3."
         case .alreadyFed: "You already fed them today."
         case .nothingToFeed: "There are no birds to feed."
-        case .notEnoughFeed(let n, let h): "You need \(n) feed but have \(h). Buy feed: buy feed"
         case .noEggsInNest: "The nest boxes are empty."
         case .cartonFull: "Your carton is full. Sell eggs first: sell"
         case .cartonEmpty: "Your carton is empty. Collect eggs first: collect"
@@ -117,13 +116,12 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         case .brooderFull(let room): "The brooder only has room for \(room) more chick\(room == 1 ? "" : "s"). Set fewer eggs."
         }
     case .starterChosen(let id): return "You take \(name(id, s)) home and settle them under the heat lamp."
-    case .fed(let units): return "You feed the flock (\(units) feed)."
+    case .fed: return "You fill the feeder and top up the water."
     case .eggsCollected(let n, let left):
         return "You collect \(n) egg\(n == 1 ? "" : "s")." + (left > 0 ? " \(left) left in the nest: the carton is full." : "")
     case .eggsSold(let n, let coins, let stale):
         return "Speckle & Down buys \(n) egg\(n == 1 ? "" : "s") for \(coins) coin\(coins == 1 ? "" : "s")."
             + (stale > 0 ? " \(stale) sat in the nest too long and sold at half price." : "")
-    case .feedBought(let units, let cost): return "You buy \(units) feed for \(cost) coins."
     case .coopClosed: return "You shut the coop door for the night."
     case .quietNight: return "A quiet night."
     case .foxVisited(let ids):
@@ -183,7 +181,7 @@ func look(_ s: GameState) {
         print("Choose one: choose <1-3> <name>")
         return
     }
-    print("Day \(s.day), \(s.season.rawValue) · \(s.coins) coins · feed \(s.feedStock) · coop door \(s.coopDoorOpen ? "open" : "closed")\(s.fedToday ? " · fed today" : "")")
+    print("Day \(s.day), \(s.season.rawValue) · \(s.coins) coins · coop door \(s.coopDoorOpen ? "open" : "closed")\(s.fedToday ? " · fed today" : "")")
     print("Brooder (\(s.brooder.count)/\(s.brooderSize)):")
     s.brooder.forEach { print("  " + label($0, s)) }
     print("Coop (\(s.coop.count)/\(s.perches) perches, \(s.nestBoxes) nesting boxes):")
@@ -231,7 +229,6 @@ Commands:
   sell                 sell every egg in your carton
   sell clear           sell every egg except the ones you know are fertile
   candle               hold the carton eggs up to a light to see which are fertile
-  buy feed [bags]      buy feed (\(game.state.rules.feedBagUnits) per bag, \(game.state.rules.feedBagPrice) coins)
   buy incubator        buy a \(game.state.rules.bigIncubatorSize)-egg incubator (\(game.state.rules.incubatorPrice) coins)
   incubate <n>         candle n eggs from the carton; fertile ones go in the incubator
   sit <hen> <n>        candle n eggs; fertile ones go under a broody hen
@@ -272,12 +269,10 @@ while true {
     case "sell": run(words.count > 1 && words[1] == "clear" ? .sellClearEggs : .sellEggs)
     case "candle": run(.candle)
     case "buy":
-        if words.count > 1, words[1] == "feed" {
-            run(.buyFeed(bags: words.count > 2 ? Int(words[2]) ?? 0 : 1))
-        } else if words.count > 1, words[1] == "incubator" {
+        if words.count > 1, words[1] == "incubator" {
             run(.buyIncubator)
         } else {
-            print("You can buy: feed, incubator")
+            print("You can buy: incubator. Basic feed is free.")
         }
     case "incubate":
         run(.incubate(count: words.count > 1 ? Int(words[1]) ?? 0 : 0))
@@ -295,9 +290,6 @@ while true {
     case "day":
         let n = max(1, words.count > 1 ? Int(words[1]) ?? 1 : 1)
         for _ in 0..<n {
-            if game.state.feedStock < game.state.birdsAtHome.count, game.state.coins >= game.state.rules.feedBagPrice {
-                run(.buyFeed(bags: 1))
-            }
             run(.feed)
             if !game.state.nest.isEmpty { run(.collectEggs) }
             if game.state.carton.count >= game.state.cartonCapacity { run(.sellEggs) }

@@ -5,7 +5,6 @@ public enum Command: Hashable, Codable, Sendable {
     case feed
     case collectEggs
     case sellEggs
-    case buyFeed(bags: Int)
     case closeCoop
     case passNight
     case buyIncubator
@@ -26,7 +25,6 @@ public enum Rejection: Hashable, Codable, Sendable {
     case noSuchChick
     case alreadyFed
     case nothingToFeed
-    case notEnoughFeed(needed: Int, have: Int)
     case noEggsInNest
     case cartonFull
     case cartonEmpty
@@ -52,7 +50,6 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case fed(units: Int)
     case eggsCollected(count: Int, leftInNest: Int)
     case eggsSold(count: Int, coins: Int, stale: Int)
-    case feedBought(units: Int, cost: Int)
     case coopClosed
     // Night
     case quietNight
@@ -116,8 +113,6 @@ public enum Engine {
             let needed = s.birdsAtHome.count
             if needed == 0 { return [.rejected(.nothingToFeed)] }
             if s.fedToday { return [.rejected(.alreadyFed)] }
-            if s.feedStock < needed { return [.rejected(.notEnoughFeed(needed: needed, have: s.feedStock))] }
-            s.feedStock -= needed
             s.fedToday = true
             return [.fed(units: needed)]
 
@@ -148,14 +143,6 @@ public enum Engine {
             for i in unchecked { s.carton[i].candled = true }
             let fertile = unchecked.filter { s.carton[$0].isFertile }.count
             return [.candled(fertile: fertile, clear: unchecked.count - fertile)]
-
-        case .buyFeed(let bags):
-            if bags < 1 { return [.rejected(.invalidAmount)] }
-            let cost = bags * s.rules.feedBagPrice
-            if s.coins < cost { return [.rejected(.notEnoughCoins(needed: cost, have: s.coins))] }
-            s.coins -= cost
-            s.feedStock += bags * s.rules.feedBagUnits
-            return [.feedBought(units: bags * s.rules.feedBagUnits, cost: cost)]
 
         case .closeCoop:
             if !s.coopDoorOpen { return [.rejected(.coopAlreadyClosed)] }

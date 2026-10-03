@@ -75,7 +75,6 @@ public struct GameState: Hashable, Codable, Sendable {
     public var giftHenGiven = false
 
     public var coins: Int
-    public var feedStock: Int
     public var fedToday = false
     public var coopDoorOpen = true
 
@@ -106,7 +105,6 @@ public struct GameState: Hashable, Codable, Sendable {
         self.rules = rules
         self.phase = phase
         coins = rules.startCoins
-        feedStock = rules.startFeed
         perches = rules.startPerches
         nestBoxes = rules.startNestBoxes
         brooderSize = rules.startBrooderSize
