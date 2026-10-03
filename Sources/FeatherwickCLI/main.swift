@@ -70,9 +70,7 @@ func label(_ b: Bird, _ s: GameState) -> String {
     case (.adult, .hen): "hen"
     case (.adult, .rooster): "rooster"
     }
-    var parts = ["\(b.breed.rawValue) \(kind)", p.colour.rawValue]
-    if p.isBarred { parts.append("barred") }
-    if p.isLaced { parts.append("laced") }
+    var parts = ["\(b.varietyName) \(kind)", colourText(p)]
     if stage == .adult, let egg = p.eggColour, b.sex == .hen {
         parts.append("lays \(p.eggIsSpeckled ? "speckled " : "")\(egg.rawValue)")
     }
@@ -82,6 +80,12 @@ func label(_ b: Bird, _ s: GameState) -> String {
 }
 
 func name(_ id: UUID, _ s: GameState) -> String { s.bird(id)?.name ?? "a bird" }
+
+/// "gold laced", "barred blue", "lavender"...
+func colourText(_ p: Phenotype) -> String {
+    if p.isLaced { return "gold laced" }
+    return (p.isBarred ? "barred " : "") + p.colour.rawValue
+}
 
 /// Finds a bird by name, ignoring case. "chick 3" can be typed as "chick3" too.
 func findBird(_ query: String, _ s: GameState) -> Bird? {
@@ -140,9 +144,10 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
     case .birdReturned(let id): return "\(name(id, s)) has found their way home."
     case .birdWaitingForPerch(let id): return "\(name(id, s)) is nearby, but the coop has no free perch."
     case .grewUp: return nil  // shown through reveals and look
-    case .revealed(let id, let sex, let breed):
-        return "\(name(id, s)) is growing feathers: a \(breed.rawValue) \(sex == .hen ? "pullet" : "cockerel")!"
-    case .newBreedBookEntry(let entry): return "New Breed Book entry: \(entry.colour.rawValue) \(entry.breed.rawValue)."
+    case .revealed(let id, let sex, _):
+        let variety = s.bird(id)?.varietyName ?? "young"
+        return "\(name(id, s)) is growing feathers: a \(variety) \(sex == .hen ? "pullet" : "cockerel")!"
+    case .newBreedBookEntry(let entry): return "New Breed Book entry: \(entryText(entry))."
     case .neighbourGaveHen(let id):
         return "The neighbour visits: \"He'll want some company.\" She gives you a young hen: \(label(s.bird(id)!, s))."
     case .movedToCoop(let id): return "\(name(id, s)) is big enough to move from the brooder to the coop."
@@ -249,11 +254,18 @@ func look(_ s: GameState) {
     print("Nest: \(s.nest.count)/\(s.nestCapacity) eggs · \(cartonInfo)")
 }
 
+func entryText(_ e: BreedBookEntry) -> String {
+    let colour = e.laced ? "gold laced" : (e.barred ? "barred " : "") + e.colour.rawValue
+    return "\(colour) \(e.variety)" + (e.silkieFeathered && e.variety != "silkie" ? ", silkie-feathered" : "")
+}
+
 func book(_ s: GameState) {
     print("Breed Book (\(s.breedBook.count)):")
-    for e in s.breedBook.sorted(by: { "\($0.breed)\($0.colour)" < "\($1.breed)\($1.colour)" }) {
-        print("  \(e.colour.rawValue) \(e.breed.rawValue)\(e.barred ? ", barred" : "")\(e.laced ? ", laced" : "")")
-    }
+    let pure = s.breedBook.filter { !$0.isCross }.map(entryText).sorted()
+    let crosses = s.breedBook.filter(\.isCross).map(entryText).sorted()
+    pure.forEach { print("  " + $0) }
+    print("Crosses (\(crosses.count)):")
+    crosses.forEach { print("  " + $0) }
     print("Egg colours (\(s.eggBook.count)):")
     for e in s.eggBook.sorted(by: { $0.colour.rawValue < $1.colour.rawValue }) {
         print("  \(e.speckled ? "speckled " : "")\(e.colour.rawValue)")

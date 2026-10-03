@@ -311,16 +311,11 @@ public enum Engine {
             return ev
         case .fertileEgg:
             if s.carton.count >= s.cartonCapacity { return [.rejected(.cartonFull)] }
-            let motherBreed = Breed.starters.randomElement(using: &rng)!
-            let fatherBreed = Breed.starters.randomElement(using: &rng)!
-            let mother = motherBreed.purebred(.hen, colour: StarterColour.allCases.randomElement(using: &rng)!)
-            let father = fatherBreed.purebred(.rooster, colour: StarterColour.allCases.randomElement(using: &rng)!)
-            let p = Phenotype(mother)
-            var egg = Egg(id: makeID(using: &rng), layDay: s.day, motherID: makeID(using: &rng),
-                          colour: p.eggColour ?? .cream, speckled: p.eggIsSpeckled,
-                          collectedDay: s.day, motherBreed: motherBreed)
-            egg.fatherID = makeID(using: &rng)
-            egg.embryo = try? Breeding.cross(mother: mother, father: father, using: &rng)
+            // From a local flock: two purebred starter birds, maybe of different breeds.
+            let mother = youngBird(.hen, origin: "Local flock", s, &rng)
+            let father = youngBird(.rooster, origin: "Local flock", s, &rng)
+            var egg = Breeding.layEgg(mother: mother, father: father, day: s.day, using: &rng)
+            egg.collectedDay = s.day
             egg.candled = true
             s.coins -= cost
             s.carton.append(egg)
@@ -389,13 +384,9 @@ public enum Engine {
             guard clutch.hatchDay <= s.day else { waiting.append(clutch); continue }
             var ids: [UUID] = []
             for egg in clutch.eggs {
-                guard let genome = egg.embryo else { continue }
+                guard let chick = Breeding.hatch(egg, name: "Chick \(s.chicksHatched + 1)", onDay: s.day,
+                                                 origin: "Henhaven", using: &rng) else { continue }
                 s.chicksHatched += 1
-                let chick = Bird(
-                    id: makeID(using: &rng), name: "Chick \(s.chicksHatched)",
-                    breed: egg.motherBreed ?? .orpington, genome: genome, hatchDay: s.day,
-                    motherID: egg.motherID, fatherID: egg.fatherID, origin: "Henhaven"
-                )
                 if let hen = clutch.henID {
                     var raised = chick
                     raised.raisedBy = hen
@@ -610,14 +601,11 @@ public enum Engine {
                 ev.append(.eggBroken(by: hen.id))
                 continue
             }
-            let p = hen.phenotype
-            var egg = Egg(id: makeID(using: &rng), layDay: s.day, motherID: hen.id,
-                          colour: p.eggColour ?? .cream, speckled: p.eggIsSpeckled, motherBreed: hen.breed)
+            var father: Bird?
             if !roosters.isEmpty, Double.roll(s.rules.fertileChance, using: &rng) {
-                let father = roosters[Int.random(in: 0..<roosters.count, using: &rng)]
-                egg.fatherID = father.id
-                egg.embryo = try? Breeding.cross(mother: hen.genome, father: father.genome, using: &rng)
+                father = roosters[Int.random(in: 0..<roosters.count, using: &rng)]
             }
+            let egg = Breeding.layEgg(mother: hen, father: father, day: s.day, using: &rng)
             s.nest.append(egg)
             ev.append(.eggLaid(egg.id, by: hen.id))
             if egg.isFertile, !s.incubatorGiftGiven {

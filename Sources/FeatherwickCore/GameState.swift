@@ -17,6 +17,9 @@ public struct Egg: Identifiable, Hashable, Codable, Sendable {
     public var fatherID: UUID?
     public var embryo: Genome?
     public var motherBreed: Breed?
+    public var fatherBreed: Breed?
+    public var motherPurebred: Bool?
+    public var fatherPurebred: Bool?
 
     /// True once the player has held it up to a light. Only then does the player know if it is fertile.
     public var candled: Bool?
@@ -51,7 +54,9 @@ public struct LostBird: Hashable, Codable, Sendable {
 }
 
 public struct BreedBookEntry: Hashable, Codable, Sendable {
-    public let breed: Breed
+    /// The breed (purebred) or cross name (crossbred).
+    public let variety: String
+    public let isCross: Bool
     public let colour: FeatherColour
     public let barred: Bool
     public let laced: Bool
@@ -59,7 +64,8 @@ public struct BreedBookEntry: Hashable, Codable, Sendable {
 
     init(_ bird: Bird) {
         let p = bird.phenotype
-        breed = bird.breed
+        variety = bird.varietyName
+        isCross = !bird.isPurebred
         colour = p.colour
         barred = p.isBarred
         laced = p.isLaced

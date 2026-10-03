@@ -18,7 +18,7 @@ public enum ChickDown: String, Hashable, Codable, Sendable, CaseIterable {
 
 extension Phenotype {
     public var chickDown: ChickDown {
-        if isBarred && colour != .buff { return .darkWithHeadSpot }
+        if isBarred { return .darkWithHeadSpot }
         switch colour {
         case .black: return .black
         case .blue: return .slate
@@ -44,8 +44,6 @@ public struct Phenotype: Hashable, Codable, Sendable {
     public init(_ genome: Genome) {
         sex = genome.sex
         isSilkieFeathered = genome.feathering.isHomozygous(for: .silkie)
-        isBarred = genome.sexChromosomes.isBarred
-        isLaced = genome.lacing.isHomozygous(for: .laced)
 
         // Colour order: buff hides the black-based dilutions; lavender wins over blue.
         if genome.baseColour.isHomozygous(for: .buff) {
@@ -59,6 +57,12 @@ public struct Phenotype: Hashable, Codable, Sendable {
             default: colour = .splash
             }
         }
+
+        // Patterns only show on the right ground colour, as in real chickens. The genes are still
+        // carried and passed on, so hidden patterns can reappear in chicks.
+        // Lacing needs a gold (buff) ground; barring shows only on black-based birds.
+        isLaced = colour == .buff && genome.lacing.isHomozygous(for: .laced)
+        isBarred = colour != .buff && genome.sexChromosomes.isBarred
 
         if sex == .hen {
             let blueShell = genome.blueShell.has(.blue)

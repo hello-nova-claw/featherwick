@@ -160,7 +160,9 @@ struct ShopTests {
         for b in s.coop {
             #expect(Breed.starters.contains(b.breed))
             #expect(!b.phenotype.isSilkieFeathered)
-            #expect(Phenotype(b.genome).isLaced == (b.breed == .wyandotte))
+            #expect(b.isPurebred)
+            // Only gold (buff) Wyandottes show lacing.
+            #expect(b.phenotype.isLaced == (b.breed == .wyandotte && b.phenotype.colour == .buff))
         }
     }
 }

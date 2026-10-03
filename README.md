@@ -40,6 +40,16 @@ Night order: fox (only if the coop is open) → new day → lost birds come home
 | Brown coating | Br / br | Dominant | Simplified (real brown is polygenic). Blue + brown = olive |
 | Speckle | sp+ / sp | Recessive | Game-only gene |
 
+## Realism rules (tested)
+
+- Lacing shows only on a gold (buff) ground ("gold laced"); barring shows only on black-based birds.
+  Hidden pattern genes are still passed on.
+- A chick is purebred only if both parents are purebred and the same breed. Crosses are named
+  like real keepers name them: olive egger (blue egg x brown egg), easter egger (other blue-egg
+  crosses), barnyard mix (everything else).
+- `GeneticsRealismTests` breeds tens of thousands of birds over 6 generations and fails on any
+  bird a real keeper couldn't breed.
+
 ## Design rules
 
 - Real genetics, but no lethal genes. Every egg hatches.

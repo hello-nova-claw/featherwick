@@ -40,14 +40,34 @@ public enum Breeding {
         )
     }
 
-    /// Hatches a named chick from two birds. Keeps lineage for the family tree and trading.
+    /// An egg from this hen. With a father it is fertile: the chick's genome is fixed now.
+    public static func layEgg<R: RandomNumberGenerator>(
+        mother: Bird, father: Bird?, day: Int, using rng: inout R
+    ) -> Egg {
+        let p = mother.phenotype
+        var egg = Egg(id: makeID(using: &rng), layDay: day, motherID: mother.id,
+                      colour: p.eggColour ?? .cream, speckled: p.eggIsSpeckled,
+                      motherBreed: mother.breed, motherPurebred: mother.isPurebred)
+        if let father, let embryo = try? cross(mother: mother.genome, father: father.genome, using: &rng) {
+            egg.fatherID = father.id
+            egg.fatherBreed = father.breed
+            egg.fatherPurebred = father.isPurebred
+            egg.embryo = embryo
+        }
+        return egg
+    }
+
+    /// The chick from a fertile egg. Purebred only if both parents are purebred and the same breed.
     public static func hatch<R: RandomNumberGenerator>(
-        mother: Bird, father: Bird, name: String, onDay day: Int, origin: String, using rng: inout R
-    ) throws -> Bird {
-        let genome = try cross(mother: mother.genome, father: father.genome, using: &rng)
-        return Bird(
-            id: makeID(using: &rng), name: name, breed: mother.breed, genome: genome,
-            hatchDay: day, motherID: mother.id, fatherID: father.id, origin: origin
-        )
+        _ egg: Egg, name: String, onDay day: Int, origin: String, using rng: inout R
+    ) -> Bird? {
+        guard let genome = egg.embryo else { return nil }
+        let breed = egg.motherBreed ?? .orpington
+        let pure = (egg.motherPurebred ?? true) && (egg.fatherPurebred ?? true)
+            && egg.fatherBreed.map { $0 == breed } ?? true
+        var chick = Bird(id: makeID(using: &rng), name: name, breed: breed, genome: genome,
+                         hatchDay: day, motherID: egg.motherID, fatherID: egg.fatherID, origin: origin)
+        chick.purebredFlag = pure
+        return chick
     }
 }
