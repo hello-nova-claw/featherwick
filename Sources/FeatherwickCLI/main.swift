@@ -116,6 +116,7 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         case .birdsBoarding: "You can't set eggs while a bird is staying with the neighbour. Make room first: rehome a bird or upgrade the coop."
         case .birdIsBusy: "She is sitting on eggs or caring for chicks. She can't go to a new home right now."
         case .coopAtMax: "The coop can't hold any more perches."
+        case .lastBird: "That's your only bird. Keep at least one, or Henhaven would be empty."
         case .brooderFull(let room):
             room == 0
                 ? "The brooder is full. Make room first: rehome a bird or upgrade the coop so the brooder birds can move out."
@@ -206,7 +207,7 @@ func look(_ s: GameState) {
     for b in s.coop {
         var line = "  " + label(b, s)
         if let c = s.clutch(under: b.id) { line += " · sitting on \(c.eggs.count) eggs, hatch day \(c.hatchDay)" }
-        let kids = s.henChicks.filter { $0.motherID == b.id }
+        let kids = s.henChicks.filter { $0.raisedBy == b.id }
         if !kids.isEmpty { line += " · with \(kids.count) chick\(kids.count == 1 ? "" : "s")" }
         print(line)
     }

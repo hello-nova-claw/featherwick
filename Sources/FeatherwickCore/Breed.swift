@@ -82,6 +82,8 @@ public struct Bird: Identifiable, Hashable, Codable, Sendable {
     public var noLayUntilDay: Int
     /// While set and in the future, the hen is broody: she sits and does not lay.
     public var broodyUntilDay: Int?
+    /// The broody hen raising this chick. Not always its mother: a broody hen will sit on any hen's eggs.
+    public var raisedBy: UUID?
 
     public func isBroody(onDay day: Int) -> Bool { (broodyUntilDay ?? Int.min) > day }
 

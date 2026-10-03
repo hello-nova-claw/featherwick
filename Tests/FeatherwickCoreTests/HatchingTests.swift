@@ -186,3 +186,26 @@ struct HatchingTests {
         #expect(s.brooder[0].name == "Marigold")
     }
 }
+
+struct FosterHenTests {
+    /// Real broody hens sit on any hen's eggs. The chicks keep their real mother for the family tree,
+    /// and the hen raising them is the one who is busy (and can't be rehomed).
+    @Test func aBroodyHenCanRaiseAnotherHensChicks() {
+        var r = calmRules()
+        r.broodyChance = [:]
+        var (s, rng) = adultHenGame(r)
+        let foster = s.coop[0].id
+        s.coop[0].broodyUntilDay = s.day + 5
+        let layer = plainBird(.araucana, hatchDay: s.day - r.adultAge, rng: &rng)
+        let rooster = plainBird(.orpington, .rooster, hatchDay: s.day - r.adultAge, rng: &rng)
+        s.coop += [layer, rooster]
+        s.carton = [fertileEgg(mother: layer, father: rooster, day: s.day, rng: &rng)]
+        _ = Engine.apply(.sit(hen: foster, count: 1), to: &s, using: &rng)
+        for _ in 0..<r.broodyHatchDays { night(&s, &rng) }
+        #expect(s.henChicks.count == 1)
+        #expect(s.henChicks[0].motherID == layer.id)
+        #expect(s.henChicks[0].raisedBy == foster)
+        #expect(Engine.apply(.rehome(foster), to: &s, using: &rng) == [.rejected(.birdIsBusy)])
+        #expect(Engine.apply(.rehome(layer.id), to: &s, using: &rng) == [.rehomed(layer.id, coins: 8)])
+    }
+}

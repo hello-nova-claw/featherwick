@@ -47,6 +47,8 @@ public enum Rejection: Hashable, Codable, Sendable {
     case birdsBoarding
     case birdIsBusy
     case coopAtMax
+    /// The player must always keep at least one bird, or the game could never continue.
+    case lastBird
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -204,7 +206,7 @@ public enum Engine {
         case .rename(let id, let name):
             let trimmed = name.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty else { return [.rejected(.invalidAmount)] }
-            let groups: [WritableKeyPath<GameState, [Bird]>] = [\.brooder, \.henChicks, \.coop]
+            let groups: [WritableKeyPath<GameState, [Bird]>] = [\.brooder, \.henChicks, \.coop, \.boarding]
             for keyPath in groups {
                 if let i = s[keyPath: keyPath].firstIndex(where: { $0.id == id }) {
                     s[keyPath: keyPath][i].name = trimmed
@@ -214,8 +216,12 @@ public enum Engine {
             return [.rejected(.noSuchBird)]
 
         case .rehome(let id):
-            if s.clutch(under: id) != nil || s.henChicks.contains(where: { $0.motherID == id }) {
+            if s.clutch(under: id) != nil || s.henChicks.contains(where: { $0.raisedBy == id }) {
                 return [.rejected(.birdIsBusy)]
+            }
+            let owned = s.birdsAtHome.count + s.lost.count + s.boarding.count
+            if owned <= 1, s.bird(id) != nil, !s.rehomed.contains(where: { $0.id == id }) {
+                return [.rejected(.lastBird)]
             }
             let groups: [WritableKeyPath<GameState, [Bird]>] = [\.brooder, \.henChicks, \.coop, \.boarding]
             for keyPath in groups {
@@ -292,7 +298,13 @@ public enum Engine {
                     breed: egg.motherBreed ?? .orpington, genome: genome, hatchDay: s.day,
                     motherID: egg.motherID, fatherID: egg.fatherID, origin: "Henhaven"
                 )
-                if clutch.henID == nil { s.brooder.append(chick) } else { s.henChicks.append(chick) }
+                if let hen = clutch.henID {
+                    var raised = chick
+                    raised.raisedBy = hen
+                    s.henChicks.append(raised)
+                } else {
+                    s.brooder.append(chick)
+                }
                 ids.append(chick.id)
             }
             ev.append(.chicksHatched(ids, hen: clutch.henID))
@@ -506,8 +518,11 @@ public enum Engine {
             ev.append(.eggLaid(egg.id, by: hen.id))
             if egg.isFertile, !s.incubatorGiftGiven {
                 s.incubatorGiftGiven = true
-                s.incubatorSize = max(s.incubatorSize, s.rules.giftIncubatorSize)
-                ev.append(.neighbourGaveIncubator(size: s.rules.giftIncubatorSize))
+                // Only offered if the player has no incubator yet (they may have bought the big one).
+                if !s.hasIncubator {
+                    s.incubatorSize = s.rules.giftIncubatorSize
+                    ev.append(.neighbourGaveIncubator(size: s.rules.giftIncubatorSize))
+                }
             }
             let entry = EggBookEntry(colour: egg.colour, speckled: egg.speckled)
             if s.eggBook.insert(entry).inserted { ev.append(.newEggBookEntry(entry)) }
