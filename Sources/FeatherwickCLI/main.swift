@@ -105,7 +105,7 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
     case .eggsCollected(let n, let left):
         return "You collect \(n) egg\(n == 1 ? "" : "s")." + (left > 0 ? " \(left) left in the nest: the carton is full." : "")
     case .eggsSold(let n, let coins, let stale):
-        return "Speckle & Down buys \(n) egg\(n == 1 ? "" : "s") for \(coins) coins."
+        return "Speckle & Down buys \(n) egg\(n == 1 ? "" : "s") for \(coins) coin\(coins == 1 ? "" : "s")."
             + (stale > 0 ? " \(stale) sat in the nest too long and sold at half price." : "")
     case .feedBought(let units, let cost): return "You buy \(units) feed for \(cost) coins."
     case .coopClosed: return "You shut the coop door for the night."
