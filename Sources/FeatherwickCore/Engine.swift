@@ -17,6 +17,9 @@ public enum Command: Hashable, Codable, Sendable {
     case candle
     /// Sell every egg except the ones known to be fertile.
     case sellClearEggs
+    /// A neighbour adopts the bird and pays for it. Rarer birds are worth more.
+    case rehome(UUID)
+    case upgradeCoop
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -41,6 +44,9 @@ public enum Rejection: Hashable, Codable, Sendable {
     case notEnoughEggsInCarton(have: Int)
     case brooderFull(room: Int)
     case nothingToCandle
+    case birdsBoarding
+    case birdIsBusy
+    case coopAtMax
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -64,7 +70,11 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case newBreedBookEntry(BreedBookEntry)
     case neighbourGaveHen(UUID)
     case movedToCoop(UUID)
-    case stuckInBrooder(UUID)
+    /// A grown bird with no perch. It waits in the brooder until the player makes room.
+    case needsHome(UUID)
+    /// No perch and no brooder room: the neighbour keeps it. Hatching pauses until it has a home.
+    case boardingWithNeighbour(UUID)
+    case cameHomeFromBoarding(UUID)
     case noEggsHungry
     case eggLaid(UUID, by: UUID)
     case eggBroken(by: UUID)          // nest boxes full: laid on the floor and broke
@@ -79,6 +89,8 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case eggsSet(count: Int, hen: UUID?, hatchDay: Int)
     case chicksHatched([UUID], hen: UUID?)
     case renamed(UUID)
+    case rehomed(UUID, coins: Int)
+    case coopUpgraded(perches: Int, cost: Int)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -163,6 +175,7 @@ public enum Engine {
 
         case .incubate(let count):
             if !s.hasIncubator { return [.rejected(.noIncubator)] }
+            if !s.boarding.isEmpty { return [.rejected(.birdsBoarding)] }
             if s.incubatorClutch != nil { return [.rejected(.incubatorBusy)] }
             if count > s.incubatorSize { return [.rejected(.clutchTooBig(max: s.incubatorSize))] }
             if let r = checkClutchSize(count, s) { return [.rejected(r)] }
@@ -173,6 +186,7 @@ public enum Engine {
 
         case .sit(let henID, let count):
             guard let i = s.coop.firstIndex(where: { $0.id == henID }) else { return [.rejected(.noSuchBird)] }
+            if !s.boarding.isEmpty { return [.rejected(.birdsBoarding)] }
             if !s.coop[i].isBroody(onDay: s.day) { return [.rejected(.notBroody)] }
             if s.clutch(under: henID) != nil { return [.rejected(.henAlreadySitting)] }
             if let r = checkClutchSize(count, s) { return [.rejected(r)] }
@@ -195,6 +209,31 @@ public enum Engine {
                 }
             }
             return [.rejected(.noSuchBird)]
+
+        case .rehome(let id):
+            if s.clutch(under: id) != nil || s.henChicks.contains(where: { $0.motherID == id }) {
+                return [.rejected(.birdIsBusy)]
+            }
+            let groups: [WritableKeyPath<GameState, [Bird]>] = [\.brooder, \.henChicks, \.coop, \.boarding]
+            for keyPath in groups {
+                if let i = s[keyPath: keyPath].firstIndex(where: { $0.id == id }) {
+                    let bird = s[keyPath: keyPath].remove(at: i)
+                    let coins = s.rules.rehomeValue(of: bird, onDay: s.day)
+                    s.coins += coins
+                    s.rehomed.append(bird)
+                    if s.starterID == id { s.starterID = nil }
+                    return [.rehomed(id, coins: coins)]
+                }
+            }
+            return [.rejected(.noSuchBird)]
+
+        case .upgradeCoop:
+            if s.perches >= s.rules.maxPerches { return [.rejected(.coopAtMax)] }
+            let cost = s.rules.coopUpgradePrice
+            if s.coins < cost { return [.rejected(.notEnoughCoins(needed: cost, have: s.coins))] }
+            s.coins -= cost
+            s.perches = min(s.rules.maxPerches, s.perches + s.rules.perchesPerUpgrade)
+            return [.coopUpgraded(perches: s.perches, cost: cost)]
         }
     }
 
@@ -345,9 +384,8 @@ public enum Engine {
         // 5. Eggs due today hatch: incubator chicks go to the brooder, broody-hatched chicks stay with their mother.
         ev += hatchDue(&s, &rng)
 
-        // 6. Chicks move to the coop when old enough and a perch is free.
-        ev += moveGrownChicks(&s.brooder, into: &s.coop, perches: s.perches, day: s.day, rules: r)
-        ev += moveGrownChicks(&s.henChicks, into: &s.coop, perches: s.perches, day: s.day, rules: r)
+        // 6. Grown chicks and boarding birds find homes (a free perch), or wait.
+        ev += findHomes(&s)
 
         // 7. Broody hens that have sat (and mothered) long enough get up.
         for i in s.coop.indices {
@@ -367,25 +405,38 @@ public enum Engine {
         return ev
     }
 
-    static func moveGrownChicks(
-        _ chicks: inout [Bird], into coop: inout [Bird], perches: Int, day: Int, rules: Rules
-    ) -> [GameEvent] {
+    /// Perches go first to birds boarding with the neighbour, then grown brooder birds, then grown hen chicks.
+    /// A grown bird with no perch waits in the brooder; if the brooder is full too, the neighbour boards it.
+    static func findHomes(_ s: inout GameState) -> [GameEvent] {
         var ev: [GameEvent] = []
-        var staying: [Bird] = []
-        for b in chicks {
-            if b.age(onDay: day) >= rules.brooderDays {
-                if coop.count < perches {
-                    coop.append(b)
-                    ev.append(.movedToCoop(b.id))
-                } else {
-                    staying.append(b)
-                    ev.append(.stuckInBrooder(b.id))
-                }
-            } else {
-                staying.append(b)
-            }
+        let day = s.day, brooderDays = s.rules.brooderDays
+        let grown = { (b: Bird) in b.age(onDay: day) >= brooderDays }
+
+        var stillBoarding: [Bird] = []
+        for b in s.boarding {
+            if s.coop.count < s.perches { s.coop.append(b); ev.append(.cameHomeFromBoarding(b.id)) }
+            else { stillBoarding.append(b) }
         }
-        chicks = staying
+        s.boarding = stillBoarding
+
+        var inBrooder: [Bird] = []
+        for b in s.brooder {
+            guard grown(b) else { inBrooder.append(b); continue }
+            if s.coop.count < s.perches { s.coop.append(b); ev.append(.movedToCoop(b.id)) }
+            else { inBrooder.append(b); ev.append(.needsHome(b.id)) }
+        }
+        s.brooder = inBrooder
+
+        var withMother: [Bird] = []
+        for b in s.henChicks {
+            guard grown(b) else { withMother.append(b); continue }
+            if s.coop.count < s.perches { s.coop.append(b); ev.append(.movedToCoop(b.id)) }
+            else if s.brooder.count < s.brooderSize { s.brooder.append(b); ev.append(.needsHome(b.id)) }
+            else { s.boarding.append(b) }
+        }
+        s.henChicks = withMother
+
+        for b in s.boarding { ev.append(.boardingWithNeighbour(b.id)) }
         return ev
     }
 

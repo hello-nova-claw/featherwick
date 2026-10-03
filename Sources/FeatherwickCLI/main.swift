@@ -86,7 +86,7 @@ func name(_ id: UUID, _ s: GameState) -> String { s.bird(id)?.name ?? "a bird" }
 /// Finds a bird by name, ignoring case. "chick 3" can be typed as "chick3" too.
 func findBird(_ query: String, _ s: GameState) -> Bird? {
     let q = query.lowercased().replacingOccurrences(of: " ", with: "")
-    return s.birdsAtHome.first { $0.name.lowercased().replacingOccurrences(of: " ", with: "") == q }
+    return (s.birdsAtHome + s.boarding).first { $0.name.lowercased().replacingOccurrences(of: " ", with: "") == q }
 }
 
 func text(_ e: GameEvent, _ s: GameState) -> String? {
@@ -113,6 +113,9 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         case .clutchTooBig(let max): "That's too many eggs. The most is \(max)."
         case .notEnoughEggsInCarton(let have): "You only have \(have) egg\(have == 1 ? "" : "s") in your carton. Collect first: collect"
         case .nothingToCandle: "You have already candled every egg in the carton."
+        case .birdsBoarding: "You can't set eggs while a bird is staying with the neighbour. Make room first: rehome a bird or upgrade the coop."
+        case .birdIsBusy: "She is sitting on eggs or caring for chicks. She can't go to a new home right now."
+        case .coopAtMax: "The coop can't hold any more perches."
         case .brooderFull(let room): "The brooder only has room for \(room) more chick\(room == 1 ? "" : "s"). Set fewer eggs."
         }
     case .starterChosen(let id): return "You take \(name(id, s)) home and settle them under the heat lamp."
@@ -137,7 +140,16 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
     case .neighbourGaveHen(let id):
         return "The neighbour visits: \"He'll want some company.\" She gives you a young hen: \(label(s.bird(id)!, s))."
     case .movedToCoop(let id): return "\(name(id, s)) is big enough to move from the brooder to the coop."
-    case .stuckInBrooder(let id): return "\(name(id, s)) is ready for the coop, but there is no free perch."
+    case .needsHome(let id):
+        return "\(name(id, s)) is ready for the coop, but there is no free perch. \(name(id, s)) waits in the brooder. "
+            + "Make room: rehome a bird (rehome <name>) or add perches (upgrade coop, \(s.rules.coopUpgradePrice) coins)."
+    case .boardingWithNeighbour(let id):
+        return "\(name(id, s)) is staying with the neighbour: no perch, and the brooder is full. "
+            + "You can't set eggs until \(name(id, s)) has a home. Rehome a bird or upgrade the coop."
+    case .cameHomeFromBoarding(let id): return "\(name(id, s)) comes home from the neighbour's to a free perch."
+    case .rehomed(let id, let coins):
+        return "\(name(id, s)) goes to a new home in Featherwick. They pay you \(coins) coin\(coins == 1 ? "" : "s")."
+    case .coopUpgraded(let perches, let cost): return "You add perches to the coop for \(cost) coins. It now has \(perches) perches."
     case .noEggsHungry: return "No eggs today. The hens were not fed yesterday."
     case .eggLaid(_, let by): return "\(name(by, s)) laid an egg."
     case .eggBroken(let by): return "The nest boxes were full, so \(name(by, s)) laid on the floor and the egg broke."
@@ -183,7 +195,10 @@ func look(_ s: GameState) {
     }
     print("Day \(s.day), \(s.season.rawValue) · \(s.coins) coins · coop door \(s.coopDoorOpen ? "open" : "closed")\(s.fedToday ? " · fed today" : "")")
     print("Brooder (\(s.brooder.count)/\(s.brooderSize)):")
-    s.brooder.forEach { print("  " + label($0, s)) }
+    for b in s.brooder {
+        let waiting = b.age(onDay: s.day) >= s.rules.brooderDays
+        print("  " + label(b, s) + (waiting ? " · needs a home" : ""))
+    }
     print("Coop (\(s.coop.count)/\(s.perches) perches, \(s.nestBoxes) nesting boxes):")
     for b in s.coop {
         var line = "  " + label(b, s)
@@ -201,6 +216,9 @@ func look(_ s: GameState) {
         print("Incubator (holds \(s.incubatorSize)): " + (c.map { "\($0.eggs.count) egg\($0.eggs.count == 1 ? "" : "s"), hatch day \($0.hatchDay)" } ?? "empty"))
     }
     if !s.lost.isEmpty { print("Lost: " + s.lost.map(\.bird.name).joined(separator: ", ")) }
+    if !s.boarding.isEmpty {
+        print("Staying with the neighbour (no eggs can be set until they have a home): " + s.boarding.map(\.name).joined(separator: ", "))
+    }
     let fertile = s.carton.filter { $0.isCandled && $0.isFertile }.count
     let clear = s.carton.filter { $0.isCandled && !$0.isFertile }.count
     let unchecked = s.carton.count - fertile - clear
@@ -233,6 +251,9 @@ Commands:
   incubate <n>         candle n eggs from the carton; fertile ones go in the incubator
   sit <hen> <n>        candle n eggs; fertile ones go under a broody hen
   rename <name> <new>  rename a bird
+  value <name>         what a neighbour would pay to adopt a bird
+  rehome <name>        a neighbour adopts the bird and pays you (rarer birds pay more)
+  upgrade coop         add \(game.state.rules.perchesPerUpgrade) perches (\(game.state.rules.coopUpgradePrice) coins)
   close                shut the coop door for the night
   sleep                pass the night
   day [n]              do a full day n times: feed, collect, close, sleep
@@ -285,6 +306,15 @@ while true {
         guard parts.count > 2 else { print("Use: rename <name> <new name>"); break }
         guard let bird = findBird(parts[1], game.state) else { print("There is no bird called \(parts[1])."); break }
         run(.rename(bird.id, name: parts.dropFirst(2).joined(separator: " ")))
+    case "rehome":
+        guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("Use: rehome <name>"); break }
+        run(.rehome(bird.id))
+    case "value":
+        guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("Use: value <name>"); break }
+        print("A neighbour would pay \(game.state.rules.rehomeValue(of: bird, onDay: game.state.day)) coins for \(bird.name).")
+    case "upgrade":
+        guard words.count > 1, words[1] == "coop" else { print("You can upgrade: coop"); break }
+        run(.upgradeCoop)
     case "close": run(.closeCoop)
     case "sleep", "s": run(.passNight)
     case "day":

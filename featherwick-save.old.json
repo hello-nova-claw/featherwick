@@ -1,0 +1,199 @@
+{
+  "rng" : {
+    "state" : 4204702123379016959
+  },
+  "state" : {
+    "breedBook" : [
+      {
+        "barred" : false,
+        "breed" : "araucana",
+        "colour" : "buff",
+        "laced" : false,
+        "silkieFeathered" : false
+      },
+      {
+        "barred" : false,
+        "breed" : "orpington",
+        "colour" : "lavender",
+        "laced" : false,
+        "silkieFeathered" : false
+      }
+    ],
+    "brooder" : [
+
+    ],
+    "brooderSize" : 4,
+    "carton" : [
+
+    ],
+    "cartons" : 1,
+    "coins" : 13,
+    "coop" : [
+      {
+        "breed" : "orpington",
+        "genome" : {
+          "baseColour" : {
+            "first" : "E",
+            "second" : "E"
+          },
+          "blue" : {
+            "first" : "bl+",
+            "second" : "bl+"
+          },
+          "blueShell" : {
+            "first" : "o+",
+            "second" : "o+"
+          },
+          "brownShell" : {
+            "first" : "Br",
+            "second" : "Br"
+          },
+          "feathering" : {
+            "first" : "H",
+            "second" : "H"
+          },
+          "lacing" : {
+            "first" : "lc+",
+            "second" : "lc+"
+          },
+          "lavender" : {
+            "first" : "lav",
+            "second" : "lav"
+          },
+          "sexChromosomes" : {
+            "rooster" : {
+              "z" : {
+                "first" : "b+",
+                "second" : "b+"
+              }
+            }
+          },
+          "speckle" : {
+            "first" : "sp+",
+            "second" : "sp+"
+          }
+        },
+        "hatchDay" : 0,
+        "id" : "58A21503-D38E-4B0D-99BF-B5CD65709ECA",
+        "name" : "Chick",
+        "noLayUntilDay" : 0,
+        "origin" : "Neighbour",
+        "revealed" : true,
+        "timesScared" : 0
+      },
+      {
+        "breed" : "araucana",
+        "genome" : {
+          "baseColour" : {
+            "first" : "e",
+            "second" : "e"
+          },
+          "blue" : {
+            "first" : "bl+",
+            "second" : "bl+"
+          },
+          "blueShell" : {
+            "first" : "O",
+            "second" : "O"
+          },
+          "brownShell" : {
+            "first" : "br",
+            "second" : "br"
+          },
+          "feathering" : {
+            "first" : "H",
+            "second" : "H"
+          },
+          "lacing" : {
+            "first" : "lc+",
+            "second" : "lc+"
+          },
+          "lavender" : {
+            "first" : "lav+",
+            "second" : "lav+"
+          },
+          "sexChromosomes" : {
+            "hen" : {
+              "z" : "b+"
+            }
+          },
+          "speckle" : {
+            "first" : "sp+",
+            "second" : "sp+"
+          }
+        },
+        "hatchDay" : 4,
+        "id" : "9BCC8187-C751-4932-97A2-7B75A957ACCC",
+        "name" : "Gift hen",
+        "noLayUntilDay" : 0,
+        "origin" : "Neighbour",
+        "revealed" : true,
+        "timesScared" : 0
+      }
+    ],
+    "coopDoorOpen" : true,
+    "day" : 54,
+    "eggBook" : [
+      {
+        "colour" : "blue",
+        "speckled" : false
+      }
+    ],
+    "fedToday" : false,
+    "feedStock" : 21,
+    "giftHenGiven" : true,
+    "lost" : [
+
+    ],
+    "nest" : [
+
+    ],
+    "nestBoxes" : 3,
+    "perches" : 3,
+    "phase" : {
+      "playing" : {
+
+      }
+    },
+    "rules" : {
+      "adultAge" : 21,
+      "blueEggPrice" : 3,
+      "brooderDays" : 7,
+      "brownEggPrice" : 2,
+      "cartonSize" : 12,
+      "creamEggPrice" : 1,
+      "daysPerSeason" : 28,
+      "feedBagPrice" : 10,
+      "feedBagUnits" : 20,
+      "fleeChance" : 0.5,
+      "floorEggBreakChance" : 0.5,
+      "foxChance" : 0.5,
+      "giftHenAge" : 3,
+      "growerAge" : 7,
+      "hensPerNestBox" : 4,
+      "layChance" : [
+        "summer",
+        0.8,
+        "autumn",
+        0.4,
+        "winter",
+        0.5,
+        "spring",
+        0.9
+      ],
+      "lostDaysCap" : 30,
+      "lostDaysMax" : 3,
+      "lostDaysMin" : 1,
+      "oliveEggPrice" : 4,
+      "scaredNoLayDays" : 3,
+      "speckleBonus" : 1,
+      "startBrooderSize" : 4,
+      "startCartons" : 1,
+      "startCoins" : 20,
+      "startFeed" : 10,
+      "startNestBoxes" : 3,
+      "startPerches" : 3
+    },
+    "starterID" : "58A21503-D38E-4B0D-99BF-B5CD65709ECA"
+  }
+}

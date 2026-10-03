@@ -95,6 +95,11 @@ public struct GameState: Hashable, Codable, Sendable {
     public var henChicks: [Bird] = []
     public var coop: [Bird] = []
     public var lost: [LostBird] = []
+    /// Grown birds with no perch and no brooder room. The neighbour keeps them safe,
+    /// but no eggs can be set until they have a home.
+    public var boarding: [Bird] = []
+    /// Birds adopted by people in Featherwick. Kept so they can appear in town later.
+    public var rehomed: [Bird] = []
     public var nest: [Egg] = []
     public var carton: [Egg] = []
 
@@ -125,6 +130,9 @@ public struct GameState: Hashable, Codable, Sendable {
     public func clutch(under henID: UUID) -> Clutch? { clutches.first { $0.henID == henID } }
 
     public func bird(_ id: UUID) -> Bird? {
-        birdsAtHome.first { $0.id == id } ?? lost.first { $0.bird.id == id }?.bird
+        birdsAtHome.first { $0.id == id }
+            ?? lost.first { $0.bird.id == id }?.bird
+            ?? boarding.first { $0.id == id }
+            ?? rehomed.first { $0.id == id }
     }
 }

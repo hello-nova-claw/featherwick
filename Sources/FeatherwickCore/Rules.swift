@@ -37,6 +37,17 @@ public struct Rules: Codable, Hashable, Sendable {
     public var bigIncubatorSize = 6        // the one you buy
     public var incubatorPrice = 40
 
+    // Making room
+    public var coopUpgradePrice = 30
+    public var perchesPerUpgrade = 2
+    public var maxPerches = 15
+    public var rehomeBase: [LifeStage: Int] = [.chick: 2, .grower: 4, .adult: 6]
+    public var rareLavenderOrSilkie = 6    // lavender, or silkie feathering on a non-Silkie
+    public var rareOliveEggs = 5
+    public var rareSplash = 4
+    public var rareSpeckledEggs = 3
+    public var rareSmall = 2               // each of: blue, barred, blue eggs
+
     // Fox (never kills)
     public var foxChance = 0.5       // chance the fox visits when the coop is left open
     public var fleeChance = 0.5      // chance each bird runs off when it does
@@ -57,6 +68,23 @@ public struct Rules: Codable, Hashable, Sendable {
     public init() {}
 
     public static let standard = Rules()
+
+    /// Coins a neighbour pays to adopt a bird. Rarer birds are worth more.
+    /// Egg traits count for roosters too: they pass them on (olive-egger roosters are prized).
+    public func rehomeValue(of bird: Bird, onDay day: Int) -> Int {
+        let p = bird.phenotype
+        let g = bird.genome
+        var value = rehomeBase[bird.stage(onDay: day, rules: self)] ?? 0
+        if p.colour == .lavender { value += rareLavenderOrSilkie }
+        if p.isSilkieFeathered && bird.breed != .silkie { value += rareLavenderOrSilkie }
+        if p.colour == .splash { value += rareSplash }
+        if p.colour == .blue { value += rareSmall }
+        if p.isBarred { value += rareSmall }
+        let blueShell = g.blueShell.has(.blue), brown = g.brownShell.has(.brown)
+        if blueShell && brown { value += rareOliveEggs } else if blueShell { value += rareSmall }
+        if g.speckle.isHomozygous(for: .speckled) { value += rareSpeckledEggs }
+        return value
+    }
 
     public func isStale(_ egg: Egg, onDay day: Int) -> Bool {
         (egg.collectedDay ?? day) - egg.layDay > nestFreshDays
