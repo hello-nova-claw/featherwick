@@ -83,6 +83,12 @@ func label(_ b: Bird, _ s: GameState) -> String {
 
 func name(_ id: UUID, _ s: GameState) -> String { s.bird(id)?.name ?? "a bird" }
 
+/// Finds a bird by name, ignoring case. "chick 3" can be typed as "chick3" too.
+func findBird(_ query: String, _ s: GameState) -> Bird? {
+    let q = query.lowercased().replacingOccurrences(of: " ", with: "")
+    return s.birdsAtHome.first { $0.name.lowercased().replacingOccurrences(of: " ", with: "") == q }
+}
+
 func text(_ e: GameEvent, _ s: GameState) -> String? {
     switch e {
     case .rejected(let r):
@@ -99,6 +105,15 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         case .notEnoughCoins(let n, let h): "That costs \(n) coins. You have \(h)."
         case .invalidAmount: "Give a number of 1 or more."
         case .coopAlreadyClosed: "The coop is already closed."
+        case .noSuchBird: "There is no bird with that name here."
+        case .noIncubator: "You don't have an incubator. Buy one: buy incubator (\(s.rules.incubatorPrice) coins)"
+        case .alreadyHaveIncubator: "You already have an incubator."
+        case .incubatorBusy: "The incubator already has eggs in it."
+        case .notBroody: "She isn't broody. Only a broody hen will sit on eggs."
+        case .henAlreadySitting: "She is already sitting on eggs."
+        case .clutchTooBig(let max): "That's too many eggs. The most is \(max)."
+        case .notEnoughEggsInCarton(let have): "You only have \(have) egg\(have == 1 ? "" : "s") in your carton. Collect first: collect"
+        case .brooderFull(let room): "The brooder only has room for \(room) more chick\(room == 1 ? "" : "s"). Set fewer eggs."
         }
     case .starterChosen(let id): return "You take \(name(id, s)) home and settle them under the heat lamp."
     case .fed(let units): return "You feed the flock (\(units) feed)."
@@ -130,7 +145,19 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
     case .newEggBookEntry(let entry):
         return "New egg colour: \(entry.speckled ? "speckled " : "")\(entry.colour.rawValue)!"
     case .wentBroody(let id): return "\(name(id, s)) has gone broody. She fluffs up on the pile of eggs and won't lay for a while."
-    case .broodyEnded(let id): return "\(name(id, s)) has given up sitting and is back to normal."
+    case .broodyEnded(let id): return "\(name(id, s)) is done being broody and is back to normal."
+    case .incubatorBought(let cost): return "You buy an incubator for \(cost) coins. It hatches eggs overnight."
+    case .candled(let fertile, let clear):
+        if fertile == 0 { return "You hold each egg up to the light. All \(clear) are clear: none are fertile. They go back in the carton." }
+        return "You hold each egg up to the light: \(fertile) fertile" + (clear > 0 ? ", \(clear) clear (back in the carton)." : ".")
+    case .eggsSet(let n, let hen, let hatchDay):
+        let who = hen.map { "under \(name($0, s))" } ?? "in the incubator"
+        return "You set \(n) egg\(n == 1 ? "" : "s") \(who). They will hatch on day \(hatchDay)."
+    case .chicksHatched(let ids, let hen):
+        let where_ = hen.map { "under \(name($0, s))" } ?? "in the incubator"
+        return "Peeping \(where_)! \(ids.count) chick\(ids.count == 1 ? "" : "s") hatched: "
+            + ids.compactMap { s.bird($0) }.map { "\($0.name) (\(downText($0.phenotype.chickDown)))" }.joined(separator: ", ")
+    case .renamed(let id): return "Renamed to \(name(id, s))."
     }
 }
 
@@ -145,7 +172,21 @@ func look(_ s: GameState) {
     print("Brooder (\(s.brooder.count)/\(s.brooderSize)):")
     s.brooder.forEach { print("  " + label($0, s)) }
     print("Coop (\(s.coop.count)/\(s.perches) perches, \(s.nestBoxes) nesting boxes):")
-    s.coop.forEach { print("  " + label($0, s)) }
+    for b in s.coop {
+        var line = "  " + label(b, s)
+        if let c = s.clutch(under: b.id) { line += " · sitting on \(c.eggs.count) eggs, hatch day \(c.hatchDay)" }
+        let kids = s.henChicks.filter { $0.motherID == b.id }
+        if !kids.isEmpty { line += " · with \(kids.count) chick\(kids.count == 1 ? "" : "s")" }
+        print(line)
+    }
+    if !s.henChicks.isEmpty {
+        print("Chicks with their mother:")
+        s.henChicks.forEach { print("  " + label($0, s)) }
+    }
+    if s.hasIncubator {
+        let c = s.incubatorClutch
+        print("Incubator: " + (c.map { "\($0.eggs.count) eggs, hatch day \($0.hatchDay)" } ?? "empty"))
+    }
     if !s.lost.isEmpty { print("Lost: " + s.lost.map(\.bird.name).joined(separator: ", ")) }
     print("Nest: \(s.nest.count)/\(s.nestCapacity) eggs · carton \(s.carton.count)/\(s.cartonCapacity)")
 }
@@ -169,6 +210,10 @@ Commands:
   collect              move eggs from the nest to your carton
   sell                 sell every egg in your carton
   buy feed [bags]      buy feed (\(game.state.rules.feedBagUnits) per bag, \(game.state.rules.feedBagPrice) coins)
+  buy incubator        buy an incubator (\(game.state.rules.incubatorPrice) coins)
+  incubate <n>         candle n eggs from the carton; fertile ones go in the incubator
+  sit <hen> <n>        candle n eggs; fertile ones go under a broody hen
+  rename <name> <new>  rename a bird
   close                shut the coop door for the night
   sleep                pass the night
   day [n]              do a full day n times: feed, collect, close, sleep
@@ -204,8 +249,24 @@ while true {
     case "collect", "c": run(.collectEggs)
     case "sell": run(.sellEggs)
     case "buy":
-        guard words.count > 1, words[1] == "feed" else { print("You can buy: feed"); break }
-        run(.buyFeed(bags: words.count > 2 ? Int(words[2]) ?? 0 : 1))
+        if words.count > 1, words[1] == "feed" {
+            run(.buyFeed(bags: words.count > 2 ? Int(words[2]) ?? 0 : 1))
+        } else if words.count > 1, words[1] == "incubator" {
+            run(.buyIncubator)
+        } else {
+            print("You can buy: feed, incubator")
+        }
+    case "incubate":
+        run(.incubate(count: words.count > 1 ? Int(words[1]) ?? 0 : 0))
+    case "sit":
+        guard words.count > 2, let n = Int(words[2]) else { print("Use: sit <hen> <number of eggs>"); break }
+        guard let hen = findBird(words[1], game.state) else { print("There is no bird called \(words[1])."); break }
+        run(.sit(hen: hen.id, count: n))
+    case "rename":
+        let parts = line.split(separator: " ").map(String.init)
+        guard parts.count > 2 else { print("Use: rename <name> <new name>"); break }
+        guard let bird = findBird(parts[1], game.state) else { print("There is no bird called \(parts[1])."); break }
+        run(.rename(bird.id, name: parts.dropFirst(2).joined(separator: " ")))
     case "close": run(.closeCoop)
     case "sleep", "s": run(.passNight)
     case "day":

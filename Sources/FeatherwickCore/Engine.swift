@@ -8,6 +8,12 @@ public enum Command: Hashable, Codable, Sendable {
     case buyFeed(bags: Int)
     case closeCoop
     case passNight
+    case buyIncubator
+    /// Candle eggs from the carton and set the fertile ones in the incubator.
+    case incubate(count: Int)
+    /// Candle eggs from the carton and set the fertile ones under a broody hen.
+    case sit(hen: UUID, count: Int)
+    case rename(UUID, name: String)
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -23,6 +29,15 @@ public enum Rejection: Hashable, Codable, Sendable {
     case notEnoughCoins(needed: Int, have: Int)
     case invalidAmount
     case coopAlreadyClosed
+    case noSuchBird
+    case noIncubator
+    case alreadyHaveIncubator
+    case incubatorBusy
+    case notBroody
+    case henAlreadySitting
+    case clutchTooBig(max: Int)
+    case notEnoughEggsInCarton(have: Int)
+    case brooderFull(room: Int)
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -54,6 +69,12 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case newEggBookEntry(EggBookEntry)
     case wentBroody(UUID)
     case broodyEnded(UUID)
+    // Hatching
+    case incubatorBought(cost: Int)
+    case candled(fertile: Int, clear: Int)
+    case eggsSet(count: Int, hen: UUID?, hatchDay: Int)
+    case chicksHatched([UUID], hen: UUID?)
+    case renamed(UUID)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -127,7 +148,96 @@ public enum Engine {
 
         case .passNight:
             return passNight(&s, &rng)
+
+        case .buyIncubator:
+            if s.hasIncubator { return [.rejected(.alreadyHaveIncubator)] }
+            let cost = s.rules.incubatorPrice
+            if s.coins < cost { return [.rejected(.notEnoughCoins(needed: cost, have: s.coins))] }
+            s.coins -= cost
+            s.hasIncubator = true
+            return [.incubatorBought(cost: cost)]
+
+        case .incubate(let count):
+            if !s.hasIncubator { return [.rejected(.noIncubator)] }
+            if s.incubatorClutch != nil { return [.rejected(.incubatorBusy)] }
+            if let r = checkClutchSize(count, s) { return [.rejected(r)] }
+            let fertile = s.carton.prefix(count).filter(\.isFertile).count
+            let room = s.brooderSize - s.brooder.count
+            if fertile > room { return [.rejected(.brooderFull(room: room))] }
+            return setEggs(count: count, hen: nil, hatchDay: s.day + s.rules.incubatorHatchDays, &s)
+
+        case .sit(let henID, let count):
+            guard let i = s.coop.firstIndex(where: { $0.id == henID }) else { return [.rejected(.noSuchBird)] }
+            if !s.coop[i].isBroody(onDay: s.day) { return [.rejected(.notBroody)] }
+            if s.clutch(under: henID) != nil { return [.rejected(.henAlreadySitting)] }
+            if let r = checkClutchSize(count, s) { return [.rejected(r)] }
+            let hatchDay = s.day + s.rules.broodyHatchDays
+            let ev = setEggs(count: count, hen: henID, hatchDay: hatchDay, &s)
+            if s.clutch(under: henID) != nil {
+                // She sits, then raises her chicks until they are big enough for the coop.
+                s.coop[i].broodyUntilDay = hatchDay + s.rules.brooderDays
+            }
+            return ev
+
+        case .rename(let id, let name):
+            let trimmed = name.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty else { return [.rejected(.invalidAmount)] }
+            let groups: [WritableKeyPath<GameState, [Bird]>] = [\.brooder, \.henChicks, \.coop]
+            for keyPath in groups {
+                if let i = s[keyPath: keyPath].firstIndex(where: { $0.id == id }) {
+                    s[keyPath: keyPath][i].name = trimmed
+                    return [.renamed(id)]
+                }
+            }
+            return [.rejected(.noSuchBird)]
         }
+    }
+
+    // MARK: - Hatching
+
+    static func checkClutchSize(_ count: Int, _ s: GameState) -> Rejection? {
+        if count < 1 { return .invalidAmount }
+        if count > s.rules.maxClutch { return .clutchTooBig(max: s.rules.maxClutch) }
+        if s.carton.count < count { return .notEnoughEggsInCarton(have: s.carton.count) }
+        return nil
+    }
+
+    /// Candles the oldest eggs in the carton. Clear (infertile) eggs go back in the carton.
+    /// Only fertile eggs are set, so every egg that is set will hatch (cozy rule).
+    static func setEggs(count: Int, hen: UUID?, hatchDay: Int, _ s: inout GameState) -> [GameEvent] {
+        let chosen = Array(s.carton.prefix(count))
+        s.carton.removeFirst(count)
+        let fertile = chosen.filter(\.isFertile)
+        s.carton.insert(contentsOf: chosen.filter { !$0.isFertile }, at: 0)
+        var ev: [GameEvent] = [.candled(fertile: fertile.count, clear: chosen.count - fertile.count)]
+        if !fertile.isEmpty {
+            s.clutches.append(Clutch(henID: hen, eggs: fertile, hatchDay: hatchDay))
+            ev.append(.eggsSet(count: fertile.count, hen: hen, hatchDay: hatchDay))
+        }
+        return ev
+    }
+
+    static func hatchDue<R: RandomNumberGenerator>(_ s: inout GameState, _ rng: inout R) -> [GameEvent] {
+        var ev: [GameEvent] = []
+        var waiting: [Clutch] = []
+        for clutch in s.clutches {
+            guard clutch.hatchDay <= s.day else { waiting.append(clutch); continue }
+            var ids: [UUID] = []
+            for egg in clutch.eggs {
+                guard let genome = egg.embryo else { continue }
+                s.chicksHatched += 1
+                let chick = Bird(
+                    id: makeID(using: &rng), name: "Chick \(s.chicksHatched)",
+                    breed: egg.motherBreed ?? .orpington, genome: genome, hatchDay: s.day,
+                    motherID: egg.motherID, fatherID: egg.fatherID, origin: "Henhaven"
+                )
+                if clutch.henID == nil { s.brooder.append(chick) } else { s.henChicks.append(chick) }
+                ids.append(chick.id)
+            }
+            ev.append(.chicksHatched(ids, hen: clutch.henID))
+        }
+        s.clutches = waiting
+        return ev
     }
 
     // MARK: - Starter
@@ -157,16 +267,20 @@ public enum Engine {
         let r = s.rules
 
         // 1. Night: the fox visits only if the coop is open. It never kills; it scares birds away.
-        if s.coopDoorOpen, !s.coop.isEmpty, Double.roll(r.foxChance, using: &rng) {
-            var stay: [Bird] = []
+        //    Broody and mothering hens hold their ground, and their chicks stay hidden under them.
+        let canFlee = s.coop.filter { !$0.isBroody(onDay: s.day) }
+        if s.coopDoorOpen, !canFlee.isEmpty, Double.roll(r.foxChance, using: &rng) {
+            var stay = s.coop.filter { $0.isBroody(onDay: s.day) }
+            var calm: [Bird] = []
             var scared: [Bird] = []
-            for b in s.coop {
-                if Double.roll(r.fleeChance, using: &rng) { scared.append(b) } else { stay.append(b) }
+            for b in canFlee {
+                if Double.roll(r.fleeChance, using: &rng) { scared.append(b) } else { calm.append(b) }
             }
             if scared.isEmpty {
-                scared.append(stay.remove(at: Int.random(in: 0..<stay.count, using: &rng)))
+                scared.append(calm.remove(at: Int.random(in: 0..<calm.count, using: &rng)))
             }
-            s.coop = stay
+            stay += calm
+            s.coop = s.coop.filter { b in stay.contains { $0.id == b.id } }
             for var b in scared {
                 let days = lostDays(timesScared: b.timesScared, rules: r, &rng)
                 b.timesScared += 1
@@ -200,31 +314,23 @@ public enum Engine {
         s.lost = stillLost
 
         // 4. Growth and reveals.
-        var brooder = s.brooder, coop = s.coop
+        var brooder = s.brooder, henChicks = s.henChicks, coop = s.coop
         ev += grow(&brooder, day: s.day, rules: r, book: &s.breedBook)
+        ev += grow(&henChicks, day: s.day, rules: r, book: &s.breedBook)
         ev += grow(&coop, day: s.day, rules: r, book: &s.breedBook)
         s.brooder = brooder
+        s.henChicks = henChicks
         s.coop = coop
         ev += neighbourGiftIfNeeded(&s, &rng)
 
-        // 5. Chicks leave the brooder when old enough and a perch is free.
-        var stillInBrooder: [Bird] = []
-        for b in s.brooder {
-            if b.age(onDay: s.day) >= r.brooderDays {
-                if s.coop.count < s.perches {
-                    s.coop.append(b)
-                    ev.append(.movedToCoop(b.id))
-                } else {
-                    stillInBrooder.append(b)
-                    ev.append(.stuckInBrooder(b.id))
-                }
-            } else {
-                stillInBrooder.append(b)
-            }
-        }
-        s.brooder = stillInBrooder
+        // 5. Eggs due today hatch: incubator chicks go to the brooder, broody-hatched chicks stay with their mother.
+        ev += hatchDue(&s, &rng)
 
-        // 6. Broody hens that have sat long enough get up.
+        // 6. Chicks move to the coop when old enough and a perch is free.
+        ev += moveGrownChicks(&s.brooder, into: &s.coop, perches: s.perches, day: s.day, rules: r)
+        ev += moveGrownChicks(&s.henChicks, into: &s.coop, perches: s.perches, day: s.day, rules: r)
+
+        // 7. Broody hens that have sat (and mothered) long enough get up.
         for i in s.coop.indices {
             if let until = s.coop[i].broodyUntilDay, until <= s.day {
                 s.coop[i].broodyUntilDay = nil
@@ -232,13 +338,35 @@ public enum Engine {
             }
         }
 
-        // 7. Laying. Hens lay only if they were fed yesterday. Then a full nest may set a hen broody.
+        // 8. Laying. Hens lay only if they were fed yesterday. Then a full nest may set a hen broody.
         ev += lay(&s, &rng)
         ev += maybeGoBroody(&s, &rng)
 
-        // 8. Reset for the new day. The door is opened in the morning.
+        // 9. Reset for the new day. The door is opened in the morning.
         s.fedToday = false
         s.coopDoorOpen = true
+        return ev
+    }
+
+    static func moveGrownChicks(
+        _ chicks: inout [Bird], into coop: inout [Bird], perches: Int, day: Int, rules: Rules
+    ) -> [GameEvent] {
+        var ev: [GameEvent] = []
+        var staying: [Bird] = []
+        for b in chicks {
+            if b.age(onDay: day) >= rules.brooderDays {
+                if coop.count < perches {
+                    coop.append(b)
+                    ev.append(.movedToCoop(b.id))
+                } else {
+                    staying.append(b)
+                    ev.append(.stuckInBrooder(b.id))
+                }
+            } else {
+                staying.append(b)
+            }
+        }
+        chicks = staying
         return ev
     }
 
@@ -284,6 +412,8 @@ public enum Engine {
         guard s.fedToday else { return [.noEggsHungry] }
         var ev: [GameEvent] = []
         let chance = s.rules.layChance[s.season] ?? 0
+        // Any adult rooster in the coop fertilises the hens' eggs. (A breeding pen comes later.)
+        let roosters = s.coop.filter { $0.sex == .rooster && $0.stage(onDay: s.day, rules: s.rules) == .adult }
         for hen in hens where s.day >= hen.noLayUntilDay && !hen.isBroody(onDay: s.day) {
             guard Double.roll(chance, using: &rng) else { continue }
             // Nest boxes full: the hen lays on the floor, and the egg may break.
@@ -292,8 +422,13 @@ public enum Engine {
                 continue
             }
             let p = hen.phenotype
-            let egg = Egg(id: makeID(using: &rng), layDay: s.day, motherID: hen.id,
-                          colour: p.eggColour ?? .cream, speckled: p.eggIsSpeckled)
+            var egg = Egg(id: makeID(using: &rng), layDay: s.day, motherID: hen.id,
+                          colour: p.eggColour ?? .cream, speckled: p.eggIsSpeckled, motherBreed: hen.breed)
+            if !roosters.isEmpty, Double.roll(s.rules.fertileChance, using: &rng) {
+                let father = roosters[Int.random(in: 0..<roosters.count, using: &rng)]
+                egg.fatherID = father.id
+                egg.embryo = try? Breeding.cross(mother: hen.genome, father: father.genome, using: &rng)
+            }
             s.nest.append(egg)
             ev.append(.eggLaid(egg.id, by: hen.id))
             let entry = EggBookEntry(colour: egg.colour, speckled: egg.speckled)

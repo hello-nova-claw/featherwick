@@ -28,6 +28,13 @@ public struct Rules: Codable, Hashable, Sendable {
     public var broodyChance: [Breed: Double] = [.silkie: 0.6, .orpington: 0.3, .wyandotte: 0.15, .araucana: 0.2]
     public var broodyDays = 7              // a broody hen does not lay
 
+    // Pairing and hatching
+    public var fertileChance = 0.85        // with an adult rooster in the coop
+    public var broodyHatchDays = 3         // under a broody hen
+    public var incubatorHatchDays = 1      // overnight
+    public var maxClutch = 6               // eggs under one hen, or in the incubator
+    public var incubatorPrice = 40
+
     // Fox (never kills)
     public var foxChance = 0.5       // chance the fox visits when the coop is left open
     public var fleeChance = 0.5      // chance each bird runs off when it does

@@ -12,6 +12,20 @@ public struct Egg: Identifiable, Hashable, Codable, Sendable {
     public let speckled: Bool
     /// Set when the egg moves from the nest to the carton. Freshness counts nest days only.
     public var collectedDay: Int?
+    /// Fertile eggs carry the chick's genome from the moment they are laid.
+    /// Nil = not fertile. Hidden from the player until the egg is candled.
+    public var fatherID: UUID?
+    public var embryo: Genome?
+    public var motherBreed: Breed?
+
+    public var isFertile: Bool { embryo != nil }
+}
+
+/// Eggs being hatched: under a broody hen (henID set) or in the incubator (henID nil).
+public struct Clutch: Hashable, Codable, Sendable {
+    public var henID: UUID?
+    public var eggs: [Egg]
+    public var hatchDay: Int
 }
 
 /// A bird the fox scared away. It always comes home, once the day has come and a perch is free.
@@ -66,7 +80,13 @@ public struct GameState: Hashable, Codable, Sendable {
     public var brooderSize: Int
     public var cartons: Int
 
+    public var hasIncubator = false
+    public var clutches: [Clutch] = []
+    public var chicksHatched = 0
+
     public var brooder: [Bird] = []
+    /// Chicks raised by a broody hen. They stay with her (no brooder, no perch) until big enough.
+    public var henChicks: [Bird] = []
     public var coop: [Bird] = []
     public var lost: [LostBird] = []
     public var nest: [Egg] = []
@@ -94,7 +114,10 @@ public struct GameState: Hashable, Codable, Sendable {
     public var nestCapacity: Int { nestBoxes * rules.eggsPerNestBox }
 
     /// Birds at home (brooder and coop). Lost birds are not fed.
-    public var birdsAtHome: [Bird] { brooder + coop }
+    public var birdsAtHome: [Bird] { brooder + henChicks + coop }
+
+    public var incubatorClutch: Clutch? { clutches.first { $0.henID == nil } }
+    public func clutch(under henID: UUID) -> Clutch? { clutches.first { $0.henID == henID } }
 
     public func bird(_ id: UUID) -> Bird? {
         birdsAtHome.first { $0.id == id } ?? lost.first { $0.bird.id == id }?.bird
