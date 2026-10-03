@@ -134,8 +134,7 @@ extension Engine {
                 bird.tameness = s.rules.boughtBirdTameness
                 s.coop.append(bird)
                 ev.append(.storyGift(story.id, bird.id))
-                let entry = BreedBookEntry(bird)
-                if s.breedBook.insert(entry).inserted { ev.append(.newBreedBookEntry(entry)) }
+                ev += recordBreed(bird, into: &s.breedBook)
             case .unlockShopBreed(let breed):
                 if s.shopBreeds.insert(breed).inserted { ev.append(.shopUnlocked(breed)) }
             }

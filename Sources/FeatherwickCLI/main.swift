@@ -148,8 +148,7 @@ func name(_ id: UUID, _ s: GameState) -> String { s.bird(id)?.name ?? "a bird" }
 
 /// "gold laced", "barred blue", "lavender"...
 func colourText(_ p: Phenotype) -> String {
-    if p.isLaced { return "gold laced" }
-    return (p.isBarred ? "barred " : "") + p.colour.rawValue
+    featherColourName(p.colour, barred: p.isBarred, laced: p.isLaced)
 }
 
 func noteText(_ n: JudgeNote) -> String {
@@ -188,9 +187,11 @@ func cardText(_ c: JudgeCard) -> String {
 }
 
 /// Finds a bird by name, ignoring case. "chick 3" can be typed as "chick3" too.
-func findBird(_ query: String, _ s: GameState) -> Bird? {
+/// Read-only and renaming commands pass `includeLost` so a bird the fox scared off can still be reached.
+func findBird(_ query: String, _ s: GameState, includeLost: Bool = false) -> Bird? {
     let q = query.lowercased().replacingOccurrences(of: " ", with: "")
-    return (s.birdsAtHome + s.boarding).first { $0.name.lowercased().replacingOccurrences(of: " ", with: "") == q }
+    let birds = s.birdsAtHome + s.boarding + (includeLost ? s.lost.map(\.bird) : [])
+    return birds.first { $0.name.lowercased().replacingOccurrences(of: " ", with: "") == q }
 }
 
 func text(_ e: GameEvent, _ s: GameState) -> String? {
@@ -389,7 +390,7 @@ func look(_ s: GameState) {
 }
 
 func entryText(_ e: BreedBookEntry) -> String {
-    let colour = e.laced ? "gold laced" : (e.barred ? "barred " : "") + e.colour.rawValue
+    let colour = featherColourName(e.colour, barred: e.barred, laced: e.laced)
     return "\(colour) \(e.variety)" + (e.silkieFeathered && e.variety != "silkie" ? ", silkie-feathered" : "")
 }
 
@@ -523,29 +524,29 @@ while true {
     case "rename":
         let parts = line.split(separator: " ").map(String.init)
         guard parts.count > 2 else { print("Use: rename <name> <new name>"); break }
-        guard let bird = findBird(parts[1], game.state) else { print("There is no bird called \(parts[1])."); break }
+        guard let bird = findBird(parts[1], game.state, includeLost: true) else { print("There is no bird called \(parts[1])."); break }
         run(.rename(bird.id, name: parts.dropFirst(2).joined(separator: " ")))
     case "rehome":
         guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("Use: rehome <name>"); break }
         run(.rehome(bird.id))
     case "value":
-        guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("Use: value <name>"); break }
+        guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state, includeLost: true) else { print("Use: value <name>"); break }
         print("A neighbour would pay \(game.state.rules.rehomeValue(of: bird, onDay: game.state.day)) coins for \(bird.name).")
     case "pet", "cuddle", "treat":
         guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("Use: \(verb) <name>"); break }
         run(verb == "treat" ? .giveTreat(bird.id) : .pet(bird.id))
     case "tree":
-        guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("Use: tree <name>"); break }
+        guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state, includeLost: true) else { print("Use: tree <name>"); break }
         printTree(bird.id, game.state)
     case "kin":
         let parts = line.split(separator: " ").dropFirst().map(String.init)
-        guard parts.count == 2, let a = findBird(parts[0], game.state), let b = findBird(parts[1], game.state) else {
+        guard parts.count == 2, let a = findBird(parts[0], game.state, includeLost: true), let b = findBird(parts[1], game.state, includeLost: true) else {
             print("Use: kin <name> <name> (names without spaces, e.g. chick3)"); break
         }
         let k = Pedigree.kinship(a.id, b.id, in: game.state)
         print("\(a.name) and \(b.name): \(relatedText(Relatedness(kinship: k))). A chick of theirs would be \(Int((k * 100).rounded()))% inbred.")
     case "draw":
-        guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("Use: draw <name>"); break }
+        guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state, includeLost: true) else { print("Use: draw <name>"); break }
         let look = bird.look(onDay: game.state.day, rules: game.state.rules)
         print("\(bird.name): \(look.stage.rawValue), scale \(String(format: "%.2f", look.scale))")
         for placed in look.parts {

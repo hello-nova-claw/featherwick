@@ -24,7 +24,7 @@ The CLI autosaves to `featherwick-save.json` in the current folder. Type `help` 
 
 `Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. Command in, events out. All tunable numbers live in `Rules`.
 
-Night order: fox (only if the coop is open) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → brooder to coop → laying (only if fed) → door opens.
+Night order: fox (only if the coop is open) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → hatching (eggs due today) → brooder to coop → broody hens wake → laying (only if fed) → stories & trade offer → door opens.
 
 ## Genome (current genes)
 
@@ -76,7 +76,7 @@ changes shape. `Tests/.../Fixtures/save-v0.json` is a real old save; it must alw
 | Class | Who enters | Points |
 | --- | --- | --- |
 | Breed | Purebred adults | type 50 · colour 30 · condition 20 |
-| Pet chicken | Any grower or adult, crosses too | condition 100 (friendliness joins later) |
+| Pet chicken | Any grower or adult, crosses too | condition 50 · friendliness 50 |
 | Eggs | A matched plate of 3 | match 30 · shape 30 · shell 20 · freshness 20 |
 
 - Standard colours come from the breed table: a colour is standard if one of the breed's varieties

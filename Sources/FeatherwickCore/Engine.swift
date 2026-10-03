@@ -249,13 +249,10 @@ public enum Engine {
             guard trimmed.count <= NameBook.maxLength else { return [.rejected(.nameTooLong(max: NameBook.maxLength))] }
             guard NameBook.flock(s).contains(where: { $0.id == id }) else { return [.rejected(.noSuchBird)] }
             guard !NameBook.isTaken(trimmed, exceptID: id, in: s) else { return [.rejected(.nameTaken)] }
-            let groups: [WritableKeyPath<GameState, [Bird]>] = [\.brooder, \.henChicks, \.coop, \.boarding]
-            for keyPath in groups {
-                if let i = s[keyPath: keyPath].firstIndex(where: { $0.id == id }) {
-                    s[keyPath: keyPath][i].name = trimmed
-                    s[keyPath: keyPath][i].needsName = nil
-                    return [.renamed(id)]
-                }
+            if let (keyPath, i) = locate(id, in: s, groups: [\.brooder, \.henChicks, \.coop, \.boarding]) {
+                s[keyPath: keyPath][i].name = trimmed
+                s[keyPath: keyPath][i].needsName = nil
+                return [.renamed(id)]
             }
             if let i = s.lost.firstIndex(where: { $0.bird.id == id }) {
                 s.lost[i].bird.name = trimmed
@@ -272,17 +269,14 @@ public enum Engine {
             if owned <= 1, s.bird(id) != nil, !s.rehomed.contains(where: { $0.id == id }) {
                 return [.rejected(.lastBird)]
             }
-            let groups: [WritableKeyPath<GameState, [Bird]>] = [\.brooder, \.henChicks, \.coop, \.boarding]
-            for keyPath in groups {
-                if let i = s[keyPath: keyPath].firstIndex(where: { $0.id == id }) {
-                    let bird = s[keyPath: keyPath].remove(at: i)
-                    let coins = s.rules.rehomeValue(of: bird, onDay: s.day)
-                    s.coins += coins
-                    s.rehomed.append(bird)
-                    if s.starterID == id { s.starterID = nil }
-                    if s.tradeOffer?.roosterID == id { s.tradeOffer = nil }  // a new offer comes in the morning if needed
-                    return [.rehomed(id, coins: coins)]
-                }
+            if let (keyPath, i) = locate(id, in: s, groups: [\.brooder, \.henChicks, \.coop, \.boarding]) {
+                let bird = s[keyPath: keyPath].remove(at: i)
+                let coins = s.rules.rehomeValue(of: bird, onDay: s.day)
+                s.coins += coins
+                s.rehomed.append(bird)
+                if s.starterID == id { s.starterID = nil }
+                if s.tradeOffer?.roosterID == id { s.tradeOffer = nil }  // a new offer comes in the morning if needed
+                return [.rehomed(id, coins: coins)]
             }
             return [.rejected(.noSuchBird)]
 
@@ -307,25 +301,20 @@ public enum Engine {
             s.coins -= cost
             s.coop.append(bird)
             var ev: [GameEvent] = [.boughtBreed(bird.id, breed, cost: cost)]
-            let entry = BreedBookEntry(bird)
-            if s.breedBook.insert(entry).inserted { ev.append(.newBreedBookEntry(entry)) }
+            ev += recordBreed(bird, into: &s.breedBook)
             return ev
 
         case .acceptTrade:
             guard let offer = s.tradeOffer else { return [.rejected(.noTradeOffer)] }
-            let groups: [WritableKeyPath<GameState, [Bird]>] = [\.coop, \.brooder]
-            for keyPath in groups {
-                if let i = s[keyPath: keyPath].firstIndex(where: { $0.id == offer.roosterID }) {
-                    let rooster = s[keyPath: keyPath][i]
-                    s[keyPath: keyPath][i] = offer.hen   // she takes his place
-                    s.rehomed.append(rooster)
-                    s.tradeOffer = nil
-                    if s.starterID == rooster.id { s.starterID = nil }
-                    var ev: [GameEvent] = [.tradeAccepted(rooster: rooster.id, hen: offer.hen.id)]
-                    let entry = BreedBookEntry(offer.hen)
-                    if s.breedBook.insert(entry).inserted { ev.append(.newBreedBookEntry(entry)) }
-                    return ev
-                }
+            if let (keyPath, i) = locate(offer.roosterID, in: s, groups: [\.coop, \.brooder]) {
+                let rooster = s[keyPath: keyPath][i]
+                s[keyPath: keyPath][i] = offer.hen   // she takes his place
+                s.rehomed.append(rooster)
+                s.tradeOffer = nil
+                if s.starterID == rooster.id { s.starterID = nil }
+                var ev: [GameEvent] = [.tradeAccepted(rooster: rooster.id, hen: offer.hen.id)]
+                ev += recordBreed(offer.hen, into: &s.breedBook)
+                return ev
             }
             s.tradeOffer = nil  // that rooster is no longer at home; a new offer comes in the morning if needed
             return [.rejected(.noTradeOffer)]
@@ -369,8 +358,7 @@ public enum Engine {
             s.coins -= cost
             s.coop.append(bird)
             var ev: [GameEvent] = [.boughtBird(bird.id, item: item, cost: cost)]
-            let entry = BreedBookEntry(bird)
-            if s.breedBook.insert(entry).inserted { ev.append(.newBreedBookEntry(entry)) }
+            ev += recordBreed(bird, into: &s.breedBook)
             return ev
         case .treats:
             s.coins -= cost
@@ -391,6 +379,20 @@ public enum Engine {
             s.carton.append(egg)
             return [.boughtEgg(cost: cost)]
         }
+    }
+
+    /// Where a bird lives among the given collections, as a keyPath and index. Groups are searched in order.
+    static func locate(_ id: UUID, in s: GameState, groups: [WritableKeyPath<GameState, [Bird]>]) -> (WritableKeyPath<GameState, [Bird]>, Int)? {
+        for keyPath in groups {
+            if let i = s[keyPath: keyPath].firstIndex(where: { $0.id == id }) { return (keyPath, i) }
+        }
+        return nil
+    }
+
+    /// Records a bird in the Breed Book. Returns the new-entry event if it was not already known.
+    static func recordBreed(_ bird: Bird, into book: inout Set<BreedBookEntry>) -> [GameEvent] {
+        let entry = BreedBookEntry(bird)
+        return book.insert(entry).inserted ? [.newBreedBookEntry(entry)] : []
     }
 
     /// Handling and treats. Birds at home only: lost and boarding birds are out of reach.
@@ -512,6 +514,7 @@ public enum Engine {
         guard chicks.indices.contains(index) else { return [.rejected(.noSuchChick)] }
         var chick = chicks[index]
         let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard trimmed.count <= NameBook.maxLength else { return [.rejected(.nameTooLong(max: NameBook.maxLength))] }
         chick.name = trimmed.isEmpty ? "Chick" : trimmed
         s.brooder.append(chick)
         s.starterID = chick.id
@@ -625,6 +628,7 @@ public enum Engine {
         var ev: [GameEvent] = []
         let day = s.day, brooderDays = s.rules.brooderDays
         let grown = { (b: Bird) in b.age(onDay: day) >= brooderDays }
+        let wereBoarding = Set(s.boarding.map(\.id))  // only birds that newly board tonight get the notice
 
         var stillBoarding: [Bird] = []
         for b in s.boarding {
@@ -650,7 +654,7 @@ public enum Engine {
         }
         s.henChicks = withMother
 
-        for b in s.boarding { ev.append(.boardingWithNeighbour(b.id)) }
+        for b in s.boarding where !wereBoarding.contains(b.id) { ev.append(.boardingWithNeighbour(b.id)) }
         return ev
     }
 
@@ -663,8 +667,7 @@ public enum Engine {
             if !birds[i].revealed && now >= .grower {
                 birds[i].revealed = true
                 ev.append(.revealed(birds[i].id, sex: birds[i].sex, breed: birds[i].breed))
-                let entry = BreedBookEntry(birds[i])
-                if book.insert(entry).inserted { ev.append(.newBreedBookEntry(entry)) }
+                ev += recordBreed(birds[i], into: &book)
             }
         }
         return ev
@@ -683,10 +686,13 @@ public enum Engine {
             revealed: true  // the neighbour tells you her breed and sex
         ).withFounderQuality().withTameness(s.rules.boughtBirdTameness).namedByKeeper(in: s)
         s.giftHenGiven = true
-        if s.brooder.count < s.brooderSize { s.brooder.append(hen) } else { s.coop.append(hen) }
         var ev: [GameEvent] = [.neighbourGaveHen(hen.id)]
-        let entry = BreedBookEntry(hen)
-        if s.breedBook.insert(entry).inserted { ev.append(.newBreedBookEntry(entry)) }
+        // The brooder if it has room, else a free perch; if both are full the neighbour boards her,
+        // just like any grown bird with nowhere to go (see findHomes).
+        if s.brooder.count < s.brooderSize { s.brooder.append(hen) }
+        else if s.coop.count < s.perches { s.coop.append(hen) }
+        else { s.boarding.append(hen); ev.append(.boardingWithNeighbour(hen.id)) }
+        ev += recordBreed(hen, into: &s.breedBook)
         return ev
     }
 

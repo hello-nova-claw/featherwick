@@ -10,6 +10,14 @@ import Foundation
 // Breed standards come from the breed table: a colour is standard for a breed if one of the
 // breed's colour varieties produces it. So a new breed or variety gets a standard for free.
 
+/// The colour as a show standard names it: "gold laced", "blue laced", "barred black", "lavender".
+/// The one authoritative formatter; the Breed Book and the CLI all defer to it.
+public func featherColourName(_ colour: FeatherColour, barred: Bool, laced: Bool) -> String {
+    if laced { return colour == .buff ? "gold laced" : "\(colour.rawValue) laced" }
+    if barred { return "barred \(colour.rawValue)" }
+    return colour.rawValue
+}
+
 /// What a bird looks like, in the words a standard uses. Worked out from the phenotype.
 public struct Appearance: Hashable, Codable, Sendable {
     public let colour: FeatherColour
@@ -25,11 +33,7 @@ public struct Appearance: Hashable, Codable, Sendable {
     }
 
     /// "gold laced", "barred black", "blue".
-    public var colourName: String {
-        if laced { return colour == .buff ? "gold laced" : "\(colour.rawValue) laced" }
-        if barred { return "barred \(colour.rawValue)" }
-        return colour.rawValue
-    }
+    public var colourName: String { featherColourName(colour, barred: barred, laced: laced) }
 }
 
 public enum ShowClass: Hashable, Codable, Sendable {
