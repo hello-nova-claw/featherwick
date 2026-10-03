@@ -96,6 +96,15 @@ public struct Rules: Codable, Hashable, Sendable {
     public var oliveEggPrice = 4
     public var speckleBonus = 1
 
+    // County show (see ShowEvent.swift). A recurring event that rewards selective breeding, taming
+    // and egg quality. Entering costs a small fee (a coin sink); ribbons pay out.
+    public var showIntervalDays = 28   // one show each season
+    public var showCompetitors = 5     // AI entries in each class
+    public var showEntryFee = 3        // per entry, paid when you enter
+    public var showPrizeFirst = 20
+    public var showPrizeSecond = 10
+    public var showPrizeThird = 5
+
     public init() {}
 
     public static let standard = Rules()
