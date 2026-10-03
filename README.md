@@ -139,6 +139,16 @@ too) stay in the state; outside parents, such as those of a bought egg, are kept
   the coefficient (capped at 50%); show condition drops (capped at 0.3) with "lacks vigour".
 - CLI: `tree <name>`, `kin <name> <name>`.
 
+## Names
+
+`Names.swift`. Birds you hatch or buy arrive with `needsName`; the UI asks for a name at once,
+with a suggestion (Enter takes it). Birds given by people (gift hen, trade hen, story gifts)
+arrive already named by their keeper. Any bird you own can be renamed any time, even while lost.
+
+- Names are unique in the flock, ignoring case and spaces; up to 24 letters.
+- Suggestions come from the bird's own ID (no game randomness used) and skip taken names.
+  A chick whose sex is still hidden gets a neutral suggestion, so the name never gives it away.
+
 ## Storylines
 
 `Story.swift`. Small puzzles told through Featherwick's people, which lead to gifts and unlocks.

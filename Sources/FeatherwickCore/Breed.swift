@@ -62,6 +62,8 @@ public struct Bird: Identifiable, Hashable, Codable, Sendable {
     public var lastTreatDay: Int?
     /// Wright's inbreeding coefficient, fixed at hatch: 0 = unrelated parents, 0.25 = brother × sister.
     public var inbreeding: Double?
+    /// True while the player still has to name this bird (hatched or bought). `name` is a placeholder until then.
+    public var needsName: Bool?
 
     public var isPurebred: Bool { purebredFlag ?? true }
 

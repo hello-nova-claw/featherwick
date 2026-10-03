@@ -127,10 +127,10 @@ extension Engine {
             switch reward {
             case .giftBird(let breed, let sex):
                 var bird = Bird(
-                    id: makeID(using: &rng), name: "\(breed.definition.displayName) \(sex == .hen ? "pullet" : "cockerel")",
+                    id: makeID(using: &rng), name: "",
                     breed: breed, genome: breed.purebred(sex, variety: breed.definition.varieties.randomElement(using: &rng)),
                     hatchDay: s.day - s.rules.growerAge, origin: "A Featherwick neighbour", revealed: true
-                ).withFounderQuality()
+                ).withFounderQuality().namedByKeeper(in: s)
                 bird.tameness = s.rules.boughtBirdTameness
                 s.coop.append(bird)
                 ev.append(.storyGift(story.id, bird.id))

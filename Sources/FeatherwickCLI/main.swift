@@ -230,6 +230,8 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         case .nothingToDeliver: "Nobody is waiting for anything from you right now. See: story"
         case .needFertileEggs(let need, let have):
             "You need \(need) eggs you KNOW are fertile in your carton (candle them first). You have \(have)."
+        case .nameTaken: "Another bird in your flock already has that name."
+        case .nameTooLong(let max): "That name is too long. Use \(max) letters or fewer."
         case .breedNotInShop: "Speckle & Down doesn't sell that breed. Type shop to see what they have."
         case .brooderFull(let room):
             room == 0
@@ -335,7 +337,7 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         let where_ = hen.map { "under \(name($0, s))" } ?? "in the incubator"
         return "Peeping \(where_)! \(ids.count) chick\(ids.count == 1 ? "" : "s") hatched: "
             + ids.compactMap { s.bird($0) }.map { "\($0.name) (\(downText($0.phenotype.chickDown)))" }.joined(separator: ", ")
-    case .renamed(let id): return "Renamed to \(name(id, s))."
+    case .renamed(let id): return "Hello, \(name(id, s))!"
     case .roostersSquabbling(let extra):
         return "The roosters were squabbling again. The hens are unsettled and laying less. "
             + "There \(extra == 1 ? "is 1 rooster" : "are \(extra) roosters") too many for this many hens (1 rooster per \(s.rules.hensPerRooster) hens, or just 1)."
@@ -416,7 +418,7 @@ Commands:
   buy incubator        buy a \(game.state.rules.bigIncubatorSize)-egg incubator (\(game.state.rules.incubatorPrice) coins)
   incubate <n>         candle n eggs from the carton; fertile ones go in the incubator
   sit <hen> <n>        candle n eggs; fertile ones go under a broody hen
-  rename <name> <new>  rename a bird
+  rename <name> <new>  rename any of your birds, any time
   value <name>         what a neighbour would pay to adopt a bird
   tree <name>          family tree, 3 generations, and how closely bred the bird is
   kin <name> <name>    how closely related two birds are (plan your pairings)
@@ -453,7 +455,23 @@ print("Featherwick · save: \(savePath.path)")
 print("Type help for commands.\n")
 look(game.state)
 
+/// New birds you hatched or bought need a name. Ask now, with a suggestion (Enter takes it).
+@MainActor func askForNames() {
+    while let bird = game.state.unnamedBirds.first {
+        let suggestion = NameBook.suggestion(for: bird, in: game.state)
+        let p = bird.phenotype
+        let what = bird.revealed
+            ? "your new \(bird.varietyName) \(bird.sex == .hen ? "pullet" : "cockerel") (\(colourText(p)))"
+            : "your new chick (\(downText(p.chickDown)))"
+        print("\nWhat will you call \(what)? [Enter for \(suggestion)] ", terminator: "")
+        guard let input = readLine() else { return }
+        let typed = input.trimmingCharacters(in: .whitespaces)
+        run(.rename(bird.id, name: typed.isEmpty ? suggestion : typed))
+    }
+}
+
 while true {
+    askForNames()
     print("\n> ", terminator: "")
     guard let line = readLine() else { break }
     let words = line.lowercased().split(separator: " ").map(String.init)

@@ -65,9 +65,7 @@ extension Bird {
     /// A bird bred outside the player's flock (neighbour, shop, trade) gets random quality genes.
     /// The random numbers come from the bird's own ID, so this does not move the game's RNG.
     public func withFounderQuality() -> Bird {
-        let bytes = withUnsafeBytes(of: id.uuid) { Array($0) }
-        let seed = bytes.prefix(8).reduce(UInt64(0)) { ($0 << 8) | UInt64($1) }
-        var local = SeededRNG(seed: seed)
+        var local = localRNG(salt: 0)
         var copy = self
         for trait in QuantitativeTrait.all {
             // Temperament runs in breeds: calm breeds carry more calm genes.

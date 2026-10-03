@@ -68,6 +68,8 @@ public enum Rejection: Hashable, Codable, Sendable {
     case nothingToDeliver
     case needFertileEggs(need: Int, have: Int)
     case breedNotInShop
+    case nameTaken
+    case nameTooLong(max: Int)
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -241,14 +243,24 @@ public enum Engine {
             return ev
 
         case .rename(let id, let name):
+            // Any bird the player owns, any time: at home, boarding, or lost.
             let trimmed = name.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty else { return [.rejected(.invalidAmount)] }
+            guard trimmed.count <= NameBook.maxLength else { return [.rejected(.nameTooLong(max: NameBook.maxLength))] }
+            guard NameBook.flock(s).contains(where: { $0.id == id }) else { return [.rejected(.noSuchBird)] }
+            guard !NameBook.isTaken(trimmed, exceptID: id, in: s) else { return [.rejected(.nameTaken)] }
             let groups: [WritableKeyPath<GameState, [Bird]>] = [\.brooder, \.henChicks, \.coop, \.boarding]
             for keyPath in groups {
                 if let i = s[keyPath: keyPath].firstIndex(where: { $0.id == id }) {
                     s[keyPath: keyPath][i].name = trimmed
+                    s[keyPath: keyPath][i].needsName = nil
                     return [.renamed(id)]
                 }
+            }
+            if let i = s.lost.firstIndex(where: { $0.bird.id == id }) {
+                s.lost[i].bird.name = trimmed
+                s.lost[i].bird.needsName = nil
+                return [.renamed(id)]
             }
             return [.rejected(.noSuchBird)]
 
@@ -291,7 +303,7 @@ public enum Engine {
             let cost = s.rules.rareBreedPulletPrice
             if s.coins < cost { return [.rejected(.notEnoughCoins(needed: cost, have: s.coins))] }
             if s.coop.count >= s.perches { return [.rejected(.noFreePerch)] }
-            let bird = youngBird(.hen, origin: "Speckle & Down", s, &rng, breed: breed)
+            let bird = youngBird(.hen, origin: "Speckle & Down", s, &rng, breed: breed).waitingForName()
             s.coins -= cost
             s.coop.append(bird)
             var ev: [GameEvent] = [.boughtBreed(bird.id, breed, cost: cost)]
@@ -353,7 +365,7 @@ public enum Engine {
         switch item {
         case .pullet, .cockerel:
             if s.coop.count >= s.perches { return [.rejected(.noFreePerch)] }
-            let bird = youngBird(item == .pullet ? .hen : .rooster, origin: "Speckle & Down", s, &rng)
+            let bird = youngBird(item == .pullet ? .hen : .rooster, origin: "Speckle & Down", s, &rng).waitingForName()
             s.coins -= cost
             s.coop.append(bird)
             var ev: [GameEvent] = [.boughtBird(bird.id, item: item, cost: cost)]
@@ -422,8 +434,7 @@ public enum Engine {
             s.tradeOffer = nil  // every known rooster is out; they come home, and the offer comes then
             return []
         }
-        var hen = youngBird(.hen, origin: "A Featherwick neighbour", s, &rng)
-        hen.name = "Traded pullet"
+        let hen = youngBird(.hen, origin: "A Featherwick neighbour", s, &rng).namedByKeeper(in: s)
         s.tradeOffer = TradeOffer(roosterID: rooster.id, hen: hen)
         return [.tradeOffered(rooster: rooster.id, hen: hen.id)]
     }
@@ -477,6 +488,7 @@ public enum Engine {
                                                  origin: "Henhaven", using: &rng) else { continue }
                 s.chicksHatched += 1
                 chick.inbreeding = Pedigree.kinship(chick.motherID, chick.fatherID, in: s)
+                chick.needsName = true
                 if let hen = clutch.henID {
                     chick.raisedBy = hen
                     chick.tameness = s.rules.broodyChickTameness
@@ -669,7 +681,7 @@ public enum Engine {
             genome: breed.purebred(.hen, variety: colour),
             hatchDay: s.day - s.rules.giftHenAge, origin: "Neighbour",
             revealed: true  // the neighbour tells you her breed and sex
-        ).withFounderQuality().withTameness(s.rules.boughtBirdTameness)
+        ).withFounderQuality().withTameness(s.rules.boughtBirdTameness).namedByKeeper(in: s)
         s.giftHenGiven = true
         if s.brooder.count < s.brooderSize { s.brooder.append(hen) } else { s.coop.append(hen) }
         var ev: [GameEvent] = [.neighbourGaveHen(hen.id)]
