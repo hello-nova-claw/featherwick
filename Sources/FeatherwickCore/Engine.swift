@@ -111,11 +111,11 @@ public enum Engine {
         var chicks: [Bird] = []
         for breed in Breed.starters.shuffled(using: &rng) {
             let sex: Sex = Bool.random(using: &rng) ? .hen : .rooster
-            let colour = StarterColour.allCases.randomElement(using: &rng)!
+            let colour = breed.definition.varieties.randomElement(using: &rng)!
             let barred = Double.roll(0.25, using: &rng)
             chicks.append(Bird(
                 id: makeID(using: &rng), name: "", breed: breed,
-                genome: breed.purebred(sex, colour: colour, barred: barred),
+                genome: breed.purebred(sex, variety: colour, barred: barred),
                 hatchDay: 0, origin: "Neighbour"
             ))
         }
@@ -284,10 +284,10 @@ public enum Engine {
     /// A young bird from a local flock: a starter breed, random colour, breed and sex known.
     static func youngBird<R: RandomNumberGenerator>(_ sex: Sex, origin: String, _ s: GameState, _ rng: inout R) -> Bird {
         let breed = Breed.starters.randomElement(using: &rng)!
-        let colour = StarterColour.allCases.randomElement(using: &rng)!
+        let colour = breed.definition.varieties.randomElement(using: &rng)!
         return Bird(
             id: makeID(using: &rng), name: sex == .hen ? "New pullet" : "New cockerel", breed: breed,
-            genome: breed.purebred(sex, colour: colour), hatchDay: s.day - s.rules.growerAge,
+            genome: breed.purebred(sex, variety: colour), hatchDay: s.day - s.rules.growerAge,
             origin: origin, revealed: true
         )
     }
@@ -568,10 +568,10 @@ public enum Engine {
         guard !s.giftHenGiven, let id = s.starterID, let starter = s.bird(id),
               starter.revealed, starter.sex == .rooster else { return [] }
         let breed = Breed.starters.randomElement(using: &rng)!
-        let colour = StarterColour.allCases.randomElement(using: &rng)!
+        let colour = breed.definition.varieties.randomElement(using: &rng)!
         let hen = Bird(
             id: makeID(using: &rng), name: "Gift hen", breed: breed,
-            genome: breed.purebred(.hen, colour: colour),
+            genome: breed.purebred(.hen, variety: colour),
             hatchDay: s.day - s.rules.giftHenAge, origin: "Neighbour",
             revealed: true  // the neighbour tells you her breed and sex
         )

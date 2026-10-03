@@ -1,0 +1,126 @@
+import Foundation
+
+/// A whole saved game: the state and the random generator, so a loaded game continues exactly.
+public struct SaveGame: Codable, Sendable {
+    public var state: GameState
+    public var rng: SeededRNG
+
+    public init(state: GameState, rng: SeededRNG) {
+        self.state = state
+        self.rng = rng
+    }
+}
+
+/// Save files: a version number, and migrations that bring old saves up to date.
+///
+/// A save is `{ "version": n, "state": …, "rng": … }`. Version 0 is the first CLI format, with no version key.
+///
+/// When to add a migration: only when existing data must CHANGE SHAPE (a field renamed or moved).
+/// A new gene, a new breed or a new optional field needs no migration.
+/// To add one: bump `currentVersion` and add `migrations[old]`, which edits the raw JSON of an `old` save.
+public enum SaveFormat {
+    public static let currentVersion = 1
+
+    public enum LoadError: Error, Equatable, Sendable {
+        /// The data is not a Featherwick save.
+        case notASave
+        /// The save is from a newer version of the game. Do not overwrite it.
+        case tooNew(version: Int)
+        /// No migration from this version (a bug: every old version needs one).
+        case noMigration(from: Int)
+    }
+
+    public typealias Migration = @Sendable (inout [String: Any]) throws -> Void
+
+    /// `migrations[n]` turns a version-n save into a version-(n+1) save.
+    public static let migrations: [Int: Migration] = [
+        0: migrateGenomesToRegistry,
+    ]
+
+    private struct Envelope: Codable {
+        var version: Int
+        var state: GameState
+        var rng: SeededRNG
+    }
+
+    private struct Probe: Decodable {
+        var version: Int?
+    }
+
+    public static func encode(_ save: SaveGame) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return try encoder.encode(Envelope(version: currentVersion, state: save.state, rng: save.rng))
+    }
+
+    public static func decode(_ data: Data) throws -> SaveGame {
+        try decode(data, migrations: migrations, currentVersion: currentVersion)
+    }
+
+    /// Loads a save of any known version. Old saves are migrated step by step to `currentVersion`.
+    static func decode(_ data: Data, migrations: [Int: Migration], currentVersion: Int) throws -> SaveGame {
+        guard let probe = try? JSONDecoder().decode(Probe.self, from: data) else { throw LoadError.notASave }
+        let version = probe.version ?? 0
+        if version > currentVersion { throw LoadError.tooNew(version: version) }
+
+        var current = data
+        if version < currentVersion {
+            guard var root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                  root["state"] != nil else { throw LoadError.notASave }
+            for v in version..<currentVersion {
+                guard let migrate = migrations[v] else { throw LoadError.noMigration(from: v) }
+                try migrate(&root)
+            }
+            root["version"] = currentVersion
+            current = try JSONSerialization.data(withJSONObject: root)
+        }
+        guard let envelope = try? JSONDecoder().decode(Envelope.self, from: current) else { throw LoadError.notASave }
+        return SaveGame(state: envelope.state, rng: envelope.rng)
+    }
+
+    /// Calls `change` on every JSON object, at any depth, that `match` accepts.
+    /// Use it in migrations: genomes, for example, sit inside birds, eggs, clutches and trade offers.
+    public static func transformObjects(
+        in value: Any, where match: ([String: Any]) -> Bool, _ change: (inout [String: Any]) -> Void
+    ) -> Any {
+        if var object = value as? [String: Any] {
+            for (key, child) in object { object[key] = transformObjects(in: child, where: match, change) }
+            if match(object) { change(&object) }
+            return object
+        }
+        if let array = value as? [Any] { return array.map { transformObjects(in: $0, where: match, change) } }
+        return value
+    }
+
+    // MARK: - Migrations
+
+    /// v0 → v1: genomes had one field per gene. Now they are stored by locus name (see `Loci`).
+    ///
+    ///     v0: { "sexChromosomes": { "hen": { "z": "B" } }, "feathering": { "first": "H", "second": "h" }, … }
+    ///     v1: { "sex": "hen", "z": { "barring": ["B"] }, "autosomal": { "feathering": { "first": "H", "second": "h" }, … } }
+    ///
+    /// The v0 field names are the v1 locus names, so autosomal genes move across unchanged.
+    static func migrateGenomesToRegistry(_ root: inout [String: Any]) throws {
+        let migrated = transformObjects(in: root, where: { $0["sexChromosomes"] != nil }) { genome in
+            var z: [String: Any] = [:]
+            var sex: String?
+            let chromosomes = genome["sexChromosomes"] as? [String: Any] ?? [:]
+            if let hen = chromosomes["hen"] as? [String: Any] {
+                sex = "hen"
+                if let b = hen["z"] as? String { z[Barring.locus.rawValue] = [b] }
+            } else if let rooster = chromosomes["rooster"] as? [String: Any] {
+                sex = "rooster"
+                if let pair = rooster["z"] as? [String: Any],
+                   let a = pair["first"] as? String, let b = pair["second"] as? String {
+                    z[Barring.locus.rawValue] = [a, b]
+                }
+            }
+            var autosomal: [String: Any] = [:]
+            for (key, value) in genome where key != "sexChromosomes" { autosomal[key] = value }
+            genome = ["autosomal": autosomal, "z": z]
+            if let sex { genome["sex"] = sex }
+        }
+        guard let object = migrated as? [String: Any] else { throw LoadError.notASave }
+        root = object
+    }
+}

@@ -1,0 +1,262 @@
+{
+  "rng" : {
+    "state" : 17026080509101393278
+  },
+  "state" : {
+    "boarding" : [
+
+    ],
+    "breedBook" : [
+      {
+        "barred" : false,
+        "colour" : "blue",
+        "isCross" : false,
+        "laced" : false,
+        "silkieFeathered" : false,
+        "variety" : "araucana"
+      },
+      {
+        "barred" : false,
+        "colour" : "black",
+        "isCross" : false,
+        "laced" : false,
+        "silkieFeathered" : false,
+        "variety" : "wyandotte"
+      }
+    ],
+    "brooder" : [
+
+    ],
+    "brooderSize" : 4,
+    "carton" : [
+
+    ],
+    "cartons" : 1,
+    "chicksHatched" : 0,
+    "clutches" : [
+
+    ],
+    "coins" : 20,
+    "coop" : [
+      {
+        "breed" : "wyandotte",
+        "genome" : {
+          "baseColour" : {
+            "first" : "E",
+            "second" : "E"
+          },
+          "blue" : {
+            "first" : "bl+",
+            "second" : "bl+"
+          },
+          "blueShell" : {
+            "first" : "o+",
+            "second" : "o+"
+          },
+          "brownShell" : {
+            "first" : "Br",
+            "second" : "Br"
+          },
+          "feathering" : {
+            "first" : "H",
+            "second" : "H"
+          },
+          "lacing" : {
+            "first" : "lc",
+            "second" : "lc"
+          },
+          "lavender" : {
+            "first" : "lav+",
+            "second" : "lav+"
+          },
+          "sexChromosomes" : {
+            "rooster" : {
+              "z" : {
+                "first" : "b+",
+                "second" : "b+"
+              }
+            }
+          },
+          "speckle" : {
+            "first" : "sp+",
+            "second" : "sp+"
+          }
+        },
+        "hatchDay" : 0,
+        "id" : "0B9BDFEE-688E-47D7-A0B2-E9956304A7F5",
+        "name" : "Pip",
+        "noLayUntilDay" : 0,
+        "origin" : "Neighbour",
+        "revealed" : true,
+        "timesScared" : 0
+      },
+      {
+        "breed" : "araucana",
+        "genome" : {
+          "baseColour" : {
+            "first" : "E",
+            "second" : "E"
+          },
+          "blue" : {
+            "first" : "Bl",
+            "second" : "bl+"
+          },
+          "blueShell" : {
+            "first" : "O",
+            "second" : "O"
+          },
+          "brownShell" : {
+            "first" : "br",
+            "second" : "br"
+          },
+          "feathering" : {
+            "first" : "H",
+            "second" : "H"
+          },
+          "lacing" : {
+            "first" : "lc+",
+            "second" : "lc+"
+          },
+          "lavender" : {
+            "first" : "lav+",
+            "second" : "lav+"
+          },
+          "sexChromosomes" : {
+            "hen" : {
+              "z" : "b+"
+            }
+          },
+          "speckle" : {
+            "first" : "sp+",
+            "second" : "sp+"
+          }
+        },
+        "hatchDay" : 4,
+        "id" : "8DA19AA7-D1C2-46AD-BA6E-E0989A7C9A23",
+        "name" : "Gift hen",
+        "noLayUntilDay" : 0,
+        "origin" : "Neighbour",
+        "revealed" : true,
+        "timesScared" : 0
+      }
+    ],
+    "coopDoorOpen" : true,
+    "day" : 25,
+    "eggBook" : [
+      {
+        "colour" : "blue",
+        "speckled" : false
+      }
+    ],
+    "fedToday" : false,
+    "giftHenGiven" : true,
+    "henChicks" : [
+
+    ],
+    "incubatorGiftGiven" : false,
+    "incubatorSize" : 0,
+    "lost" : [
+
+    ],
+    "nest" : [
+      {
+        "colour" : "blue",
+        "id" : "DCC8A6BD-C818-4D68-B1EA-3CAFFFAD3548",
+        "layDay" : 25,
+        "motherBreed" : "araucana",
+        "motherID" : "8DA19AA7-D1C2-46AD-BA6E-E0989A7C9A23",
+        "motherPurebred" : true,
+        "speckled" : false
+      }
+    ],
+    "nestBoxes" : 3,
+    "perches" : 3,
+    "phase" : {
+      "playing" : {
+
+      }
+    },
+    "rehomed" : [
+
+    ],
+    "rules" : {
+      "adultAge" : 21,
+      "bigIncubatorSize" : 6,
+      "blueEggPrice" : 3,
+      "brooderDays" : 7,
+      "broodyChance" : [
+        "orpington",
+        0.3,
+        "wyandotte",
+        0.15,
+        "araucana",
+        0.2,
+        "silkie",
+        0.6
+      ],
+      "broodyDays" : 7,
+      "broodyHatchDays" : 3,
+      "broodyNestEggs" : 4,
+      "brownEggPrice" : 2,
+      "cartonSize" : 12,
+      "cockerelPrice" : 15,
+      "coopUpgradePrice" : 30,
+      "creamEggPrice" : 1,
+      "daysPerSeason" : 28,
+      "eggsPerNestBox" : 4,
+      "extraRoosterLayPenalty" : 0.15,
+      "fertileChance" : 0.85,
+      "fertileEggPrice" : 6,
+      "fleeChance" : 0.5,
+      "floorEggBreakChance" : 0.5,
+      "foxChance" : 0.5,
+      "giftHenAge" : 3,
+      "giftIncubatorSize" : 1,
+      "growerAge" : 7,
+      "hensPerRooster" : 5,
+      "incubatorHatchDays" : 1,
+      "incubatorPrice" : 40,
+      "layChance" : [
+        "winter",
+        0.5,
+        "autumn",
+        0.4,
+        "summer",
+        0.8,
+        "spring",
+        0.9
+      ],
+      "lostDaysCap" : 30,
+      "lostDaysMax" : 3,
+      "lostDaysMin" : 1,
+      "maxClutch" : 6,
+      "maxPerches" : 15,
+      "nestFreshDays" : 2,
+      "oliveEggPrice" : 4,
+      "perchesPerUpgrade" : 2,
+      "pulletPrice" : 25,
+      "rareLavenderOrSilkie" : 6,
+      "rareOliveEggs" : 5,
+      "rareSmall" : 2,
+      "rareSpeckledEggs" : 3,
+      "rareSplash" : 4,
+      "rehomeBase" : [
+        "adult",
+        6,
+        "chick",
+        2,
+        "grower",
+        4
+      ],
+      "scaredNoLayDays" : 3,
+      "speckleBonus" : 1,
+      "staleEggPriceFactor" : 0.5,
+      "startBrooderSize" : 4,
+      "startCartons" : 1,
+      "startCoins" : 20,
+      "startNestBoxes" : 3,
+      "startPerches" : 3
+    },
+    "starterID" : "0B9BDFEE-688E-47D7-A0B2-E9956304A7F5"
+  }
+}

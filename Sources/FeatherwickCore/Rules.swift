@@ -25,7 +25,8 @@ public struct Rules: Codable, Hashable, Sendable {
     public var nestFreshDays = 2           // eggs left in the nest longer than this sell as stale
     public var staleEggPriceFactor = 0.5
     public var broodyNestEggs = 4          // a pile of this many eggs can set a hen broody
-    public var broodyChance: [Breed: Double] = [.silkie: 0.6, .orpington: 0.3, .wyandotte: 0.15, .araucana: 0.2]
+    /// From the breed table. A breed missing here never goes broody.
+    public var broodyChance: [Breed: Double] = Dictionary(uniqueKeysWithValues: BreedTable.all.map { ($0.id, $0.broodiness) })
     public var broodyDays = 7              // a broody hen does not lay
 
     // Pairing and hatching
@@ -89,7 +90,7 @@ public struct Rules: Codable, Hashable, Sendable {
         guard bird.revealed else { return value }
         let p = bird.phenotype
         if p.colour == .lavender { value += rareLavenderOrSilkie }
-        if p.isSilkieFeathered && bird.breed != .silkie { value += rareLavenderOrSilkie }
+        if p.isSilkieFeathered && !bird.breed.definition.fixes(Feathering.silkie) { value += rareLavenderOrSilkie }
         if p.colour == .splash { value += rareSplash }
         if p.colour == .blue { value += rareSmall }
         if p.isBarred { value += rareSmall }

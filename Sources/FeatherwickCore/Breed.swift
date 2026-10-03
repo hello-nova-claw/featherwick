@@ -1,55 +1,16 @@
 import Foundation
 
-public enum Breed: String, Hashable, Codable, Sendable, CaseIterable {
-    case silkie, orpington, wyandotte, araucana
-
-    /// The neighbour's breeds. Silkie chicks are too easy to spot, so Silkies come later.
-    public static let starters: [Breed] = [.orpington, .wyandotte, .araucana]
-}
-
-/// Colours a starter bird can come in.
+/// Colours a starter bird can come in. Each one is a colour variety in the breed table.
 public enum StarterColour: String, Hashable, Codable, Sendable, CaseIterable {
     case black, blue, buff, lavender
-}
 
-extension Breed {
-    /// A true-breeding starter bird of this breed.
-    ///
-    /// Breed signatures: Silkie = silkie feathering, Wyandotte = lacing,
-    /// Araucana = blue shell, Orpington and Wyandotte = brown coating.
-    /// Starter blue birds are Bl/bl+, so two blues can hatch black, blue and splash.
-    public func purebred(_ sex: Sex, colour: StarterColour = .black, barred: Bool = false) -> Genome {
-        let feathering: AllelePair<Feathering> =
-            self == .silkie ? .homozygous(.silkie) : .homozygous(.normal)
-        let lacing: AllelePair<Lacing> =
-            self == .wyandotte ? .homozygous(.laced) : .homozygous(.solid)
-        let blueShell: AllelePair<BlueShell> =
-            self == .araucana ? .homozygous(.blue) : .homozygous(.white)
-        let brownShell: AllelePair<BrownShell> =
-            (self == .orpington || self == .wyandotte) ? .homozygous(.brown) : .homozygous(.noCoating)
-
-        let baseColour: AllelePair<BaseColour> =
-            colour == .buff ? .homozygous(.buff) : .homozygous(.black)
-        let blue: AllelePair<BlueDilution> =
-            colour == .blue ? AllelePair(.blue, .notBlue) : .homozygous(.notBlue)
-        let lavender: AllelePair<Lavender> =
-            colour == .lavender ? .homozygous(.lavender) : .homozygous(.normal)
-
-        let barring: Barring = barred ? .barred : .plain
-        let sexChromosomes: SexChromosomes =
-            sex == .hen ? .hen(z: barring) : .rooster(z: .homozygous(barring))
-
-        return Genome(
-            sexChromosomes: sexChromosomes,
-            feathering: feathering,
-            baseColour: baseColour,
-            blue: blue,
-            lavender: lavender,
-            lacing: lacing,
-            blueShell: blueShell,
-            brownShell: brownShell,
-            speckle: .homozygous(.plain)
-        )
+    public var variety: ColourVariety {
+        switch self {
+        case .black: .black
+        case .blue: .blue
+        case .buff: .buff
+        case .lavender: .lavender
+        }
     }
 }
 

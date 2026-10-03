@@ -11,33 +11,30 @@ public enum Breeding {
     public static func cross<R: RandomNumberGenerator>(
         mother: Genome, father: Genome, using rng: inout R
     ) throws -> Genome {
-        guard case .hen(let motherZ) = mother.sexChromosomes else {
-            throw BreedingError.motherMustBeHen
-        }
-        guard case .rooster(let fatherZZ) = father.sexChromosomes else {
-            throw BreedingError.fatherMustBeRooster
-        }
+        guard mother.sex == .hen else { throw BreedingError.motherMustBeHen }
+        guard father.sex == .rooster else { throw BreedingError.fatherMustBeRooster }
 
         // The father always passes one of his two Z chromosomes.
-        let zFromFather = fatherZZ.gamete(using: &rng)
+        // SIMPLIFIED: each Z-linked gene is drawn on its own (no linkage between Z genes).
+        let fromFather = Loci.zLinked.map { locus in
+            let zz = father.alleles(at: locus)
+            return AllelePair(zz[0], zz[1]).gamete(using: &rng)
+        }
         // The mother passes her W (chick is a hen) or her Z (chick is a rooster).
         let chickIsHen = Bool.random(using: &rng)
-        let sexChromosomes: SexChromosomes =
-            chickIsHen
-            ? .hen(z: zFromFather)
-            : .rooster(z: AllelePair(motherZ, zFromFather))
+        var chick = Genome(sex: chickIsHen ? .hen : .rooster)
+        for (locus, fatherAllele) in zip(Loci.zLinked, fromFather) {
+            let motherAllele = mother.alleles(at: locus)[0]
+            chick.setAlleles(chickIsHen ? [fatherAllele] : [motherAllele, fatherAllele], at: locus)
+        }
 
-        return Genome(
-            sexChromosomes: sexChromosomes,
-            feathering: .cross(mother: mother.feathering, father: father.feathering, using: &rng),
-            baseColour: .cross(mother: mother.baseColour, father: father.baseColour, using: &rng),
-            blue: .cross(mother: mother.blue, father: father.blue, using: &rng),
-            lavender: .cross(mother: mother.lavender, father: father.lavender, using: &rng),
-            lacing: .cross(mother: mother.lacing, father: father.lacing, using: &rng),
-            blueShell: .cross(mother: mother.blueShell, father: father.blueShell, using: &rng),
-            brownShell: .cross(mother: mother.brownShell, father: father.brownShell, using: &rng),
-            speckle: .cross(mother: mother.speckle, father: father.speckle, using: &rng)
-        )
+        // One allele from each parent for every other gene, mother's first.
+        for locus in Loci.autosomal {
+            let m = mother.alleles(at: locus), f = father.alleles(at: locus)
+            let pair = AllelePair.cross(mother: AllelePair(m[0], m[1]), father: AllelePair(f[0], f[1]), using: &rng)
+            chick.setAlleles([pair.first, pair.second], at: locus)
+        }
+        return chick
     }
 
     /// An egg from this hen. With a father it is fertile: the chick's genome is fixed now.

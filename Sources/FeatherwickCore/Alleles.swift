@@ -61,3 +61,54 @@ public enum Speckle: String, Hashable, Codable, Sendable, CaseIterable {
     case plain = "sp+"
     case speckled = "sp"
 }
+
+// MARK: - Registry conformances
+//
+// Locus names are written to saves. Never rename one.
+// Default alleles are the plain forms: a bird with no entry for a gene looks plain for that gene.
+
+extension Feathering: GeneLocus {
+    public static let locus: LocusID = "feathering"
+    public static let defaultAllele = Feathering.normal
+}
+
+extension BaseColour: GeneLocus {
+    public static let locus: LocusID = "baseColour"
+    public static let defaultAllele = BaseColour.black
+}
+
+extension BlueDilution: GeneLocus {
+    public static let locus: LocusID = "blue"
+    public static let defaultAllele = BlueDilution.notBlue
+}
+
+extension Lavender: GeneLocus {
+    public static let locus: LocusID = "lavender"
+    public static let defaultAllele = Lavender.normal
+}
+
+extension Lacing: GeneLocus {
+    public static let locus: LocusID = "lacing"
+    public static let defaultAllele = Lacing.solid
+}
+
+extension Barring: GeneLocus {
+    public static let locus: LocusID = "barring"
+    public static let inheritance = Inheritance.zLinked
+    public static let defaultAllele = Barring.plain
+}
+
+extension BlueShell: GeneLocus {
+    public static let locus: LocusID = "blueShell"
+    public static let defaultAllele = BlueShell.white
+}
+
+extension BrownShell: GeneLocus {
+    public static let locus: LocusID = "brownShell"
+    public static let defaultAllele = BrownShell.noCoating
+}
+
+extension Speckle: GeneLocus {
+    public static let locus: LocusID = "speckle"
+    public static let defaultAllele = Speckle.plain
+}

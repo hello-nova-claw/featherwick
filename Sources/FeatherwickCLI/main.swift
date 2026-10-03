@@ -5,10 +5,7 @@ import Foundation
 // Usage: swift run featherwick [seed]     (seed is used only when no save exists)
 // The game autosaves to featherwick-save.json in the current folder.
 
-struct SaveFile: Codable {
-    var state: GameState
-    var rng: SeededRNG
-}
+typealias SaveFile = SaveGame
 
 let savePath = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
     .appendingPathComponent("featherwick-save.json")
@@ -22,21 +19,24 @@ func newSave(seed: UInt64) -> SaveFile {
 func load() -> SaveFile? {
     guard let data = try? Data(contentsOf: savePath) else { return nil }
     do {
-        return try JSONDecoder().decode(SaveFile.self, from: data)
+        // Old saves are migrated here. They are written back in the new format on the next save.
+        return try SaveFormat.decode(data)
+    } catch SaveFormat.LoadError.tooNew(let version) {
+        // Never overwrite a save from a newer game.
+        print("This save is from a newer version of Featherwick (save version \(version)). Update the game to load it.")
+        exit(1)
     } catch {
-        // The save format changed. Keep the old file instead of overwriting it.
+        // Not readable. Keep the old file instead of overwriting it.
         let backup = savePath.deletingPathExtension().appendingPathExtension("old.json")
         try? FileManager.default.removeItem(at: backup)
         try? FileManager.default.moveItem(at: savePath, to: backup)
-        print("Your save is from an older version and cannot be loaded. It was moved to \(backup.lastPathComponent). Starting a new game.")
+        print("Your save cannot be read. It was moved to \(backup.lastPathComponent). Starting a new game.")
         return nil
     }
 }
 
 func save(_ file: SaveFile) {
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    if let data = try? encoder.encode(file) { try? data.write(to: savePath) }
+    if let data = try? SaveFormat.encode(file) { try? data.write(to: savePath) }
 }
 
 let seedArg = CommandLine.arguments.dropFirst().first.flatMap { UInt64($0) }

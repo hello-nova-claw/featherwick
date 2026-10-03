@@ -13,6 +13,7 @@ let package = Package(
         .target(name: "FeatherwickCore"),
         // Thin text front end over the core.
         .executableTarget(name: "FeatherwickCLI", dependencies: ["FeatherwickCore"]),
-        .testTarget(name: "FeatherwickCoreTests", dependencies: ["FeatherwickCore"]),
+        .testTarget(name: "FeatherwickCoreTests", dependencies: ["FeatherwickCore"],
+                    resources: [.copy("Fixtures")]),  // real saves from older versions
     ]
 )
