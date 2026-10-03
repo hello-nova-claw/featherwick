@@ -75,7 +75,9 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case wentBroody(UUID)
     case broodyEnded(UUID)
     // Hatching
-    case incubatorBought(cost: Int)
+    case incubatorBought(cost: Int, size: Int)
+    /// First fertile egg ever: the neighbour gives her old 1-egg incubator (and the CLI explains hatching).
+    case neighbourGaveIncubator(size: Int)
     case candled(fertile: Int, clear: Int)
     case eggsSet(count: Int, hen: UUID?, hatchDay: Int)
     case chicksHatched([UUID], hen: UUID?)
@@ -164,16 +166,18 @@ public enum Engine {
             return passNight(&s, &rng)
 
         case .buyIncubator:
-            if s.hasIncubator { return [.rejected(.alreadyHaveIncubator)] }
+            if s.incubatorSize >= s.rules.bigIncubatorSize { return [.rejected(.alreadyHaveIncubator)] }
+            if s.incubatorClutch != nil { return [.rejected(.incubatorBusy)] }
             let cost = s.rules.incubatorPrice
             if s.coins < cost { return [.rejected(.notEnoughCoins(needed: cost, have: s.coins))] }
             s.coins -= cost
-            s.hasIncubator = true
-            return [.incubatorBought(cost: cost)]
+            s.incubatorSize = s.rules.bigIncubatorSize
+            return [.incubatorBought(cost: cost, size: s.incubatorSize)]
 
         case .incubate(let count):
             if !s.hasIncubator { return [.rejected(.noIncubator)] }
             if s.incubatorClutch != nil { return [.rejected(.incubatorBusy)] }
+            if count > s.incubatorSize { return [.rejected(.clutchTooBig(max: s.incubatorSize))] }
             if let r = checkClutchSize(count, s) { return [.rejected(r)] }
             // Every egg set could hatch, so the brooder needs room for all of them.
             let room = s.brooderSize - s.brooder.count
@@ -459,6 +463,11 @@ public enum Engine {
             }
             s.nest.append(egg)
             ev.append(.eggLaid(egg.id, by: hen.id))
+            if egg.isFertile, !s.incubatorGiftGiven {
+                s.incubatorGiftGiven = true
+                s.incubatorSize = max(s.incubatorSize, s.rules.giftIncubatorSize)
+                ev.append(.neighbourGaveIncubator(size: s.rules.giftIncubatorSize))
+            }
             let entry = EggBookEntry(colour: egg.colour, speckled: egg.speckled)
             if s.eggBook.insert(entry).inserted { ev.append(.newEggBookEntry(entry)) }
         }

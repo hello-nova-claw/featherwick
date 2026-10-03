@@ -84,7 +84,10 @@ public struct GameState: Hashable, Codable, Sendable {
     public var brooderSize: Int
     public var cartons: Int
 
-    public var hasIncubator = false
+    /// Eggs the incubator holds. 0 = no incubator yet.
+    public var incubatorSize = 0
+    public var incubatorGiftGiven = false
+    public var hasIncubator: Bool { incubatorSize > 0 }
     public var clutches: [Clutch] = []
     public var chicksHatched = 0
 

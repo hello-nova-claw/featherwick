@@ -34,6 +34,32 @@ struct HatchingTests {
         #expect(s.nest[0].motherBreed == .orpington)
     }
 
+    @Test func firstFertileEggBringsTheNeighboursOneEggIncubatorOnce() {
+        var r = calmRules()
+        r.fertileChance = 1
+        r.broodyChance = [:]
+        var (s, rng) = startedGame(sex: .hen, rules: r)
+        while s.day < r.adultAge - 1 { night(&s, &rng) }
+        #expect(!s.hasIncubator)
+        s.coop.append(adult(.araucana, .rooster, day: s.day, rules: r, rng: &rng))
+        var all: [GameEvent] = []
+        for _ in 0..<3 { all += night(&s, &rng) }
+        #expect(all.filter { if case .neighbourGaveIncubator = $0 { true } else { false } }.count == 1)
+        #expect(s.incubatorSize == r.giftIncubatorSize)
+
+        _ = Engine.apply(.collectEggs, to: &s, using: &rng)
+        #expect(Engine.apply(.incubate(count: 2), to: &s, using: &rng) == [.rejected(.clutchTooBig(max: 1))])
+        let one = Engine.apply(.incubate(count: 1), to: &s, using: &rng)
+        #expect(one.contains { if case .eggsSet(1, nil, _) = $0 { true } else { false } })
+
+        // Buying the big incubator upgrades it (not while eggs are inside).
+        s.coins = 100
+        #expect(Engine.apply(.buyIncubator, to: &s, using: &rng) == [.rejected(.incubatorBusy)])
+        night(&s, &rng)
+        #expect(Engine.apply(.buyIncubator, to: &s, using: &rng) == [.incubatorBought(cost: r.incubatorPrice, size: r.bigIncubatorSize)])
+        #expect(Engine.apply(.buyIncubator, to: &s, using: &rng) == [.rejected(.alreadyHaveIncubator)])
+    }
+
     @Test func noRoosterNoFertileEggs() {
         var r = calmRules()
         r.broodyChance = [:]
@@ -72,7 +98,7 @@ struct HatchingTests {
         let hen = adult(.araucana, .hen, day: 0, rules: r, rng: &rng)
         let rooster = adult(.orpington, .rooster, day: 0, rules: r, rng: &rng)
         s.carton = (0..<3).map { _ in fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng) }
-        s.hasIncubator = true
+        s.incubatorSize = 6
         #expect(Engine.apply(.incubate(count: 3), to: &s, using: &rng) == [.rejected(.brooderFull(room: 1))])
         #expect(s.carton.count == 3)
     }
@@ -138,7 +164,7 @@ struct HatchingTests {
 
     @Test func knownFertileEggsAreSetFirstAndKnownClearAreSkipped() {
         var (s, rng) = startedGame(sex: .hen)
-        s.hasIncubator = true
+        s.incubatorSize = 6
         let hen = adult(.araucana, .hen, day: 0, rules: s.rules, rng: &rng)
         let rooster = adult(.orpington, .rooster, day: 0, rules: s.rules, rng: &rng)
         var clear = clearEgg(mother: hen, day: 0, rng: &rng)

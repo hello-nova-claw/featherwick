@@ -106,8 +106,8 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         case .invalidAmount: "Give a number of 1 or more."
         case .coopAlreadyClosed: "The coop is already closed."
         case .noSuchBird: "There is no bird with that name here."
-        case .noIncubator: "You don't have an incubator. Buy one: buy incubator (\(s.rules.incubatorPrice) coins)"
-        case .alreadyHaveIncubator: "You already have an incubator."
+        case .noIncubator: "You don't have an incubator yet."
+        case .alreadyHaveIncubator: "You already have the big incubator."
         case .incubatorBusy: "The incubator already has eggs in it."
         case .notBroody: "She isn't broody. Only a broody hen will sit on eggs."
         case .henAlreadySitting: "She is already sitting on eggs."
@@ -147,10 +147,24 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         return "New egg colour: \(entry.speckled ? "speckled " : "")\(entry.colour.rawValue)!"
     case .wentBroody(let id): return "\(name(id, s)) has gone broody. She fluffs up on the pile of eggs and won't lay for a while."
     case .broodyEnded(let id): return "\(name(id, s)) is done being broody and is back to normal."
-    case .incubatorBought(let cost): return "You buy an incubator for \(cost) coins. It hatches eggs overnight."
+    case .incubatorBought(let cost, let size):
+        return "You buy a bigger incubator for \(cost) coins. It holds \(size) eggs and hatches them overnight."
+    case .neighbourGaveIncubator(let size):
+        return """
+        The neighbour leans over the fence. "I see your rooster has been busy. Some of your eggs will be fertile now. \
+        Here, take my old incubator. It only fits \(size) egg\(size == 1 ? "" : "s"), but it works."
+
+        How to hatch eggs:
+          candle          hold the carton eggs up to a light to see which are fertile
+          sell clear      sell your eggs but keep the fertile ones
+          incubate \(size)      put a fertile egg in the incubator; it hatches overnight into the brooder
+          sit <hen> <n>   if a hen goes broody, she can sit on up to \(s.rules.maxClutch) eggs; they hatch in \
+        \(s.rules.broodyHatchDays) days and she raises the chicks herself
+          buy incubator   a bigger incubator holds \(s.rules.bigIncubatorSize) eggs (\(s.rules.incubatorPrice) coins)
+        """
     case .candled(let fertile, let clear):
-        if fertile == 0 { return "You hold each egg up to the light. All \(clear) are clear: none are fertile. They go back in the carton." }
-        return "You hold each egg up to the light: \(fertile) fertile" + (clear > 0 ? ", \(clear) clear (back in the carton)." : ".")
+        if fertile == 0 { return "You hold each egg up to the light. All \(clear) are clear: none are fertile." }
+        return "You hold each egg up to the light: \(fertile) fertile" + (clear > 0 ? ", \(clear) clear." : ".")
     case .eggsSet(let n, let hen, let hatchDay):
         let who = hen.map { "under \(name($0, s))" } ?? "in the incubator"
         return "You set \(n) egg\(n == 1 ? "" : "s") \(who). They will hatch on day \(hatchDay)."
@@ -186,7 +200,7 @@ func look(_ s: GameState) {
     }
     if s.hasIncubator {
         let c = s.incubatorClutch
-        print("Incubator: " + (c.map { "\($0.eggs.count) eggs, hatch day \($0.hatchDay)" } ?? "empty"))
+        print("Incubator (holds \(s.incubatorSize)): " + (c.map { "\($0.eggs.count) egg\($0.eggs.count == 1 ? "" : "s"), hatch day \($0.hatchDay)" } ?? "empty"))
     }
     if !s.lost.isEmpty { print("Lost: " + s.lost.map(\.bird.name).joined(separator: ", ")) }
     let fertile = s.carton.filter { $0.isCandled && $0.isFertile }.count
@@ -218,7 +232,7 @@ Commands:
   sell clear           sell every egg except the ones you know are fertile
   candle               hold the carton eggs up to a light to see which are fertile
   buy feed [bags]      buy feed (\(game.state.rules.feedBagUnits) per bag, \(game.state.rules.feedBagPrice) coins)
-  buy incubator        buy an incubator (\(game.state.rules.incubatorPrice) coins)
+  buy incubator        buy a \(game.state.rules.bigIncubatorSize)-egg incubator (\(game.state.rules.incubatorPrice) coins)
   incubate <n>         candle n eggs from the carton; fertile ones go in the incubator
   sit <hen> <n>        candle n eggs; fertile ones go under a broody hen
   rename <name> <new>  rename a bird
