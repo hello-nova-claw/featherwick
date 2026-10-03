@@ -49,6 +49,9 @@ struct InvariantTests {
         if let id = s.starterID, s.bird(id) == nil { p.append("starter missing") }
         // Never zero birds: lost and boarding birds still belong to the player and always come back.
         if s.birdsAtHome.count + s.lost.count + s.boarding.count == 0 { p.append("the player has no birds") }
+        if let offer = s.tradeOffer, !s.ownedBirds.contains(where: { $0.id == offer.roosterID }) {
+            p.append("trade offer for a rooster the player doesn't own")
+        }
         return p
     }
 
@@ -81,7 +84,14 @@ struct InvariantTests {
             if !s.boarding.isEmpty { return .rehome(s.boarding[0].id) }
             return birds.count >= 3 ? .rehome(anyBird) : .passNight
         case 94..<97: return .upgradeCoop
-        case 97..<98: return .rename(anyBird, name: "R\(roll)")
+        case 97..<98:
+            // Shopping and trades.
+            switch Int.random(in: 0..<4, using: &pick) {
+            case 0: return .buy(.pullet)
+            case 1: return .buy(.cockerel)
+            case 2: return .buy(.fertileEgg)
+            default: return .acceptTrade
+            }
         case 98..<99: return .sit(hen: UUID(), count: 3)
         default: return .rehome(UUID())
         }
@@ -106,6 +116,13 @@ struct InvariantTests {
             if command == .passNight {
                 #expect(s.day == dayBefore + 1)
                 #expect(!s.fedToday && s.coopDoorOpen)
+                // No dead ends: with no hen, the player can buy one, has an offer, or a rooster is still out.
+                let hasHen = s.ownedBirds.contains { $0.sex == .hen }
+                let roosterAtHome = (s.coop + s.brooder).contains { $0.sex == .rooster }
+                if !hasHen && s.coins < s.rules.pulletPrice && roosterAtHome && s.tradeOffer == nil {
+                    Issue.record("seed \(seed), step \(step): dead end, no hen and no way to get one")
+                    break
+                }
             } else {
                 #expect(s.day == dayBefore)
             }

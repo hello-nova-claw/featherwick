@@ -37,6 +37,11 @@ public struct Rules: Codable, Hashable, Sendable {
     public var bigIncubatorSize = 6        // the one you buy
     public var incubatorPrice = 40
 
+    // Speckle & Down shop
+    public var pulletPrice = 25            // a young hen, breed and sex known
+    public var cockerelPrice = 15          // a young rooster
+    public var fertileEggPrice = 6         // from a local flock, already candled
+
     // Making room
     public var coopUpgradePrice = 30
     public var perchesPerUpgrade = 2

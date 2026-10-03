@@ -20,6 +20,8 @@ public enum Command: Hashable, Codable, Sendable {
     /// A neighbour adopts the bird and pays for it. Rarer birds are worth more.
     case rehome(UUID)
     case upgradeCoop
+    case buy(ShopItem)
+    case acceptTrade
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -49,6 +51,8 @@ public enum Rejection: Hashable, Codable, Sendable {
     case coopAtMax
     /// The player must always keep at least one bird, or the game could never continue.
     case lastBird
+    case noFreePerch
+    case noTradeOffer
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -93,6 +97,10 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case renamed(UUID)
     case rehomed(UUID, coins: Int)
     case coopUpgraded(perches: Int, cost: Int)
+    case boughtBird(UUID, item: ShopItem, cost: Int)
+    case boughtEgg(cost: Int)
+    case tradeOffered(rooster: UUID, hen: UUID)
+    case tradeAccepted(rooster: UUID, hen: UUID)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -231,10 +239,33 @@ public enum Engine {
                     s.coins += coins
                     s.rehomed.append(bird)
                     if s.starterID == id { s.starterID = nil }
+                    if s.tradeOffer?.roosterID == id { s.tradeOffer = nil }  // a new offer comes in the morning if needed
                     return [.rehomed(id, coins: coins)]
                 }
             }
             return [.rejected(.noSuchBird)]
+
+        case .buy(let item):
+            return buy(item, &s, &rng)
+
+        case .acceptTrade:
+            guard let offer = s.tradeOffer else { return [.rejected(.noTradeOffer)] }
+            let groups: [WritableKeyPath<GameState, [Bird]>] = [\.coop, \.brooder]
+            for keyPath in groups {
+                if let i = s[keyPath: keyPath].firstIndex(where: { $0.id == offer.roosterID }) {
+                    let rooster = s[keyPath: keyPath][i]
+                    s[keyPath: keyPath][i] = offer.hen   // she takes his place
+                    s.rehomed.append(rooster)
+                    s.tradeOffer = nil
+                    if s.starterID == rooster.id { s.starterID = nil }
+                    var ev: [GameEvent] = [.tradeAccepted(rooster: rooster.id, hen: offer.hen.id)]
+                    let entry = BreedBookEntry(offer.hen)
+                    if s.breedBook.insert(entry).inserted { ev.append(.newBreedBookEntry(entry)) }
+                    return ev
+                }
+            }
+            s.tradeOffer = nil  // that rooster is no longer at home; a new offer comes in the morning if needed
+            return [.rejected(.noTradeOffer)]
 
         case .upgradeCoop:
             if s.perches >= s.rules.maxPerches { return [.rejected(.coopAtMax)] }
@@ -244,6 +275,71 @@ public enum Engine {
             s.perches = min(s.rules.maxPerches, s.perches + s.rules.perchesPerUpgrade)
             return [.coopUpgraded(perches: s.perches, cost: cost)]
         }
+    }
+
+    // MARK: - Shop and safety net
+
+    /// A young bird from a local flock: a starter breed, random colour, breed and sex known.
+    static func youngBird<R: RandomNumberGenerator>(_ sex: Sex, origin: String, _ s: GameState, _ rng: inout R) -> Bird {
+        let breed = Breed.starters.randomElement(using: &rng)!
+        let colour = StarterColour.allCases.randomElement(using: &rng)!
+        return Bird(
+            id: makeID(using: &rng), name: sex == .hen ? "New pullet" : "New cockerel", breed: breed,
+            genome: breed.purebred(sex, colour: colour), hatchDay: s.day - s.rules.growerAge,
+            origin: origin, revealed: true
+        )
+    }
+
+    static func buy<R: RandomNumberGenerator>(_ item: ShopItem, _ s: inout GameState, _ rng: inout R) -> [GameEvent] {
+        let cost = switch item {
+        case .pullet: s.rules.pulletPrice
+        case .cockerel: s.rules.cockerelPrice
+        case .fertileEgg: s.rules.fertileEggPrice
+        }
+        if s.coins < cost { return [.rejected(.notEnoughCoins(needed: cost, have: s.coins))] }
+        switch item {
+        case .pullet, .cockerel:
+            if s.coop.count >= s.perches { return [.rejected(.noFreePerch)] }
+            let bird = youngBird(item == .pullet ? .hen : .rooster, origin: "Speckle & Down", s, &rng)
+            s.coins -= cost
+            s.coop.append(bird)
+            var ev: [GameEvent] = [.boughtBird(bird.id, item: item, cost: cost)]
+            let entry = BreedBookEntry(bird)
+            if s.breedBook.insert(entry).inserted { ev.append(.newBreedBookEntry(entry)) }
+            return ev
+        case .fertileEgg:
+            if s.carton.count >= s.cartonCapacity { return [.rejected(.cartonFull)] }
+            let motherBreed = Breed.starters.randomElement(using: &rng)!
+            let fatherBreed = Breed.starters.randomElement(using: &rng)!
+            let mother = motherBreed.purebred(.hen, colour: StarterColour.allCases.randomElement(using: &rng)!)
+            let father = fatherBreed.purebred(.rooster, colour: StarterColour.allCases.randomElement(using: &rng)!)
+            let p = Phenotype(mother)
+            var egg = Egg(id: makeID(using: &rng), layDay: s.day, motherID: makeID(using: &rng),
+                          colour: p.eggColour ?? .cream, speckled: p.eggIsSpeckled,
+                          collectedDay: s.day, motherBreed: motherBreed)
+            egg.fatherID = makeID(using: &rng)
+            egg.embryo = try? Breeding.cross(mother: mother, father: father, using: &rng)
+            egg.candled = true
+            s.coins -= cost
+            s.carton.append(egg)
+            return [.boughtEgg(cost: cost)]
+        }
+    }
+
+    static func updateTradeOffer<R: RandomNumberGenerator>(_ s: inout GameState, _ rng: inout R) -> [GameEvent] {
+        let owned = s.ownedBirds
+        let stuck = !owned.contains { $0.sex == .hen } && s.coins < s.rules.pulletPrice
+        guard stuck else { s.tradeOffer = nil; return [] }
+        // Keep an existing offer while its rooster is still at home.
+        if let offer = s.tradeOffer, (s.coop + s.brooder).contains(where: { $0.id == offer.roosterID }) { return [] }
+        guard let rooster = (s.coop + s.brooder).first(where: { $0.sex == .rooster }) else {
+            s.tradeOffer = nil  // every rooster is out; they come home, and the offer comes then
+            return []
+        }
+        var hen = youngBird(.hen, origin: "A Featherwick neighbour", s, &rng)
+        hen.name = "Traded pullet"
+        s.tradeOffer = TradeOffer(roosterID: rooster.id, hen: hen)
+        return [.tradeOffered(rooster: rooster.id, hen: hen.id)]
     }
 
     // MARK: - Hatching
@@ -414,7 +510,10 @@ public enum Engine {
         ev += lay(&s, &rng)
         ev += maybeGoBroody(&s, &rng)
 
-        // 9. Reset for the new day. The door is opened in the morning.
+        // 9. Safety net: a rooster-only flock that can't afford a pullet gets a trade offer.
+        ev += updateTradeOffer(&s, &rng)
+
+        // 10. Reset for the new day. The door is opened in the morning.
         s.fedToday = false
         s.coopDoorOpen = true
         return ev

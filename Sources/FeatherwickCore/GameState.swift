@@ -25,6 +25,18 @@ public struct Egg: Identifiable, Hashable, Codable, Sendable {
     public var isCandled: Bool { candled == true }
 }
 
+public enum ShopItem: String, Hashable, Codable, Sendable, CaseIterable {
+    case pullet, cockerel, fertileEgg
+}
+
+/// The safety net. A flock of only roosters, with too few coins for a pullet, can never lay or hatch.
+/// Someone in Featherwick then offers a young hen in trade for one rooster. The offer stays until
+/// it is taken or no longer needed.
+public struct TradeOffer: Hashable, Codable, Sendable {
+    public var roosterID: UUID
+    public var hen: Bird
+}
+
 /// Eggs being hatched: under a broody hen (henID set) or in the incubator (henID nil).
 public struct Clutch: Hashable, Codable, Sendable {
     public var henID: UUID?
@@ -103,6 +115,8 @@ public struct GameState: Hashable, Codable, Sendable {
     public var nest: [Egg] = []
     public var carton: [Egg] = []
 
+    public var tradeOffer: TradeOffer?
+
     public var breedBook: Set<BreedBookEntry> = []
     public var eggBook: Set<EggBookEntry> = []
 
@@ -125,6 +139,9 @@ public struct GameState: Hashable, Codable, Sendable {
 
     /// Birds at home (brooder and coop). Lost birds are not fed.
     public var birdsAtHome: [Bird] { brooder + henChicks + coop }
+
+    /// Every bird the player owns, wherever it is. Lost and boarding birds always come back.
+    public var ownedBirds: [Bird] { birdsAtHome + lost.map(\.bird) + boarding }
 
     public var incubatorClutch: Clutch? { clutches.first { $0.henID == nil } }
     public func clutch(under henID: UUID) -> Clutch? { clutches.first { $0.henID == henID } }

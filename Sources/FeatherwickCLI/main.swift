@@ -117,6 +117,8 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         case .birdIsBusy: "She is sitting on eggs or caring for chicks. She can't go to a new home right now."
         case .coopAtMax: "The coop can't hold any more perches."
         case .lastBird: "That's your only bird. Keep at least one, or Henhaven would be empty."
+        case .noFreePerch: "There's no free perch for a new bird. Rehome a bird or upgrade the coop first."
+        case .noTradeOffer: "Nobody is offering a trade right now."
         case .brooderFull(let room):
             room == 0
                 ? "The brooder is full. Make room first: rehome a bird or upgrade the coop so the brooder birds can move out."
@@ -154,6 +156,16 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
     case .rehomed(let id, let coins):
         return "\(name(id, s)) goes to a new home in Featherwick. They pay you \(coins) coin\(coins == 1 ? "" : "s")."
     case .coopUpgraded(let perches, let cost): return "You add perches to the coop for \(cost) coins. It now has \(perches) perches."
+    case .boughtBird(let id, _, let cost):
+        return "Speckle & Down sells you a bird for \(cost) coins: \(s.bird(id).map { label($0, s) } ?? "a young bird")."
+    case .boughtEgg(let cost):
+        return "Speckle & Down sells you a fertile egg from a local flock for \(cost) coins. It's in your carton, already candled."
+    case .tradeOffered:
+        guard let offer = s.tradeOffer else { return nil }
+        return "A neighbour's daughter is starting a flock and needs a rooster. She offers you a young hen "
+            + "for \(name(offer.roosterID, s)): \(label(offer.hen, s)). To agree: accept trade"
+    case .tradeAccepted(let rooster, let hen):
+        return "\(name(rooster, s)) goes to his new flock, and \(name(hen, s)) moves into Henhaven."
     case .noEggsHungry: return "No eggs today. The hens were not fed yesterday."
     case .eggLaid(_, let by): return "\(name(by, s)) laid an egg."
     case .eggBroken(let by): return "The nest boxes were full, so \(name(by, s)) laid on the floor and the egg broke."
@@ -220,6 +232,9 @@ func look(_ s: GameState) {
         print("Incubator (holds \(s.incubatorSize)): " + (c.map { "\($0.eggs.count) egg\($0.eggs.count == 1 ? "" : "s"), hatch day \($0.hatchDay)" } ?? "empty"))
     }
     if !s.lost.isEmpty { print("Lost: " + s.lost.map(\.bird.name).joined(separator: ", ")) }
+    if let offer = s.tradeOffer {
+        print("Trade offer: a young hen (\(label(offer.hen, s))) for \(name(offer.roosterID, s)). Type: accept trade")
+    }
     if !s.boarding.isEmpty {
         print("Staying with the neighbour (no eggs can be set until they have a home): " + s.boarding.map(\.name).joined(separator: ", "))
     }
@@ -257,6 +272,9 @@ Commands:
   rename <name> <new>  rename a bird
   value <name>         what a neighbour would pay to adopt a bird
   rehome <name>        a neighbour adopts the bird and pays you (rarer birds pay more)
+  shop                 see what Speckle & Down sells
+  buy pullet|cockerel|egg   buy a young hen, a young rooster, or a fertile egg
+  accept trade         accept a neighbour's offer of a hen for a rooster
   upgrade coop         add \(game.state.rules.perchesPerUpgrade) perches (\(game.state.rules.coopUpgradePrice) coins)
   close                shut the coop door for the night
   sleep                pass the night
@@ -294,11 +312,25 @@ while true {
     case "sell": run(words.count > 1 && words[1] == "clear" ? .sellClearEggs : .sellEggs)
     case "candle": run(.candle)
     case "buy":
-        if words.count > 1, words[1] == "incubator" {
-            run(.buyIncubator)
-        } else {
-            print("You can buy: incubator. Basic feed is free.")
+        let item = words.count > 1 ? words[1] : ""
+        switch item {
+        case "incubator": run(.buyIncubator)
+        case "pullet", "hen": run(.buy(.pullet))
+        case "cockerel", "rooster": run(.buy(.cockerel))
+        case "egg", "fertile": run(.buy(.fertileEgg))
+        default: print("You can buy: pullet, cockerel, egg, incubator. Basic feed is free.")
         }
+    case "shop":
+        let r = game.state.rules
+        print("""
+        Speckle & Down (you have \(game.state.coins) coins):
+          pullet      a young hen, breed known        \(r.pulletPrice) coins
+          cockerel    a young rooster, breed known    \(r.cockerelPrice) coins
+          egg         a fertile egg from a local flock \(r.fertileEggPrice) coins
+          incubator   holds \(r.bigIncubatorSize) eggs                   \(r.incubatorPrice) coins
+        """)
+    case "accept":
+        run(.acceptTrade)
     case "incubate":
         run(.incubate(count: words.count > 1 ? Int(words[1]) ?? 0 : 0))
     case "sit":
