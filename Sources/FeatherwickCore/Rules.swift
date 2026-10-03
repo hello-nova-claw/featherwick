@@ -147,3 +147,47 @@ public struct Rules: Codable, Hashable, Sendable {
         return max(1, Int((Double(base) * staleEggPriceFactor).rounded(.down)))
     }
 }
+
+// MARK: - Difficulty presets
+//
+// A preset is just `Rules()` with a few numbers nudged, so it automatically inherits sensible
+// defaults for any rule added later. A preset only seeds a NEW game; loading an existing save keeps
+// that save's own rules.
+extension Rules {
+    /// A gentler game: hens lay more, the fox is rarer and less greedy, and you start with more coins.
+    public static let relaxed: Rules = {
+        var r = Rules()
+        r.startCoins = 40
+        r.layChance = [.spring: 0.95, .summer: 0.9, .autumn: 0.6, .winter: 0.7]
+        r.fertileChance = 0.9
+        r.foxChance = 0.3
+        r.fleeChance = 0.35
+        r.lostDaysMax = 2
+        r.lostDaysCap = 10
+        r.pulletPrice = 20
+        r.incubatorPrice = 30
+        r.coopUpgradePrice = 25
+        return r
+    }()
+
+    /// A tougher game: leaner laying, a bolder fox, pricier stock, and a thinner purse.
+    public static let challenge: Rules = {
+        var r = Rules()
+        r.startCoins = 10
+        r.layChance = [.spring: 0.75, .summer: 0.65, .autumn: 0.25, .winter: 0.3]
+        r.fertileChance = 0.75
+        r.foxChance = 0.65
+        r.fleeChance = 0.6
+        r.lostDaysMax = 4
+        r.lostDaysCap = 40
+        r.pulletPrice = 35
+        r.incubatorPrice = 55
+        r.coopUpgradePrice = 40
+        return r
+    }()
+
+    /// Named difficulty presets for a new game, case-insensitive.
+    public static let presets: [String: Rules] = ["standard": .standard, "relaxed": .relaxed, "challenge": .challenge]
+    public static let presetNames = ["relaxed", "standard", "challenge"]
+    public static func preset(named name: String) -> Rules? { presets[name.lowercased()] }
+}

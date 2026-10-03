@@ -2,22 +2,44 @@ import FeatherwickCore
 import Foundation
 
 // Featherwick text front end.
-// Usage: swift run featherwick [seed]     (seed is used only when no save exists)
-// The game autosaves to featherwick-save.json in the current folder.
+// Usage: swift run featherwick [seed] [--slot <name>] [--preset relaxed|standard|challenge]
+//   seed   : used only when starting a NEW game (replayable hatches)
+//   --slot : which save to play (default "featherwick-save"); switch in-game with `slot <name>`
+//   --preset : difficulty for a NEW game only; an existing save keeps its own rules
+// Saves are atomic with rolling backups (see SaveStore), so a crash can't wipe your flock.
 
 typealias SaveFile = SaveGame
 
-let savePath = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-    .appendingPathComponent("featherwick-save.json")
+// MARK: - Launch arguments and save store
 
-func newSave(seed: UInt64) -> SaveFile {
+let launchArgs = Array(CommandLine.arguments.dropFirst())
+func launchFlag(_ name: String) -> String? {
+    guard let i = launchArgs.firstIndex(of: name), i + 1 < launchArgs.count else { return nil }
+    return launchArgs[i + 1]
+}
+let slotArg = launchFlag("--slot") ?? SaveStore.defaultSlot
+let presetArg = launchFlag("--preset")
+let seedArg = launchArgs.first { UInt64($0) != nil }.flatMap { UInt64($0) }
+let startRules = presetArg.flatMap(Rules.preset(named:)) ?? .standard
+
+var store = SaveStore(directory: URL(fileURLWithPath: FileManager.default.currentDirectoryPath), slot: slotArg)
+
+func newSave(seed: UInt64, rules: Rules = .standard) -> SaveFile {
     var rng = SeededRNG(seed: seed)
-    let state = Engine.newGame(using: &rng)
+    let state = Engine.newGame(rules: rules, using: &rng)
     return SaveFile(state: state, rng: rng)
 }
 
-func load() -> SaveFile? {
-    guard let data = try? Data(contentsOf: savePath) else { return nil }
+func load(from store: SaveStore) -> SaveFile? {
+    let data = (try? store.read()) ?? nil
+    guard let data else {
+        // Main save gone: fall back to the newest backup if there is one.
+        if let b = store.newestBackupData(), let save = try? SaveFormat.decode(b) {
+            print("Main save was missing; restored from a backup.")
+            return save
+        }
+        return nil
+    }
     do {
         // Old saves are migrated here. They are written back in the new format on the next save.
         return try SaveFormat.decode(data)
@@ -26,21 +48,23 @@ func load() -> SaveFile? {
         print("This save is from a newer version of Featherwick (save version \(version)). Update the game to load it.")
         exit(1)
     } catch {
-        // Not readable. Keep the old file instead of overwriting it.
-        let backup = savePath.deletingPathExtension().appendingPathExtension("old.json")
-        try? FileManager.default.removeItem(at: backup)
-        try? FileManager.default.moveItem(at: savePath, to: backup)
-        print("Your save cannot be read. It was moved to \(backup.lastPathComponent). Starting a new game.")
+        // Not readable: keep it (quarantine, never delete), then try a backup, else start fresh.
+        let kept = store.quarantine().map { " (kept as \($0.lastPathComponent))" } ?? ""
+        if let b = store.newestBackupData(), let save = try? SaveFormat.decode(b) {
+            print("Your save couldn't be read\(kept). Restored from a backup.")
+            return save
+        }
+        print("Your save couldn't be read\(kept). Starting a new game.")
         return nil
     }
 }
 
-func save(_ file: SaveFile) {
-    if let data = try? SaveFormat.encode(file) { try? data.write(to: savePath) }
+@MainActor func save(_ file: SaveFile) {
+    guard let data = try? SaveFormat.encode(file) else { return }
+    try? store.write(data)
 }
 
-let seedArg = CommandLine.arguments.dropFirst().first.flatMap { UInt64($0) }
-var game = load() ?? newSave(seed: seedArg ?? UInt64(Date().timeIntervalSince1970))
+var game = load(from: store) ?? newSave(seed: seedArg ?? UInt64(Date().timeIntervalSince1970), rules: startRules)
 
 // MARK: - Text
 
@@ -441,7 +465,9 @@ Commands:
   sleep                pass the night
   day [n]              do a full day n times: feed, collect, close, sleep
   book                 Breed Book and egg colours
-  new yes              delete the save and start again
+  slot [name]          list your saves, or switch to / create a save slot
+  sim [days] [games]   balance report: simulate seeded games and show the numbers
+  new yes [difficulty] delete the save and start again (relaxed | standard | challenge)
   quit
 """
 
@@ -452,7 +478,7 @@ Commands:
     for e in events { if let t = text(e, state) { print(t) } }
 }
 
-print("Featherwick · save: \(savePath.path)")
+print("Featherwick · slot: \(store.slot) · save: \(store.url.path)")
 print("Type help for commands.\n")
 look(game.state)
 
@@ -604,12 +630,39 @@ while true {
     case "book", "b": book(game.state)
     case "new":
         if words.count > 1, words[1] == "yes" {
-            game = newSave(seed: UInt64(Date().timeIntervalSince1970))
-            print("A new game begins.")
+            let name = words.count > 2 ? words[2] : "standard"
+            let rules = Rules.preset(named: name) ?? .standard
+            let used = Rules.preset(named: name) != nil ? name : "standard"
+            game = newSave(seed: UInt64(Date().timeIntervalSince1970), rules: rules)
+            print("A new game begins (\(used)).")
             look(game.state)
         } else {
-            print("This deletes your save. Type: new yes")
+            print("This deletes your save. Type: new yes [relaxed|standard|challenge]")
         }
+    case "slot":
+        guard words.count > 1 else {
+            let all = SaveStore.slots(in: store.directory)
+            print("Current slot: \(store.slot). Saves: \(all.isEmpty ? "none" : all.joined(separator: ", "))")
+            print("Switch to or create a slot: slot <name>")
+            break
+        }
+        let name = words[1].filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }
+        guard !name.isEmpty else { print("Use letters, numbers, - or _ for a slot name."); break }
+        guard name != store.slot else { print("You're already playing slot \(name)."); break }
+        save(game)  // keep the current game safe in its own slot before switching
+        store = SaveStore(directory: store.directory, slot: name)
+        if let loaded = load(from: store) {
+            game = loaded
+            print("Switched to slot \(store.slot).")
+        } else {
+            game = newSave(seed: UInt64(Date().timeIntervalSince1970), rules: startRules)
+            print("New slot \(store.slot): a new game begins.")
+        }
+        look(game.state)
+    case "sim":
+        let days = (words.count > 1 ? Int(words[1]) : nil) ?? 120
+        let games = (words.count > 2 ? Int(words[2]) : nil) ?? 20
+        print(Simulation.textReport(days: max(1, days), games: max(1, games), rules: game.state.rules))
     case "quit", "q", "exit":
         save(game)
         exit(0)
