@@ -18,13 +18,16 @@ swift test
 swift run featherwick 2026   # play; seed 2026 is used only for a new save
 ```
 
-The CLI autosaves to `featherwick-save.json` in the current folder. Type `help` in the game for commands. `day 10` runs ten full days (feed, collect, close, sleep) for fast tuning.
+The CLI autosaves to a named slot (default `featherwick-save.json`) in the current folder, writing
+atomically with rolling backups. Launch flags: `--slot <name>` picks a save, `--preset <relaxed|standard|challenge>`
+sets the difficulty of a new game. Type `help` in the game for commands. `day 10` runs ten full days
+(feed, collect, close, sleep) for fast tuning; `sim [days] [games]` prints a balance report.
 
 ## Engine
 
 `Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. Command in, events out. All tunable numbers live in `Rules`.
 
-Night order: fox (only if the coop is open) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → hatching (eggs due today) → brooder to coop → broody hens wake → laying (only if fed) → stories & trade offer → door opens.
+Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → hatching (eggs due today) → brooder to coop → broody hens wake → retirements → laying (only if fed) → stories & trade offer → county show (on show days) → door opens.
 
 ## Genome (current genes)
 
@@ -53,7 +56,8 @@ Three tables. Most new content is a table entry, not new logic.
 - Genomes store only genes that differ from the default allele. A gene missing from a save is the
   default, so a new gene needs no save migration.
 - Breeds have a status: `inGame` or `planned`. Planned breeds are tested but never appear in play.
-  Now: Silkie, Orpington, Wyandotte, Araucana (in game); Australorp, Plymouth Rock (planned).
+  Now: Silkie, Orpington, Wyandotte, Araucana, Australorp (in game); Plymouth Rock (planned).
+  Australorp is not a starter: it is unlocked at the shop by the "heritage breed" storyline.
 - The colour a bird shows always comes from its genes (`Phenotype`), never from a variety name.
 
 How to add:
@@ -85,10 +89,18 @@ changes shape. `Tests/.../Fixtures/save-v0.json` is a real old save; it must alw
   half from each parent, score capped. Selective breeding works; nothing can exceed the maximum.
   Birds from outside the flock get random quality genes from their own ID.
 - Condition and shell quality come from care: moult (autumn), frights, broodiness, hunger, heat, age.
-- Grades are absolute (fair → excellent). Placings against other entries come with show days.
-- CLI: `judge <name>`, `judge eggs`.
+- Grades are absolute (fair → excellent). `judge <name>` / `judge eggs` are practice: judging with no competitors.
 
 Saves: missing GameState fields and rules load with their starting values (`fillNewSettings`).
+
+### The county show (`ShowEvent.swift`)
+
+A recurring show (one every `showIntervalDays`, ~once a season) is where breeding, taming and egg
+quality finally pay off. Before a show you `enter <name>` (a bird routes to its breed class, or the
+pet class) or `enter eggs` (your best matched plate), paying a small entry fee — a coin sink. On the
+show day (a `passNight` step) each entry is judged by the same `Judge` code against `showCompetitors`
+AI entries generated from random IDs (so quality varies), placed 1st/2nd/3rd by score; ribbons pay
+coins and a first place is kept in the trophy case. CLI: `enter <name>`, `enter eggs`, `shows`.
 
 ## Friendliness
 
@@ -100,6 +112,34 @@ breeds) + 60% learned tameness. Bands: wild, skittish, friendly, lap chicken.
 - Start: brooder chick 0.2, chick raised by a hen 0.05, bought bird 0.25.
 - A fox fright and days lost lower tameness. Neglect never does.
 - Effects: half of the pet show class; lap chickens rehome for more.
+
+## Flock turnover and feed
+
+Hens slow and retire with age, so breeding keeps mattering (`Rules.layAgeFactor`, `Bird.isRetired`).
+
+- A hen lays at full rate until `layDeclineStartDays`, then gradually less, down to `layDeclineFloor`.
+- At `retirementAgeDays` (three in-game years) she becomes a beloved non-layer — never death (cozy).
+  Retired hens keep their perch, can still be petted, shown in the pet class, and rehomed.
+- **Premium feed** is an optional coin sink (basic feed stays free). A bag is several day-portions;
+  `feed premium` feeds the flock for the day and lifts that day's laying. CLI: `buy feed`, `feed premium`.
+
+## Foraging
+
+Leaving the coop door open is a real risk/reward, not just a fox gamble. If the flock comes through
+the night, the free-ranging birds forage: they return fed (no feeding needed that day) and a little
+better off — a small lay bonus (`forageLayBonus`) and show-condition bonus (`forageConditionBonus`).
+So each night you choose: close up safe but feed tomorrow, or leave open to forage and risk the fox.
+
+## Saves, difficulty and balance
+
+- **Saves** (`SaveStore.swift`): named slots, atomic writes, and rolling backups (`…bak1/bak2.json`),
+  so a bad write can't lose a game. An unreadable save is quarantined, not overwritten. `SaveFormat`
+  still versions and migrates the state itself.
+- **Difficulty** (`Rules.preset(named:)`): `relaxed`, `standard`, `challenge`. Presets only seed a new
+  game; loading an existing save is unaffected (new rules fields fall back to their defaults).
+- **Balance sim** (`Simulation.swift`): plays many seeded games with a simple keeper policy and reports
+  coins, flock size, Breed Book growth and eggs/day, so the first-guess `Rules` numbers can be tuned
+  from data. CLI: `sim [days] [games]`; `SimulationTests` guards against balance regressions.
 
 ## Look (render spec from a shared parts kit)
 
@@ -160,7 +200,11 @@ words live in the UI.
 - **The broody Silkie** (first hatch): a neighbour's Silkie is sitting on a golf ball. Bring 3
   eggs you know are fertile (candled). 4 days later she thanks you with a Silkie pullet, and
   Speckle & Down starts selling Silkie pullets. Always solvable: the shop sells candled fertile eggs.
-- CLI: `story`, `give eggs`, `buy silkie` (once unlocked).
+- **A laced gift** (after the broody Silkie): a neighbour admires your flock and gifts you a
+  Wyandotte hen, so lacing enters your lines.
+- **A heritage breed** (deliver 4 fertile eggs): earns an Australorp hen and unlocks Australorp
+  pullets at Speckle & Down — the breed's only way into play.
+- CLI: `story`, `give eggs`, `buy silkie` / `buy australorp` (once unlocked).
 
 To add one: one `Storyline` in `Storylines.all`, plus its words in the UI.
 
