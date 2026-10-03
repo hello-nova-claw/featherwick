@@ -31,7 +31,7 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case starterChosen(UUID)
     case fed(units: Int)
     case eggsCollected(count: Int, leftInNest: Int)
-    case eggsSold(count: Int, coins: Int)
+    case eggsSold(count: Int, coins: Int, stale: Int)
     case feedBought(units: Int, cost: Int)
     case coopClosed
     // Night
@@ -50,8 +50,10 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case stuckInBrooder(UUID)
     case noEggsHungry
     case eggLaid(UUID, by: UUID)
-    case eggBroken(by: UUID)
+    case eggBroken(by: UUID)          // nest boxes full: laid on the floor and broke
     case newEggBookEntry(EggBookEntry)
+    case wentBroody(UUID)
+    case broodyEnded(UUID)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -95,18 +97,20 @@ public enum Engine {
             if s.nest.isEmpty { return [.rejected(.noEggsInNest)] }
             let space = s.cartonCapacity - s.carton.count
             if space <= 0 { return [.rejected(.cartonFull)] }
-            let moving = Array(s.nest.prefix(space))
+            var moving = Array(s.nest.prefix(space))
+            for i in moving.indices { moving[i].collectedDay = s.day }
             s.nest.removeFirst(moving.count)
             s.carton += moving
             return [.eggsCollected(count: moving.count, leftInNest: s.nest.count)]
 
         case .sellEggs:
             if s.carton.isEmpty { return [.rejected(.cartonEmpty)] }
-            let total = s.carton.reduce(0) { $0 + s.rules.price(of: $1) }
+            let total = s.carton.reduce(0) { $0 + s.rules.price(of: $1, onDay: s.day) }
+            let stale = s.carton.filter { s.rules.isStale($0, onDay: s.day) }.count
             let count = s.carton.count
             s.coins += total
             s.carton.removeAll()
-            return [.eggsSold(count: count, coins: total)]
+            return [.eggsSold(count: count, coins: total, stale: stale)]
 
         case .buyFeed(let bags):
             if bags < 1 { return [.rejected(.invalidAmount)] }
@@ -220,10 +224,19 @@ public enum Engine {
         }
         s.brooder = stillInBrooder
 
-        // 6. Laying. Hens lay only if they were fed yesterday.
-        ev += lay(&s, &rng)
+        // 6. Broody hens that have sat long enough get up.
+        for i in s.coop.indices {
+            if let until = s.coop[i].broodyUntilDay, until <= s.day {
+                s.coop[i].broodyUntilDay = nil
+                ev.append(.broodyEnded(s.coop[i].id))
+            }
+        }
 
-        // 7. Reset for the new day. The door is opened in the morning.
+        // 7. Laying. Hens lay only if they were fed yesterday. Then a full nest may set a hen broody.
+        ev += lay(&s, &rng)
+        ev += maybeGoBroody(&s, &rng)
+
+        // 8. Reset for the new day. The door is opened in the morning.
         s.fedToday = false
         s.coopDoorOpen = true
         return ev
@@ -271,13 +284,10 @@ public enum Engine {
         guard s.fedToday else { return [.noEggsHungry] }
         var ev: [GameEvent] = []
         let chance = s.rules.layChance[s.season] ?? 0
-        let boxSpace = s.nestBoxes * s.rules.hensPerNestBox
-        var laid = 0
-        for hen in hens where s.day >= hen.noLayUntilDay {
+        for hen in hens where s.day >= hen.noLayUntilDay && !hen.isBroody(onDay: s.day) {
             guard Double.roll(chance, using: &rng) else { continue }
-            laid += 1
-            // Too few nesting boxes: some eggs are laid on the floor and break.
-            if laid > boxSpace, Double.roll(s.rules.floorEggBreakChance, using: &rng) {
+            // Nest boxes full: the hen lays on the floor, and the egg may break.
+            if s.nest.count >= s.nestCapacity, Double.roll(s.rules.floorEggBreakChance, using: &rng) {
                 ev.append(.eggBroken(by: hen.id))
                 continue
             }
@@ -288,6 +298,22 @@ public enum Engine {
             ev.append(.eggLaid(egg.id, by: hen.id))
             let entry = EggBookEntry(colour: egg.colour, speckled: egg.speckled)
             if s.eggBook.insert(entry).inserted { ev.append(.newEggBookEntry(entry)) }
+        }
+        return ev
+    }
+
+    /// A pile of uncollected eggs can set a hen broody (real behaviour). Some breeds go broody far more.
+    static func maybeGoBroody<R: RandomNumberGenerator>(_ s: inout GameState, _ rng: inout R) -> [GameEvent] {
+        guard s.nest.count >= s.rules.broodyNestEggs else { return [] }
+        var ev: [GameEvent] = []
+        for i in s.coop.indices {
+            let hen = s.coop[i]
+            guard hen.sex == .hen, hen.stage(onDay: s.day, rules: s.rules) == .adult,
+                  !hen.isBroody(onDay: s.day) else { continue }
+            if Double.roll(s.rules.broodyChance[hen.breed] ?? 0, using: &rng) {
+                s.coop[i].broodyUntilDay = s.day + s.rules.broodyDays
+                ev.append(.wentBroody(hen.id))
+            }
         }
         return ev
     }

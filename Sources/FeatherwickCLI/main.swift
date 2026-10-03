@@ -21,7 +21,16 @@ func newSave(seed: UInt64) -> SaveFile {
 
 func load() -> SaveFile? {
     guard let data = try? Data(contentsOf: savePath) else { return nil }
-    return try? JSONDecoder().decode(SaveFile.self, from: data)
+    do {
+        return try JSONDecoder().decode(SaveFile.self, from: data)
+    } catch {
+        // The save format changed. Keep the old file instead of overwriting it.
+        let backup = savePath.deletingPathExtension().appendingPathExtension("old.json")
+        try? FileManager.default.removeItem(at: backup)
+        try? FileManager.default.moveItem(at: savePath, to: backup)
+        print("Your save is from an older version and cannot be loaded. It was moved to \(backup.lastPathComponent). Starting a new game.")
+        return nil
+    }
 }
 
 func save(_ file: SaveFile) {
@@ -68,6 +77,7 @@ func label(_ b: Bird, _ s: GameState) -> String {
         parts.append("lays \(p.eggIsSpeckled ? "speckled " : "")\(egg.rawValue)")
     }
     if b.noLayUntilDay > s.day { parts.append("shaken, not laying yet") }
+    if b.isBroody(onDay: s.day) { parts.append("broody") }
     return "\(b.name): " + parts.joined(separator: ", ") + " (\(age))"
 }
 
@@ -94,7 +104,9 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
     case .fed(let units): return "You feed the flock (\(units) feed)."
     case .eggsCollected(let n, let left):
         return "You collect \(n) egg\(n == 1 ? "" : "s")." + (left > 0 ? " \(left) left in the nest: the carton is full." : "")
-    case .eggsSold(let n, let coins): return "Speckle & Down buys \(n) egg\(n == 1 ? "" : "s") for \(coins) coins."
+    case .eggsSold(let n, let coins, let stale):
+        return "Speckle & Down buys \(n) egg\(n == 1 ? "" : "s") for \(coins) coins."
+            + (stale > 0 ? " \(stale) sat in the nest too long and sold at half price." : "")
     case .feedBought(let units, let cost): return "You buy \(units) feed for \(cost) coins."
     case .coopClosed: return "You shut the coop door for the night."
     case .quietNight: return "A quiet night."
@@ -114,9 +126,11 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
     case .stuckInBrooder(let id): return "\(name(id, s)) is ready for the coop, but there is no free perch."
     case .noEggsHungry: return "No eggs today. The hens were not fed yesterday."
     case .eggLaid(_, let by): return "\(name(by, s)) laid an egg."
-    case .eggBroken(let by): return "\(name(by, s)) laid on the floor and the egg broke. More nesting boxes would help."
+    case .eggBroken(let by): return "The nest boxes were full, so \(name(by, s)) laid on the floor and the egg broke."
     case .newEggBookEntry(let entry):
         return "New egg colour: \(entry.speckled ? "speckled " : "")\(entry.colour.rawValue)!"
+    case .wentBroody(let id): return "\(name(id, s)) has gone broody. She fluffs up on the pile of eggs and won't lay for a while."
+    case .broodyEnded(let id): return "\(name(id, s)) has given up sitting and is back to normal."
     }
 }
 
@@ -133,7 +147,7 @@ func look(_ s: GameState) {
     print("Coop (\(s.coop.count)/\(s.perches) perches, \(s.nestBoxes) nesting boxes):")
     s.coop.forEach { print("  " + label($0, s)) }
     if !s.lost.isEmpty { print("Lost: " + s.lost.map(\.bird.name).joined(separator: ", ")) }
-    print("Nest: \(s.nest.count) egg\(s.nest.count == 1 ? "" : "s") · carton \(s.carton.count)/\(s.cartonCapacity)")
+    print("Nest: \(s.nest.count)/\(s.nestCapacity) eggs · carton \(s.carton.count)/\(s.cartonCapacity)")
 }
 
 func book(_ s: GameState) {

@@ -17,8 +17,16 @@ public struct Rules: Codable, Hashable, Sendable {
     public var startBrooderSize = 4
     public var startCartons = 1
     public var cartonSize = 12
-    public var hensPerNestBox = 4
+
+    // Nest boxes. Hens keep laying when eggs are in the nest (real hens do), so the costs of
+    // not collecting are: full boxes (floor eggs break), stale eggs (lower price), and broodiness.
+    public var eggsPerNestBox = 4
     public var floorEggBreakChance = 0.5
+    public var nestFreshDays = 2           // eggs left in the nest longer than this sell as stale
+    public var staleEggPriceFactor = 0.5
+    public var broodyNestEggs = 4          // a pile of this many eggs can set a hen broody
+    public var broodyChance: [Breed: Double] = [.silkie: 0.6, .orpington: 0.3, .wyandotte: 0.15, .araucana: 0.2]
+    public var broodyDays = 7              // a broody hen does not lay
 
     // Fox (never kills)
     public var foxChance = 0.5       // chance the fox visits when the coop is left open
@@ -43,13 +51,19 @@ public struct Rules: Codable, Hashable, Sendable {
 
     public static let standard = Rules()
 
-    public func price(of egg: Egg) -> Int {
-        let base = switch egg.colour {
+    public func isStale(_ egg: Egg, onDay day: Int) -> Bool {
+        (egg.collectedDay ?? day) - egg.layDay > nestFreshDays
+    }
+
+    public func price(of egg: Egg, onDay day: Int) -> Int {
+        var base = switch egg.colour {
         case .cream: creamEggPrice
         case .brown: brownEggPrice
         case .blue: blueEggPrice
         case .olive: oliveEggPrice
         }
-        return base + (egg.speckled ? speckleBonus : 0)
+        base += egg.speckled ? speckleBonus : 0
+        guard isStale(egg, onDay: day) else { return base }
+        return max(1, Int((Double(base) * staleEggPriceFactor).rounded(.down)))
     }
 }

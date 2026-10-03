@@ -100,15 +100,60 @@ struct EngineTests {
         #expect(Engine.apply(.collectEggs, to: &s, using: &rng) == [.eggsCollected(count: 12, leftInNest: 3)])
         #expect(Engine.apply(.collectEggs, to: &s, using: &rng) == [.rejected(.cartonFull)])
         let coins = s.coins
-        #expect(Engine.apply(.sellEggs, to: &s, using: &rng) == [.eggsSold(count: 12, coins: 12 * s.rules.brownEggPrice)])
+        #expect(Engine.apply(.sellEggs, to: &s, using: &rng) == [.eggsSold(count: 12, coins: 12 * s.rules.brownEggPrice, stale: 0)])
         #expect(s.coins == coins + 12 * s.rules.brownEggPrice)
     }
 
-    @Test func eggPrices() {
+    @Test func eggPricesAndStaleness() {
         let r = Rules.standard
         let id = UUID()
-        #expect(r.price(of: Egg(id: id, layDay: 0, motherID: id, colour: .olive, speckled: true)) == r.oliveEggPrice + r.speckleBonus)
-        #expect(r.price(of: Egg(id: id, layDay: 0, motherID: id, colour: .cream, speckled: false)) == r.creamEggPrice)
+        let olive = Egg(id: id, layDay: 0, motherID: id, colour: .olive, speckled: true, collectedDay: 1)
+        #expect(r.price(of: olive, onDay: 9) == r.oliveEggPrice + r.speckleBonus)
+        // Freshness counts days in the nest, not days in the carton.
+        let staleOlive = Egg(id: id, layDay: 0, motherID: id, colour: .olive, speckled: true, collectedDay: 5)
+        #expect(r.price(of: staleOlive, onDay: 5) == (r.oliveEggPrice + r.speckleBonus) / 2)
+        let staleCream = Egg(id: id, layDay: 0, motherID: id, colour: .cream, speckled: false, collectedDay: 9)
+        #expect(r.price(of: staleCream, onDay: 9) == 1)  // never below 1 coin
+    }
+
+    @Test func fullNestBoxesMeanFloorEggs() {
+        var r = calmRules()
+        r.floorEggBreakChance = 1
+        var (s, rng) = startedGame(sex: .hen, rules: r)
+        while s.day < r.adultAge - 1 { night(&s, &rng) }
+        let mother = s.coop[0].id
+        s.nest = (0..<s.nestCapacity).map { _ in Egg(id: makeID(using: &rng), layDay: s.day, motherID: mother, colour: .brown, speckled: false) }
+        s.rules.broodyChance = [:]
+        let ev = night(&s, &rng)
+        #expect(ev.contains(.eggBroken(by: mother)))
+        #expect(s.nest.count == s.nestCapacity)
+    }
+
+    @Test func pileOfEggsCanSetAHenBroody() {
+        var r = calmRules()
+        r.broodyChance = [.orpington: 1]
+        var (s, rng) = startedGame(sex: .hen, rules: r)
+        while s.day < r.adultAge - 1 { night(&s, &rng) }
+        let hen = s.coop[0].id
+        s.nest = (0..<r.broodyNestEggs).map { _ in Egg(id: makeID(using: &rng), layDay: s.day, motherID: hen, colour: .brown, speckled: false) }
+        #expect(night(&s, &rng).contains(.wentBroody(hen)))
+        _ = Engine.apply(.collectEggs, to: &s, using: &rng)
+        var laidWhileBroody = false
+        var ended = false
+        for _ in 0..<r.broodyDays {
+            let ev = night(&s, &rng)
+            if ev.contains(.broodyEnded(hen)) { ended = true; break }
+            if ev.contains(where: { if case .eggLaid = $0 { true } else { false } }) { laidWhileBroody = true }
+        }
+        #expect(!laidWhileBroody)
+        #expect(ended)
+    }
+
+    @Test func hensKeepLayingWithEggsInTheNest() {
+        var (s, rng) = startedGame(sex: .hen, rules: { var r = calmRules(); r.broodyChance = [:]; return r }())
+        while s.day < s.rules.adultAge { night(&s, &rng) }
+        for _ in 0..<3 { night(&s, &rng) }
+        #expect(s.nest.count == 4)  // one egg a day, nothing collected
     }
 
     // MARK: - Fox

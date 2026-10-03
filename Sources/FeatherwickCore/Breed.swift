@@ -80,6 +80,10 @@ public struct Bird: Identifiable, Hashable, Codable, Sendable {
     public var revealed: Bool
     public var timesScared: Int
     public var noLayUntilDay: Int
+    /// While set and in the future, the hen is broody: she sits and does not lay.
+    public var broodyUntilDay: Int?
+
+    public func isBroody(onDay day: Int) -> Bool { (broodyUntilDay ?? Int.min) > day }
 
     public init(
         id: UUID, name: String, breed: Breed, genome: Genome, hatchDay: Int,

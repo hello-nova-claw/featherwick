@@ -10,6 +10,8 @@ public struct Egg: Identifiable, Hashable, Codable, Sendable {
     public let motherID: UUID
     public let colour: EggColour
     public let speckled: Bool
+    /// Set when the egg moves from the nest to the carton. Freshness counts nest days only.
+    public var collectedDay: Int?
 }
 
 /// A bird the fox scared away. It always comes home, once the day has come and a perch is free.
@@ -89,6 +91,7 @@ public struct GameState: Hashable, Codable, Sendable {
     }
 
     public var cartonCapacity: Int { cartons * rules.cartonSize }
+    public var nestCapacity: Int { nestBoxes * rules.eggsPerNestBox }
 
     /// Birds at home (brooder and coop). Lost birds are not fed.
     public var birdsAtHome: [Bird] { brooder + coop }
