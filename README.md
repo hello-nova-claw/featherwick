@@ -90,6 +90,17 @@ changes shape. `Tests/.../Fixtures/save-v0.json` is a real old save; it must alw
 
 Saves: missing GameState fields and rules load with their starting values (`fillNewSettings`).
 
+## Friendliness
+
+`Friendliness.swift`. Score 0...1 = 40% calm genes (8-gene quantitative trait, stronger in calm
+breeds) + 60% learned tameness. Bands: wild, skittish, friendly, lap chicken.
+
+- `pet <name>` and `treat <name>`: once a day per bird each. Gains shrink as a bird gets tamer
+  and never pass 1. Chicks learn 3x faster, growers 1.5x. Chicks with a mother hen learn at half speed.
+- Start: brooder chick 0.2, chick raised by a hen 0.05, bought bird 0.25.
+- A fox fright and days lost lower tameness. Neglect never does.
+- Effects: half of the pet show class; lap chickens rehome for more.
+
 ## Realism rules (tested)
 
 - Lacing shows only on a gold (buff) ground ("gold laced"); barring shows only on black-based birds.

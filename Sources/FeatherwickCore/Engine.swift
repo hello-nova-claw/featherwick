@@ -22,6 +22,10 @@ public enum Command: Hashable, Codable, Sendable {
     case upgradeCoop
     case buy(ShopItem)
     case acceptTrade
+    /// Pick a bird up and handle it gently. Counts once a day per bird.
+    case pet(UUID)
+    /// Give a bird a treat from your hand. Uses one treat. Counts once a day per bird.
+    case giveTreat(UUID)
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -53,6 +57,10 @@ public enum Rejection: Hashable, Codable, Sendable {
     case lastBird
     case noFreePerch
     case noTradeOffer
+    case birdNotHome
+    case alreadyPettedToday
+    case alreadyHadTreatToday
+    case noTreats
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -103,6 +111,10 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case boughtEgg(cost: Int)
     case tradeOffered(rooster: UUID, hen: UUID)
     case tradeAccepted(rooster: UUID, hen: UUID)
+    case boughtTreats(count: Int, cost: Int)
+    case handled(UUID, Handling)
+    /// The bird moved up a friendliness band.
+    case friendlierNow(UUID, Friendliness)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -117,7 +129,7 @@ public enum Engine {
                 id: makeID(using: &rng), name: "", breed: breed,
                 genome: breed.purebred(sex, variety: colour, barred: barred),
                 hatchDay: 0, origin: "Neighbour"
-            ).withFounderQuality())
+            ).withFounderQuality().withTameness(rules.brooderChickTameness))
         }
         return GameState(rules: rules, phase: .choosingStarter(chicks))
     }
@@ -250,6 +262,12 @@ public enum Engine {
         case .buy(let item):
             return buy(item, &s, &rng)
 
+        case .pet(let id):
+            return handle(id, .pet, &s)
+
+        case .giveTreat(let id):
+            return handle(id, .treat, &s)
+
         case .acceptTrade:
             guard let offer = s.tradeOffer else { return [.rejected(.noTradeOffer)] }
             let groups: [WritableKeyPath<GameState, [Bird]>] = [\.coop, \.brooder]
@@ -289,7 +307,7 @@ public enum Engine {
             id: makeID(using: &rng), name: sex == .hen ? "New pullet" : "New cockerel", breed: breed,
             genome: breed.purebred(sex, variety: colour), hatchDay: s.day - s.rules.growerAge,
             origin: origin, revealed: true
-        ).withFounderQuality()
+        ).withFounderQuality().withTameness(s.rules.boughtBirdTameness)
     }
 
     static func buy<R: RandomNumberGenerator>(_ item: ShopItem, _ s: inout GameState, _ rng: inout R) -> [GameEvent] {
@@ -297,6 +315,7 @@ public enum Engine {
         case .pullet: s.rules.pulletPrice
         case .cockerel: s.rules.cockerelPrice
         case .fertileEgg: s.rules.fertileEggPrice
+        case .treats: s.rules.treatBagPrice
         }
         if s.coins < cost { return [.rejected(.notEnoughCoins(needed: cost, have: s.coins))] }
         switch item {
@@ -309,6 +328,10 @@ public enum Engine {
             let entry = BreedBookEntry(bird)
             if s.breedBook.insert(entry).inserted { ev.append(.newBreedBookEntry(entry)) }
             return ev
+        case .treats:
+            s.coins -= cost
+            s.treats += s.rules.treatBagSize
+            return [.boughtTreats(count: s.rules.treatBagSize, cost: cost)]
         case .fertileEgg:
             if s.carton.count >= s.cartonCapacity { return [.rejected(.cartonFull)] }
             // From a local flock: two purebred starter birds, maybe of different breeds.
@@ -321,6 +344,35 @@ public enum Engine {
             s.carton.append(egg)
             return [.boughtEgg(cost: cost)]
         }
+    }
+
+    /// Handling and treats. Birds at home only: lost and boarding birds are out of reach.
+    static func handle(_ id: UUID, _ kind: Handling, _ s: inout GameState) -> [GameEvent] {
+        let homes: [WritableKeyPath<GameState, [Bird]>] = [\.brooder, \.henChicks, \.coop]
+        guard let home = homes.first(where: { s[keyPath: $0].contains { $0.id == id } }),
+              let i = s[keyPath: home].firstIndex(where: { $0.id == id })
+        else {
+            let away = s.lost.contains { $0.bird.id == id } || s.boarding.contains { $0.id == id }
+            return [.rejected(away ? .birdNotHome : .noSuchBird)]
+        }
+        var bird = s[keyPath: home][i]
+        switch kind {
+        case .pet:
+            if bird.lastPettedDay == s.day { return [.rejected(.alreadyPettedToday)] }
+            bird.lastPettedDay = s.day
+        case .treat:
+            if bird.lastTreatDay == s.day { return [.rejected(.alreadyHadTreatToday)] }
+            if s.treats <= 0 { return [.rejected(.noTreats)] }
+            s.treats -= 1
+            bird.lastTreatDay = s.day
+        }
+        let before = bird.friendliness
+        bird.changeTameness(by: Handling.gain(kind, for: bird, withMotherHen: home == \GameState.henChicks,
+                                              day: s.day, rules: s.rules))
+        s[keyPath: home][i] = bird
+        var ev: [GameEvent] = [.handled(id, kind)]
+        if bird.friendliness > before { ev.append(.friendlierNow(id, bird.friendliness)) }
+        return ev
     }
 
     static func updateTradeOffer<R: RandomNumberGenerator>(_ s: inout GameState, _ rng: inout R) -> [GameEvent] {
@@ -384,14 +436,15 @@ public enum Engine {
             guard clutch.hatchDay <= s.day else { waiting.append(clutch); continue }
             var ids: [UUID] = []
             for egg in clutch.eggs {
-                guard let chick = Breeding.hatch(egg, name: "Chick \(s.chicksHatched + 1)", onDay: s.day,
+                guard var chick = Breeding.hatch(egg, name: "Chick \(s.chicksHatched + 1)", onDay: s.day,
                                                  origin: "Henhaven", using: &rng) else { continue }
                 s.chicksHatched += 1
                 if let hen = clutch.henID {
-                    var raised = chick
-                    raised.raisedBy = hen
-                    s.henChicks.append(raised)
+                    chick.raisedBy = hen
+                    chick.tameness = s.rules.broodyChickTameness
+                    s.henChicks.append(chick)
                 } else {
+                    chick.tameness = s.rules.brooderChickTameness
                     s.brooder.append(chick)
                 }
                 ids.append(chick.id)
@@ -446,6 +499,9 @@ public enum Engine {
             for var b in scared {
                 let days = lostDays(timesScared: b.timesScared, rules: r, &rng)
                 b.timesScared += 1
+                // A fright and time living rough make a bird warier of people.
+                let away = min(r.maxLostTamenessLoss, r.lostDayTamenessLoss * Double(days + 1))
+                b.changeTameness(by: -(r.foxFrightTamenessLoss + away))
                 s.lost.append(LostBird(bird: b, returnsOnDay: s.day + 1 + days))
             }
             ev.append(.foxVisited(scared: scared.map(\.id)))
@@ -574,7 +630,7 @@ public enum Engine {
             genome: breed.purebred(.hen, variety: colour),
             hatchDay: s.day - s.rules.giftHenAge, origin: "Neighbour",
             revealed: true  // the neighbour tells you her breed and sex
-        ).withFounderQuality()
+        ).withFounderQuality().withTameness(s.rules.boughtBirdTameness)
         s.giftHenGiven = true
         if s.brooder.count < s.brooderSize { s.brooder.append(hen) } else { s.coop.append(hen) }
         var ev: [GameEvent] = [.neighbourGaveHen(hen.id)]

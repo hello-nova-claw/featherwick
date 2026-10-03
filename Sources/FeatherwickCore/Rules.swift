@@ -66,6 +66,22 @@ public struct Rules: Codable, Hashable, Sendable {
     public var lostDaysCap = 30
     public var scaredNoLayDays = 3   // a frightened hen stops laying for a while
 
+    // Friendliness (see Friendliness.swift)
+    public var petTamenessGain = 0.06        // picking a bird up, once a day
+    public var treatTamenessGain = 0.04      // a treat from your hand, once a day
+    public var chickHandlingBoost = 3.0      // chicks learn trust fastest
+    public var growerHandlingBoost = 1.5
+    public var motherHenHandlingFactor = 0.5 // a broody hen keeps her chicks wary
+    public var brooderChickTameness = 0.2    // hatched in the incubator, raised in the brooder
+    public var broodyChickTameness = 0.05    // hatched under a hen
+    public var boughtBirdTameness = 0.25     // a young bird from a shop or a neighbour
+    public var foxFrightTamenessLoss = 0.15
+    public var lostDayTamenessLoss = 0.02    // per day away
+    public var maxLostTamenessLoss = 0.3
+    public var treatBagSize = 10
+    public var treatBagPrice = 5
+    public var lapChickenRehomeBonus = 3     // people pay more for a bird that loves a cuddle
+
     // Economy
     public var startCoins = 20
     // Basic feed is free and unlimited. Feeding is still a daily task: unfed hens don't lay.
@@ -94,6 +110,7 @@ public struct Rules: Codable, Hashable, Sendable {
         if p.colour == .splash { value += rareSplash }
         if p.colour == .blue { value += rareSmall }
         if p.isBarred { value += rareSmall }
+        if bird.friendliness == .lapChicken { value += lapChickenRehomeBonus }
         if bird.sex == .hen, stage == .adult, let egg = p.eggColour {
             if egg == .olive { value += rareOliveEggs } else if egg == .blue { value += rareSmall }
             if p.eggIsSpeckled { value += rareSpeckledEggs }

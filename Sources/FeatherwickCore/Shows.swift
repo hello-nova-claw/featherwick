@@ -84,6 +84,7 @@ public enum JudgeNote: Hashable, Codable, Sendable {
     case broody
     case hungry
     case inFineCondition
+    case friendliness(Friendliness)
     // Eggs
     case shape(Band)
     case shell(Band)
@@ -123,8 +124,7 @@ public struct JudgeCard: Hashable, Codable, Sendable {
 /// Points per part of the judging. Each kind of class adds up to 100.
 public enum ShowPoints {
     public static let breedType = 50, breedColour = 30, breedCondition = 20
-    /// SIMPLIFIED until the friendliness trait exists: the pet class is judged on condition only.
-    public static let petCondition = 100
+    public static let petCondition = 50, petFriendliness = 50
     public static let eggMatch = 30, eggShape = 30, eggShell = 20, eggFreshness = 20
     public static let eggPlate = 3
 }
@@ -180,11 +180,13 @@ public enum Judge {
         return card(cls, points, [.standardColour(look.colourName), .type(.init(type))] + conditionNotes)
     }
 
-    /// Any bird, purebred or cross. SIMPLIFIED: condition only, until birds have a friendliness score.
+    /// Any bird, purebred or cross: judged on condition and on how calmly it sits in the judge's hands.
     static func petClass(_ bird: Bird, _ s: GameState) -> JudgeCard {
         guard bird.stage(onDay: s.day, rules: s.rules) != .chick else { return disqualified(.pet, .tooYoung) }
         let (condition, notes) = condition(of: bird, in: s)
-        return card(.pet, condition * Double(ShowPoints.petCondition), notes)
+        let points = condition * Double(ShowPoints.petCondition)
+            + bird.friendlinessScore * Double(ShowPoints.petFriendliness)
+        return card(.pet, points, [.friendliness(bird.friendliness)] + notes)
     }
 
     // MARK: - Eggs

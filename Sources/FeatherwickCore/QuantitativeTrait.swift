@@ -53,7 +53,12 @@ public struct QuantitativeTrait: Sendable {
     public static let eggShape = QuantitativeTrait(name: "egg shape", prefix: "eggShape", genes: 6,
                                                    summary: "Egg shape. One of many small additive genes.")
 
-    public static let all: [QuantitativeTrait] = [showType, eggShape]
+    /// Calm temperament: how easily a bird learns to trust people. About 40% of friendliness;
+    /// the rest is how it was raised and handled. Real fearfulness in chickens is partly heritable.
+    public static let calm = QuantitativeTrait(name: "calm", prefix: "calm", genes: 8,
+                                              summary: "Calm temperament. One of many small additive genes.")
+
+    public static let all: [QuantitativeTrait] = [showType, eggShape, calm]
 }
 
 extension Bird {
@@ -63,14 +68,12 @@ extension Bird {
         let bytes = withUnsafeBytes(of: id.uuid) { Array($0) }
         let seed = bytes.prefix(8).reduce(UInt64(0)) { ($0 << 8) | UInt64($1) }
         var local = SeededRNG(seed: seed)
-        var genome = self.genome
-        for trait in QuantitativeTrait.all { trait.randomise(&genome, using: &local) }
-        var copy = Bird(id: id, name: name, breed: breed, genome: genome, hatchDay: hatchDay,
-                        motherID: motherID, fatherID: fatherID, origin: origin,
-                        revealed: revealed, timesScared: timesScared, noLayUntilDay: noLayUntilDay)
-        copy.broodyUntilDay = broodyUntilDay
-        copy.raisedBy = raisedBy
-        copy.purebredFlag = purebredFlag
+        var copy = self
+        for trait in QuantitativeTrait.all {
+            // Temperament runs in breeds: calm breeds carry more calm genes.
+            let chance = trait.name == QuantitativeTrait.calm.name ? breed.definition.calmness : 0.5
+            trait.randomise(&copy.genome, plusChance: chance, using: &local)
+        }
         return copy
     }
 }

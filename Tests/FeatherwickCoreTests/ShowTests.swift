@@ -180,7 +180,9 @@ struct ShowTests {
         var rng = SeededRNG(seed: 7)
         let s = Self.showDay()
         let cross = Self.bird(.orpington, pure: false, rng: &rng)
-        #expect(Judge.judge(cross, in: .pet, state: s).score == 100)
+        // Fine condition (50) + friendliness 0.4 × 0.5 calm + 0.6 × 0.3 tameness = 0.38 (19).
+        let card = Judge.judge(cross, in: .pet, state: s)
+        #expect(card.score == 69 && card.notes.first == .friendliness(.skittish))
         #expect(Judge.judge(Self.bird(.orpington, age: 2, rng: &rng), in: .pet, state: s).notes == [.tooYoung])
     }
 

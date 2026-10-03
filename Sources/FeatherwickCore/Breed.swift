@@ -37,7 +37,7 @@ public struct Bird: Identifiable, Hashable, Codable, Sendable {
     /// V1 PLACEHOLDER RULE: a chick takes its mother's breed (like Pokémon).
     /// Open question: how mixed-breed chicks show in the Breed Book.
     public let breed: Breed
-    public let genome: Genome
+    public internal(set) var genome: Genome
     public let hatchDay: Int
     public let motherID: UUID?
     public let fatherID: UUID?
@@ -54,6 +54,12 @@ public struct Bird: Identifiable, Hashable, Codable, Sendable {
     public var raisedBy: UUID?
     /// Nil or true: purebred. False: a cross of two breeds (then `breed` is only the mother's line).
     public var purebredFlag: Bool?
+    /// Learned trust in people, 0...1: handling, treats, frights, time lost. Nil = an older bird, average.
+    public var tameness: Double?
+    /// The last day the player picked this bird up. Handling counts once a day.
+    public var lastPettedDay: Int?
+    /// The last day the player gave this bird a treat. Treats count once a day.
+    public var lastTreatDay: Int?
 
     public var isPurebred: Bool { purebredFlag ?? true }
 

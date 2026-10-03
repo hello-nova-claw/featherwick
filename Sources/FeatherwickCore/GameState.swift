@@ -34,7 +34,7 @@ public struct Egg: Identifiable, Hashable, Codable, Sendable {
 }
 
 public enum ShopItem: String, Hashable, Codable, Sendable, CaseIterable {
-    case pullet, cockerel, fertileEgg
+    case pullet, cockerel, fertileEgg, treats
 }
 
 /// The safety net. A flock of only roosters, with too few coins for a pullet, can never lay or hatch.
@@ -98,6 +98,8 @@ public struct GameState: Hashable, Codable, Sendable {
     public var giftHenGiven = false
 
     public var coins: Int
+    /// Treats in the bag (mealworms). Bought at Speckle & Down.
+    public var treats = 0
     public var fedToday = false
     public var coopDoorOpen = true
 

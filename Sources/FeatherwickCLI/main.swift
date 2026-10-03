@@ -60,7 +60,7 @@ func label(_ b: Bird, _ s: GameState) -> String {
     let p = b.phenotype
     let age = "day \(b.age(onDay: s.day))"
     guard b.revealed else {
-        return "\(b.name): chick, \(downText(p.chickDown)), breed ?, sex ? (\(age))"
+        return "\(b.name): chick, \(downText(p.chickDown)), breed ?, sex ?, \(friendlyText(b.friendliness)) (\(age))"
     }
     let kind: String = switch (stage, b.sex) {
     case (.chick, .hen): "hen chick"
@@ -76,7 +76,17 @@ func label(_ b: Bird, _ s: GameState) -> String {
     }
     if b.noLayUntilDay > s.day { parts.append("shaken, not laying yet") }
     if b.isBroody(onDay: s.day) { parts.append("broody") }
+    parts.append(friendlyText(b.friendliness))
     return "\(b.name): " + parts.joined(separator: ", ") + " (\(age))"
+}
+
+func friendlyText(_ f: Friendliness) -> String {
+    switch f {
+    case .wild: "wild"
+    case .skittish: "skittish"
+    case .friendly: "friendly"
+    case .lapChicken: "a lap chicken"
+    }
 }
 
 func name(_ id: UUID, _ s: GameState) -> String { s.bird(id)?.name ?? "a bird" }
@@ -87,7 +97,6 @@ func colourText(_ p: Phenotype) -> String {
     return (p.isBarred ? "barred " : "") + p.colour.rawValue
 }
 
-/// Finds a bird by name, ignoring case. "chick 3" can be typed as "chick3" too.
 func noteText(_ n: JudgeNote) -> String {
     switch n {
     case .tooYoung: "too young to show"
@@ -104,6 +113,7 @@ func noteText(_ n: JudgeNote) -> String {
     case .broody: "broody and out of condition"
     case .hungry: "not fed today"
     case .inFineCondition: "in fine condition"
+    case .friendliness(let f): friendlyText(f)
     case .shape(let b): "shape \(b.rawValue)"
     case .shell(let b): "shells \(b.rawValue)"
     case .staleEggs(let n): "\(n) stale"
@@ -121,6 +131,7 @@ func cardText(_ c: JudgeCard) -> String {
     return "  \(c.showClass.name): \(grade) (\(c.score)/100) · " + c.notes.map(noteText).joined(separator: ", ")
 }
 
+/// Finds a bird by name, ignoring case. "chick 3" can be typed as "chick3" too.
 func findBird(_ query: String, _ s: GameState) -> Bird? {
     let q = query.lowercased().replacingOccurrences(of: " ", with: "")
     return (s.birdsAtHome + s.boarding).first { $0.name.lowercased().replacingOccurrences(of: " ", with: "") == q }
@@ -156,6 +167,10 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         case .lastBird: "That's your only bird. Keep at least one, or Henhaven would be empty."
         case .noFreePerch: "There's no free perch for a new bird. Rehome a bird or upgrade the coop first."
         case .noTradeOffer: "Nobody is offering a trade right now."
+        case .birdNotHome: "That bird is not at home right now."
+        case .alreadyPettedToday: "You already gave that bird a cuddle today. Try again tomorrow."
+        case .alreadyHadTreatToday: "That bird already had a treat today."
+        case .noTreats: "Your treat bag is empty. Buy more: buy treats"
         case .brooderFull(let room):
             room == 0
                 ? "The brooder is full. Make room first: rehome a bird or upgrade the coop so the brooder birds can move out."
@@ -204,6 +219,15 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
             + "for \(name(offer.roosterID, s)): \(label(offer.hen, s)). To agree: accept trade"
     case .tradeAccepted(let rooster, let hen):
         return "\(name(rooster, s)) goes to his new flock, and \(name(hen, s)) moves into Henhaven."
+    case .boughtTreats(let count, let cost):
+        return "You buy a bag of \(count) mealworm treats for \(cost) coins. You have \(s.treats) treats."
+    case .handled(let id, let kind):
+        let n = name(id, s)
+        return kind == .pet
+            ? "You pick up \(n) and hold \(n) for a while."
+            : "\(n) takes a mealworm from your hand. \(s.treats) treats left."
+    case .friendlierNow(let id, let f):
+        return "\(name(id, s)) seems \(f == .lapChicken ? "to love being held now" : "\(friendlyText(f)) now")."
     case .noEggsHungry: return "No eggs today. The hens were not fed yesterday."
     case .eggLaid(_, let by): return "\(name(by, s)) laid an egg."
     case .eggBroken(let by): return "The nest boxes were full, so \(name(by, s)) laid on the floor and the egg broke."
@@ -324,6 +348,9 @@ Commands:
   rehome <name>        a neighbour adopts the bird and pays you (rarer birds pay more)
   shop                 see what Speckle & Down sells
   buy pullet|cockerel|egg   buy a young hen, a young rooster, or a fertile egg
+  buy treats           a bag of mealworm treats
+  pet <name>           pick a bird up and hold it (once a day; chicks learn trust fastest)
+  treat <name>         give a bird a treat from your hand (once a day)
   accept trade         accept a neighbour's offer of a hen for a rooster
   upgrade coop         add \(game.state.rules.perchesPerUpgrade) perches (\(game.state.rules.coopUpgradePrice) coins)
   close                shut the coop door for the night
@@ -368,7 +395,8 @@ while true {
         case "pullet", "hen": run(.buy(.pullet))
         case "cockerel", "rooster": run(.buy(.cockerel))
         case "egg", "fertile": run(.buy(.fertileEgg))
-        default: print("You can buy: pullet, cockerel, egg, incubator. Basic feed is free.")
+        case "treats", "treat", "mealworms": run(.buy(.treats))
+        default: print("You can buy: pullet, cockerel, egg, treats, incubator. Basic feed is free.")
         }
     case "shop":
         let r = game.state.rules
@@ -378,6 +406,7 @@ while true {
           cockerel    a young rooster, breed known    \(r.cockerelPrice) coins
           egg         a fertile egg from a local flock \(r.fertileEggPrice) coins
           incubator   holds \(r.bigIncubatorSize) eggs                   \(r.incubatorPrice) coins
+          treats      \(r.treatBagSize) mealworms                        \(r.treatBagPrice) coins
         """)
     case "accept":
         run(.acceptTrade)
@@ -398,6 +427,9 @@ while true {
     case "value":
         guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("Use: value <name>"); break }
         print("A neighbour would pay \(game.state.rules.rehomeValue(of: bird, onDay: game.state.day)) coins for \(bird.name).")
+    case "pet", "cuddle", "treat":
+        guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("Use: \(verb) <name>"); break }
+        run(verb == "treat" ? .giveTreat(bird.id) : .pet(bird.id))
     case "judge":
         guard words.count > 1 else { print("Use: judge <name> or judge eggs"); break }
         if words[1] == "eggs" {
