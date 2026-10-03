@@ -199,6 +199,9 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         return "Peeping \(where_)! \(ids.count) chick\(ids.count == 1 ? "" : "s") hatched: "
             + ids.compactMap { s.bird($0) }.map { "\($0.name) (\(downText($0.phenotype.chickDown)))" }.joined(separator: ", ")
     case .renamed(let id): return "Renamed to \(name(id, s))."
+    case .roostersSquabbling(let extra):
+        return "The roosters were squabbling again. The hens are unsettled and laying less. "
+            + "There \(extra == 1 ? "is 1 rooster" : "are \(extra) roosters") too many for this many hens (1 rooster per \(s.rules.hensPerRooster) hens, or just 1)."
     }
 }
 

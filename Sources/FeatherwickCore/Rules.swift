@@ -37,6 +37,10 @@ public struct Rules: Codable, Hashable, Sendable {
     public var bigIncubatorSize = 6        // the one you buy
     public var incubatorPrice = 40
 
+    // Rooster tension (never harm: hens just lay less)
+    public var hensPerRooster = 5          // one rooster is always fine; beyond that, 1 per 5 hens
+    public var extraRoosterLayPenalty = 0.15
+
     // Speckle & Down shop
     public var pulletPrice = 25            // a young hen, breed and sex known
     public var cockerelPrice = 15          // a young rooster
@@ -94,6 +98,14 @@ public struct Rules: Codable, Hashable, Sendable {
             if p.eggIsSpeckled { value += rareSpeckledEggs }
         }
         return value
+    }
+
+    /// Roosters in the coop beyond what the hens can bear. Cockerels count too.
+    public func extraRoosters(inCoop coop: [Bird], onDay day: Int) -> Int {
+        let roosters = coop.filter { $0.sex == .rooster && $0.stage(onDay: day, rules: self) >= .grower }.count
+        let hens = coop.filter { $0.sex == .hen && $0.stage(onDay: day, rules: self) >= .grower }.count
+        let allowed = max(1, (hens + hensPerRooster - 1) / hensPerRooster)
+        return max(0, roosters - allowed)
     }
 
     public func isStale(_ egg: Egg, onDay day: Int) -> Bool {

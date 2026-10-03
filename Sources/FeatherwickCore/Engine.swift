@@ -87,6 +87,8 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case newEggBookEntry(EggBookEntry)
     case wentBroody(UUID)
     case broodyEnded(UUID)
+    /// Too many roosters for the hens: the hens are unsettled and lay less. Nobody is hurt.
+    case roostersSquabbling(extra: Int)
     // Hatching
     case incubatorBought(cost: Int, size: Int)
     /// First fertile egg ever: the neighbour gives her old 1-egg incubator (and the CLI explains hatching).
@@ -595,7 +597,10 @@ public enum Engine {
         guard !hens.isEmpty else { return [] }
         guard s.fedToday else { return [.noEggsHungry] }
         var ev: [GameEvent] = []
-        let chance = s.rules.layChance[s.season] ?? 0
+        let extra = s.rules.extraRoosters(inCoop: s.coop, onDay: s.day)
+        if extra > 0 { ev.append(.roostersSquabbling(extra: extra)) }
+        let calm = max(0, 1 - Double(extra) * s.rules.extraRoosterLayPenalty)
+        let chance = (s.rules.layChance[s.season] ?? 0) * calm
         // Any adult rooster in the coop fertilises the hens' eggs. (A breeding pen comes later.)
         let roosters = s.coop.filter { $0.sex == .rooster && $0.stage(onDay: s.day, rules: s.rules) == .adult }
         for hen in hens where s.day >= hen.noLayUntilDay && !hen.isBroody(onDay: s.day) {
