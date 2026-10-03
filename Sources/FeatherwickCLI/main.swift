@@ -113,6 +113,7 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         case .henAlreadySitting: "She is already sitting on eggs."
         case .clutchTooBig(let max): "That's too many eggs. The most is \(max)."
         case .notEnoughEggsInCarton(let have): "You only have \(have) egg\(have == 1 ? "" : "s") in your carton. Collect first: collect"
+        case .nothingToCandle: "You have already candled every egg in the carton."
         case .brooderFull(let room): "The brooder only has room for \(room) more chick\(room == 1 ? "" : "s"). Set fewer eggs."
         }
     case .starterChosen(let id): return "You take \(name(id, s)) home and settle them under the heat lamp."
@@ -188,7 +189,12 @@ func look(_ s: GameState) {
         print("Incubator: " + (c.map { "\($0.eggs.count) eggs, hatch day \($0.hatchDay)" } ?? "empty"))
     }
     if !s.lost.isEmpty { print("Lost: " + s.lost.map(\.bird.name).joined(separator: ", ")) }
-    print("Nest: \(s.nest.count)/\(s.nestCapacity) eggs · carton \(s.carton.count)/\(s.cartonCapacity)")
+    let fertile = s.carton.filter { $0.isCandled && $0.isFertile }.count
+    let clear = s.carton.filter { $0.isCandled && !$0.isFertile }.count
+    let unchecked = s.carton.count - fertile - clear
+    var cartonInfo = "carton \(s.carton.count)/\(s.cartonCapacity)"
+    if fertile + clear > 0 { cartonInfo += " (\(fertile) fertile, \(clear) clear, \(unchecked) not candled)" }
+    print("Nest: \(s.nest.count)/\(s.nestCapacity) eggs · \(cartonInfo)")
 }
 
 func book(_ s: GameState) {
@@ -209,6 +215,8 @@ Commands:
   feed                 feed everyone for today
   collect              move eggs from the nest to your carton
   sell                 sell every egg in your carton
+  sell clear           sell every egg except the ones you know are fertile
+  candle               hold the carton eggs up to a light to see which are fertile
   buy feed [bags]      buy feed (\(game.state.rules.feedBagUnits) per bag, \(game.state.rules.feedBagPrice) coins)
   buy incubator        buy an incubator (\(game.state.rules.incubatorPrice) coins)
   incubate <n>         candle n eggs from the carton; fertile ones go in the incubator
@@ -247,7 +255,8 @@ while true {
         run(.chooseStarter(index: index - 1, name: original))
     case "feed", "f": run(.feed)
     case "collect", "c": run(.collectEggs)
-    case "sell": run(.sellEggs)
+    case "sell": run(words.count > 1 && words[1] == "clear" ? .sellClearEggs : .sellEggs)
+    case "candle": run(.candle)
     case "buy":
         if words.count > 1, words[1] == "feed" {
             run(.buyFeed(bags: words.count > 2 ? Int(words[2]) ?? 0 : 1))

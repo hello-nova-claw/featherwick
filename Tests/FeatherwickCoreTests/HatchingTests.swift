@@ -121,6 +121,38 @@ struct HatchingTests {
         #expect(later.contains(.broodyEnded(henID)))
     }
 
+    @Test func candleThenSellOnlyClearEggs() {
+        var (s, rng) = startedGame(sex: .hen)
+        let hen = adult(.araucana, .hen, day: 0, rules: s.rules, rng: &rng)
+        let rooster = adult(.orpington, .rooster, day: 0, rules: s.rules, rng: &rng)
+        s.carton = [fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng),
+                    clearEgg(mother: hen, day: 0, rng: &rng),
+                    clearEgg(mother: hen, day: 0, rng: &rng)]
+        #expect(Engine.apply(.candle, to: &s, using: &rng) == [.candled(fertile: 1, clear: 2)])
+        #expect(Engine.apply(.candle, to: &s, using: &rng) == [.rejected(.nothingToCandle)])
+        let ev = Engine.apply(.sellClearEggs, to: &s, using: &rng)
+        guard case .eggsSold(let n, _, _) = ev.first else { Issue.record("not sold"); return }
+        #expect(n == 2)
+        #expect(s.carton.count == 1 && s.carton[0].isFertile)
+    }
+
+    @Test func knownFertileEggsAreSetFirstAndKnownClearAreSkipped() {
+        var (s, rng) = startedGame(sex: .hen)
+        s.hasIncubator = true
+        let hen = adult(.araucana, .hen, day: 0, rules: s.rules, rng: &rng)
+        let rooster = adult(.orpington, .rooster, day: 0, rules: s.rules, rng: &rng)
+        var clear = clearEgg(mother: hen, day: 0, rng: &rng)
+        clear.candled = true
+        var fertile = fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng)
+        fertile.candled = true
+        s.carton = [clear, fertile]
+        // Only 1 usable egg: the known-clear one is not offered.
+        #expect(Engine.apply(.incubate(count: 2), to: &s, using: &rng) == [.rejected(.notEnoughEggsInCarton(have: 1))])
+        // Already candled, so no new candling event, just the set.
+        #expect(Engine.apply(.incubate(count: 1), to: &s, using: &rng) == [.eggsSet(count: 1, hen: nil, hatchDay: s.day + 1)])
+        #expect(s.carton == [clear])
+    }
+
     @Test func renameAnyBird() {
         var (s, rng) = startedGame(sex: .hen)
         let id = s.brooder[0].id

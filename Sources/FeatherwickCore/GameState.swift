@@ -18,7 +18,11 @@ public struct Egg: Identifiable, Hashable, Codable, Sendable {
     public var embryo: Genome?
     public var motherBreed: Breed?
 
+    /// True once the player has held it up to a light. Only then does the player know if it is fertile.
+    public var candled: Bool?
+
     public var isFertile: Bool { embryo != nil }
+    public var isCandled: Bool { candled == true }
 }
 
 /// Eggs being hatched: under a broody hen (henID set) or in the incubator (henID nil).

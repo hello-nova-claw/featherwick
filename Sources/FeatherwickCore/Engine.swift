@@ -14,6 +14,10 @@ public enum Command: Hashable, Codable, Sendable {
     /// Candle eggs from the carton and set the fertile ones under a broody hen.
     case sit(hen: UUID, count: Int)
     case rename(UUID, name: String)
+    /// Hold every unchecked egg in the carton up to a light: shows which are fertile.
+    case candle
+    /// Sell every egg except the ones known to be fertile.
+    case sellClearEggs
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -38,6 +42,7 @@ public enum Rejection: Hashable, Codable, Sendable {
     case clutchTooBig(max: Int)
     case notEnoughEggsInCarton(have: Int)
     case brooderFull(room: Int)
+    case nothingToCandle
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -124,14 +129,23 @@ public enum Engine {
             s.carton += moving
             return [.eggsCollected(count: moving.count, leftInNest: s.nest.count)]
 
-        case .sellEggs:
-            if s.carton.isEmpty { return [.rejected(.cartonEmpty)] }
-            let total = s.carton.reduce(0) { $0 + s.rules.price(of: $1, onDay: s.day) }
-            let stale = s.carton.filter { s.rules.isStale($0, onDay: s.day) }.count
-            let count = s.carton.count
+        case .sellEggs, .sellClearEggs:
+            let keepFertile = command == .sellClearEggs
+            let selling = s.carton.filter { !(keepFertile && $0.isCandled && $0.isFertile) }
+            if selling.isEmpty { return [.rejected(.cartonEmpty)] }
+            let total = selling.reduce(0) { $0 + s.rules.price(of: $1, onDay: s.day) }
+            let stale = selling.filter { s.rules.isStale($0, onDay: s.day) }.count
+            let sold = Set(selling.map(\.id))
             s.coins += total
-            s.carton.removeAll()
-            return [.eggsSold(count: count, coins: total, stale: stale)]
+            s.carton.removeAll { sold.contains($0.id) }
+            return [.eggsSold(count: selling.count, coins: total, stale: stale)]
+
+        case .candle:
+            let unchecked = s.carton.indices.filter { !s.carton[$0].isCandled }
+            if unchecked.isEmpty { return [.rejected(s.carton.isEmpty ? .cartonEmpty : .nothingToCandle)] }
+            for i in unchecked { s.carton[i].candled = true }
+            let fertile = unchecked.filter { s.carton[$0].isFertile }.count
+            return [.candled(fertile: fertile, clear: unchecked.count - fertile)]
 
         case .buyFeed(let bags):
             if bags < 1 { return [.rejected(.invalidAmount)] }
@@ -161,9 +175,9 @@ public enum Engine {
             if !s.hasIncubator { return [.rejected(.noIncubator)] }
             if s.incubatorClutch != nil { return [.rejected(.incubatorBusy)] }
             if let r = checkClutchSize(count, s) { return [.rejected(r)] }
-            let fertile = s.carton.prefix(count).filter(\.isFertile).count
+            // Every egg set could hatch, so the brooder needs room for all of them.
             let room = s.brooderSize - s.brooder.count
-            if fertile > room { return [.rejected(.brooderFull(room: room))] }
+            if count > room { return [.rejected(.brooderFull(room: room))] }
             return setEggs(count: count, hen: nil, hatchDay: s.day + s.rules.incubatorHatchDays, &s)
 
         case .sit(let henID, let count):
@@ -195,21 +209,35 @@ public enum Engine {
 
     // MARK: - Hatching
 
+    /// Eggs worth trying to hatch, best first: known fertile, then unchecked. Known-clear eggs are skipped.
+    static func hatchCandidates(_ s: GameState, count: Int) -> [Egg] {
+        let known = s.carton.filter { $0.isCandled && $0.isFertile }
+        let unchecked = s.carton.filter { !$0.isCandled }
+        return Array((known + unchecked).prefix(count))
+    }
+
     static func checkClutchSize(_ count: Int, _ s: GameState) -> Rejection? {
         if count < 1 { return .invalidAmount }
         if count > s.rules.maxClutch { return .clutchTooBig(max: s.rules.maxClutch) }
-        if s.carton.count < count { return .notEnoughEggsInCarton(have: s.carton.count) }
+        let usable = hatchCandidates(s, count: Int.max).count
+        if usable < count { return .notEnoughEggsInCarton(have: usable) }
         return nil
     }
 
-    /// Candles the oldest eggs in the carton. Clear (infertile) eggs go back in the carton.
+    /// Candles the chosen eggs. Clear (infertile) eggs stay in the carton, now marked as clear.
     /// Only fertile eggs are set, so every egg that is set will hatch (cozy rule).
     static func setEggs(count: Int, hen: UUID?, hatchDay: Int, _ s: inout GameState) -> [GameEvent] {
-        let chosen = Array(s.carton.prefix(count))
-        s.carton.removeFirst(count)
+        let chosen = hatchCandidates(s, count: count)
+        let chosenIDs = Set(chosen.map(\.id))
         let fertile = chosen.filter(\.isFertile)
-        s.carton.insert(contentsOf: chosen.filter { !$0.isFertile }, at: 0)
-        var ev: [GameEvent] = [.candled(fertile: fertile.count, clear: chosen.count - fertile.count)]
+        s.carton.removeAll { chosenIDs.contains($0.id) && $0.isFertile }
+        for i in s.carton.indices where chosenIDs.contains(s.carton[i].id) { s.carton[i].candled = true }
+        let newlyChecked = chosen.filter { !$0.isCandled }
+        let newlyFertile = newlyChecked.filter(\.isFertile).count
+        var ev: [GameEvent] = []
+        if !newlyChecked.isEmpty {
+            ev.append(.candled(fertile: newlyFertile, clear: newlyChecked.count - newlyFertile))
+        }
         if !fertile.isEmpty {
             s.clutches.append(Clutch(henID: hen, eggs: fertile, hatchDay: hatchDay))
             ev.append(.eggsSet(count: fertile.count, hen: hen, hatchDay: hatchDay))
