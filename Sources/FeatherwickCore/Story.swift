@@ -75,7 +75,33 @@ public enum Storylines {
         rewards: [.giftBird(.silkie, .hen), .unlockShopBreed(.silkie)]
     )
 
-    public static let all: [Storyline] = [broodySilkie]
+    /// Once the Silkie story is done, a neighbour who keeps Wyandottes admires your growing flock
+    /// and, a few days later, brings round one of her laced girls. A pure gift of time, no errands.
+    public static let lacedGift = Storyline(
+        id: "lacedGift",
+        trigger: .chicksHatched(atLeast: 4),
+        after: ["broodySilkie"],
+        steps: [
+            StoryStep(id: "admiring", goal: .waitDays(3)),
+        ],
+        rewards: [.giftBird(.wyandotte, .hen)]
+    )
+
+    /// A travelling keeper is retiring her heritage Australorp line and looking for good homes.
+    /// Hatch a proper flock, hand her a few fertile eggs to prove you can raise them, and after she
+    /// settles in she leaves you a hen — and tells Speckle & Down to stock the breed for you.
+    public static let heritageBreed = Storyline(
+        id: "heritageBreed",
+        trigger: .chicksHatched(atLeast: 8),
+        after: ["lacedGift"],
+        steps: [
+            StoryStep(id: "bringEggs", goal: .deliverFertileEggs(4)),
+            StoryStep(id: "settling", goal: .waitDays(4)),
+        ],
+        rewards: [.giftBird(.australorp, .hen), .unlockShopBreed(.australorp)]
+    )
+
+    public static let all: [Storyline] = [broodySilkie, lacedGift, heritageBreed]
 
     public static func story(_ id: String) -> Storyline? { all.first { $0.id == id } }
 }

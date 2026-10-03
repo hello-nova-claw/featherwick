@@ -154,11 +154,12 @@ public enum BreedTable {
             look: BreedLook(body: .light, comb: .pea, legTone: .willow, size: 0.85),
             note: "Lays blue eggs. Crossed with brown-egg breeds, makes olive eggers."),
         BreedDefinition(
-            id: .australorp, displayName: "Australorp", status: .planned, isStarter: false,
+            id: .australorp, displayName: "Australorp", status: .inGame, isStarter: false,
             signature: [.two(BrownShell.brown)],
             varieties: [.black, .blue], broodiness: 0.25, calmness: 0.65,
             look: BreedLook(body: .heavy, comb: .single, legTone: .slate, size: 1.1),
-            note: "Australian. Black with a green sheen, a famous layer. Brown eggs."),
+            note: "Australian. Black with a green sheen, a famous layer. Brown eggs. "
+                + "Not a starter: comes to Featherwick through the heritage-breed storyline."),
         BreedDefinition(
             id: .plymouthRock, displayName: "Plymouth Rock", status: .planned, isStarter: false,
             signature: [.two(BrownShell.brown)],

@@ -98,6 +98,18 @@ func storyText(_ id: String, step: String?) -> String {
         """
     case ("broodySilkie", "sitting"):
         return "The Silkie settles onto your eggs with a happy grumble. Check back in a few days."
+    case ("lacedGift", nil):
+        return """
+        The Wyandotte keeper two doors down stops to admire your flock over the fence. "You've a proper \
+        little henhaven going. Give me a few days — I've a girl who'd be happier with you."
+        """
+    case ("heritageBreed", nil):
+        return """
+        A travelling keeper is retiring her heritage Australorp line. "They're grand layers, gentle as \
+        anything. Bring me 4 eggs you know are fertile, so I know they'll be in good hands." (candle, then: give eggs)
+        """
+    case ("heritageBreed", "settling"):
+        return "The Australorp hen is settling in. Give her a few days to find her feet."
     default:
         return "Something is happening in Featherwick. Type: story"
     }
@@ -167,6 +179,7 @@ func noteText(_ n: JudgeNote) -> String {
     case .broody: "broody and out of condition"
     case .hungry: "not fed today"
     case .inFineCondition: "in fine condition"
+    case .foraged: "well-foraged"
     case .lacksVigour: "lacks vigour (closely bred)"
     case .friendliness(let f): friendlyText(f)
     case .shape(let b): "shape \(b.rawValue)"
@@ -306,6 +319,9 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
             : "\(n) takes a mealworm from your hand. \(s.treats) treats left."
     case .friendlierNow(let id, let f):
         return "\(name(id, s)) seems \(f == .lapChicken ? "to love being held now" : "\(friendlyText(f)) now")."
+    case .birdsForaged(let count):
+        return "You left the coop open, and \(count == 1 ? "1 bird" : "\(count) birds") free-ranged overnight, "
+            + "foraging for grubs and greens. They come back fed, so there's no need to feed today."
     case .noEggsHungry: return "No eggs today. The hens were not fed yesterday."
     case .eggLaid(_, let by): return "\(name(by, s)) laid an egg."
     case .eggBroken(let by): return "The nest boxes were full, so \(name(by, s)) laid on the floor and the egg broke."
@@ -437,8 +453,8 @@ Commands:
   treat <name>         give a bird a treat from your hand (once a day)
   accept trade         accept a neighbour's offer of a hen for a rooster
   upgrade coop         add \(game.state.rules.perchesPerUpgrade) perches (\(game.state.rules.coopUpgradePrice) coins)
-  close                shut the coop door for the night
-  sleep                pass the night
+  close                shut the coop door (safe from the fox, but you must feed)
+  sleep                pass the night (door left open? birds forage: fed free + a small bonus, but fox risk)
   day [n]              do a full day n times: feed, collect, close, sleep
   book                 Breed Book and egg colours
   new yes              delete the save and start again

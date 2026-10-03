@@ -132,6 +132,8 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case handled(UUID, Handling)
     /// The bird moved up a friendliness band.
     case friendlierNow(UUID, Friendliness)
+    /// The flock free-ranged overnight (door left open) and came back fed and foraged.
+    case birdsForaged(count: Int)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -562,6 +564,19 @@ public enum Engine {
             ev.append(.quietNight)
         }
 
+        // 1b. Foraging: if the door was left open and birds stayed out, they free-ranged overnight.
+        //     They come back fed (no feeding needed) and a little the better for it — the upside that
+        //     makes leaving the coop open a real choice against the fox. No luck involved; broody hens
+        //     are sitting, so they don't forage.
+        let foragers = s.coop.filter { !$0.isBroody(onDay: s.day) }
+        if s.coopDoorOpen, !foragers.isEmpty {
+            s.foragedToday = true
+            s.fedToday = true   // a night's foraging counts as feeding for this night's lay
+            ev.append(.birdsForaged(count: foragers.count))
+        } else {
+            s.foragedToday = false
+        }
+
         // 2. New day.
         let oldSeason = s.season
         s.day += 1
@@ -704,7 +719,9 @@ public enum Engine {
         let extra = s.rules.extraRoosters(inCoop: s.coop, onDay: s.day)
         if extra > 0 { ev.append(.roostersSquabbling(extra: extra)) }
         let calm = max(0, 1 - Double(extra) * s.rules.extraRoosterLayPenalty)
-        let chance = (s.rules.layChance[s.season] ?? 0) * calm
+        // Foraging the night before makes hens lay a little more readily.
+        let forage = s.foragedToday ? (1 + s.rules.forageLayBonus) : 1
+        let chance = (s.rules.layChance[s.season] ?? 0) * calm * forage
         // Any adult rooster in the coop fertilises the hens' eggs. (A breeding pen comes later.)
         let roosters = s.coop.filter { $0.sex == .rooster && $0.stage(onDay: s.day, rules: s.rules) == .adult }
         for hen in hens where s.day >= hen.noLayUntilDay && !hen.isBroody(onDay: s.day) {

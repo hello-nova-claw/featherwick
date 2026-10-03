@@ -141,6 +141,10 @@ public struct GameState: Hashable, Codable, Sendable {
     public var breedBook: Set<BreedBookEntry> = []
     public var eggBook: Set<EggBookEntry> = []
 
+    /// True when the flock free-ranged and foraged last night (door left open and survived).
+    /// Gives a small lay and condition bonus for the day; recomputed each night. See `Rules.forage*`.
+    public var foragedToday = false
+
     init(rules: Rules, phase: Phase) {
         self.rules = rules
         self.phase = phase

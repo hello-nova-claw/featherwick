@@ -88,6 +88,8 @@ public enum JudgeNote: Hashable, Codable, Sendable {
     case broody
     case hungry
     case inFineCondition
+    /// Free-ranged and foraged the night before: shows in slightly better condition.
+    case foraged
     /// Inbred: real judges see less vigour in closely bred birds.
     case lacksVigour
     case friendliness(Friendliness)
@@ -145,6 +147,7 @@ public enum Judge {
         if s.day < bird.noLayUntilDay { value -= 0.4; notes.append(.stressed) }
         if bird.isBroody(onDay: s.day) { value -= 0.3; notes.append(.broody) }
         if !s.fedToday { value -= 0.2; notes.append(.hungry) }
+        if s.foragedToday { value = min(1, value + s.rules.forageConditionBonus); notes.append(.foraged) }
         if let f = bird.inbreeding, f >= 0.0625 {
             value -= min(s.rules.maxInbreedingConditionLoss, f)
             notes.append(.lacksVigour)

@@ -5,7 +5,7 @@ import Testing
 /// Design rule: no bizarre genetics. Every bird the game can make must look like a bird a real
 /// keeper could breed, and be named the way a keeper would name it.
 struct GeneticsRealismTests {
-    static let breedEgg: [Breed: EggColour] = [.orpington: .brown, .wyandotte: .brown, .araucana: .blue, .silkie: .cream]
+    static let breedEgg: [Breed: EggColour] = [.orpington: .brown, .wyandotte: .brown, .araucana: .blue, .silkie: .cream, .australorp: .brown]
 
     /// Problems with one bird, or [] if it looks real.
     static func problems(_ b: Bird) -> [String] {
