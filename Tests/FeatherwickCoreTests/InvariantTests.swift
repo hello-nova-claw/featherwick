@@ -47,6 +47,8 @@ struct InvariantTests {
             for b in s.coop where !b.revealed { p.append("unrevealed bird in coop: \(b.name)") }
         }
         if let id = s.starterID, s.bird(id) == nil { p.append("starter missing") }
+        // Never zero birds: lost and boarding birds still belong to the player and always come back.
+        if s.birdsAtHome.count + s.lost.count + s.boarding.count == 0 { p.append("the player has no birds") }
         return p
     }
 

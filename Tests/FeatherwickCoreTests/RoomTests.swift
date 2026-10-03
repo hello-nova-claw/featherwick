@@ -96,13 +96,23 @@ struct RoomTests {
         #expect(r.rehomeValue(of: plain, onDay: 0) == 2)  // black orpington chick
 
         let lavenderAraucana = Bird(id: makeID(using: &rng), name: "b", breed: .araucana,
-                                    genome: Breed.araucana.purebred(.hen, colour: .lavender), hatchDay: 0, origin: "t")
+                                    genome: Breed.araucana.purebred(.hen, colour: .lavender), hatchDay: 0, origin: "t",
+                                    revealed: true)
         #expect(r.rehomeValue(of: lavenderAraucana, onDay: r.adultAge) == 6 + 6 + 2)  // adult + lavender + blue eggs
 
-        var oliveGenome = Breed.araucana.purebred(.rooster)
+        var oliveGenome = Breed.araucana.purebred(.hen)
         oliveGenome.brownShell = AllelePair(.brown, .noCoating)
-        let oliveRooster = Bird(id: makeID(using: &rng), name: "c", breed: .araucana,
-                                genome: oliveGenome, hatchDay: 0, origin: "t")
-        #expect(r.rehomeValue(of: oliveRooster, onDay: r.adultAge) == 6 + 5)  // olive-egger roosters count too
+        let oliveHen = Bird(id: makeID(using: &rng), name: "c", breed: .araucana,
+                            genome: oliveGenome, hatchDay: 0, origin: "t", revealed: true)
+        #expect(r.rehomeValue(of: oliveHen, onDay: r.adultAge) == 6 + 5)
+        // Hidden genes never raise the price: not in an unrevealed chick, not in a rooster's egg genes.
+        let hiddenLavender = Bird(id: makeID(using: &rng), name: "d", breed: .orpington,
+                                  genome: Breed.orpington.purebred(.hen, colour: .lavender), hatchDay: 0, origin: "t")
+        #expect(r.rehomeValue(of: hiddenLavender, onDay: 0) == 2)
+        var oliveRoosterGenome = Breed.araucana.purebred(.rooster)
+        oliveRoosterGenome.brownShell = AllelePair(.brown, .noCoating)
+        let oliveRooster = Bird(id: makeID(using: &rng), name: "e", breed: .araucana,
+                                genome: oliveRoosterGenome, hatchDay: 0, origin: "t", revealed: true)
+        #expect(r.rehomeValue(of: oliveRooster, onDay: r.adultAge) == 6)
     }
 }

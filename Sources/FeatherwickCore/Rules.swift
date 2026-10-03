@@ -70,19 +70,24 @@ public struct Rules: Codable, Hashable, Sendable {
     public static let standard = Rules()
 
     /// Coins a neighbour pays to adopt a bird. Rarer birds are worth more.
-    /// Egg traits count for roosters too: they pass them on (olive-egger roosters are prized).
+    ///
+    /// Anti-gaming rule: only traits the player can already see count. An unrevealed chick is worth
+    /// the base price, so neither the price nor the `value` check leaks hidden genes, and hatching
+    /// chicks to sell them unseen is not a shortcut. Egg traits count once a hen is laying.
     public func rehomeValue(of bird: Bird, onDay day: Int) -> Int {
+        let stage = bird.stage(onDay: day, rules: self)
+        var value = rehomeBase[stage] ?? 0
+        guard bird.revealed else { return value }
         let p = bird.phenotype
-        let g = bird.genome
-        var value = rehomeBase[bird.stage(onDay: day, rules: self)] ?? 0
         if p.colour == .lavender { value += rareLavenderOrSilkie }
         if p.isSilkieFeathered && bird.breed != .silkie { value += rareLavenderOrSilkie }
         if p.colour == .splash { value += rareSplash }
         if p.colour == .blue { value += rareSmall }
         if p.isBarred { value += rareSmall }
-        let blueShell = g.blueShell.has(.blue), brown = g.brownShell.has(.brown)
-        if blueShell && brown { value += rareOliveEggs } else if blueShell { value += rareSmall }
-        if g.speckle.isHomozygous(for: .speckled) { value += rareSpeckledEggs }
+        if bird.sex == .hen, stage == .adult, let egg = p.eggColour {
+            if egg == .olive { value += rareOliveEggs } else if egg == .blue { value += rareSmall }
+            if p.eggIsSpeckled { value += rareSpeckledEggs }
+        }
         return value
     }
 
