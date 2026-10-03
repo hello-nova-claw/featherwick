@@ -3,4 +3,5 @@
 *.xcodeproj
 xcuserdata/
 .DS_Store
-featherwick-save.json
+# Player saves (the CLI writes these in the current folder)
+featherwick-save*.json
