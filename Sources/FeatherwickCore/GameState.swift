@@ -148,6 +148,9 @@ public struct GameState: Hashable, Codable, Sendable {
     public var premiumFeed = 0
     /// Whether the flock was given premium feed today. Resets each night.
     public var fedPremiumToday = false
+    /// True when the flock free-ranged and foraged last night (door left open and survived).
+    /// Gives a small lay and condition bonus for the day; recomputed each night. See `Rules.forage*`.
+    public var foragedToday = false
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

@@ -114,6 +114,10 @@ public struct Rules: Codable, Hashable, Sendable {
     public var premiumFeedPrice = 8
     public var premiumFeedBagSize = 7
     public var premiumFeedLayBonus = 0.25  // multiplies the day's lay chance when premium-fed
+    // Foraging (see Engine.passNight). Leaving the coop door open overnight risks the fox, but if the
+    // flock survives they free-range: they come back fed (no feeding needed) and a little the better for it.
+    public var forageLayBonus = 0.1        // hens lay a little more readily the day after foraging
+    public var forageConditionBonus = 0.1  // foraging birds show in slightly better condition
 
     public init() {}
 
