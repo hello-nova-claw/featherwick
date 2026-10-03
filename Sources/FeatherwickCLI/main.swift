@@ -343,8 +343,8 @@ Commands:
   sit <hen> <n>        candle n eggs; fertile ones go under a broody hen
   rename <name> <new>  rename a bird
   value <name>         what a neighbour would pay to adopt a bird
-  draw <name>          what the artist's layers would show for this bird
-  art                  the list of drawings the game needs
+  draw <name>          which art parts and colours make up this bird
+  art                  the parts the artist needs to paint
   judge <name>         practice judging: breed class (purebred adults) and pet class
   judge eggs           practice judging: your best plate of 3 matched eggs
   rehome <name>        a neighbour adopts the bird and pays you (rarer birds pay more)
@@ -435,14 +435,17 @@ while true {
     case "draw":
         guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("Use: draw <name>"); break }
         let look = bird.look(onDay: game.state.day, rules: game.state.rules)
-        print("\(bird.name): drawing \(look.art), scale \(String(format: "%.2f", look.scale))")
-        for mask in look.art.stage.masks { print("  \(mask.rawValue): \(look.fills[mask]?.rawValue ?? "?")") }
+        print("\(bird.name): \(look.stage.rawValue), scale \(String(format: "%.2f", look.scale))")
+        for placed in look.parts {
+            let fills = placed.part.masks.map { "\($0.rawValue) \(placed.fills[$0]?.rawValue ?? "?")" }.joined(separator: ", ")
+            let size = placed.scale == 1 ? "" : " ×\(String(format: "%.2f", placed.scale))"
+            print("  \(placed.part)\(size): \(fills)")
+        }
         for o in look.overlays { print("  + \(o.pattern.rawValue) in \(o.tone.rawValue) on \(o.masks.map(\.rawValue).joined(separator: ", "))") }
     case "art":
         let keys = ArtChecklist.required(includePlanned: words.count > 1 && words[1] == "all")
-        print("Drawings needed (\(keys.count)), each greyscale with these mask layers:")
-        for stage in ArtStage.allCases { print("  \(stage.rawValue): \(stage.masks.map(\.rawValue).joined(separator: ", "))") }
-        print(keys.map(\.description).joined(separator: "\n"))
+        print("Parts to paint (\(keys.count)), each greyscale with flat mask layers:")
+        for key in keys { print("  \(key): \(key.masks.map(\.rawValue).joined(separator: ", "))") }
     case "judge":
         guard words.count > 1 else { print("Use: judge <name> or judge eggs"); break }
         if words[1] == "eggs" {

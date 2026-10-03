@@ -101,18 +101,30 @@ breeds) + 60% learned tameness. Bands: wild, skittish, friendly, lap chicken.
 - A fox fright and days lost lower tameness. Neglect never does.
 - Effects: half of the pet show class; lap chickens rehome for more.
 
-## Look (render spec)
+## Look (render spec from a shared parts kit)
 
-`Look.swift`. `bird.look(onDay:rules:)` gives the game screen everything it needs to draw a bird:
+`Look.swift`. A bird is drawn from shared greyscale parts with flat mask layers. Breeds share
+parts, so most new breeds need no new art. `bird.look(onDay:rules:)` returns:
 
-- `art`: which greyscale drawing (art family + stage: chick, pullet, cockerel, hen, rooster).
-  Purebreds use their breed's family, crosses use `mixed`, silkie-feathered birds use `silkie`.
-- `fills`: a colour token for each mask layer (down; or body, hackle, tail, comb, beak, legs).
+- `parts`, back to front: tail, legs, body, head, comb (or one chick part). Each part has a colour
+  token per mask and its own scale: combs and tails grow in with age, and a hen's comb is the
+  rooster's drawing, smaller. Pullets and cockerels are the adult parts, smaller.
 - `overlays`: pattern textures clipped to masks (lacing, barring, a barred chick's head spot).
 - `scale`: breed size, grows smoothly with age; roosters end 20% bigger.
 
-Tokens are not RGB: the art direction maps them to real colours. `ArtChecklist` lists the
-drawings needed (25 for the in-game breeds). CLI: `draw <name>`, `art`, `art all`.
+| Part | Shapes | Who uses them |
+| --- | --- | --- |
+| Body (hen + rooster) | heavy, medium, light, fluffy | Orpington/Australorp, Wyandotte/Plymouth Rock/crosses, Araucana, Silkie |
+| Comb | single, rose, pea, walnut | most, Wyandotte, Araucana, Silkie |
+| Legs | clean, feathered 5-toe | everyone but Silkie |
+| Head | plain, crested | everyone but Silkie |
+| Tail | hen, rooster, fluffy | |
+| Chick | plain, fluffy | |
+
+The kit is 21 parts and covers all 6 breeds in the table. Silkie feathering (a real gene) picks
+the fluffy body, tail and chick, for crosses too. Tokens are not RGB: the art direction maps them.
+Watercolour tip: paint each body whole, then cut it into parts with soft, overlapping edges.
+CLI: `draw <name>`, `art`.
 
 ## Realism rules (tested)
 
