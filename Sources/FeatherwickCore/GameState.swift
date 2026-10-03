@@ -34,7 +34,7 @@ public struct Egg: Identifiable, Hashable, Codable, Sendable {
 }
 
 public enum ShopItem: String, Hashable, Codable, Sendable, CaseIterable {
-    case pullet, cockerel, fertileEgg, treats
+    case pullet, cockerel, fertileEgg, treats, premiumFeed
 }
 
 /// The safety net. A flock of only roosters, with too few coins for a pullet, can never lay or hatch.
@@ -140,6 +140,11 @@ public struct GameState: Hashable, Codable, Sendable {
 
     public var breedBook: Set<BreedBookEntry> = []
     public var eggBook: Set<EggBookEntry> = []
+
+    /// Premium feed in the barrel (day-portions). Bought at Speckle & Down.
+    public var premiumFeed = 0
+    /// Whether the flock was given premium feed today. Resets each night.
+    public var fedPremiumToday = false
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

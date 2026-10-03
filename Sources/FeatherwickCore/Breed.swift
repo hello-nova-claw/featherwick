@@ -110,4 +110,10 @@ public struct Bird: Identifiable, Hashable, Codable, Sendable {
         if age >= rules.growerAge { return .grower }
         return .chick
     }
+
+    /// A hen who has reached retirement age: a beloved non-layer. Cozy rule — she never dies,
+    /// she just stops laying and keeps her perch. Roosters never retire (they don't lay).
+    public func isRetired(onDay day: Int, rules: Rules) -> Bool {
+        sex == .hen && age(onDay: day) >= rules.retirementAgeDays
+    }
 }

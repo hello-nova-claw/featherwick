@@ -96,7 +96,29 @@ public struct Rules: Codable, Hashable, Sendable {
     public var oliveEggPrice = 4
     public var speckleBonus = 1
 
+    // Flock turnover (cozy: hens slow with age and retire, they never die).
+    public var layDeclineStartDays = 180   // a hen lays full until roughly her first autumn
+    public var layDeclineFloor = 0.4       // the least a laying hen's age factor falls to
+    public var retirementAgeDays = 336     // three in-game years (4 seasons x 28 x 3): she becomes a beloved non-layer
+
+    // Premium feed: an optional coin sink. Basic feed stays free; premium feed feeds the flock
+    // for the day AND lifts laying a little. One bag is several day-portions.
+    public var premiumFeedPrice = 8
+    public var premiumFeedBagSize = 7
+    public var premiumFeedLayBonus = 0.25  // multiplies the day's lay chance when premium-fed
+
     public init() {}
+
+    /// How an adult hen's laying falls with age: full until `layDeclineStartDays`, then down to
+    /// `layDeclineFloor`, reaching 0 at retirement (retired hens don't lay at all). Real heritage
+    /// hens lay their best in the first year or two and slow steadily after.
+    public func layAgeFactor(ageDays: Int) -> Double {
+        guard ageDays > layDeclineStartDays else { return 1 }
+        if ageDays >= retirementAgeDays { return 0 }
+        let span = Double(retirementAgeDays - layDeclineStartDays)
+        let past = Double(ageDays - layDeclineStartDays)
+        return max(layDeclineFloor, 1 - (1 - layDeclineFloor) * (past / span))
+    }
 
     public static let standard = Rules()
 

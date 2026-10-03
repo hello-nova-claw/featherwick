@@ -71,9 +71,11 @@ func label(_ b: Bird, _ s: GameState) -> String {
     case (.adult, .rooster): "rooster"
     }
     var parts = ["\(b.varietyName) \(kind)", colourText(p)]
-    if stage == .adult, let egg = p.eggColour, b.sex == .hen {
+    let retired = b.isRetired(onDay: s.day, rules: s.rules)
+    if stage == .adult, let egg = p.eggColour, b.sex == .hen, !retired {
         parts.append("lays \(p.eggIsSpeckled ? "speckled " : "")\(egg.rawValue)")
     }
+    if retired { parts.append("retired") }
     if b.noLayUntilDay > s.day { parts.append("shaken, not laying yet") }
     if b.isBroody(onDay: s.day) { parts.append("broody") }
     parts.append(friendlyText(b.friendliness))
@@ -238,6 +240,8 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
             room == 0
                 ? "The brooder is full. Make room first: rehome a bird or upgrade the coop so the brooder birds can move out."
                 : "The brooder only has room for \(room) more chick\(room == 1 ? "" : "s"). Set fewer eggs."
+        case .noPremiumFeed: "Your premium feed barrel is empty. Buy more: buy feed"
+        case .alreadyFedPremium: "You already gave them premium feed today."
         }
     case .starterChosen(let id): return "You take \(name(id, s)) home and settle them under the heat lamp."
     case .fed: return "You fill the feeder and top up the water."
@@ -306,6 +310,12 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
             : "\(n) takes a mealworm from your hand. \(s.treats) treats left."
     case .friendlierNow(let id, let f):
         return "\(name(id, s)) seems \(f == .lapChicken ? "to love being held now" : "\(friendlyText(f)) now")."
+    case .boughtPremiumFeed(let count, let cost):
+        return "You buy a sack of premium feed (\(count) days) for \(cost) coins. You have \(s.premiumFeed) days in the barrel."
+    case .fedPremium(let units):
+        return "You scatter rich premium feed for \(units) bird\(units == 1 ? "" : "s"). They'll lay a little better today. \(s.premiumFeed) days left."
+    case .birdRetired(let id):
+        return "\(name(id, s)) has earned a gentle retirement. She'll keep her perch, but her laying days are behind her."
     case .noEggsHungry: return "No eggs today. The hens were not fed yesterday."
     case .eggLaid(_, let by): return "\(name(by, s)) laid an egg."
     case .eggBroken(let by): return "The nest boxes were full, so \(name(by, s)) laid on the floor and the egg broke."
@@ -352,7 +362,9 @@ func look(_ s: GameState) {
         print("Choose one: choose <1-3> <name>")
         return
     }
-    print("Day \(s.day), \(s.season.rawValue) · \(s.coins) coins · coop door \(s.coopDoorOpen ? "open" : "closed")\(s.fedToday ? " · fed today" : "")")
+    let fedLabel = s.fedPremiumToday ? " · premium-fed today" : (s.fedToday ? " · fed today" : "")
+    let feedBarrel = s.premiumFeed > 0 ? " · premium feed \(s.premiumFeed)d" : ""
+    print("Day \(s.day), \(s.season.rawValue) · \(s.coins) coins · coop door \(s.coopDoorOpen ? "open" : "closed")\(fedLabel)\(feedBarrel)")
     print("Brooder (\(s.brooder.count)/\(s.brooderSize)):")
     for b in s.brooder {
         let waiting = b.age(onDay: s.day) >= s.rules.brooderDays
@@ -411,7 +423,8 @@ let help = """
 Commands:
   look                 see your birds and supplies
   choose <1-3> <name>  pick your starter chick
-  feed                 feed everyone for today
+  feed                 feed everyone for today (basic feed is free)
+  feed premium         use premium feed: feeds them and lifts laying (buy feed first)
   collect              move eggs from the nest to your carton
   sell                 sell every egg in your carton
   sell clear           sell every egg except the ones you know are fertile
@@ -433,6 +446,7 @@ Commands:
   shop                 see what Speckle & Down sells
   buy pullet|cockerel|egg   buy a young hen, a young rooster, or a fertile egg
   buy treats           a bag of mealworm treats
+  buy feed             a sack of premium feed (several days)
   pet <name>           pick a bird up and hold it (once a day; chicks learn trust fastest)
   treat <name>         give a bird a treat from your hand (once a day)
   accept trade         accept a neighbour's offer of a hen for a rooster
@@ -484,7 +498,7 @@ while true {
         let index = (words.count > 1 ? Int(words[1]) : nil) ?? 0
         let original = line.split(separator: " ").dropFirst(2).joined(separator: " ")
         run(.chooseStarter(index: index - 1, name: original))
-    case "feed", "f": run(.feed)
+    case "feed", "f": run(words.count > 1 && words[1] == "premium" ? .feedPremium : .feed)
     case "collect", "c": run(.collectEggs)
     case "sell": run(words.count > 1 && words[1] == "clear" ? .sellClearEggs : .sellEggs)
     case "candle": run(.candle)
@@ -496,9 +510,10 @@ while true {
         case "cockerel", "rooster": run(.buy(.cockerel))
         case "egg", "fertile": run(.buy(.fertileEgg))
         case "treats", "treat", "mealworms": run(.buy(.treats))
+        case "feed", "premium", "premiumfeed": run(.buy(.premiumFeed))
         case let other where game.state.shopBreeds.contains(where: { $0.rawValue == other }):
             run(.buyBreed(Breed(rawValue: other)))
-        default: print("You can buy: pullet, cockerel, egg, treats, incubator. Basic feed is free.")
+        default: print("You can buy: pullet, cockerel, egg, treats, feed, incubator. Basic feed is free.")
         }
     case "shop":
         let r = game.state.rules
@@ -509,6 +524,7 @@ while true {
           egg         a fertile egg from a local flock \(r.fertileEggPrice) coins
           incubator   holds \(r.bigIncubatorSize) eggs                   \(r.incubatorPrice) coins
           treats      \(r.treatBagSize) mealworms                        \(r.treatBagPrice) coins
+          feed        \(r.premiumFeedBagSize) days of premium feed          \(r.premiumFeedPrice) coins (basic feed is free)
         """)
         for breed in game.state.shopBreeds.sorted(by: { $0.rawValue < $1.rawValue }) {
             print("  \(breed.rawValue.padding(toLength: 11, withPad: " ", startingAt: 0)) a \(breed.definition.displayName) pullet          \(r.rareBreedPulletPrice) coins")
