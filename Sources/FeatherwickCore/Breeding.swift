@@ -40,11 +40,14 @@ public enum Breeding {
         )
     }
 
-    /// Hatches a named chick from two birds.
+    /// Hatches a named chick from two birds. Keeps lineage for the family tree and trading.
     public static func hatch<R: RandomNumberGenerator>(
-        mother: Bird, father: Bird, name: String, using rng: inout R
+        mother: Bird, father: Bird, name: String, onDay day: Int, origin: String, using rng: inout R
     ) throws -> Bird {
         let genome = try cross(mother: mother.genome, father: father.genome, using: &rng)
-        return Bird(name: name, breed: mother.breed, genome: genome)
+        return Bird(
+            id: makeID(using: &rng), name: name, breed: mother.breed, genome: genome,
+            hatchDay: day, motherID: mother.id, fatherID: father.id, origin: origin
+        )
     }
 }

@@ -2,7 +2,8 @@
 ///
 /// The same seed gives the same hatches, so genetics can be tested and replayed.
 /// The core never uses the system random generator.
-public struct SeededRNG: RandomNumberGenerator, Sendable {
+/// Codable, so the RNG position is saved with the game and a loaded game continues the same way.
+public struct SeededRNG: RandomNumberGenerator, Codable, Hashable, Sendable {
     private var state: UInt64
 
     public init(seed: UInt64) {

@@ -6,6 +6,29 @@ public enum EggColour: String, Hashable, Codable, Sendable, CaseIterable {
     case cream, brown, blue, olive
 }
 
+/// How a chick's down looks. Shows the colour genes, not the breed.
+public enum ChickDown: String, Hashable, Codable, Sendable, CaseIterable {
+    case black          // often with a pale belly
+    case slate          // blue
+    case paleGrey       // splash
+    case silver         // lavender
+    case yellow         // buff
+    case darkWithHeadSpot  // barred
+}
+
+extension Phenotype {
+    public var chickDown: ChickDown {
+        if isBarred && colour != .buff { return .darkWithHeadSpot }
+        switch colour {
+        case .black: return .black
+        case .blue: return .slate
+        case .splash: return .paleGrey
+        case .lavender: return .silver
+        case .buff: return .yellow
+        }
+    }
+}
+
 /// What a bird looks like and lays, computed from its genome.
 /// The UI and the Breed Book read this. They never read genes directly.
 public struct Phenotype: Hashable, Codable, Sendable {

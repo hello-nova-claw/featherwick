@@ -15,8 +15,16 @@ This repo is the game logic first. The iOS front end (SpriteKit + SwiftUI) comes
 ```sh
 swift build
 swift test
-swift run featherwick 2026   # genetics demo with seed 2026
+swift run featherwick 2026   # play; seed 2026 is used only for a new save
 ```
+
+The CLI autosaves to `featherwick-save.json` in the current folder. Type `help` in the game for commands. `day 10` runs ten full days (feed, collect, close, sleep) for fast tuning.
+
+## Engine
+
+`Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. Command in, events out. All tunable numbers live in `Rules`.
+
+Night order: fox (only if the coop is open) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → brooder to coop → laying (only if fed) → door opens.
 
 ## Genome v1
 

@@ -1,5 +1,10 @@
+import Foundation
+
 public enum Breed: String, Hashable, Codable, Sendable, CaseIterable {
     case silkie, orpington, wyandotte, araucana
+
+    /// The neighbour's breeds. Silkie chicks are too easy to spot, so Silkies come later.
+    public static let starters: [Breed] = [.orpington, .wyandotte, .araucana]
 }
 
 /// Colours a starter bird can come in.
@@ -48,19 +53,61 @@ extension Breed {
     }
 }
 
-/// A named bird in the flock.
-public struct Bird: Hashable, Codable, Sendable {
+public enum LifeStage: String, Codable, Sendable, Comparable {
+    case chick, grower, adult
+
+    public static func < (a: LifeStage, b: LifeStage) -> Bool {
+        let order: [LifeStage] = [.chick, .grower, .adult]
+        return order.firstIndex(of: a)! < order.firstIndex(of: b)!
+    }
+}
+
+/// A bird. IDs are global and lineage is kept, so birds can be traded later.
+public struct Bird: Identifiable, Hashable, Codable, Sendable {
+    public let id: UUID
     public var name: String
     /// V1 PLACEHOLDER RULE: a chick takes its mother's breed (like Pokémon).
     /// Open question: how mixed-breed chicks show in the Breed Book.
-    public var breed: Breed
-    public var genome: Genome
+    public let breed: Breed
+    public let genome: Genome
+    public let hatchDay: Int
+    public let motherID: UUID?
+    public let fatherID: UUID?
+    /// Who bred it: "Neighbour", a shop, or (later) another player's ID.
+    public let origin: String
 
-    public init(name: String, breed: Breed, genome: Genome) {
+    /// True once the player knows its sex and breed (grown enough, or told by the breeder).
+    public var revealed: Bool
+    public var timesScared: Int
+    public var noLayUntilDay: Int
+
+    public init(
+        id: UUID, name: String, breed: Breed, genome: Genome, hatchDay: Int,
+        motherID: UUID? = nil, fatherID: UUID? = nil, origin: String,
+        revealed: Bool = false, timesScared: Int = 0, noLayUntilDay: Int = 0
+    ) {
+        self.id = id
         self.name = name
         self.breed = breed
         self.genome = genome
+        self.hatchDay = hatchDay
+        self.motherID = motherID
+        self.fatherID = fatherID
+        self.origin = origin
+        self.revealed = revealed
+        self.timesScared = timesScared
+        self.noLayUntilDay = noLayUntilDay
     }
 
     public var phenotype: Phenotype { Phenotype(genome) }
+    public var sex: Sex { genome.sex }
+
+    public func age(onDay day: Int) -> Int { day - hatchDay }
+
+    public func stage(onDay day: Int, rules: Rules) -> LifeStage {
+        let age = age(onDay: day)
+        if age >= rules.adultAge { return .adult }
+        if age >= rules.growerAge { return .grower }
+        return .chick
+    }
 }
