@@ -105,6 +105,8 @@ public struct BreedDefinition: Sendable, Identifiable {
     public let broodiness: Double
     /// Temperament: the share of calm genes in birds bred outside the player's flock, 0...1.
     public let calmness: Double
+    /// Body shape (which drawings), comb, legs and size.
+    public let look: BreedLook
     public let note: String
 
     public var isInGame: Bool { status == .inGame }
@@ -118,6 +120,7 @@ public struct BreedDefinition: Sendable, Identifiable {
     static func placeholder(_ id: Breed) -> BreedDefinition {
         BreedDefinition(id: id, displayName: id.rawValue.capitalized, status: .planned, isStarter: false,
                         signature: [], varieties: [.black], broodiness: 0.2, calmness: 0.5,
+                        look: .mixed,
                         note: "Not in this version of the game.")
     }
 }
@@ -130,31 +133,37 @@ public enum BreedTable {
             id: .silkie, displayName: "Silkie", status: .inGame, isStarter: false,
             signature: [.two(Feathering.silkie)],
             varieties: [.black, .blue, .buff, .lavender], broodiness: 0.6, calmness: 0.75,
+            look: BreedLook(family: "silkie", comb: .mulberry, legs: .slate, size: 0.7),
             note: "Fluffy, gentle, famously broody. Cream eggs."),
         BreedDefinition(
             id: .orpington, displayName: "Orpington", status: .inGame, isStarter: true,
             signature: [.two(BrownShell.brown)],
             varieties: [.black, .blue, .buff, .lavender], broodiness: 0.3, calmness: 0.7,
+            look: BreedLook(family: "orpington", legs: .slate, legsOnBuff: .white, size: 1.2),
             note: "Big, soft and calm. Brown eggs."),
         BreedDefinition(
             id: .wyandotte, displayName: "Wyandotte", status: .inGame, isStarter: true,
             signature: [.two(Lacing.laced), .two(BrownShell.brown)],
             varieties: [.black, .blue, .buff, .lavender], broodiness: 0.15, calmness: 0.55,
+            look: BreedLook(family: "wyandotte", legs: .yellow, size: 1.0),
             note: "Carries lacing; it shows on gold (buff) birds. Brown eggs."),
         BreedDefinition(
             id: .araucana, displayName: "Araucana", status: .inGame, isStarter: true,
             signature: [.two(BlueShell.blue)],
             varieties: [.black, .blue, .buff, .lavender], broodiness: 0.2, calmness: 0.4,
+            look: BreedLook(family: "araucana", legs: .willow, size: 0.85),
             note: "Lays blue eggs. Crossed with brown-egg breeds, makes olive eggers."),
         BreedDefinition(
             id: .australorp, displayName: "Australorp", status: .planned, isStarter: false,
             signature: [.two(BrownShell.brown)],
             varieties: [.black, .blue], broodiness: 0.25, calmness: 0.65,
+            look: BreedLook(family: "australorp", legs: .black, size: 1.1),
             note: "Australian. Black with a green sheen, a famous layer. Brown eggs."),
         BreedDefinition(
             id: .plymouthRock, displayName: "Plymouth Rock", status: .planned, isStarter: false,
             signature: [.two(BrownShell.brown)],
             varieties: [.barred, .buff], broodiness: 0.2, calmness: 0.6,
+            look: BreedLook(family: "plymouth rock", legs: .yellow, size: 1.1),
             note: "The Barred Rock. Black-and-white barring. Brown eggs."),
     ]
 

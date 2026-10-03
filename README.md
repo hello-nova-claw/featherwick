@@ -101,6 +101,19 @@ breeds) + 60% learned tameness. Bands: wild, skittish, friendly, lap chicken.
 - A fox fright and days lost lower tameness. Neglect never does.
 - Effects: half of the pet show class; lap chickens rehome for more.
 
+## Look (render spec)
+
+`Look.swift`. `bird.look(onDay:rules:)` gives the game screen everything it needs to draw a bird:
+
+- `art`: which greyscale drawing (art family + stage: chick, pullet, cockerel, hen, rooster).
+  Purebreds use their breed's family, crosses use `mixed`, silkie-feathered birds use `silkie`.
+- `fills`: a colour token for each mask layer (down; or body, hackle, tail, comb, beak, legs).
+- `overlays`: pattern textures clipped to masks (lacing, barring, a barred chick's head spot).
+- `scale`: breed size, grows smoothly with age; roosters end 20% bigger.
+
+Tokens are not RGB: the art direction maps them to real colours. `ArtChecklist` lists the
+drawings needed (25 for the in-game breeds). CLI: `draw <name>`, `art`, `art all`.
+
 ## Realism rules (tested)
 
 - Lacing shows only on a gold (buff) ground ("gold laced"); barring shows only on black-based birds.
