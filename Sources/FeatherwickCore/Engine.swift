@@ -34,6 +34,8 @@ public enum Command: Hashable, Codable, Sendable {
     case enterShow(UUID)
     /// Enter your best matched plate of eggs in the next county show.
     case enterEggs
+    /// Feed the flock premium feed for the day: feeds them AND lifts laying a little. Uses one portion.
+    case feedPremium
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -80,6 +82,8 @@ public enum Rejection: Hashable, Codable, Sendable {
     case alreadyEntered
     /// No matched plate of 3 eggs in the carton to enter.
     case noMatchedPlate
+    case noPremiumFeed
+    case alreadyFedPremium
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -149,6 +153,10 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case showNoEntries
     case showPlacing(ShowResult)
     case showPrizesWon(coins: Int)
+    case boughtPremiumFeed(count: Int, cost: Int)
+    case fedPremium(units: Int)
+    /// A hen reached retirement age today: a beloved non-layer from now on.
+    case birdRetired(UUID)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -185,6 +193,16 @@ public enum Engine {
             if s.fedToday { return [.rejected(.alreadyFed)] }
             s.fedToday = true
             return [.fed(units: needed)]
+
+        case .feedPremium:
+            let needed = s.birdsAtHome.count
+            if needed == 0 { return [.rejected(.nothingToFeed)] }
+            if s.fedPremiumToday { return [.rejected(.alreadyFedPremium)] }
+            if s.premiumFeed <= 0 { return [.rejected(.noPremiumFeed)] }
+            s.premiumFeed -= 1
+            s.fedPremiumToday = true
+            s.fedToday = true  // premium feed covers the day's feeding too
+            return [.fedPremium(units: needed)]
 
         case .collectEggs:
             if s.nest.isEmpty { return [.rejected(.noEggsInNest)] }
@@ -372,6 +390,7 @@ public enum Engine {
         case .cockerel: s.rules.cockerelPrice
         case .fertileEgg: s.rules.fertileEggPrice
         case .treats: s.rules.treatBagPrice
+        case .premiumFeed: s.rules.premiumFeedPrice
         }
         if s.coins < cost { return [.rejected(.notEnoughCoins(needed: cost, have: s.coins))] }
         switch item {
@@ -387,6 +406,10 @@ public enum Engine {
             s.coins -= cost
             s.treats += s.rules.treatBagSize
             return [.boughtTreats(count: s.rules.treatBagSize, cost: cost)]
+        case .premiumFeed:
+            s.coins -= cost
+            s.premiumFeed += s.rules.premiumFeedBagSize
+            return [.boughtPremiumFeed(count: s.rules.premiumFeedBagSize, cost: cost)]
         case .fertileEgg:
             if s.carton.count >= s.cartonCapacity { return [.rejected(.cartonFull)] }
             // From a local flock: two purebred starter birds, maybe of different breeds.
@@ -635,6 +658,12 @@ public enum Engine {
         ev += lay(&s, &rng)
         ev += maybeGoBroody(&s, &rng)
 
+        // 8a. Hens that reached retirement age today get a gentle send-off. They've already stopped
+        //     laying above; from now on they keep their perch as beloved non-layers (cozy: no deaths).
+        for b in s.coop where b.isRetired(onDay: s.day, rules: r) && !b.isRetired(onDay: s.day - 1, rules: r) {
+            ev.append(.birdRetired(b.id))
+        }
+
         // 9. Safety net: a rooster-only flock that can't afford a pullet gets a trade offer.
         ev += advanceStories(&s, &rng)
         ev += updateTradeOffer(&s, &rng)
@@ -644,6 +673,7 @@ public enum Engine {
 
         // 10. Reset for the new day. The door is opened in the morning.
         s.fedToday = false
+        s.fedPremiumToday = false
         s.coopDoorOpen = true
         return ev
     }
@@ -723,19 +753,25 @@ public enum Engine {
     }
 
     static func lay<R: RandomNumberGenerator>(_ s: inout GameState, _ rng: inout R) -> [GameEvent] {
-        let hens = s.coop.filter { $0.sex == .hen && $0.stage(onDay: s.day, rules: s.rules) == .adult }
+        let hens = s.coop.filter {
+            $0.sex == .hen && $0.stage(onDay: s.day, rules: s.rules) == .adult
+                && !$0.isRetired(onDay: s.day, rules: s.rules)
+        }
         guard !hens.isEmpty else { return [] }
         guard s.fedToday else { return [.noEggsHungry] }
         var ev: [GameEvent] = []
         let extra = s.rules.extraRoosters(inCoop: s.coop, onDay: s.day)
         if extra > 0 { ev.append(.roostersSquabbling(extra: extra)) }
         let calm = max(0, 1 - Double(extra) * s.rules.extraRoosterLayPenalty)
-        let chance = (s.rules.layChance[s.season] ?? 0) * calm
+        // Premium feed lifts the whole day's laying a little.
+        let premium = s.fedPremiumToday ? (1 + s.rules.premiumFeedLayBonus) : 1
+        let chance = min(1, (s.rules.layChance[s.season] ?? 0) * calm * premium)
         // Any adult rooster in the coop fertilises the hens' eggs. (A breeding pen comes later.)
         let roosters = s.coop.filter { $0.sex == .rooster && $0.stage(onDay: s.day, rules: s.rules) == .adult }
         for hen in hens where s.day >= hen.noLayUntilDay && !hen.isBroody(onDay: s.day) {
-            // Inbred hens lay a little less (real inbreeding depression).
+            // Inbred hens lay a little less (real inbreeding depression); older hens slow with age.
             let henChance = chance * (1 - min(s.rules.maxInbreedingLayLoss, hen.inbreeding ?? 0))
+                * s.rules.layAgeFactor(ageDays: hen.age(onDay: s.day))
             guard Double.roll(henChance, using: &rng) else { continue }
             // Nest boxes full: the hen lays on the floor, and the egg may break.
             if s.nest.count >= s.nestCapacity, Double.roll(s.rules.floorEggBreakChance, using: &rng) {

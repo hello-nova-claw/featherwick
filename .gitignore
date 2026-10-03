@@ -5,3 +5,4 @@ xcuserdata/
 .DS_Store
 # Player saves (the CLI writes these in the current folder)
 featherwick-save*.json
+.claude/
