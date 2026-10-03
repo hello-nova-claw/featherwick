@@ -126,6 +126,19 @@ the fluffy body, tail and chick, for crosses too. Tokens are not RGB: the art di
 Watercolour tip: paint each body whole, then cut it into parts with soft, overlapping edges.
 CLI: `draw <name>`, `art`.
 
+## Family tree and inbreeding
+
+`Pedigree.swift`. Every bird keeps its mother's and father's IDs. Owned birds (rehomed ones
+too) stay in the state; outside parents, such as those of a bought egg, are kept as
+`PedigreeRecord`s, so no tree breaks.
+
+- `Pedigree.tree(of:generations:)`, `offspring(of:)`, `kinship(a, b)`, `inbreeding(of:)`.
+- Inbreeding is Wright's coefficient, as real breeders use: brother × sister = 0.25, half
+  siblings 0.125, cousins 0.0625. Brother-sister lines climb 0.25, 0.375, 0.5, 0.59.
+- Stored on each chick at hatch. Effects are light and never block a hatch: lay chance drops by
+  the coefficient (capped at 50%); show condition drops (capped at 0.3) with "lacks vigour".
+- CLI: `tree <name>`, `kin <name> <name>`.
+
 ## Realism rules (tested)
 
 - Lacing shows only on a gold (buff) ground ("gold laced"); barring shows only on black-based birds.

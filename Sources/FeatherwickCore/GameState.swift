@@ -125,6 +125,8 @@ public struct GameState: Hashable, Codable, Sendable {
     public var boarding: [Bird] = []
     /// Birds adopted by people in Featherwick. Kept so they can appear in town later.
     public var rehomed: [Bird] = []
+    /// Family-tree records for birds the player never owned, such as the parents of a bought egg.
+    public var pedigree: [UUID: PedigreeRecord] = [:]
     public var nest: [Egg] = []
     public var carton: [Egg] = []
 

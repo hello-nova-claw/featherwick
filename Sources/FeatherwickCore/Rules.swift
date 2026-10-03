@@ -82,6 +82,10 @@ public struct Rules: Codable, Hashable, Sendable {
     public var treatBagPrice = 5
     public var lapChickenRehomeBonus = 3     // people pay more for a bird that loves a cuddle
 
+    // Inbreeding (see Pedigree.swift). Lay chance and show condition drop by the bird's coefficient, capped.
+    public var maxInbreedingLayLoss = 0.5
+    public var maxInbreedingConditionLoss = 0.3
+
     // Economy
     public var startCoins = 20
     // Basic feed is free and unlimited. Feeding is still a daily task: unfed hens don't lay.

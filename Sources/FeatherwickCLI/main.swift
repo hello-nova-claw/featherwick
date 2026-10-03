@@ -89,6 +89,47 @@ func friendlyText(_ f: Friendliness) -> String {
     }
 }
 
+func relatedText(_ r: Relatedness) -> String {
+    switch r {
+    case .unrelated: "not related"
+    case .distant: "distantly related"
+    case .cousins: "related like cousins"
+    case .halfSiblings: "related like half-siblings"
+    case .close: "closely related (like siblings, or parent and chick)"
+    }
+}
+
+func printTree(_ id: UUID, _ s: GameState) {
+    guard let tree = Pedigree.tree(of: id, generations: 3, in: s) else { return }
+    func line(_ r: PedigreeRecord) -> String {
+        let from = r.motherID == nil && r.fatherID == nil ? ", from \(r.origin)" : ""
+        return "\(r.name.isEmpty ? "unnamed" : r.name) (\(r.kind), hatched day \(r.hatchDay)\(from))"
+    }
+    func walk(_ t: FamilyTree, _ prefix: String) {
+        let parents: [(String, FamilyTree.Indirect?, UUID?)] = [
+            ("Mother", t.mother, t.record.motherID), ("Father", t.father, t.record.fatherID),
+        ]
+        for (i, (label, node, knownID)) in parents.enumerated() {
+            let last = i == parents.count - 1
+            let branch = prefix + (last ? "└ " : "├ ")
+            if let node {
+                print(branch + "\(label): " + line(node.tree.record))
+                walk(node.tree, prefix + (last ? "  " : "│ "))
+            } else if let knownID, Pedigree.record(knownID, in: s) != nil {
+                print(branch + "\(label): further back")
+            } else if t.record.motherID != nil || t.record.fatherID != nil {
+                print(branch + "\(label): unknown")
+            }
+        }
+    }
+    print(line(tree.record))
+    walk(tree, "")
+    let f = Pedigree.inbreeding(of: id, in: s)
+    print("Parents: \(relatedText(Relatedness(kinship: f))) · \(Int((f * 100).rounded()))% inbred")
+    let kids = Pedigree.offspring(of: id, in: s)
+    if !kids.isEmpty { print("Chicks (\(kids.count)): " + kids.map { $0.name }.joined(separator: ", ")) }
+}
+
 func name(_ id: UUID, _ s: GameState) -> String { s.bird(id)?.name ?? "a bird" }
 
 /// "gold laced", "barred blue", "lavender"...
@@ -113,6 +154,7 @@ func noteText(_ n: JudgeNote) -> String {
     case .broody: "broody and out of condition"
     case .hungry: "not fed today"
     case .inFineCondition: "in fine condition"
+    case .lacksVigour: "lacks vigour (closely bred)"
     case .friendliness(let f): friendlyText(f)
     case .shape(let b): "shape \(b.rawValue)"
     case .shell(let b): "shells \(b.rawValue)"
@@ -343,6 +385,8 @@ Commands:
   sit <hen> <n>        candle n eggs; fertile ones go under a broody hen
   rename <name> <new>  rename a bird
   value <name>         what a neighbour would pay to adopt a bird
+  tree <name>          family tree, 3 generations, and how closely bred the bird is
+  kin <name> <name>    how closely related two birds are (plan your pairings)
   draw <name>          which art parts and colours make up this bird
   art                  the parts the artist needs to paint
   judge <name>         practice judging: breed class (purebred adults) and pet class
@@ -432,6 +476,16 @@ while true {
     case "pet", "cuddle", "treat":
         guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("Use: \(verb) <name>"); break }
         run(verb == "treat" ? .giveTreat(bird.id) : .pet(bird.id))
+    case "tree":
+        guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("Use: tree <name>"); break }
+        printTree(bird.id, game.state)
+    case "kin":
+        let parts = line.split(separator: " ").dropFirst().map(String.init)
+        guard parts.count == 2, let a = findBird(parts[0], game.state), let b = findBird(parts[1], game.state) else {
+            print("Use: kin <name> <name> (names without spaces, e.g. chick3)"); break
+        }
+        let k = Pedigree.kinship(a.id, b.id, in: game.state)
+        print("\(a.name) and \(b.name): \(relatedText(Relatedness(kinship: k))). A chick of theirs would be \(Int((k * 100).rounded()))% inbred.")
     case "draw":
         guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else { print("Use: draw <name>"); break }
         let look = bird.look(onDay: game.state.day, rules: game.state.rules)

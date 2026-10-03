@@ -60,6 +60,8 @@ public struct Bird: Identifiable, Hashable, Codable, Sendable {
     public var lastPettedDay: Int?
     /// The last day the player gave this bird a treat. Treats count once a day.
     public var lastTreatDay: Int?
+    /// Wright's inbreeding coefficient, fixed at hatch: 0 = unrelated parents, 0.25 = brother × sister.
+    public var inbreeding: Double?
 
     public var isPurebred: Bool { purebredFlag ?? true }
 

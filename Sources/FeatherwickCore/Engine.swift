@@ -338,6 +338,9 @@ public enum Engine {
             let mother = youngBird(.hen, origin: "Local flock", s, &rng)
             let father = youngBird(.rooster, origin: "Local flock", s, &rng)
             var egg = Breeding.layEgg(mother: mother, father: father, day: s.day, using: &rng)
+            // Keep the parents on record, so the chick's family tree is not blank.
+            s.pedigree[mother.id] = PedigreeRecord(mother)
+            s.pedigree[father.id] = PedigreeRecord(father)
             egg.collectedDay = s.day
             egg.candled = true
             s.coins -= cost
@@ -439,6 +442,7 @@ public enum Engine {
                 guard var chick = Breeding.hatch(egg, name: "Chick \(s.chicksHatched + 1)", onDay: s.day,
                                                  origin: "Henhaven", using: &rng) else { continue }
                 s.chicksHatched += 1
+                chick.inbreeding = Pedigree.kinship(chick.motherID, chick.fatherID, in: s)
                 if let hen = clutch.henID {
                     chick.raisedBy = hen
                     chick.tameness = s.rules.broodyChickTameness
@@ -651,7 +655,9 @@ public enum Engine {
         // Any adult rooster in the coop fertilises the hens' eggs. (A breeding pen comes later.)
         let roosters = s.coop.filter { $0.sex == .rooster && $0.stage(onDay: s.day, rules: s.rules) == .adult }
         for hen in hens where s.day >= hen.noLayUntilDay && !hen.isBroody(onDay: s.day) {
-            guard Double.roll(chance, using: &rng) else { continue }
+            // Inbred hens lay a little less (real inbreeding depression).
+            let henChance = chance * (1 - min(s.rules.maxInbreedingLayLoss, hen.inbreeding ?? 0))
+            guard Double.roll(henChance, using: &rng) else { continue }
             // Nest boxes full: the hen lays on the floor, and the egg may break.
             if s.nest.count >= s.nestCapacity, Double.roll(s.rules.floorEggBreakChance, using: &rng) {
                 ev.append(.eggBroken(by: hen.id))
