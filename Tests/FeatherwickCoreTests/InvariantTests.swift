@@ -118,7 +118,7 @@ struct InvariantTests {
                 #expect(!s.fedToday && s.coopDoorOpen)
                 // No dead ends: with no hen, the player can buy one, has an offer, or a rooster is still out.
                 let hasHen = s.ownedBirds.contains { $0.sex == .hen }
-                let roosterAtHome = (s.coop + s.brooder).contains { $0.sex == .rooster }
+                let roosterAtHome = (s.coop + s.brooder).contains { $0.sex == .rooster && $0.revealed }
                 if !hasHen && s.coins < s.rules.pulletPrice && roosterAtHome && s.tradeOffer == nil {
                     Issue.record("seed \(seed), step \(step): dead end, no hen and no way to get one")
                     break

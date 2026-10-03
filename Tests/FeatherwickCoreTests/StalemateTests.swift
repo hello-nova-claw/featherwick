@@ -166,3 +166,29 @@ struct ShopTests {
         }
     }
 }
+
+/// Anti-leak rule: the trade safety net must not tell the player a chick's sex before the game does.
+struct TradeOfferLeakTests {
+    @Test func anUnrevealedRoosterChickIsNeverOfferedInTrade() {
+        // The bug: a rooster starter chick, coins spent, day 2. The offer "a hen for Pip" said Pip is a rooster.
+        var (s, rng) = startedGame(sex: .rooster, rules: calmRules())
+        s.coins = 0
+        let pip = s.brooder[0]
+        #expect(!pip.revealed)
+        for _ in 0..<(s.rules.growerAge - 1) {
+            night(&s, &rng)
+            #expect(s.tradeOffer == nil, "day \(s.day): offer before Pip is revealed")
+        }
+    }
+
+    @Test func theOfferComesOnceTheRoosterIsKnown() {
+        var (s, rng) = startedGame(sex: .rooster, rules: calmRules())
+        s.giftHenGiven = true  // no neighbour's gift hen: the trade is the only way to a hen
+        s.coins = 0
+        while !(s.bird(s.brooder.first?.id ?? s.coop[0].id)?.revealed ?? false) { night(&s, &rng) }
+        night(&s, &rng)
+        #expect(s.tradeOffer != nil)
+        let offered = s.bird(s.tradeOffer!.roosterID)!
+        #expect(offered.revealed && offered.sex == .rooster)
+    }
+}

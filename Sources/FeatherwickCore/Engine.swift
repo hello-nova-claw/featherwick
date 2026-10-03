@@ -384,8 +384,10 @@ public enum Engine {
         guard stuck else { s.tradeOffer = nil; return [] }
         // Keep an existing offer while its rooster is still at home.
         if let offer = s.tradeOffer, (s.coop + s.brooder).contains(where: { $0.id == offer.roosterID }) { return [] }
-        guard let rooster = (s.coop + s.brooder).first(where: { $0.sex == .rooster }) else {
-            s.tradeOffer = nil  // every rooster is out; they come home, and the offer comes then
+        // Only a rooster the player already knows is a rooster. Offering an unrevealed chick would
+        // tell the player its sex early. An unrevealed rooster is revealed as it grows; the offer comes then.
+        guard let rooster = (s.coop + s.brooder).first(where: { $0.sex == .rooster && $0.revealed }) else {
+            s.tradeOffer = nil  // every known rooster is out; they come home, and the offer comes then
             return []
         }
         var hen = youngBird(.hen, origin: "A Featherwick neighbour", s, &rng)
