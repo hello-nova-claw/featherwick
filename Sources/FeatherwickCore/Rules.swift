@@ -36,7 +36,7 @@ public struct Rules: Codable, Hashable, Sendable {
     public var maxClutch = 6               // eggs under one broody hen
     public var giftIncubatorSize = 1       // the neighbour's old incubator, given with the first fertile egg
     public var bigIncubatorSize = 6        // the one you buy
-    public var incubatorPrice = 40
+    public var incubatorPrice = 30
 
     // Rooster tension (never harm: hens just lay less)
     public var hensPerRooster = 5          // one rooster is always fine; beyond that, 1 per 5 hens
@@ -88,7 +88,7 @@ public struct Rules: Codable, Hashable, Sendable {
     public var maxInbreedingConditionLoss = 0.3
 
     // Economy
-    public var startCoins = 20
+    public var startCoins = 25
     // Basic feed is free and unlimited. Feeding is still a daily task: unfed hens don't lay.
     public var creamEggPrice = 1
     public var brownEggPrice = 2
@@ -105,9 +105,9 @@ public struct Rules: Codable, Hashable, Sendable {
     public var showPrizeSecond = 10
     public var showPrizeThird = 5
     // Flock turnover (cozy: hens slow with age and retire, they never die).
-    public var layDeclineStartDays = 180   // a hen lays full until roughly her first autumn
+    public var layDeclineStartDays = 252   // full for about nine in-game months before slowing
     public var layDeclineFloor = 0.4       // the least a laying hen's age factor falls to
-    public var retirementAgeDays = 336     // three in-game years (4 seasons x 28 x 3): she becomes a beloved non-layer
+    public var retirementAgeDays = 504     // about 4.5 in-game years: she becomes a beloved non-layer
 
     // Premium feed: an optional coin sink. Basic feed stays free; premium feed feeds the flock
     // for the day AND lifts laying a little. One bag is several day-portions.
@@ -199,15 +199,15 @@ extension Rules {
         r.lostDaysMax = 2
         r.lostDaysCap = 10
         r.pulletPrice = 20
-        r.incubatorPrice = 30
-        r.coopUpgradePrice = 25
+        r.incubatorPrice = 24
+        r.coopUpgradePrice = 24
         return r
     }()
 
     /// A tougher game: leaner laying, a bolder fox, pricier stock, and a thinner purse.
     public static let challenge: Rules = {
         var r = Rules()
-        r.startCoins = 10
+        r.startCoins = 15
         r.layChance = [.spring: 0.75, .summer: 0.65, .autumn: 0.25, .winter: 0.3]
         r.fertileChance = 0.75
         r.foxChance = 0.65

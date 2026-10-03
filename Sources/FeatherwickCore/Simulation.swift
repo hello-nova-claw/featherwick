@@ -19,6 +19,7 @@ public enum Simulation {
         public var eggsLaid: Int
         public var eggsSold: Int
         public var coinsFromEggs: Int
+        public var coinsFromShows: Int
         public var chicksHatched: Int
         public var foxVisits: Int
         public var storiesFinished: Int
@@ -31,7 +32,7 @@ public enum Simulation {
         var rng = SeededRNG(seed: seed)
         var s = Engine.newGame(rules: rules, using: &rng)
         var r = Report(seed: seed, days: days, finalCoins: 0, peakCoins: 0, finalFlock: 0, peakFlock: 0,
-                       breedBook: 0, eggBook: 0, eggsLaid: 0, eggsSold: 0, coinsFromEggs: 0,
+                       breedBook: 0, eggBook: 0, eggsLaid: 0, eggsSold: 0, coinsFromEggs: 0, coinsFromShows: 0,
                        chicksHatched: 0, foxVisits: 0, storiesFinished: 0)
         apply(.chooseStarter(index: Int(seed % 3), name: "Sim"), &s, &rng, &r)
 
@@ -77,9 +78,36 @@ public enum Simulation {
         // Sell before the carton overflows, but keep eggs known to be fertile for hatching.
         if s.carton.count >= s.cartonCapacity - 2 { apply(.sellClearEggs, &s, &rng, &r) }
 
+        manageRoosters(&s, &rng, &r)
+        maybeEnterShow(&s, &rng, &r)
         makeRoom(&s, &rng, &r)
         apply(.closeCoop, &s, &rng, &r)
         apply(.passNight, &s, &rng, &r)
+    }
+
+    /// Keep one adult rooster for breeding and rehome the rest: a real keeper does this to ease rooster
+    /// tension (so the hens lay) and to turn spare cockerels into coins. Without it the flock fills with
+    /// roosters and laying is dragged down — which would make the balance report lie.
+    private static func manageRoosters(_ s: inout GameState, _ rng: inout SeededRNG, _ r: inout Report) {
+        while true {
+            let roosters = s.coop.filter {
+                $0.sex == .rooster && $0.stage(onDay: s.day, rules: s.rules) == .adult && !$0.isBroody(onDay: s.day)
+            }
+            guard let spare = roosters.count > 1 ? roosters.last : nil else { break }
+            apply(.rehome(spare.id), &s, &rng, &r)
+            if s.coop.contains(where: { $0.id == spare.id }) { break }  // rehome refused: stop, don't spin
+        }
+    }
+
+    /// In the few days before a show, enter one eligible bird and the best plate of eggs, once.
+    /// Exercises the show system (entry fees out, prize coins in) so the report reflects it.
+    private static func maybeEnterShow(_ s: inout GameState, _ rng: inout SeededRNG, _ r: inout Report) {
+        let until = s.nextShowDay - s.day
+        guard s.showEntries.isEmpty, until >= 0, until <= 3, s.coins >= s.rules.showEntryFee else { return }
+        if let bird = s.coop.first(where: { $0.stage(onDay: s.day, rules: s.rules) != .chick }) {
+            apply(.enterShow(bird.id), &s, &rng, &r)
+        }
+        apply(.enterEggs, &s, &rng, &r)  // enters the best plate if there is one; a harmless no-op otherwise
     }
 
     /// A flock needs both sexes to breed: a lone hen buys a cockerel, a lone rooster a hen.
@@ -119,6 +147,7 @@ public enum Simulation {
         switch e {
         case .eggLaid: r.eggsLaid += 1
         case .eggsSold(let n, let coins, _): r.eggsSold += n; r.coinsFromEggs += coins
+        case .showPrizesWon(let coins): r.coinsFromShows += coins
         case .chicksHatched(let ids, _): r.chicksHatched += ids.count
         case .foxVisited: r.foxVisits += 1
         default: break
@@ -143,6 +172,8 @@ public enum Simulation {
         \(line("flock") { Double($0.finalFlock) })
         \(line("breed book") { Double($0.breedBook) })
         \(line("eggs/day", "%.2f") { $0.eggsPerDay })
+        \(line("egg income") { Double($0.coinsFromEggs) })
+        \(line("show income") { Double($0.coinsFromShows) })
         \(line("hatched") { Double($0.chicksHatched) })
         \(line("fox visits") { Double($0.foxVisits) })
         """

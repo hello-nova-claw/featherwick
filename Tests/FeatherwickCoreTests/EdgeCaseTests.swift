@@ -449,9 +449,10 @@ struct HatchingEdgeCases {
 
     @Test func buyingTheIncubatorNeedsCoins() {
         var (s, rng) = startedGame(sex: .hen)
-        s.coins = 39
-        #expect(Engine.apply(.buyIncubator, to: &s, using: &rng) == [.rejected(.notEnoughCoins(needed: 40, have: 39))])
-        #expect(!s.hasIncubator && s.coins == 39)
+        let price = s.rules.incubatorPrice
+        s.coins = price - 1
+        #expect(Engine.apply(.buyIncubator, to: &s, using: &rng) == [.rejected(.notEnoughCoins(needed: price, have: price - 1))])
+        #expect(!s.hasIncubator && s.coins == price - 1)
     }
 }
 
