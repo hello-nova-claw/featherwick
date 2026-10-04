@@ -8,9 +8,11 @@ import SwiftUI
 struct EggShape: Shape {
     func path(in r: CGRect) -> Path {
         let k: CGFloat = 0.5523  // circle-to-Bézier constant
-        let cx = r.midX, w = r.width / 2
+        let cx = r.midX
+        let w = r.width / 2
         let split = r.minY + r.height * 0.6
-        let top = split - r.minY, bottom = r.maxY - split
+        let top = split - r.minY
+        let bottom = r.maxY - split
         var p = Path()
         p.move(to: CGPoint(x: r.minX, y: split))
         p.addCurve(

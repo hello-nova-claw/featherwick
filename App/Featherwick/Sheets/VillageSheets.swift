@@ -127,8 +127,10 @@ struct ShowPanel: View {
         let s = store.state
         VStack(alignment: .leading, spacing: Space.m) {
             Text("The \(s.season.rawValue.capitalized) Show is on day \(s.nextShowDay).").font(Typeface.body)
-            Text("Entry \(s.rules.showEntryFee) coins. Ribbons pay \(s.rules.showPrizeFirst), \(s.rules.showPrizeSecond) and \(s.rules.showPrizeThird).")
-                .font(Typeface.label).foregroundStyle(palette.inkMuted)
+            Text(
+                "Entry \(s.rules.showEntryFee) coins. Ribbons pay \(s.rules.showPrizeFirst), \(s.rules.showPrizeSecond) and \(s.rules.showPrizeThird)."
+            )
+            .font(Typeface.label).foregroundStyle(palette.inkMuted)
             if s.showEntries.isEmpty {
                 Text("Nothing entered yet. Enter a bird from its card.").font(Typeface.body)
                     .foregroundStyle(palette.inkSoft)
@@ -150,7 +152,9 @@ struct ShowPanel: View {
 
     private func entryLine(_ e: ShowEntry, _ s: GameState) -> String {
         if let id = e.birdID, let b = s.bird(id) { return "\(b.name), \(Engine.showClass(for: b, in: s).name) class" }
-        if let first = e.eggs.first { return "A plate of \(first.speckled ? "speckled " : "")\(first.colour.rawValue) eggs" }
+        if let first = e.eggs.first {
+            return "A plate of \(first.speckled ? "speckled " : "")\(first.colour.rawValue) eggs"
+        }
         return "An entry"
     }
 
@@ -311,7 +315,8 @@ struct BackFenceSheet: View {
     /// The newest storyline line, or a quiet hello when nothing is happening.
     private func speech(_ s: GameState) -> String {
         if let offer = s.tradeOffer {
-            return "“My daughter's starting a flock and needs a rooster. I'd swap you a young hen for \(birdName(offer.roosterID, s)).”"
+            return
+                "“My daughter's starting a flock and needs a rooster. I'd swap you a young hen for \(birdName(offer.roosterID, s)).”"
         }
         for story in Storylines.all.reversed() {
             guard let p = s.stories[story.id], !p.rewarded else { continue }

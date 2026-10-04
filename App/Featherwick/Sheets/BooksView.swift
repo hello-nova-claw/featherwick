@@ -126,7 +126,9 @@ struct EggBook: View {
             Text("\(s.eggBook.count) of \(total) eggs found").font(Typeface.label).foregroundStyle(palette.inkMuted)
             VStack(spacing: 0) {
                 ForEach(EggColour.allCases, id: \.self) { colour in
-                    let found = [false, true].filter { sp in s.eggBook.contains { $0.colour == colour && $0.speckled == sp } }
+                    let found = [false, true].filter { sp in
+                        s.eggBook.contains { $0.colour == colour && $0.speckled == sp }
+                    }
                     VStack(alignment: .leading, spacing: Space.s) {
                         HStack {
                             Text(colour.rawValue.capitalized).font(Typeface.item)

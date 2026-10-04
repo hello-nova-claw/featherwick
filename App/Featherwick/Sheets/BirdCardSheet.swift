@@ -314,7 +314,9 @@ struct ToastStack: View {
                 }
                 .padding(.horizontal, Space.l)
                 .background(palette.toast, in: RoundedRectangle(cornerRadius: Radius.control))
-                .shadow(color: Color.black.opacity(palette.isNight ? 0.8 : 0.35), radius: palette.isNight ? 20 : 7, y: 4)
+                .shadow(
+                    color: Color.black.opacity(palette.isNight ? 0.8 : 0.35), radius: palette.isNight ? 20 : 7, y: 4
+                )
                 .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                 .task {
                     try? await Task.sleep(for: .seconds(voiceOver ? 10 : 4))

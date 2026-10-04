@@ -120,7 +120,10 @@ final class GameStore {
         case .newBreedBookEntry(let entry):
             return ("\(entryText(entry).capitalized) added to the Breed Book", "View", .books)
         case .newEggBookEntry(let entry):
-            return ("\(entry.speckled ? "Speckled " : "")\(entry.colour.rawValue) eggs added to the Egg Book", "View", .books)
+            return (
+                "\(entry.speckled ? "Speckled " : "")\(entry.colour.rawValue) eggs added to the Egg Book", "View",
+                .books
+            )
         case .milestoneReached(let id):
             return ("Milestone: \(milestoneText(id).title)", nil, nil)
         case .storyGift(_, let id):
