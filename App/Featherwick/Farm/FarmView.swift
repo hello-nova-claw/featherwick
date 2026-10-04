@@ -17,14 +17,15 @@ enum Place: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Where the label sits on the painted scene, as a fraction of the screen (bottom-centre of the tap area).
+    /// Where the label sits, as a fraction of the farm painting (just below the place it names).
+    /// Measured on `Art/farm-day.png`; change these when the painting changes.
     var anchor: UnitPoint {
         switch self {
-        case .backFence: UnitPoint(x: 0.5, y: 0.2)
-        case .coop: UnitPoint(x: 0.26, y: 0.42)
-        case .pottingShed: UnitPoint(x: 0.74, y: 0.4)
-        case .yard: UnitPoint(x: 0.5, y: 0.66)
-        case .farmGate: UnitPoint(x: 0.5, y: 0.8)
+        case .backFence: UnitPoint(x: 0.5, y: 0.585)
+        case .coop: UnitPoint(x: 0.2, y: 0.635)
+        case .pottingShed: UnitPoint(x: 0.8, y: 0.64)
+        case .yard: UnitPoint(x: 0.5, y: 0.67)
+        case .farmGate: UnitPoint(x: 0.55, y: 0.835)
         }
     }
 }
@@ -47,40 +48,47 @@ struct FarmView: View {
     @State private var sheet: FarmSheet?
 
     var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                FarmScenePlaceholder()
-                ForEach(Place.allCases) { place in
-                    PlaceLabel(place: place, notices: notices(for: place)) { sheet = .place(place) }
-                        .position(
-                            x: geo.size.width * place.anchor.x, y: geo.size.height * place.anchor.y)
-                }
-                VStack {
-                    HUD()
-                    Spacer()
-                    HStack {
-                        FloatingBox {
-                            Button("Books") { sheet = .books }
-                                .font(Typeface.display(23, relativeTo: .title2))
-                                .frame(minWidth: 72, minHeight: 56)
-                        }
-                        Spacer()
-                        FloatingBox {
-                            Button {
-                                sheet = .settings
-                            } label: {
-                                Text("≡").font(Typeface.sans(24)).frame(width: 56, height: 56)
-                            }
-                            .accessibilityLabel("Settings")
-                        }
+        ZStack {
+            // The scene and its labels fill the whole screen, so labels line up with the painting.
+            GeometryReader { geo in
+                let season = store.state.season
+                let frame = FarmScene.paintingFrame(for: season, in: geo.size)
+                ZStack {
+                    FarmScene(season: season)
+                    ForEach(Place.allCases) { place in
+                        let anchor = place.anchor
+                        PlaceLabel(place: place, notices: notices(for: place)) { sheet = .place(place) }
+                            .position(x: frame.minX + frame.width * anchor.x, y: frame.minY + frame.height * anchor.y)
                     }
                 }
-                .padding(.horizontal, Space.l)
-                .padding(.bottom, Space.xl)
-                .buttonStyle(.plain)
-                .foregroundStyle(palette.ink)
-                ToastStack()
+                .animation(.easeInOut(duration: 1.2), value: season)
             }
+            .ignoresSafeArea()
+            VStack {
+                HUD()
+                Spacer()
+                HStack {
+                    FloatingBox {
+                        Button("Books") { sheet = .books }
+                            .font(Typeface.display(23, relativeTo: .title2))
+                            .frame(minWidth: 72, minHeight: 56)
+                    }
+                    Spacer()
+                    FloatingBox {
+                        Button {
+                            sheet = .settings
+                        } label: {
+                            Text("≡").font(Typeface.sans(24)).frame(width: 56, height: 56)
+                        }
+                        .accessibilityLabel("Settings")
+                    }
+                }
+            }
+            .padding(.horizontal, Space.l)
+            .padding(.bottom, Space.xl)
+            .buttonStyle(.plain)
+            .foregroundStyle(palette.ink)
+            ToastStack()
         }
         .sheet(item: $sheet) { which in
             content(for: which)
@@ -148,6 +156,68 @@ struct FarmView: View {
         case .farmGate:
             let until = s.nextShowDay - s.day
             return until <= 3 ? [Notice(kind: .story, text: until == 0 ? "show today" : "show in \(until) days")] : []
+        }
+    }
+}
+
+/// The painted farm for the current season, on white paper. Night is the same painting, darkened and
+/// cooled. Seasons crossfade when they turn. Without paintings in the bundle, the striped stand-in shows.
+struct FarmScene: View {
+    @Environment(\.palette) private var palette
+    let season: Season
+
+    /// `Art/farm-<season>.png` if painted, else `Art/farm-day.png` for every season. Loaded once.
+    static let paintings: [Season: UIImage] = {
+        let fallback = UIImage(named: "farm-day.png")
+        var out: [Season: UIImage] = [:]
+        for s in Season.allCases {
+            out[s] = UIImage(named: "farm-\(s.rawValue).png") ?? fallback
+        }
+        return out
+    }()
+
+    /// The paper the paintings sit on, sampled from their margins.
+    static let paper = Color(hex: 0xF3F1EB)
+
+    /// Where the painting lands on a screen of this size. A painting wider than the screen is fitted to
+    /// the width and centred on paper; a taller one fills the screen. Labels use this frame.
+    static func paintingFrame(for season: Season, in size: CGSize) -> CGRect {
+        let image = paintings[season]
+        let aspect = image.map { $0.size.width / $0.size.height } ?? (6.0 / 13.0)
+        let screenAspect = size.width / max(size.height, 1)
+        let drawn: CGSize =
+            aspect > screenAspect
+            ? CGSize(width: size.width, height: size.width / aspect)
+            : CGSize(width: size.height * aspect, height: size.height)
+        return CGRect(
+            x: (size.width - drawn.width) / 2, y: (size.height - drawn.height) / 2, width: drawn.width,
+            height: drawn.height)
+    }
+
+    var body: some View {
+        if let painting = Self.paintings[season] {
+            GeometryReader { geo in
+                let frame = Self.paintingFrame(for: season, in: geo.size)
+                ZStack {
+                    Self.paper
+                    Image(uiImage: painting)
+                        .resizable()
+                        .frame(width: frame.width, height: frame.height)
+                        .position(x: frame.midX, y: frame.midY)
+                        .id(season)
+                        .transition(.opacity)
+                }
+                .saturation(palette.isNight ? 0.55 : 1)
+                .overlay {
+                    if palette.isNight {
+                        Color(hex: 0x1B2233).opacity(0.62).blendMode(.multiply)
+                    }
+                }
+            }
+            .clipped()
+            .accessibilityHidden(true)
+        } else {
+            FarmScenePlaceholder()
         }
     }
 }
