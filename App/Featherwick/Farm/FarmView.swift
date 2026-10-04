@@ -151,7 +151,9 @@ struct FarmView: View {
             if !waiting.isEmpty {
                 let soonest = waiting.compactMap { s.nightsUntilRehomed($0.id) }.min()
                 let note = soonest.map { $0 <= 1 ? ", rehomed tomorrow" : ", \($0) nights left" } ?? ""
-                n.append(Notice(kind: .decision, text: "\(waiting.count) need\(waiting.count == 1 ? "s" : "") a perch\(note)"))
+                n.append(
+                    Notice(
+                        kind: .decision, text: "\(waiting.count) need\(waiting.count == 1 ? "s" : "") a perch\(note)"))
             }
             if let c = s.incubatorClutch, c.hatchDay <= s.day + 1 {
                 n.append(Notice(kind: .collect, text: "hatching tonight"))
