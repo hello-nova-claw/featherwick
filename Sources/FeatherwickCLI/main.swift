@@ -64,7 +64,7 @@ func load(from store: SaveStore) -> SaveFile? {
     try? store.write(data)
 }
 
-var game = load(from: store) ?? newSave(seed: seedArg ?? UInt64(Date().timeIntervalSince1970), rules: startRules)
+var game = load(from: store) ?? newSave(seed: seedArg ?? UInt64.random(in: .min ... .max), rules: startRules)
 
 // MARK: - Text
 
@@ -761,7 +761,7 @@ while true {
     case "new":
         if words.count > 1, words[1] == "yes" {
             let difficulty = (words.count > 2 ? Difficulty(named: words[2]) : nil) ?? .standard
-            game = newSave(seed: UInt64(Date().timeIntervalSince1970), rules: difficulty.rules)
+            game = newSave(seed: UInt64.random(in: .min ... .max), rules: difficulty.rules)
             print("A new game begins (\(difficulty.rawValue)).")
             look(game.state)
         } else {
@@ -783,7 +783,7 @@ while true {
             game = loaded
             print("Switched to slot \(store.slot).")
         } else {
-            game = newSave(seed: UInt64(Date().timeIntervalSince1970), rules: startRules)
+            game = newSave(seed: UInt64.random(in: .min ... .max), rules: startRules)
             print("New slot \(store.slot): a new game begins.")
         }
         look(game.state)
