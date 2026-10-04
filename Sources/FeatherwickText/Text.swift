@@ -183,7 +183,11 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         case .noSuchBird: "There is no bird with that name here."
         case .noIncubator: "You don't have an incubator yet."
         case .alreadyHaveIncubator: "You already have the big incubator."
-        case .incubatorBusy: "The incubator already has eggs in it."
+        case .incubatorBusy: "The incubator has eggs from an earlier day in it. Wait for them to hatch."
+        case .incubatorFull(let room):
+            room == 0 ? "The incubator is full." : "The incubator has room for \(room) more egg\(room == 1 ? "" : "s")."
+        case .noSuchEgg: "That egg is not in your carton."
+        case .eggIsClear: "That egg is clear. It will never hatch."
         case .notBroody: "She isn't broody. Only a broody hen will sit on eggs."
         case .henAlreadySitting: "She is already sitting on eggs."
         case .clutchTooBig(let max): "That's too many eggs. The most is \(max)."

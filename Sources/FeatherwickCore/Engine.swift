@@ -36,6 +36,12 @@ public enum Command: Hashable, Codable, Sendable {
     case enterEggs
     /// Feed the flock premium feed for the day: feeds them AND lifts laying a little. Uses one portion.
     case feedPremium
+    /// Set these exact eggs from the carton in the incubator. Clear ones are found and stay in the carton.
+    case incubateEggs([UUID])
+    /// Set these exact eggs from the carton under a broody hen.
+    case sitEggs(hen: UUID, eggs: [UUID])
+    /// Sell these exact eggs from the carton.
+    case sellChosenEggs([UUID])
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -84,6 +90,12 @@ public enum Rejection: Hashable, Codable, Sendable {
     case noMatchedPlate
     case noPremiumFeed
     case alreadyFedPremium
+    /// A chosen egg is not in the carton.
+    case noSuchEgg
+    /// A chosen egg is already known to be clear, so it can never hatch.
+    case eggIsClear
+    /// The incubator has room for only this many more eggs.
+    case incubatorFull(room: Int)
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -225,12 +237,12 @@ public enum Engine {
             let keepFertile = command == .sellClearEggs
             let selling = s.carton.filter { !(keepFertile && $0.isCandled && $0.isFertile) }
             if selling.isEmpty { return [.rejected(.cartonEmpty)] }
-            let total = selling.reduce(0) { $0 + s.rules.price(of: $1, onDay: s.day) }
-            let stale = selling.count(where: { s.rules.isStale($0, onDay: s.day) })
-            let sold = Set(selling.map(\.id))
-            s.coins += total
-            s.carton.removeAll { sold.contains($0.id) }
-            return [.eggsSold(count: selling.count, coins: total, stale: stale)]
+            return sell(selling, &s)
+
+        case .sellChosenEggs(let ids):
+            let (eggs, problem) = chosenEggs(ids, s)
+            if let problem { return [.rejected(problem)] }
+            return sell(eggs, &s)
 
         case .candle:
             let unchecked = s.carton.indices.filter { !s.carton[$0].isCandled }
@@ -257,32 +269,37 @@ public enum Engine {
             return [.incubatorBought(cost: cost, size: s.incubatorSize)]
 
         case .incubate(let count):
-            if !s.hasIncubator { return [.rejected(.noIncubator)] }
-            if !s.boarding.isEmpty { return [.rejected(.birdsBoarding)] }
-            if s.incubatorClutch != nil { return [.rejected(.incubatorBusy)] }
-            // Every egg set could hatch, so the brooder needs room for all of them.
-            let room = s.brooderSize - s.brooder.count
-            if room <= 0 { return [.rejected(.brooderFull(room: 0))] }
-            if count > s.incubatorSize { return [.rejected(.clutchTooBig(max: s.incubatorSize))] }
+            if let r = incubatorBlocker(s) { return [.rejected(r)] }
+            let space = incubatorSpace(s)
+            if count > space { return [.rejected(.clutchTooBig(max: space))] }
             if let r = checkClutchSize(count, s) { return [.rejected(r)] }
+            let room = brooderRoom(s)
             if count > room { return [.rejected(.brooderFull(room: room))] }
-            return setEggs(count: count, hen: nil, hatchDay: s.day + s.rules.incubatorHatchDays, &s)
+            return setEggs(hatchCandidates(s, count: count), hen: nil, hatchDay: incubatorHatchDay(s), &s)
+
+        case .incubateEggs(let ids):
+            if let r = incubatorBlocker(s) { return [.rejected(r)] }
+            let (eggs, problem) = chosenEggs(ids, s)
+            if let problem { return [.rejected(problem)] }
+            if eggs.contains(where: { $0.isCandled && !$0.isFertile }) { return [.rejected(.eggIsClear)] }
+            let space = incubatorSpace(s)
+            if eggs.count > space { return [.rejected(.incubatorFull(room: space))] }
+            let room = brooderRoom(s)
+            if eggs.count > room { return [.rejected(.brooderFull(room: room))] }
+            return setEggs(eggs, hen: nil, hatchDay: incubatorHatchDay(s), &s)
 
         case .sit(let henID, let count):
-            guard let i = s.coop.firstIndex(where: { $0.id == henID }) else { return [.rejected(.noSuchBird)] }
-            if !s.boarding.isEmpty { return [.rejected(.birdsBoarding)] }
-            // Her chicks may need the brooder when grown, so a full brooder blocks hatching here too.
-            if s.brooder.count >= s.brooderSize { return [.rejected(.brooderFull(room: 0))] }
-            if !s.coop[i].isBroody(onDay: s.day) { return [.rejected(.notBroody)] }
-            if s.clutch(under: henID) != nil { return [.rejected(.henAlreadySitting)] }
+            if let r = sitBlocker(henID, s) { return [.rejected(r)] }
             if let r = checkClutchSize(count, s) { return [.rejected(r)] }
-            let hatchDay = s.day + s.rules.broodyHatchDays
-            let ev = setEggs(count: count, hen: henID, hatchDay: hatchDay, &s)
-            if s.clutch(under: henID) != nil {
-                // She sits, then raises her chicks until they are big enough for the coop.
-                s.coop[i].broodyUntilDay = hatchDay + s.rules.brooderDays
-            }
-            return ev
+            return sit(henID, on: hatchCandidates(s, count: count), &s)
+
+        case .sitEggs(let henID, let ids):
+            if let r = sitBlocker(henID, s) { return [.rejected(r)] }
+            let (eggs, problem) = chosenEggs(ids, s)
+            if let problem { return [.rejected(problem)] }
+            if eggs.contains(where: { $0.isCandled && !$0.isFertile }) { return [.rejected(.eggIsClear)] }
+            if eggs.count > s.rules.maxClutch { return [.rejected(.clutchTooBig(max: s.rules.maxClutch))] }
+            return sit(henID, on: eggs, &s)
 
         case .rename(let id, let name):
             // Any bird the player owns, any time: at home, boarding, or lost.
@@ -521,10 +538,69 @@ public enum Engine {
         return nil
     }
 
+    /// The carton eggs with these IDs, in carton order, or why they can't be used.
+    /// Every ID must be in the carton.
+    static func chosenEggs(_ ids: [UUID], _ s: GameState) -> (eggs: [Egg], problem: Rejection?) {
+        let wanted = Set(ids)
+        if wanted.isEmpty { return ([], .invalidAmount) }
+        let eggs = s.carton.filter { wanted.contains($0.id) }
+        return (eggs, eggs.count == wanted.count ? nil : .noSuchEgg)
+    }
+
+    static func sell(_ eggs: [Egg], _ s: inout GameState) -> [GameEvent] {
+        let total = eggs.reduce(0) { $0 + s.rules.price(of: $1, onDay: s.day) }
+        let stale = eggs.count(where: { s.rules.isStale($0, onDay: s.day) })
+        let sold = Set(eggs.map(\.id))
+        s.coins += total
+        s.carton.removeAll { sold.contains($0.id) }
+        return [.eggsSold(count: eggs.count, coins: total, stale: stale)]
+    }
+
+    /// Why no eggs can go in the incubator right now, if anything stops it.
+    static func incubatorBlocker(_ s: GameState) -> Rejection? {
+        if !s.hasIncubator { return .noIncubator }
+        if !s.boarding.isEmpty { return .birdsBoarding }
+        // Eggs set on different days would hatch on different days, so a clutch from an earlier day blocks it.
+        if let c = s.incubatorClutch, c.hatchDay != incubatorHatchDay(s) { return .incubatorBusy }
+        if incubatorSpace(s) <= 0 { return .incubatorFull(room: 0) }
+        if brooderRoom(s) <= 0 { return .brooderFull(room: 0) }
+        return nil
+    }
+
+    static func incubatorHatchDay(_ s: GameState) -> Int { s.day + s.rules.incubatorHatchDays }
+
+    /// Free places in the incubator. Eggs set earlier today still leave room for more.
+    static func incubatorSpace(_ s: GameState) -> Int { s.incubatorSize - (s.incubatorClutch?.eggs.count ?? 0) }
+
+    /// Every egg in the incubator will hatch into the brooder, so it needs room for all of them.
+    static func brooderRoom(_ s: GameState) -> Int {
+        s.brooderSize - s.brooder.count - (s.incubatorClutch?.eggs.count ?? 0)
+    }
+
+    static func sitBlocker(_ henID: UUID, _ s: GameState) -> Rejection? {
+        guard let hen = s.coop.first(where: { $0.id == henID }) else { return .noSuchBird }
+        if !s.boarding.isEmpty { return .birdsBoarding }
+        // Her chicks may need the brooder when grown, so a full brooder blocks hatching here too.
+        if s.brooder.count >= s.brooderSize { return .brooderFull(room: 0) }
+        if !hen.isBroody(onDay: s.day) { return .notBroody }
+        if s.clutch(under: henID) != nil { return .henAlreadySitting }
+        return nil
+    }
+
+    static func sit(_ henID: UUID, on eggs: [Egg], _ s: inout GameState) -> [GameEvent] {
+        let hatchDay = s.day + s.rules.broodyHatchDays
+        let ev = setEggs(eggs, hen: henID, hatchDay: hatchDay, &s)
+        if s.clutch(under: henID) != nil, let i = s.coop.firstIndex(where: { $0.id == henID }) {
+            // She sits, then raises her chicks until they are big enough for the coop.
+            s.coop[i].broodyUntilDay = hatchDay + s.rules.brooderDays
+        }
+        return ev
+    }
+
     /// Candles the chosen eggs. Clear (infertile) eggs stay in the carton, now marked as clear.
     /// Only fertile eggs are set, so every egg that is set will hatch (cozy rule).
-    static func setEggs(count: Int, hen: UUID?, hatchDay: Int, _ s: inout GameState) -> [GameEvent] {
-        let chosen = hatchCandidates(s, count: count)
+    /// Incubator eggs join a clutch set earlier the same day.
+    static func setEggs(_ chosen: [Egg], hen: UUID?, hatchDay: Int, _ s: inout GameState) -> [GameEvent] {
         let chosenIDs = Set(chosen.map(\.id))
         let fertile = chosen.filter(\.isFertile)
         s.carton.removeAll { chosenIDs.contains($0.id) && $0.isFertile }
@@ -536,7 +612,11 @@ public enum Engine {
             ev.append(.candled(fertile: newlyFertile, clear: newlyChecked.count - newlyFertile))
         }
         if !fertile.isEmpty {
-            s.clutches.append(Clutch(henID: hen, eggs: fertile, hatchDay: hatchDay))
+            if hen == nil, let i = s.clutches.firstIndex(where: { $0.henID == nil && $0.hatchDay == hatchDay }) {
+                s.clutches[i].eggs += fertile
+            } else {
+                s.clutches.append(Clutch(henID: hen, eggs: fertile, hatchDay: hatchDay))
+            }
             ev.append(.eggsSet(count: fertile.count, hen: hen, hatchDay: hatchDay))
         }
         return ev

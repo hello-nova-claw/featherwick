@@ -25,6 +25,7 @@ struct StartingEdgeCases {
         .feed, .collectEggs, .sellEggs, .sellClearEggs, .candle, .closeCoop, .passNight,
         .buyIncubator, .incubate(count: 1), .sit(hen: UUID(), count: 1),
         .rename(UUID(), name: "x"), .rehome(UUID()), .upgradeCoop,
+        .incubateEggs([UUID()]), .sitEggs(hen: UUID(), eggs: [UUID()]), .sellChosenEggs([UUID()]),
     ]
 
     @Test(arguments: allCommandsButChoose)
@@ -379,10 +380,64 @@ struct HatchingEdgeCases {
         #expect(Engine.apply(.incubate(count: n), to: &s, using: &rng) == [.rejected(.invalidAmount)])
     }
 
-    @Test func incubatorCannotBeFilledTwice() {
+    @Test func incubatorTopsUpOnTheSameDayUntilFull() {
         var (s, rng) = gameWithIncubator(fertile: 3)
+        s.incubatorSize = 2
+        s.brooderSize = 6
         _ = Engine.apply(.incubate(count: 1), to: &s, using: &rng)
+        _ = Engine.apply(.incubate(count: 1), to: &s, using: &rng)
+        #expect(s.clutches.count == 1 && s.incubatorClutch?.eggs.count == 2)
+        #expect(Engine.apply(.incubate(count: 1), to: &s, using: &rng) == [.rejected(.incubatorFull(room: 0))])
+    }
+
+    @Test func eggsFromAnEarlierDayKeepTheIncubatorBusy() {
+        var (s, rng) = gameWithIncubator(fertile: 3)
+        s.rules.incubatorHatchDays = 3
+        s.brooderSize = 6
+        _ = Engine.apply(.incubate(count: 1), to: &s, using: &rng)
+        night(&s, &rng)
         #expect(Engine.apply(.incubate(count: 1), to: &s, using: &rng) == [.rejected(.incubatorBusy)])
+    }
+
+    @Test func theChosenEggsAreTheOnesSet() {
+        var (s, rng) = gameWithIncubator(fertile: 4)
+        s.brooderSize = 6
+        let picked = [s.carton[3].id, s.carton[1].id]
+        let ev = Engine.apply(.incubateEggs(picked), to: &s, using: &rng)
+        #expect(ev.contains(.eggsSet(count: 2, hen: nil, hatchDay: s.day + s.rules.incubatorHatchDays)))
+        #expect(Set(s.incubatorClutch!.eggs.map(\.id)) == Set(picked))
+        #expect(s.carton.count == 2 && s.carton.allSatisfy { !picked.contains($0.id) })
+    }
+
+    @Test func choosingTooManyEggsForTheIncubatorIsRejected() {
+        var (s, rng) = gameWithIncubator(fertile: 4)
+        s.incubatorSize = 2
+        s.brooderSize = 6
+        let before = s
+        let ev = Engine.apply(.incubateEggs(s.carton.prefix(3).map(\.id)), to: &s, using: &rng)
+        #expect(ev == [.rejected(.incubatorFull(room: 2))])
+        #expect(s == before)
+    }
+
+    @Test func aKnownClearOrMissingEggCannotBeChosen() {
+        var (s, rng) = gameWithIncubator(fertile: 1, clear: 1)
+        _ = Engine.apply(.candle, to: &s, using: &rng)
+        let clear = s.carton.first { !$0.isFertile }!.id
+        #expect(Engine.apply(.incubateEggs([clear]), to: &s, using: &rng) == [.rejected(.eggIsClear)])
+        #expect(Engine.apply(.incubateEggs([UUID()]), to: &s, using: &rng) == [.rejected(.noSuchEgg)])
+        #expect(Engine.apply(.incubateEggs([]), to: &s, using: &rng) == [.rejected(.invalidAmount)])
+        #expect(Engine.apply(.sellChosenEggs([UUID()]), to: &s, using: &rng) == [.rejected(.noSuchEgg)])
+    }
+
+    @Test func sellingChosenEggsSellsOnlyThose() {
+        var (s, rng) = gameWithIncubator(fertile: 2, clear: 2)
+        let picked = s.carton[2].id
+        let price = s.rules.price(of: s.carton[2], onDay: s.day)
+        let coins = s.coins
+        let ev = Engine.apply(.sellChosenEggs([picked]), to: &s, using: &rng)
+        #expect(ev == [.eggsSold(count: 1, coins: price, stale: 0)])
+        #expect(s.coins == coins + price)
+        #expect(s.carton.count == 3 && !s.carton.contains { $0.id == picked })
     }
 
     @Test func allClearEggsSetNothingAndLeaveTheIncubatorFree() {
