@@ -72,8 +72,12 @@ Most new content is a table entry. See README "Data layer" and the feature secti
 ## Workflow
 
 - Add or update tests in the matching suite for each change. Run `swift test` before a commit.
-- CI (`.github/workflows/swift.yml`) runs `swift build` and `swift test` on Linux (`swift:6.0-noble`)
-  for every pull request. Code must build on Linux too: no Apple-only APIs in Core.
+- CI (`.github/workflows/swift.yml`) runs on Linux (`swift:6.0-noble`) for every pull request:
+  format check, build with warnings as errors, then tests. Code must build on Linux too: no
+  Apple-only APIs in Core. Fix warnings; do not silence them.
+- `.github/workflows/apple.yml` builds and tests on macOS and builds the core for iOS. It runs on
+  `main` only (macOS minutes cost 10x); run it by hand before merging a change to platform code.
+- Dependabot (`.github/dependabot.yml`) opens weekly PRs for new GitHub Action versions.
 - After a `Rules` balance change, run `sim` and check `SimulationTests` still pass.
 - Prefer the standard library: `count(where:)`, tuple compares for sort tie-breaks, Hashable
   structs (not joined strings) as dictionary keys. A ranked enum with String raw values conforms
