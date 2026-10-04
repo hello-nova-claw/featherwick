@@ -25,7 +25,9 @@ final class GameStore {
     var saveLocation: String { store.url.path }
 
     init(directory: URL = GameStore.saveDirectory(), slot: String = SaveStore.defaultSlot) {
-        store = SaveStore(directory: directory, slot: slot)
+        // A local first: @Observable can't read `self.store` until every property is set.
+        let store = SaveStore(directory: directory, slot: slot)
+        self.store = store
         save = Self.load(from: store) ?? Self.newSave(rules: .standard)
         append(state.day == 0 ? "Welcome to Featherwick." : "Welcome back. It is day \(state.day).")
     }

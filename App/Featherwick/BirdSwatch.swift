@@ -18,7 +18,7 @@ struct BirdSwatch: View {
                 .overlay(Circle().strokeBorder(Color.secondary.opacity(0.4), lineWidth: 1))
                 .overlay {
                     if pattern == .barring {
-                        Image(systemName: "line.3.horizontal").foregroundStyle(.white.opacity(0.7))
+                        Image(systemName: "line.3.horizontal").foregroundStyle(Color.white.opacity(0.7))
                     } else if pattern == .lacing {
                         Circle().strokeBorder(Color.black.opacity(0.7), lineWidth: size / 10)
                     }
