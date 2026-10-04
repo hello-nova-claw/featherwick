@@ -93,10 +93,10 @@ let help = """
       collect              move eggs from the nest to your carton
       sell                 sell every egg in your carton
       sell clear           sell every egg except the ones you know are fertile
-      candle               hold the carton eggs up to a light to see which are fertile
+      candle               hold the carton eggs up to a light to see which are fertile (once you know how)
       buy incubator        buy a \(game.state.rules.bigIncubatorSize)-egg incubator (\(game.state.rules.incubatorPrice) coins)
-      incubate <n>         candle n eggs from the carton; fertile ones go in the incubator
-      sit <hen> <n>        candle n eggs; fertile ones go under a broody hen
+      incubate <n>         set n eggs from the carton in the incubator (known-fertile first)
+      sit <hen> <n>        set n eggs under a broody hen (known-fertile first)
       rename <name> <new>  rename any of your birds, any time
       value <name>         what a neighbour would pay to adopt a bird
       tree <name>          family tree, 3 generations, and how closely bred the bird is

@@ -114,6 +114,9 @@ public struct GameState: Hashable, Codable, Sendable {
     /// Whether the one-off "too many roosters — rehome one" tip has been shown. New-player nudge, once.
     public var roosterAdviceGiven = false
     public var hasIncubator: Bool { incubatorSize > 0 }
+    /// A new keeper can't candle yet: set eggs are a guess, and clear ones come back unhatched.
+    /// True by default so saves from before this rule keep the skill; `Engine.newGame` sets it false.
+    public var canCandle = true
     public var clutches: [Clutch] = []
     public var chicksHatched = 0
 

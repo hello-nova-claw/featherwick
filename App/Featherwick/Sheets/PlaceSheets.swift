@@ -28,14 +28,20 @@ struct CoopSheet: View {
                     Button("Collect") { store.run(.collectEggs) }.buttonStyle(.secondary).frame(width: 110)
                 }
             }
-            WordTabs(
-                tabs: [
-                    (.all, "All \(s.carton.count)"), (.fertile, "Fertile"), (.clear, "Clear"),
-                    (.notCandled, "Not candled"),
-                ], selection: $filter)
-            Carton(eggs: shown, capacity: max(12, s.cartonCapacity), selected: $selected)
-                .onChange(of: s.carton) { _, carton in selected.formIntersection(carton.map(\.id)) }
-            CandlingLegend()
+            // The fertile and clear filters only mean something once the keeper can candle.
+            if s.canCandle {
+                WordTabs(
+                    tabs: [
+                        (.all, "All \(s.carton.count)"), (.fertile, "Fertile"), (.clear, "Clear"),
+                        (.notCandled, "Not candled"),
+                    ], selection: $filter)
+            }
+            Carton(
+                eggs: s.canCandle ? shown : s.carton, capacity: max(12, s.cartonCapacity), canCandle: s.canCandle,
+                selected: $selected
+            )
+            .onChange(of: s.carton) { _, carton in selected.formIntersection(carton.map(\.id)) }
+            CandlingLegend(canCandle: s.canCandle)
             StitchDivider()
             let chosen = s.carton.filter { selected.contains($0.id) }
             if chosen.count == 1 {
@@ -79,7 +85,8 @@ struct CoopSheet: View {
 
     private func eggStory(_ egg: Egg, _ s: GameState) -> String {
         let from = s.bird(egg.motherID)?.name ?? "a local flock"
-        let state = egg.isCandled ? (egg.isFertile ? "Fertile" : "Clear") : "Not candled yet"
+        let unknown = s.canCandle ? "Not candled yet" : "Fertile? You can't tell yet"
+        let state = egg.isCandled ? (egg.isFertile ? "Fertile" : "Clear") : unknown
         let stale = s.rules.isStale(egg, onDay: s.day) ? " Stale: it sat in the nest too long." : ""
         return "From \(from). \(state).\(stale)"
     }
@@ -111,12 +118,17 @@ struct CoopSheet: View {
             .buttonStyle(.secondary)
             .disabled(s.carton.isEmpty)
         }
-        HStack(spacing: Space.l) {
-            Button("Candle the rest") { store.run(.candle) }
-            Button("Sell all but fertile") { store.run(.sellClearEggs) }
+        if s.canCandle {
+            HStack(spacing: Space.l) {
+                // Candling is one egg at a time: choose one egg that is not candled yet.
+                if chosen.count == 1, !chosen[0].isCandled {
+                    Button("Candle this egg") { store.run(.candleEgg(chosen[0].id)) }
+                }
+                Button("Sell all but fertile") { store.run(.sellClearEggs) }
+            }
+            .buttonStyle(.textAction)
+            .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.textAction)
-        .frame(maxWidth: .infinity)
     }
 
     /// Why the chosen eggs can't go in the incubator, or nil if they can. The engine checks again.
@@ -149,10 +161,12 @@ struct CoopSheet: View {
 }
 
 /// The carton: a dashed tray of cups. Filled ink dot = fertile, hollow ring = clear, no mark = not candled.
+/// Before the keeper can candle, an unknown egg shows "?".
 struct Carton: View {
     @Environment(\.palette) private var palette
     let eggs: [Egg]
     let capacity: Int
+    let canCandle: Bool
     @Binding var selected: Set<UUID>
 
     var body: some View {
@@ -191,6 +205,8 @@ struct Carton: View {
                             }
                         }
                         .frame(width: 7, height: 7)
+                    } else if !canCandle {
+                        Text("?").font(Typeface.caption).foregroundStyle(palette.ink)
                     }
                 }
             }
@@ -203,13 +219,14 @@ struct Carton: View {
     }
 
     private func cupLabel(_ egg: Egg) -> String {
-        let state = egg.isCandled ? (egg.isFertile ? "fertile" : "clear") : "not candled"
+        let state = egg.isCandled ? (egg.isFertile ? "fertile" : "clear") : (canCandle ? "not candled" : "unknown")
         return "\(egg.speckled ? "Speckled " : "")\(egg.colour.rawValue) egg, \(state)"
     }
 }
 
 struct CandlingLegend: View {
     @Environment(\.palette) private var palette
+    let canCandle: Bool
     var body: some View {
         HStack(spacing: Space.l) {
             HStack(spacing: Space.xs) {
@@ -220,7 +237,7 @@ struct CandlingLegend: View {
                 Circle().strokeBorder(palette.ink, lineWidth: 1).frame(width: 7, height: 7)
                 Text("clear")
             }
-            Text("no mark: not candled yet")
+            Text(canCandle ? "no mark: not candled yet" : "?: can't tell yet")
         }
         .font(Typeface.caption)
         .foregroundStyle(palette.inkMuted)

@@ -29,7 +29,20 @@ sets the difficulty of a new game. Type `help` in the game for commands. `day 10
 
 `Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. Command in, events out. All tunable numbers live in `Rules`.
 
-Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → hatching (eggs due today) → brooder to coop → broody hens wake → retirements → laying (only if fed) → stories & trade offer → county show (on show days) → door opens.
+Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → hatching (eggs due today; clear ones go back to the carton; the first hatch teaches candling) → brooder to coop → broody hens wake → retirements → laying (only if fed) → stories & trade offer → county show (on show days) → door opens.
+
+## Hatching and candling
+
+- You choose the exact eggs to hatch or sell. The incubator takes more eggs on the same day until it is full.
+- Eggs hatch in the incubator after `incubatorHatchDays` nights (3). Under a broody hen, after `broodyHatchDays`.
+- A new keeper cannot candle. A set egg is a guess. The app shows "?" on an egg you cannot judge yet.
+- A clear egg never hatches. On hatch day it goes back to the carton, marked clear. If the carton is full, it
+  goes to the nest boxes.
+- Bought eggs are already candled, so they show as fertile.
+- When `chicksToLearnCandling` chicks (1) have hatched, the neighbour teaches candling. Then you candle one egg
+  at a time (`candleEgg`). The CLI can still candle the whole carton (`candle`).
+- Every egg known to be fertile hatches (cozy rule).
+- Saves from before this rule keep candling (`canCandle` is true when it is missing).
 
 ## Genome (current genes)
 

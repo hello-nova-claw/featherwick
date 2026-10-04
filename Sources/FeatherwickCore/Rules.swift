@@ -33,7 +33,8 @@ public struct Rules: Codable, Hashable, Sendable {
     // Pairing and hatching
     public var fertileChance = 0.85  // with an adult rooster in the coop
     public var broodyHatchDays = 3  // under a broody hen
-    public var incubatorHatchDays = 1  // overnight
+    public var incubatorHatchDays = 3  // nights in the incubator
+    public var chicksToLearnCandling = 1  // the neighbour teaches candling once this many chicks have hatched
     public var maxClutch = 6  // eggs under one broody hen
     public var giftIncubatorSize = 1  // the neighbour's old incubator, given with the first fertile egg
     public var bigIncubatorSize = 6  // the one you buy

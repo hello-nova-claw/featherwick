@@ -188,6 +188,9 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
             room == 0 ? "The incubator is full." : "The incubator has room for \(room) more egg\(room == 1 ? "" : "s")."
         case .noSuchEgg: "That egg is not in your carton."
         case .eggIsClear: "That egg is clear. It will never hatch."
+        case .cannotCandleYet:
+            "You don't know how to candle eggs yet. Hatch a chick first, and the neighbour will show you."
+        case .alreadyCandled: "You have already held that egg up to the light."
         case .notBroody: "She isn't broody. Only a broody hen will sit on eggs."
         case .henAlreadySitting: "She is already sitting on eggs."
         case .clutchTooBig(let max): "That's too many eggs. The most is \(max)."
@@ -320,31 +323,49 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return "\(birdName(id, s)) has gone broody. She fluffs up on the pile of eggs and won't lay for a while."
     case .broodyEnded(let id): return "\(birdName(id, s)) is done being broody and is back to normal."
     case .incubatorBought(let cost, let size):
-        return "You buy a bigger incubator for \(cost) coins. It holds \(size) eggs and hatches them overnight."
+        let nights = s.rules.incubatorHatchDays
+        return "You buy a bigger incubator for \(cost) coins. It holds \(size) eggs. They hatch in \(nights) nights."
     case .neighbourGaveIncubator(let size):
         return """
             The neighbour leans over the fence. "I see your rooster has been busy. Some of your eggs will be fertile now. \
-            Here, take my old incubator. It only fits \(size) egg\(size == 1 ? "" : "s"), but it works."
+            Here, take my old incubator. It only fits \(size) egg\(size == 1 ? "" : "s"), but it works. \
+            You can't tell which eggs are fertile yet, so try a few. The clear ones just won't hatch."
 
             How to hatch eggs:
-              candle          hold the carton eggs up to a light to see which are fertile
-              sell clear      sell your eggs but keep the fertile ones
-              incubate \(size)      put a fertile egg in the incubator; it hatches overnight into the brooder
+              incubate \(size)      set eggs in the incubator; fertile ones hatch into the brooder in \
+            \(s.rules.incubatorHatchDays) nights, clear ones come back to the carton
               sit <hen> <n>   if a hen goes broody, she can sit on up to \(s.rules.maxClutch) eggs; they hatch in \
             \(s.rules.broodyHatchDays) days and she raises the chicks herself
               buy incubator   a bigger incubator holds \(s.rules.bigIncubatorSize) eggs (\(s.rules.incubatorPrice) coins)
             """
     case .candled(let fertile, let clear):
+        if fertile == 1 && clear == 0 {
+            return "You hold the egg up to the light. You see a shadow and fine veins: it's fertile."
+        }
+        if fertile == 0 && clear == 1 { return "You hold the egg up to the light. It glows clear: it won't hatch." }
         if fertile == 0 { return "You hold each egg up to the light. All \(clear) are clear: none are fertile." }
         return "You hold each egg up to the light: \(fertile) fertile" + (clear > 0 ? ", \(clear) clear." : ".")
     case .eggsSet(let n, let hen, let hatchDay):
         let who = hen.map { "under \(birdName($0, s))" } ?? "in the incubator"
-        return "You set \(n) egg\(n == 1 ? "" : "s") \(who). They will hatch on day \(hatchDay)."
+        let which = s.canCandle ? "They" : "Any fertile ones"
+        return "You set \(n) egg\(n == 1 ? "" : "s") \(who). \(which) will hatch on day \(hatchDay)."
     case .chicksHatched(let ids, let hen):
         let where_ = hen.map { "under \(birdName($0, s))" } ?? "in the incubator"
         return "Peeping \(where_)! \(ids.count) chick\(ids.count == 1 ? "" : "s") hatched: "
             + ids.compactMap { s.bird($0) }.map { "\($0.name) (\(downText($0.phenotype.chickDown)))" }.joined(
                 separator: ", ")
+    case .eggsDidNotHatch(let n, let hen):
+        let from = hen.map { "under \(birdName($0, s))" } ?? "in the incubator"
+        return "\(n) egg\(n == 1 ? "" : "s") \(from) did not hatch. \(n == 1 ? "It was" : "They were") clear. "
+            + "You put \(n == 1 ? "it" : "them") back with your eggs."
+    case .learnedCandling:
+        return """
+            The neighbour comes to see your new chick. "Well done! Here, let me show you a trick." She holds an egg up \
+            to a torch. "See the shadow and the little veins? That one's fertile. A clear one just glows." \
+            You can candle eggs now.
+              candle          hold the carton eggs up to a light to see which are fertile
+              sell clear      sell your eggs but keep the fertile ones
+            """
     case .renamed(let id): return "Hello, \(birdName(id, s))!"
     case .roostersSquabbling(let extra):
         return "The roosters were squabbling again. The hens are unsettled and laying less. "

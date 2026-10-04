@@ -26,7 +26,8 @@ struct InvariantTests {
         if let c = incubator.first, c.eggs.count > s.incubatorSize { p.append("incubator overfilled") }
         for c in s.clutches {
             if c.eggs.isEmpty { p.append("empty clutch") }
-            if !c.eggs.allSatisfy(\.isFertile) { p.append("clear egg being hatched") }
+            // A new keeper can set clear eggs by mistake, but never one already known to be clear.
+            if c.eggs.contains(where: { $0.isCandled && !$0.isFertile }) { p.append("known-clear egg being hatched") }
             if c.hatchDay < s.day { p.append("clutch past its hatch day") }
             if let hen = c.henID {
                 guard let b = s.coop.first(where: { $0.id == hen }) else {

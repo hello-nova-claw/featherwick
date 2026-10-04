@@ -78,7 +78,8 @@ struct FarmGateSheet: View {
             }
             if s.incubatorSize < r.bigIncubatorSize {
                 ShopRow(
-                    name: "Incubator", detail: "Holds \(r.bigIncubatorSize) eggs, hatches overnight.",
+                    name: "Incubator",
+                    detail: "Holds \(r.bigIncubatorSize) eggs. They hatch in \(r.incubatorHatchDays) nights.",
                     price: r.incubatorPrice, coins: s.coins
                 ) { store.run(.buyIncubator) }
             }
