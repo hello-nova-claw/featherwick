@@ -1,15 +1,18 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 func adult(_ breed: Breed, _ sex: Sex, day: Int, rules: Rules, rng: inout SeededRNG) -> Bird {
-    Bird(id: makeID(using: &rng), name: "\(breed.rawValue) \(sex.rawValue)", breed: breed,
-         genome: breed.purebred(sex), hatchDay: day - rules.adultAge, origin: "Test", revealed: true)
+    Bird(
+        id: makeID(using: &rng), name: "\(breed.rawValue) \(sex.rawValue)", breed: breed,
+        genome: breed.purebred(sex), hatchDay: day - rules.adultAge, origin: "Test", revealed: true)
 }
 
 func fertileEgg(mother: Bird, father: Bird, day: Int, rng: inout SeededRNG) -> Egg {
-    var e = Egg(id: makeID(using: &rng), layDay: day, motherID: mother.id, colour: .blue, speckled: false,
-                collectedDay: day, motherBreed: mother.breed)
+    var e = Egg(
+        id: makeID(using: &rng), layDay: day, motherID: mother.id, colour: .blue, speckled: false,
+        collectedDay: day, motherBreed: mother.breed)
     e.fatherID = father.id
     e.embryo = try! Breeding.cross(mother: mother.genome, father: father.genome, using: &rng)
     return e
@@ -44,7 +47,7 @@ struct HatchingTests {
         s.coop.append(adult(.araucana, .rooster, day: s.day, rules: r, rng: &rng))
         var all: [GameEvent] = []
         for _ in 0..<3 { all += night(&s, &rng) }
-        #expect(all.filter { if case .neighbourGaveIncubator = $0 { true } else { false } }.count == 1)
+        #expect(all.count(where: { if case .neighbourGaveIncubator = $0 { true } else { false } }) == 1)
         #expect(s.incubatorSize == r.giftIncubatorSize)
 
         _ = Engine.apply(.collectEggs, to: &s, using: &rng)
@@ -56,7 +59,10 @@ struct HatchingTests {
         s.coins = 100
         #expect(Engine.apply(.buyIncubator, to: &s, using: &rng) == [.rejected(.incubatorBusy)])
         night(&s, &rng)
-        #expect(Engine.apply(.buyIncubator, to: &s, using: &rng) == [.incubatorBought(cost: r.incubatorPrice, size: r.bigIncubatorSize)])
+        #expect(
+            Engine.apply(.buyIncubator, to: &s, using: &rng) == [
+                .incubatorBought(cost: r.incubatorPrice, size: r.bigIncubatorSize)
+            ])
         #expect(Engine.apply(.buyIncubator, to: &s, using: &rng) == [.rejected(.alreadyHaveIncubator)])
     }
 
@@ -72,9 +78,11 @@ struct HatchingTests {
         var (s, rng) = startedGame(sex: .hen, rules: calmRules())
         let hen = adult(.araucana, .hen, day: 0, rules: s.rules, rng: &rng)
         let rooster = adult(.orpington, .rooster, day: 0, rules: s.rules, rng: &rng)
-        s.carton = [fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng),
-                    clearEgg(mother: hen, day: 0, rng: &rng),
-                    fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng)]
+        s.carton = [
+            fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng),
+            clearEgg(mother: hen, day: 0, rng: &rng),
+            fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng),
+        ]
         #expect(Engine.apply(.incubate(count: 3), to: &s, using: &rng) == [.rejected(.noIncubator)])
         s.coins = 100
         _ = Engine.apply(.buyIncubator, to: &s, using: &rng)
@@ -151,13 +159,18 @@ struct HatchingTests {
         var (s, rng) = startedGame(sex: .hen)
         let hen = adult(.araucana, .hen, day: 0, rules: s.rules, rng: &rng)
         let rooster = adult(.orpington, .rooster, day: 0, rules: s.rules, rng: &rng)
-        s.carton = [fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng),
-                    clearEgg(mother: hen, day: 0, rng: &rng),
-                    clearEgg(mother: hen, day: 0, rng: &rng)]
+        s.carton = [
+            fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng),
+            clearEgg(mother: hen, day: 0, rng: &rng),
+            clearEgg(mother: hen, day: 0, rng: &rng),
+        ]
         #expect(Engine.apply(.candle, to: &s, using: &rng) == [.candled(fertile: 1, clear: 2)])
         #expect(Engine.apply(.candle, to: &s, using: &rng) == [.rejected(.nothingToCandle)])
         let ev = Engine.apply(.sellClearEggs, to: &s, using: &rng)
-        guard case .eggsSold(let n, _, _) = ev.first else { Issue.record("not sold"); return }
+        guard case .eggsSold(let n, _, _) = ev.first else {
+            Issue.record("not sold")
+            return
+        }
         #expect(n == 2)
         #expect(s.carton.count == 1 && s.carton[0].isFertile)
     }
@@ -175,7 +188,10 @@ struct HatchingTests {
         // Only 1 usable egg: the known-clear one is not offered.
         #expect(Engine.apply(.incubate(count: 2), to: &s, using: &rng) == [.rejected(.notEnoughEggsInCarton(have: 1))])
         // Already candled, so no new candling event, just the set.
-        #expect(Engine.apply(.incubate(count: 1), to: &s, using: &rng) == [.eggsSet(count: 1, hen: nil, hatchDay: s.day + 1)])
+        #expect(
+            Engine.apply(.incubate(count: 1), to: &s, using: &rng) == [
+                .eggsSet(count: 1, hen: nil, hatchDay: s.day + 1)
+            ])
         #expect(s.carton == [clear])
     }
 

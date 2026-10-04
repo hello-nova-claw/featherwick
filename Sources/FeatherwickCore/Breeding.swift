@@ -30,7 +30,8 @@ public enum Breeding {
 
         // One allele from each parent for every other gene, mother's first.
         for locus in Loci.autosomal {
-            let m = mother.alleles(at: locus), f = father.alleles(at: locus)
+            let m = mother.alleles(at: locus)
+            let f = father.alleles(at: locus)
             let pair = AllelePair.cross(mother: AllelePair(m[0], m[1]), father: AllelePair(f[0], f[1]), using: &rng)
             chick.setAlleles([pair.first, pair.second], at: locus)
         }
@@ -42,9 +43,10 @@ public enum Breeding {
         mother: Bird, father: Bird?, day: Int, using rng: inout R
     ) -> Egg {
         let p = mother.phenotype
-        var egg = Egg(id: makeID(using: &rng), layDay: day, motherID: mother.id,
-                      colour: p.eggColour ?? .cream, speckled: p.eggIsSpeckled,
-                      motherBreed: mother.breed, motherPurebred: mother.isPurebred)
+        var egg = Egg(
+            id: makeID(using: &rng), layDay: day, motherID: mother.id,
+            colour: p.eggColour ?? .cream, speckled: p.eggIsSpeckled,
+            motherBreed: mother.breed, motherPurebred: mother.isPurebred)
         egg.shape = QuantitativeTrait.eggShape.score(mother.genome)
         if let father, let embryo = try? cross(mother: mother.genome, father: father.genome, using: &rng) {
             egg.fatherID = father.id
@@ -61,10 +63,12 @@ public enum Breeding {
     ) -> Bird? {
         guard let genome = egg.embryo else { return nil }
         let breed = egg.motherBreed ?? .orpington
-        let pure = (egg.motherPurebred ?? true) && (egg.fatherPurebred ?? true)
+        let pure =
+            (egg.motherPurebred ?? true) && (egg.fatherPurebred ?? true)
             && egg.fatherBreed.map { $0 == breed } ?? true
-        var chick = Bird(id: makeID(using: &rng), name: name, breed: breed, genome: genome,
-                         hatchDay: day, motherID: egg.motherID, fatherID: egg.fatherID, origin: origin)
+        var chick = Bird(
+            id: makeID(using: &rng), name: name, breed: breed, genome: genome,
+            hatchDay: day, motherID: egg.motherID, fatherID: egg.fatherID, origin: origin)
         chick.purebredFlag = pure
         return chick
     }

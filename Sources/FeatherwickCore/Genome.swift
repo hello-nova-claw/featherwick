@@ -71,7 +71,6 @@ public enum SexChromosomes: Hashable, Codable, Sendable {
     }
 }
 
-
 /// The genome of one bird, stored gene by gene (see `Loci`).
 ///
 /// Only genes that differ from their default allele are stored. A gene the genome does not
@@ -126,7 +125,7 @@ public struct Genome: Hashable, Codable, Sendable {
         get {
             precondition(G.inheritance == .autosomal, "\(G.locus) is Z-linked: use zAlleles")
             guard let raw = autosomal[G.locus.rawValue],
-                  let a = G(rawValue: raw.first), let b = G(rawValue: raw.second)
+                let a = G(rawValue: raw.first), let b = G(rawValue: raw.second)
             else { return .homozygous(G.defaultAllele) }
             return AllelePair(a, b)
         }
@@ -191,14 +190,38 @@ public struct Genome: Hashable, Codable, Sendable {
 
     // MARK: Named genes (short forms for the genes the game uses now)
 
-    public var feathering: AllelePair<Feathering> { get { self[Feathering.self] } set { self[Feathering.self] = newValue } }
-    public var baseColour: AllelePair<BaseColour> { get { self[BaseColour.self] } set { self[BaseColour.self] = newValue } }
-    public var blue: AllelePair<BlueDilution> { get { self[BlueDilution.self] } set { self[BlueDilution.self] = newValue } }
-    public var lavender: AllelePair<Lavender> { get { self[Lavender.self] } set { self[Lavender.self] = newValue } }
-    public var lacing: AllelePair<Lacing> { get { self[Lacing.self] } set { self[Lacing.self] = newValue } }
-    public var blueShell: AllelePair<BlueShell> { get { self[BlueShell.self] } set { self[BlueShell.self] = newValue } }
-    public var brownShell: AllelePair<BrownShell> { get { self[BrownShell.self] } set { self[BrownShell.self] = newValue } }
-    public var speckle: AllelePair<Speckle> { get { self[Speckle.self] } set { self[Speckle.self] = newValue } }
+    public var feathering: AllelePair<Feathering> {
+        get { self[Feathering.self] }
+        set { self[Feathering.self] = newValue }
+    }
+    public var baseColour: AllelePair<BaseColour> {
+        get { self[BaseColour.self] }
+        set { self[BaseColour.self] = newValue }
+    }
+    public var blue: AllelePair<BlueDilution> {
+        get { self[BlueDilution.self] }
+        set { self[BlueDilution.self] = newValue }
+    }
+    public var lavender: AllelePair<Lavender> {
+        get { self[Lavender.self] }
+        set { self[Lavender.self] = newValue }
+    }
+    public var lacing: AllelePair<Lacing> {
+        get { self[Lacing.self] }
+        set { self[Lacing.self] = newValue }
+    }
+    public var blueShell: AllelePair<BlueShell> {
+        get { self[BlueShell.self] }
+        set { self[BlueShell.self] = newValue }
+    }
+    public var brownShell: AllelePair<BrownShell> {
+        get { self[BrownShell.self] }
+        set { self[BrownShell.self] = newValue }
+    }
+    public var speckle: AllelePair<Speckle> {
+        get { self[Speckle.self] }
+        set { self[Speckle.self] = newValue }
+    }
 
     /// Sex and barring together. Setting it can change the sex.
     public var sexChromosomes: SexChromosomes {

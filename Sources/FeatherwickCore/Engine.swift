@@ -114,7 +114,7 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case cameHomeFromBoarding(UUID)
     case noEggsHungry
     case eggLaid(UUID, by: UUID)
-    case eggBroken(by: UUID)          // nest boxes full: laid on the floor and broke
+    case eggBroken(by: UUID)  // nest boxes full: laid on the floor and broke
     case newEggBookEntry(EggBookEntry)
     case wentBroody(UUID)
     case broodyEnded(UUID)
@@ -173,11 +173,12 @@ public enum Engine {
             let sex: Sex = Bool.random(using: &rng) ? .hen : .rooster
             let colour = breed.definition.varieties.randomElement(using: &rng)!
             let barred = Double.roll(0.25, using: &rng)
-            chicks.append(Bird(
-                id: makeID(using: &rng), name: "", breed: breed,
-                genome: breed.purebred(sex, variety: colour, barred: barred),
-                hatchDay: 0, origin: "Neighbour"
-            ).withFounderQuality().withTameness(rules.brooderChickTameness))
+            chicks.append(
+                Bird(
+                    id: makeID(using: &rng), name: "", breed: breed,
+                    genome: breed.purebred(sex, variety: colour, barred: barred),
+                    hatchDay: 0, origin: "Neighbour"
+                ).withFounderQuality().withTameness(rules.brooderChickTameness))
         }
         return GameState(rules: rules, phase: .choosingStarter(chicks))
     }
@@ -192,7 +193,7 @@ public enum Engine {
 
         switch command {
         case .chooseStarter:
-            return [] // handled above
+            return []  // handled above
         case .feed:
             let needed = s.birdsAtHome.count
             if needed == 0 { return [.rejected(.nothingToFeed)] }
@@ -225,7 +226,7 @@ public enum Engine {
             let selling = s.carton.filter { !(keepFertile && $0.isCandled && $0.isFertile) }
             if selling.isEmpty { return [.rejected(.cartonEmpty)] }
             let total = selling.reduce(0) { $0 + s.rules.price(of: $1, onDay: s.day) }
-            let stale = selling.filter { s.rules.isStale($0, onDay: s.day) }.count
+            let stale = selling.count(where: { s.rules.isStale($0, onDay: s.day) })
             let sold = Set(selling.map(\.id))
             s.coins += total
             s.carton.removeAll { sold.contains($0.id) }
@@ -235,7 +236,7 @@ public enum Engine {
             let unchecked = s.carton.indices.filter { !s.carton[$0].isCandled }
             if unchecked.isEmpty { return [.rejected(s.carton.isEmpty ? .cartonEmpty : .nothingToCandle)] }
             for i in unchecked { s.carton[i].candled = true }
-            let fertile = unchecked.filter { s.carton[$0].isFertile }.count
+            let fertile = unchecked.count(where: { s.carton[$0].isFertile })
             return [.candled(fertile: fertile, clear: unchecked.count - fertile)]
 
         case .closeCoop:
@@ -349,7 +350,7 @@ public enum Engine {
             guard let offer = s.tradeOffer else { return [.rejected(.noTradeOffer)] }
             if let (keyPath, i) = locate(offer.roosterID, in: s, groups: [\.coop, \.brooder]) {
                 let rooster = s[keyPath: keyPath][i]
-                s[keyPath: keyPath][i] = offer.hen   // she takes his place
+                s[keyPath: keyPath][i] = offer.hen  // she takes his place
                 s.rehomed.append(rooster)
                 s.tradeOffer = nil
                 if s.starterID == rooster.id { s.starterID = nil }
@@ -379,8 +380,10 @@ public enum Engine {
     // MARK: - Shop and safety net
 
     /// A young bird from a local flock: a starter breed, random colour, breed and sex known.
-    static func youngBird<R: RandomNumberGenerator>(_ sex: Sex, origin: String, _ s: GameState, _ rng: inout R,
-                                                    breed chosen: Breed? = nil) -> Bird {
+    static func youngBird<R: RandomNumberGenerator>(
+        _ sex: Sex, origin: String, _ s: GameState, _ rng: inout R,
+        breed chosen: Breed? = nil
+    ) -> Bird {
         let breed = chosen ?? Breed.starters.randomElement(using: &rng)!
         let colour = breed.definition.varieties.randomElement(using: &rng)!
         return Bird(
@@ -391,13 +394,14 @@ public enum Engine {
     }
 
     static func buy<R: RandomNumberGenerator>(_ item: ShopItem, _ s: inout GameState, _ rng: inout R) -> [GameEvent] {
-        let cost = switch item {
-        case .pullet: s.rules.pulletPrice
-        case .cockerel: s.rules.cockerelPrice
-        case .fertileEgg: s.rules.fertileEggPrice
-        case .treats: s.rules.treatBagPrice
-        case .premiumFeed: s.rules.premiumFeedPrice
-        }
+        let cost =
+            switch item {
+            case .pullet: s.rules.pulletPrice
+            case .cockerel: s.rules.cockerelPrice
+            case .fertileEgg: s.rules.fertileEggPrice
+            case .treats: s.rules.treatBagPrice
+            case .premiumFeed: s.rules.premiumFeedPrice
+            }
         if s.coins < cost { return [.rejected(.notEnoughCoins(needed: cost, have: s.coins))] }
         switch item {
         case .pullet, .cockerel:
@@ -434,7 +438,9 @@ public enum Engine {
     }
 
     /// Where a bird lives among the given collections, as a keyPath and index. Groups are searched in order.
-    static func locate(_ id: UUID, in s: GameState, groups: [WritableKeyPath<GameState, [Bird]>]) -> (WritableKeyPath<GameState, [Bird]>, Int)? {
+    static func locate(
+        _ id: UUID, in s: GameState, groups: [WritableKeyPath<GameState, [Bird]>]
+    ) -> (WritableKeyPath<GameState, [Bird]>, Int)? {
         for keyPath in groups {
             if let i = s[keyPath: keyPath].firstIndex(where: { $0.id == id }) { return (keyPath, i) }
         }
@@ -451,7 +457,7 @@ public enum Engine {
     static func handle(_ id: UUID, _ kind: Handling, _ s: inout GameState) -> [GameEvent] {
         let homes: [WritableKeyPath<GameState, [Bird]>] = [\.brooder, \.henChicks, \.coop]
         guard let home = homes.first(where: { s[keyPath: $0].contains { $0.id == id } }),
-              let i = s[keyPath: home].firstIndex(where: { $0.id == id })
+            let i = s[keyPath: home].firstIndex(where: { $0.id == id })
         else {
             let away = s.lost.contains { $0.bird.id == id } || s.boarding.contains { $0.id == id }
             return [.rejected(away ? .birdNotHome : .noSuchBird)]
@@ -468,8 +474,10 @@ public enum Engine {
             bird.lastTreatDay = s.day
         }
         let before = bird.friendliness
-        bird.changeTameness(by: Handling.gain(kind, for: bird, withMotherHen: home == \GameState.henChicks,
-                                              day: s.day, rules: s.rules))
+        bird.changeTameness(
+            by: Handling.gain(
+                kind, for: bird, withMotherHen: home == \GameState.henChicks,
+                day: s.day, rules: s.rules))
         s[keyPath: home][i] = bird
         var ev: [GameEvent] = [.handled(id, kind)]
         if bird.friendliness > before { ev.append(.friendlierNow(id, bird.friendliness)) }
@@ -479,7 +487,10 @@ public enum Engine {
     static func updateTradeOffer<R: RandomNumberGenerator>(_ s: inout GameState, _ rng: inout R) -> [GameEvent] {
         let owned = s.ownedBirds
         let stuck = !owned.contains { $0.sex == .hen } && s.coins < s.rules.pulletPrice
-        guard stuck else { s.tradeOffer = nil; return [] }
+        guard stuck else {
+            s.tradeOffer = nil
+            return []
+        }
         // Keep an existing offer while its rooster is still at home.
         if let offer = s.tradeOffer, (s.coop + s.brooder).contains(where: { $0.id == offer.roosterID }) { return [] }
         // Only a rooster the player already knows is a rooster. Offering an unrevealed chick would
@@ -519,7 +530,7 @@ public enum Engine {
         s.carton.removeAll { chosenIDs.contains($0.id) && $0.isFertile }
         for i in s.carton.indices where chosenIDs.contains(s.carton[i].id) { s.carton[i].candled = true }
         let newlyChecked = chosen.filter { !$0.isCandled }
-        let newlyFertile = newlyChecked.filter(\.isFertile).count
+        let newlyFertile = newlyChecked.count(where: \.isFertile)
         var ev: [GameEvent] = []
         if !newlyChecked.isEmpty {
             ev.append(.candled(fertile: newlyFertile, clear: newlyChecked.count - newlyFertile))
@@ -535,11 +546,17 @@ public enum Engine {
         var ev: [GameEvent] = []
         var waiting: [Clutch] = []
         for clutch in s.clutches {
-            guard clutch.hatchDay <= s.day else { waiting.append(clutch); continue }
+            guard clutch.hatchDay <= s.day else {
+                waiting.append(clutch)
+                continue
+            }
             var ids: [UUID] = []
             for egg in clutch.eggs {
-                guard var chick = Breeding.hatch(egg, name: "Chick \(s.chicksHatched + 1)", onDay: s.day,
-                                                 origin: "Henhaven", using: &rng) else { continue }
+                guard
+                    var chick = Breeding.hatch(
+                        egg, name: "Chick \(s.chicksHatched + 1)", onDay: s.day,
+                        origin: "Henhaven", using: &rng)
+                else { continue }
                 s.chicksHatched += 1
                 chick.inbreeding = Pedigree.kinship(chick.motherID, chick.fatherID, in: s)
                 chick.needsName = true
@@ -621,7 +638,7 @@ public enum Engine {
         let foragers = s.coop.filter { !$0.isBroody(onDay: s.day) }
         if s.coopDoorOpen, !foragers.isEmpty {
             s.foragedToday = true
-            s.fedToday = true   // a night's foraging counts as feeding for this night's lay
+            s.fedToday = true  // a night's foraging counts as feeding for this night's lay
             ev.append(.birdsForaged(count: foragers.count))
         } else {
             s.foragedToday = false
@@ -636,7 +653,10 @@ public enum Engine {
         // 3. Lost birds come home if their day has come and a perch is free. A lost bird has no perch.
         var stillLost: [LostBird] = []
         for lb in s.lost.sorted(by: { $0.returnsOnDay < $1.returnsOnDay }) {
-            guard lb.returnsOnDay <= s.day else { stillLost.append(lb); continue }
+            guard lb.returnsOnDay <= s.day else {
+                stillLost.append(lb)
+                continue
+            }
             if s.coop.count < s.perches {
                 var b = lb.bird
                 b.noLayUntilDay = s.day + r.scaredNoLayDays
@@ -650,7 +670,9 @@ public enum Engine {
         s.lost = stillLost
 
         // 4. Growth and reveals.
-        var brooder = s.brooder, henChicks = s.henChicks, coop = s.coop
+        var brooder = s.brooder
+        var henChicks = s.henChicks
+        var coop = s.coop
         ev += grow(&brooder, day: s.day, rules: r, book: &s.breedBook)
         ev += grow(&henChicks, day: s.day, rules: r, book: &s.breedBook)
         ev += grow(&coop, day: s.day, rules: r, book: &s.breedBook)
@@ -704,31 +726,53 @@ public enum Engine {
     /// A grown bird with no perch waits in the brooder; if the brooder is full too, the neighbour boards it.
     static func findHomes(_ s: inout GameState) -> [GameEvent] {
         var ev: [GameEvent] = []
-        let day = s.day, brooderDays = s.rules.brooderDays
+        let day = s.day
+        let brooderDays = s.rules.brooderDays
         let grown = { (b: Bird) in b.age(onDay: day) >= brooderDays }
         let wereBoarding = Set(s.boarding.map(\.id))  // only birds that newly board tonight get the notice
 
         var stillBoarding: [Bird] = []
         for b in s.boarding {
-            if s.coop.count < s.perches { s.coop.append(b); ev.append(.cameHomeFromBoarding(b.id)) }
-            else { stillBoarding.append(b) }
+            if s.coop.count < s.perches {
+                s.coop.append(b)
+                ev.append(.cameHomeFromBoarding(b.id))
+            } else {
+                stillBoarding.append(b)
+            }
         }
         s.boarding = stillBoarding
 
         var inBrooder: [Bird] = []
         for b in s.brooder {
-            guard grown(b) else { inBrooder.append(b); continue }
-            if s.coop.count < s.perches { s.coop.append(b); ev.append(.movedToCoop(b.id)) }
-            else { inBrooder.append(b); ev.append(.needsHome(b.id)) }
+            guard grown(b) else {
+                inBrooder.append(b)
+                continue
+            }
+            if s.coop.count < s.perches {
+                s.coop.append(b)
+                ev.append(.movedToCoop(b.id))
+            } else {
+                inBrooder.append(b)
+                ev.append(.needsHome(b.id))
+            }
         }
         s.brooder = inBrooder
 
         var withMother: [Bird] = []
         for b in s.henChicks {
-            guard grown(b) else { withMother.append(b); continue }
-            if s.coop.count < s.perches { s.coop.append(b); ev.append(.movedToCoop(b.id)) }
-            else if s.brooder.count < s.brooderSize { s.brooder.append(b); ev.append(.needsHome(b.id)) }
-            else { s.boarding.append(b) }
+            guard grown(b) else {
+                withMother.append(b)
+                continue
+            }
+            if s.coop.count < s.perches {
+                s.coop.append(b)
+                ev.append(.movedToCoop(b.id))
+            } else if s.brooder.count < s.brooderSize {
+                s.brooder.append(b)
+                ev.append(.needsHome(b.id))
+            } else {
+                s.boarding.append(b)
+            }
         }
         s.henChicks = withMother
 
@@ -754,7 +798,8 @@ public enum Engine {
     /// If the starter turns out to be a rooster, the neighbour gives a younger hen.
     static func neighbourGiftIfNeeded<R: RandomNumberGenerator>(_ s: inout GameState, _ rng: inout R) -> [GameEvent] {
         guard !s.giftHenGiven, let id = s.starterID, let starter = s.bird(id),
-              starter.revealed, starter.sex == .rooster else { return [] }
+            starter.revealed, starter.sex == .rooster
+        else { return [] }
         let breed = Breed.starters.randomElement(using: &rng)!
         let colour = breed.definition.varieties.randomElement(using: &rng)!
         let hen = Bird(
@@ -767,9 +812,14 @@ public enum Engine {
         var ev: [GameEvent] = [.neighbourGaveHen(hen.id)]
         // The brooder if it has room, else a free perch; if both are full the neighbour boards her,
         // just like any grown bird with nowhere to go (see findHomes).
-        if s.brooder.count < s.brooderSize { s.brooder.append(hen) }
-        else if s.coop.count < s.perches { s.coop.append(hen) }
-        else { s.boarding.append(hen); ev.append(.boardingWithNeighbour(hen.id)) }
+        if s.brooder.count < s.brooderSize {
+            s.brooder.append(hen)
+        } else if s.coop.count < s.perches {
+            s.coop.append(hen)
+        } else {
+            s.boarding.append(hen)
+            ev.append(.boardingWithNeighbour(hen.id))
+        }
         ev += recordBreed(hen, into: &s.breedBook)
         return ev
     }
@@ -786,7 +836,10 @@ public enum Engine {
         if extra > 0 {
             ev.append(.roostersSquabbling(extra: extra))
             // New-player nudge: the first time it bites, say how to fix it. Shown once.
-            if !s.roosterAdviceGiven { s.roosterAdviceGiven = true; ev.append(.roosterAdvice) }
+            if !s.roosterAdviceGiven {
+                s.roosterAdviceGiven = true
+                ev.append(.roosterAdvice)
+            }
         }
         let calm = max(0, 1 - Double(extra) * s.rules.extraRoosterLayPenalty)
         // Premium feed and a night of foraging each lift the whole day's laying a little.
@@ -797,7 +850,8 @@ public enum Engine {
         let roosters = s.coop.filter { $0.sex == .rooster && $0.stage(onDay: s.day, rules: s.rules) == .adult }
         for hen in hens where s.day >= hen.noLayUntilDay && !hen.isBroody(onDay: s.day) {
             // Inbred hens lay a little less (real inbreeding depression); older hens slow with age.
-            let henChance = chance * (1 - min(s.rules.maxInbreedingLayLoss, hen.inbreeding ?? 0))
+            let henChance =
+                chance * (1 - min(s.rules.maxInbreedingLayLoss, hen.inbreeding ?? 0))
                 * s.rules.layAgeFactor(ageDays: hen.age(onDay: s.day))
             guard Double.roll(henChance, using: &rng) else { continue }
             // Nest boxes full: the hen lays on the floor, and the egg may break.
@@ -834,7 +888,8 @@ public enum Engine {
         for i in s.coop.indices {
             let hen = s.coop[i]
             guard hen.sex == .hen, hen.stage(onDay: s.day, rules: s.rules) == .adult,
-                  !hen.isBroody(onDay: s.day) else { continue }
+                !hen.isBroody(onDay: s.day)
+            else { continue }
             if Double.roll(s.rules.broodyChance[hen.breed] ?? 0, using: &rng) {
                 s.coop[i].broodyUntilDay = s.day + s.rules.broodyDays
                 ev.append(.wentBroody(hen.id))

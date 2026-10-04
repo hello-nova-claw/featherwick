@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 /// The goal ladder: milestones are awarded once, recorded in the save, and never punish.
@@ -12,18 +13,18 @@ struct MilestoneTests {
         var rng = SeededRNG(seed: 1)
         var s = Engine.newGame(using: &rng)
         _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
-        #expect(s.milestonesReached.isEmpty)            // the ladder only ticks at night
+        #expect(s.milestonesReached.isEmpty)  // the ladder only ticks at night
         #expect(!Milestones.all.contains { $0.id == "firstEgg" && $0.isReached(s) })
         #expect(!Milestones.all.contains { $0.id == "firstHatch" && $0.isReached(s) })
     }
 
     @Test func aMilestoneIsAwardedOnceAndRecorded() {
         var (s, _) = startedGame(sex: .hen)
-        s.chicksHatched = 1                             // satisfy "first hatch"
+        s.chicksHatched = 1  // satisfy "first hatch"
         let first = Engine.advanceMilestones(&s)
         #expect(first.contains(.milestoneReached("firstHatch")))
         #expect(s.milestonesReached.contains("firstHatch"))
-        let again = Engine.advanceMilestones(&s)        // same state, nothing new
+        let again = Engine.advanceMilestones(&s)  // same state, nothing new
         #expect(!again.contains(.milestoneReached("firstHatch")))
     }
 
@@ -35,9 +36,9 @@ struct MilestoneTests {
                 if case .milestoneReached(let id) = e { reached.append(id) }
             }
         }
-        #expect(Set(reached).count == reached.count)    // no milestone is ever awarded twice
-        #expect(Set(reached) == s.milestonesReached)    // what was announced is what was recorded
-        #expect(reached.contains("firstEgg"))           // a laying hen gets there in time
+        #expect(Set(reached).count == reached.count)  // no milestone is ever awarded twice
+        #expect(Set(reached) == s.milestonesReached)  // what was announced is what was recorded
+        #expect(reached.contains("firstEgg"))  // a laying hen gets there in time
         #expect(reached.allSatisfy { id in Milestones.all.contains { $0.id == id } })
     }
 }

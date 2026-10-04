@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 struct NamingTests {
@@ -32,10 +33,12 @@ struct NamingTests {
 
     @Test func hatchedChicksNeedAName() {
         var (s, rng) = Self.game()
-        let hen = Bird(id: makeID(using: &rng), name: "h", breed: .orpington, genome: Breed.orpington.purebred(.hen),
-                       hatchDay: 0, origin: "t", revealed: true)
-        let rooster = Bird(id: makeID(using: &rng), name: "r", breed: .orpington, genome: Breed.orpington.purebred(.rooster),
-                           hatchDay: 0, origin: "t", revealed: true)
+        let hen = Bird(
+            id: makeID(using: &rng), name: "h", breed: .orpington, genome: Breed.orpington.purebred(.hen),
+            hatchDay: 0, origin: "t", revealed: true)
+        let rooster = Bird(
+            id: makeID(using: &rng), name: "r", breed: .orpington, genome: Breed.orpington.purebred(.rooster),
+            hatchDay: 0, origin: "t", revealed: true)
         let egg = Breeding.layEgg(mother: hen, father: rooster, day: s.day, using: &rng)
         s.clutches = [Clutch(henID: nil, eggs: [egg], hatchDay: s.day)]
         _ = Engine.hatchDue(&s, &rng)
@@ -55,7 +58,9 @@ struct NamingTests {
             guard s.brooder[0].sex == .rooster else { continue }
             var ev: [GameEvent] = []
             for _ in 0..<s.rules.growerAge + 1 { ev += Engine.apply(.passNight, to: &s, using: &rng) }
-            guard let id = ev.compactMap({ if case .neighbourGaveHen(let id) = $0 { id } else { nil } }).first else { continue }
+            guard let id = ev.compactMap({ if case .neighbourGaveHen(let id) = $0 { id } else { nil } }).first else {
+                continue
+            }
             let hen = s.bird(id)!
             #expect(NameBook.hens.contains(hen.name) && hen.needsName == nil)
             found = true
@@ -87,7 +92,10 @@ struct NamingTests {
     @Test func nameLengthAndBlankNames() {
         var (s, rng) = Self.game()
         let pip = s.brooder[0].id
-        #expect(Self.apply(.rename(pip, name: String(repeating: "a", count: 25)), &s, &rng) == [.rejected(.nameTooLong(max: 24))])
+        #expect(
+            Self.apply(.rename(pip, name: String(repeating: "a", count: 25)), &s, &rng) == [
+                .rejected(.nameTooLong(max: 24))
+            ])
         #expect(Self.apply(.rename(pip, name: String(repeating: "a", count: 24)), &s, &rng) == [.renamed(pip)])
         #expect(Self.apply(.rename(pip, name: "  "), &s, &rng) == [.rejected(.invalidAmount)])
     }

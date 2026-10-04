@@ -41,16 +41,12 @@ public struct PedigreeRecord: Hashable, Codable, Sendable {
 }
 
 /// How closely related two birds are, as a keeper would say it.
-public enum Relatedness: String, Hashable, Codable, Sendable, Comparable, CaseIterable {
+public enum Relatedness: String, Hashable, Codable, Sendable, CaseOrdered {
     case unrelated, distant, cousins, halfSiblings, close
 
     /// From the kinship coefficient (= the inbreeding a chick of the two would have).
     public init(kinship k: Double) {
         self = k >= 0.25 ? .close : k >= 0.125 ? .halfSiblings : k >= 0.0625 ? .cousins : k > 0 ? .distant : .unrelated
-    }
-
-    public static func < (a: Relatedness, b: Relatedness) -> Bool {
-        allCases.firstIndex(of: a)! < allCases.firstIndex(of: b)!
     }
 }
 
@@ -81,14 +77,27 @@ public enum Pedigree {
 
     /// Wright's kinship coefficient between two birds: the inbreeding their chick would have.
     public static func kinship(_ a: UUID?, _ b: UUID?, in s: GameState) -> Double {
-        var memo: [String: Double] = [:]
+        var memo: [BirdPair: Double] = [:]
         return kinship(a, b, s, &memo, depth: 0)
     }
 
-    private static func kinship(_ a: UUID?, _ b: UUID?, _ s: GameState, _ memo: inout [String: Double], depth: Int) -> Double {
+    /// Memo key for kinship: two birds, in a fixed order, since kinship(a, b) == kinship(b, a).
+    private struct BirdPair: Hashable {
+        let first: UUID, second: UUID
+        init(_ a: UUID, _ b: UUID) {
+            let ordered = a.uuidString < b.uuidString
+            first = ordered ? a : b
+            second = ordered ? b : a
+        }
+    }
+
+    private static func kinship(
+        _ a: UUID?, _ b: UUID?, _ s: GameState, _ memo: inout [BirdPair: Double], depth: Int
+    ) -> Double {
         guard let a, let b, depth < maxGenerations * 2,
-              let ra = record(a, in: s), let rb = record(b, in: s) else { return 0 }
-        let key = a.uuidString < b.uuidString ? "\(a)|\(b)" : "\(b)|\(a)"
+            let ra = record(a, in: s), let rb = record(b, in: s)
+        else { return 0 }
+        let key = BirdPair(a, b)
         if let known = memo[key] { return known }
         let value: Double
         if a == b {
@@ -97,8 +106,10 @@ public enum Pedigree {
         } else {
             // Go up from the younger bird: it cannot be an ancestor of the older one.
             let (young, other) = (ra.hatchDay, a.uuidString) >= (rb.hatchDay, b.uuidString) ? (ra, b) : (rb, a)
-            value = 0.5 * (kinship(young.motherID, other, s, &memo, depth: depth + 1)
-                           + kinship(young.fatherID, other, s, &memo, depth: depth + 1))
+            value =
+                0.5
+                * (kinship(young.motherID, other, s, &memo, depth: depth + 1)
+                    + kinship(young.fatherID, other, s, &memo, depth: depth + 1))
         }
         memo[key] = value
         return value
@@ -118,7 +129,9 @@ public enum Pedigree {
     public static func tree(of id: UUID, generations: Int = 3, in s: GameState) -> FamilyTree? {
         guard let r = record(id, in: s) else { return nil }
         func branch(_ parent: UUID?) -> FamilyTree.Indirect? {
-            guard generations > 1, let parent, let t = tree(of: parent, generations: generations - 1, in: s) else { return nil }
+            guard generations > 1, let parent, let t = tree(of: parent, generations: generations - 1, in: s) else {
+                return nil
+            }
             return FamilyTree.Indirect(t)
         }
         return FamilyTree(record: r, mother: branch(r.motherID), father: branch(r.fatherID))
@@ -126,7 +139,8 @@ public enum Pedigree {
 
     /// Every known chick of this bird, oldest first.
     public static func offspring(of id: UUID, in s: GameState) -> [PedigreeRecord] {
-        let known = (s.birdsAtHome + s.lost.map(\.bird) + s.boarding + s.rehomed).map(PedigreeRecord.init)
+        let known =
+            (s.birdsAtHome + s.lost.map(\.bird) + s.boarding + s.rehomed).map(PedigreeRecord.init)
             + Array(s.pedigree.values)
         var seen: Set<UUID> = []
         return known.filter { ($0.motherID == id || $0.fatherID == id) && seen.insert($0.id).inserted }

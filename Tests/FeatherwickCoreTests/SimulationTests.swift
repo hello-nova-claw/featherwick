@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 /// The balance-sim harness: seeded games stay bounded and productive, and every difficulty is playable.
@@ -9,11 +10,11 @@ struct SimulationTests {
     func gamesStayBoundedAndProductive(seed: UInt64) {
         let r = Simulation.run(seed: seed, days: 180)
         #expect(r.days == 180)
-        #expect(r.finalFlock >= 1)              // never-zero-birds invariant holds under real play
-        #expect(r.peakFlock <= 100)             // nothing explodes
+        #expect(r.finalFlock >= 1)  // never-zero-birds invariant holds under real play
+        #expect(r.peakFlock <= 100)  // nothing explodes
         #expect(r.finalCoins >= 0)
-        #expect(r.finalCoins < 1_000_000)       // the economy doesn't diverge
-        #expect(r.eggsLaid > 0)                 // the game actually gets somewhere
+        #expect(r.finalCoins < 1_000_000)  // the economy doesn't diverge
+        #expect(r.eggsLaid > 0)  // the game actually gets somewhere
         #expect(r.chicksHatched > 0)
         #expect(r.breedBook >= 1)
     }
@@ -22,9 +23,9 @@ struct SimulationTests {
         #expect(Simulation.run(seed: 5, days: 90) == Simulation.run(seed: 5, days: 90))
     }
 
-    @Test(arguments: Rules.presetNames)
-    func everyPresetIsPlayable(preset name: String) {
-        let rules = try! #require(Rules.preset(named: name))
+    @Test(arguments: Difficulty.allCases)
+    func everyPresetIsPlayable(preset difficulty: Difficulty) {
+        let rules = difficulty.rules
         for seed in UInt64(1)...6 {
             let r = Simulation.run(seed: seed, days: 150, rules: rules)
             #expect(r.finalFlock >= 1)
@@ -64,7 +65,8 @@ struct SaveStoreTests {
     }
 
     @Test func atomicWriteRoundTrips() throws {
-        let dir = tempDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
         let store = SaveStore(directory: dir, slot: "test")
         let data = try sampleSave(1)
         try store.write(data)
@@ -73,32 +75,35 @@ struct SaveStoreTests {
     }
 
     @Test func aBadMainStillLeavesAGoodBackup() throws {
-        let dir = tempDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
         let store = SaveStore(directory: dir, slot: "test")
         let good = try sampleSave(2)
-        try store.write(good)                                  // first save (no backup yet)
-        try store.write(good)                                  // rotates the good copy into bak1
-        try Data("not a save".utf8).write(to: store.url)       // main is now corrupt
+        try store.write(good)  // first save (no backup yet)
+        try store.write(good)  // rotates the good copy into bak1
+        try Data("not a save".utf8).write(to: store.url)  // main is now corrupt
         let backup = try #require(store.newestBackupData())
-        #expect((try? SaveFormat.decode(backup)) != nil)       // the backup is still a real save
+        #expect((try? SaveFormat.decode(backup)) != nil)  // the backup is still a real save
     }
 
     @Test func quarantineKeepsTheUnreadableFile() throws {
-        let dir = tempDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
         let store = SaveStore(directory: dir, slot: "test")
         try Data("garbage".utf8).write(to: store.url)
         let moved = try #require(store.quarantine())
-        #expect(!store.exists)                                  // moved out of the way
+        #expect(!store.exists)  // moved out of the way
         #expect(FileManager.default.fileExists(atPath: moved.path))  // but never deleted
     }
 
     @Test func listsNamedSlotsOnly() throws {
-        let dir = tempDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
         let data = try sampleSave(3)
         try SaveStore(directory: dir, slot: "alpha").write(data)
         try SaveStore(directory: dir, slot: "alpha").write(data)  // makes alpha.bak1.json
         try SaveStore(directory: dir, slot: "beta").write(data)
         let slots = SaveStore.slots(in: dir)
-        #expect(slots == ["alpha", "beta"])                      // backups excluded
+        #expect(slots == ["alpha", "beta"])  // backups excluded
     }
 }

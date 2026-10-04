@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 /// Design rule: the player can never get stuck. Every game must always have a way forward to
@@ -38,8 +39,11 @@ struct StalemateTests {
         _ = Engine.apply(.rehome(hen.id), to: &s, using: &rng)
         s.coins = 0
         let ev = night(&s, &rng)
-        guard case .tradeOffered(let rooster, _) = ev.last(where: { if case .tradeOffered = $0 { true } else { false } }) else {
-            Issue.record("no trade offer"); return
+        guard
+            case .tradeOffered(let rooster, _) = ev.last(where: { if case .tradeOffered = $0 { true } else { false } })
+        else {
+            Issue.record("no trade offer")
+            return
         }
         let accepted = Engine.apply(.acceptTrade, to: &s, using: &rng)
         #expect(accepted.contains { if case .tradeAccepted(rooster, _) = $0 { true } else { false } })
@@ -107,14 +111,17 @@ struct ShopTests {
         var (s, rng) = startedGame(sex: .hen)
         s.coins = 100
         let ev = Engine.apply(.buy(.pullet), to: &s, using: &rng)
-        guard case .boughtBird(let id, .pullet, 25) = ev.first else { Issue.record("not bought"); return }
+        guard case .boughtBird(let id, .pullet, 25) = ev.first else {
+            Issue.record("not bought")
+            return
+        }
         let bird = s.bird(id)!
         #expect(bird.sex == .hen && bird.revealed && Breed.starters.contains(bird.breed))
         #expect(bird.stage(onDay: s.day, rules: s.rules) == .grower)
         #expect(s.coop.contains { $0.id == id })
         _ = Engine.apply(.buy(.cockerel), to: &s, using: &rng)
         #expect(s.coins == 100 - 25 - 15)
-        #expect(s.coop.filter { $0.sex == .rooster }.count == 1)
+        #expect(s.coop.count(where: { $0.sex == .rooster }) == 1)
     }
 
     @Test func birdsNeedAFreePerch() {
@@ -128,7 +135,8 @@ struct ShopTests {
     @Test func notEnoughCoins() {
         var (s, rng) = startedGame(sex: .hen)
         s.coins = 5
-        #expect(Engine.apply(.buy(.fertileEgg), to: &s, using: &rng) == [.rejected(.notEnoughCoins(needed: 6, have: 5))])
+        #expect(
+            Engine.apply(.buy(.fertileEgg), to: &s, using: &rng) == [.rejected(.notEnoughCoins(needed: 6, have: 5))])
     }
 
     @Test func aBoughtEggIsFertileCandledAndHatchable() {

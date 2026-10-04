@@ -109,15 +109,11 @@ public enum JudgeNote: Hashable, Codable, Sendable {
 
 /// A grade card, like the ribbons at a country show. Grades are absolute; placings against other
 /// entries come with show days.
-public enum Grade: String, Hashable, Codable, Sendable, Comparable, CaseIterable {
+public enum Grade: String, Hashable, Codable, Sendable, CaseOrdered {
     case disqualified, fair, good, veryGood, excellent
 
     init(score: Int) {
         self = score >= 85 ? .excellent : score >= 70 ? .veryGood : score >= 55 ? .good : .fair
-    }
-
-    public static func < (a: Grade, b: Grade) -> Bool {
-        allCases.firstIndex(of: a)! < allCases.firstIndex(of: b)!
     }
 }
 
@@ -143,11 +139,26 @@ public enum Judge {
         var value = 1.0
         var notes: [JudgeNote] = []
         // Real hens moult in autumn: shows avoid the moult for good reason.
-        if s.season == .autumn { value -= 0.3; notes.append(.moulting) }
-        if s.day < bird.noLayUntilDay { value -= 0.4; notes.append(.stressed) }
-        if bird.isBroody(onDay: s.day) { value -= 0.3; notes.append(.broody) }
-        if !s.fedToday { value -= 0.2; notes.append(.hungry) }
-        if s.foragedToday { value = min(1, value + s.rules.forageConditionBonus); notes.append(.foraged) }
+        if s.season == .autumn {
+            value -= 0.3
+            notes.append(.moulting)
+        }
+        if s.day < bird.noLayUntilDay {
+            value -= 0.4
+            notes.append(.stressed)
+        }
+        if bird.isBroody(onDay: s.day) {
+            value -= 0.3
+            notes.append(.broody)
+        }
+        if !s.fedToday {
+            value -= 0.2
+            notes.append(.hungry)
+        }
+        if s.foragedToday {
+            value = min(1, value + s.rules.forageConditionBonus)
+            notes.append(.foraged)
+        }
         if let f = bird.inbreeding, f >= 0.0625 {
             value -= min(s.rules.maxInbreedingConditionLoss, f)
             notes.append(.lacksVigour)
@@ -188,7 +199,8 @@ public enum Judge {
 
         let type = QuantitativeTrait.showType.fraction(bird.genome)
         let (condition, conditionNotes) = condition(of: bird, in: s)
-        let points = type * Double(ShowPoints.breedType) + Double(ShowPoints.breedColour)
+        let points =
+            type * Double(ShowPoints.breedType) + Double(ShowPoints.breedColour)
             + condition * Double(ShowPoints.breedCondition)
         return card(cls, points, [.standardColour(look.colourName), .type(.init(type))] + conditionNotes)
     }
@@ -197,7 +209,8 @@ public enum Judge {
     static func petClass(_ bird: Bird, _ s: GameState) -> JudgeCard {
         guard bird.stage(onDay: s.day, rules: s.rules) != .chick else { return disqualified(.pet, .tooYoung) }
         let (condition, notes) = condition(of: bird, in: s)
-        let points = condition * Double(ShowPoints.petCondition)
+        let points =
+            condition * Double(ShowPoints.petCondition)
             + bird.friendlinessScore * Double(ShowPoints.petFriendliness)
         return card(.pet, points, [.friendliness(bird.friendliness)] + notes)
     }
@@ -217,9 +230,10 @@ public enum Judge {
         // Eggs laid before these traits existed count as average.
         let shape = eggs.map { Double($0.shape ?? Int(shapeMax / 2)) / shapeMax }.reduce(0, +) / n
         let shell = eggs.map { $0.shell ?? 0.75 }.reduce(0, +) / n
-        let stale = eggs.filter { s.rules.isStale($0, onDay: s.day) }.count
+        let stale = eggs.count(where: { s.rules.isStale($0, onDay: s.day) })
         let fresh = 1 - Double(stale) / n
-        let points = Double(ShowPoints.eggMatch) + shape * Double(ShowPoints.eggShape)
+        let points =
+            Double(ShowPoints.eggMatch) + shape * Double(ShowPoints.eggShape)
             + shell * Double(ShowPoints.eggShell) + fresh * Double(ShowPoints.eggFreshness)
         var notes: [JudgeNote] = [.shape(.init(shape)), .shell(.init(shell))]
         if stale > 0 { notes.append(.staleEggs(stale)) }
@@ -228,14 +242,22 @@ public enum Judge {
 
     /// The best plate the player could make from these eggs, for each egg class, best first.
     public static func bestPlates(from eggs: [Egg], state s: GameState) -> [(eggs: [Egg], card: JudgeCard)] {
-        let groups = Dictionary(grouping: eggs) { "\($0.colour.rawValue)|\($0.speckled)" }
-        var plates: [(eggs: [Egg], card: JudgeCard)] = []
-        for group in groups.values where group.count >= ShowPoints.eggPlate {
-            let best = group.sorted { a, b in eggValue(a, s) > eggValue(b, s) || (eggValue(a, s) == eggValue(b, s) && a.id.uuidString < b.id.uuidString) }
-            let plate = Array(best.prefix(ShowPoints.eggPlate))
-            plates.append((plate, judgeEggs(plate, state: s)))
+        // A matched plate is one colour, all speckled or all plain: the same key as the Egg Book.
+        let groups = Dictionary(grouping: eggs) { EggBookEntry(colour: $0.colour, speckled: $0.speckled) }
+        var plates: [(eggs: [Egg], card: JudgeCard, speckled: Bool)] = []
+        for (kind, group) in groups where group.count >= ShowPoints.eggPlate {
+            // Best eggs first; the ID breaks ties so the same carton always makes the same plate.
+            let best = group.map { (egg: $0, value: eggValue($0, s)) }
+                .sorted { (-$0.value, $0.egg.id.uuidString) < (-$1.value, $1.egg.id.uuidString) }
+            let plate = best.prefix(ShowPoints.eggPlate).map(\.egg)
+            plates.append((plate, judgeEggs(plate, state: s), kind.speckled))
         }
-        return plates.sorted { $0.card.score > $1.card.score || ($0.card.score == $1.card.score && $0.card.showClass.name < $1.card.showClass.name) }
+        // Speckled and plain plates of one colour share a class name, so speckle breaks that tie
+        // (Dictionary order is not stable between runs).
+        func rank(_ p: (eggs: [Egg], card: JudgeCard, speckled: Bool)) -> (Int, String, Int) {
+            (-p.card.score, p.card.showClass.name, p.speckled ? 1 : 0)
+        }
+        return plates.sorted { rank($0) < rank($1) }.map { (eggs: $0.eggs, card: $0.card) }
     }
 
     static func eggValue(_ egg: Egg, _ s: GameState) -> Double {

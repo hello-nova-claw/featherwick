@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 struct PedigreeTests {
@@ -10,8 +11,9 @@ struct PedigreeTests {
 
         @discardableResult
         mutating func bird(_ sex: Sex, day: Int, mother: Bird? = nil, father: Bird? = nil, name: String = "b") -> Bird {
-            let b = Bird(id: makeID(using: &rng), name: name, breed: .orpington, genome: Breed.orpington.purebred(sex),
-                         hatchDay: day, motherID: mother?.id, fatherID: father?.id, origin: "t", revealed: true)
+            let b = Bird(
+                id: makeID(using: &rng), name: name, breed: .orpington, genome: Breed.orpington.purebred(sex),
+                hatchDay: day, motherID: mother?.id, fatherID: father?.id, origin: "t", revealed: true)
             s.rehomed.append(b)
             return b
         }
@@ -21,20 +23,22 @@ struct PedigreeTests {
 
     @Test func classicKinshipValues() {
         var f = Family()
-        let gm = f.bird(.hen, day: 0), gf = f.bird(.rooster, day: 0)
+        let gm = f.bird(.hen, day: 0)
+        let gf = f.bird(.rooster, day: 0)
         let mum = f.bird(.hen, day: 30, mother: gm, father: gf)
-        let dad = f.bird(.rooster, day: 30, mother: gm, father: gf)          // mum's full brother
+        let dad = f.bird(.rooster, day: 30, mother: gm, father: gf)  // mum's full brother
         let stranger = f.bird(.rooster, day: 30)
         let halfBro = f.bird(.rooster, day: 31, mother: gm, father: stranger)  // mum's half brother
         let kid = f.bird(.hen, day: 60, mother: mum, father: stranger)
-        let cousin = f.bird(.rooster, day: 60, mother: f.bird(.hen, day: 30, mother: gm, father: gf), father: f.bird(.rooster, day: 0))
+        let cousin = f.bird(
+            .rooster, day: 60, mother: f.bird(.hen, day: 30, mother: gm, father: gf), father: f.bird(.rooster, day: 0))
 
         #expect(f.k(mum, mum) == 0.5)
-        #expect(f.k(mum, dad) == 0.25)          // full siblings
-        #expect(f.k(mum, kid) == 0.25)          // parent and chick
-        #expect(f.k(mum, halfBro) == 0.125)     // half siblings
-        #expect(f.k(kid, cousin) == 0.0625)     // first cousins
-        #expect(f.k(gm, gf) == 0)               // unrelated founders
+        #expect(f.k(mum, dad) == 0.25)  // full siblings
+        #expect(f.k(mum, kid) == 0.25)  // parent and chick
+        #expect(f.k(mum, halfBro) == 0.125)  // half siblings
+        #expect(f.k(kid, cousin) == 0.0625)  // first cousins
+        #expect(f.k(gm, gf) == 0)  // unrelated founders
         #expect(Pedigree.kinship(mum.id, UUID(), in: f.s) == 0)  // unknown bird
         #expect(Relatedness(kinship: f.k(mum, dad)) == .close)
         #expect(Relatedness(kinship: f.k(kid, cousin)) == .cousins)
@@ -42,12 +46,14 @@ struct PedigreeTests {
 
     @Test func brotherSisterMatingClimbsTheTextbookSeries() {
         var f = Family()
-        var hen = f.bird(.hen, day: 0), rooster = f.bird(.rooster, day: 0)
+        var hen = f.bird(.hen, day: 0)
+        var rooster = f.bird(.rooster, day: 0)
         var series: [Double] = []
         for gen in 1...4 {
             let h = f.bird(.hen, day: gen * 30, mother: hen, father: rooster)
             let r = f.bird(.rooster, day: gen * 30, mother: hen, father: rooster)
-            hen = h; rooster = r
+            hen = h
+            rooster = r
             series.append(f.k(hen, rooster))
         }
         // Inbreeding of each generation's chicks: 0.25, 0.375, 0.5, 0.59375.
@@ -56,7 +62,8 @@ struct PedigreeTests {
 
     @Test func deepPedigreesStayFast() {
         var f = Family()
-        var hen = f.bird(.hen, day: 0), rooster = f.bird(.rooster, day: 0)
+        var hen = f.bird(.hen, day: 0)
+        var rooster = f.bird(.rooster, day: 0)
         for gen in 1...200 {
             let h = f.bird(.hen, day: gen, mother: hen, father: rooster)
             rooster = f.bird(.rooster, day: gen, mother: hen, father: rooster)
@@ -68,7 +75,8 @@ struct PedigreeTests {
 
     @Test func treesAndOffspring() {
         var f = Family()
-        let gm = f.bird(.hen, day: 0, name: "Gran"), gf = f.bird(.rooster, day: 0, name: "Grandad")
+        let gm = f.bird(.hen, day: 0, name: "Gran")
+        let gf = f.bird(.rooster, day: 0, name: "Grandad")
         let mum = f.bird(.hen, day: 30, mother: gm, father: gf, name: "Mum")
         let kid = f.bird(.hen, day: 60, mother: mum, name: "Kid")
         let tree = Pedigree.tree(of: kid.id, generations: 3, in: f.s)!
@@ -89,8 +97,10 @@ struct PedigreeTests {
         r.foxChance = 0
         f.s.rules = r
         f.s.day = 100
-        let gm = f.bird(.hen, day: 0), gf = f.bird(.rooster, day: 0)
-        let sis = f.bird(.hen, day: 30, mother: gm, father: gf), bro = f.bird(.rooster, day: 30, mother: gm, father: gf)
+        let gm = f.bird(.hen, day: 0)
+        let gf = f.bird(.rooster, day: 0)
+        let sis = f.bird(.hen, day: 30, mother: gm, father: gf)
+        let bro = f.bird(.rooster, day: 30, mother: gm, father: gf)
         let stranger = f.bird(.rooster, day: 30)
         let inbredEgg = Breeding.layEgg(mother: sis, father: bro, day: f.s.day, using: &f.rng)
         let outcrossEgg = Breeding.layEgg(mother: sis, father: stranger, day: f.s.day, using: &f.rng)
@@ -119,8 +129,9 @@ struct PedigreeTests {
         var s = GameState(rules: .standard, phase: .playing)
         s.day = 25
         s.fedToday = true
-        var hen = Bird(id: makeID(using: &rng), name: "h", breed: .orpington, genome: Breed.orpington.purebred(.hen),
-                       hatchDay: 0, origin: "t", revealed: true)
+        var hen = Bird(
+            id: makeID(using: &rng), name: "h", breed: .orpington, genome: Breed.orpington.purebred(.hen),
+            hatchDay: 0, origin: "t", revealed: true)
         #expect(Judge.condition(of: hen, in: s).notes == [.inFineCondition])
         hen.inbreeding = 0.25
         let (value, notes) = Judge.condition(of: hen, in: s)
@@ -137,8 +148,9 @@ struct PedigreeTests {
             var g = GameState(rules: r, phase: .playing)
             g.day = 40
             g.fedToday = true
-            var h = Bird(id: makeID(using: &rng), name: "h", breed: .orpington, genome: Breed.orpington.purebred(.hen),
-                         hatchDay: 0, origin: "t", revealed: true)
+            var h = Bird(
+                id: makeID(using: &rng), name: "h", breed: .orpington, genome: Breed.orpington.purebred(.hen),
+                hatchDay: 0, origin: "t", revealed: true)
             h.inbreeding = 0.9
             g.coop = [h]
             _ = Engine.lay(&g, &rng)
@@ -150,7 +162,8 @@ struct PedigreeTests {
 
     @Test func randomGamesNeverBreakTheTree() {
         for seed in UInt64(1)...15 {
-            var rng = SeededRNG(seed: seed), pick = SeededRNG(seed: seed &* 13)
+            var rng = SeededRNG(seed: seed)
+            var pick = SeededRNG(seed: seed &* 13)
             var s = Engine.newGame(using: &rng)
             _ = Engine.apply(.chooseStarter(index: Int(seed % 3), name: "S"), to: &s, using: &rng)
             for _ in 0..<1500 { _ = Engine.apply(InvariantTests.randomCommand(s, &pick), to: &s, using: &rng) }

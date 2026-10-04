@@ -118,8 +118,10 @@ public struct BreedLook: Hashable, Sendable {
     /// Adult hen size. 1.0 = average.
     public let size: Double
 
-    public init(body: BodyShape, comb: CombShape, combTone: Tone = .red, legs: LegShape = .clean,
-                legTone: Tone, legToneOnBuff: Tone? = nil, head: HeadShape = .plain, size: Double) {
+    public init(
+        body: BodyShape, comb: CombShape, combTone: Tone = .red, legs: LegShape = .clean,
+        legTone: Tone, legToneOnBuff: Tone? = nil, head: HeadShape = .plain, size: Double
+    ) {
         self.body = body
         self.comb = comb
         self.combTone = combTone
@@ -140,28 +142,32 @@ extension Bird {
         let fluffy = p.isSilkieFeathered
         let bl = isPurebred ? breed.definition.look : .mixed
         let growth = min(1, max(0, Double(age(onDay: day)) / Double(rules.adultAge)))
-        let stage: ArtStage = switch (self.stage(onDay: day, rules: rules), sex) {
-        case (.chick, _): .chick
-        case (.grower, .hen): .pullet
-        case (.grower, .rooster): .cockerel
-        case (.adult, .hen): .hen
-        case (.adult, .rooster): .rooster
-        }
+        let stage: ArtStage =
+            switch (self.stage(onDay: day, rules: rules), sex) {
+            case (.chick, _): .chick
+            case (.grower, .hen): .pullet
+            case (.grower, .rooster): .cockerel
+            case (.adult, .hen): .hen
+            case (.adult, .rooster): .rooster
+            }
         let legTone = (p.colour == .buff ? bl.legToneOnBuff : nil) ?? bl.legTone
         // Size grows smoothly with age. Roosters end about 20% bigger than hens.
         let scale = bl.size * (sex == .rooster ? 1 + 0.2 * growth : 1) * (0.3 + 0.7 * growth)
 
         if stage == .chick {
-            let down: Tone = switch p.chickDown {
-            case .black, .darkWithHeadSpot: .blackDown
-            case .slate: .slateDown
-            case .paleGrey: .paleGreyDown
-            case .silver: .silverDown
-            case .yellow: .yellowDown
-            }
-            let chick = PlacedPart(part: PartKey(slot: .chick, shape: (fluffy ? ChickShape.fluffy : .plain).rawValue, sex: nil),
-                                   fills: [.down: down, .beak: .horn, .legs: legTone], scale: 1)
-            let spot = p.chickDown == .darkWithHeadSpot
+            let down: Tone =
+                switch p.chickDown {
+                case .black, .darkWithHeadSpot: .blackDown
+                case .slate: .slateDown
+                case .paleGrey: .paleGreyDown
+                case .silver: .silverDown
+                case .yellow: .yellowDown
+                }
+            let chick = PlacedPart(
+                part: PartKey(slot: .chick, shape: (fluffy ? ChickShape.fluffy : .plain).rawValue, sex: nil),
+                fills: [.down: down, .beak: .horn, .legs: legTone], scale: 1)
+            let spot =
+                p.chickDown == .darkWithHeadSpot
                 ? [PatternOverlay(pattern: .headSpot, tone: .white, masks: [.down])] : []
             return Look(stage: stage, parts: [chick], overlays: spot, scale: scale)
         }
@@ -176,16 +182,25 @@ extension Bird {
         let tailSize = 0.4 + 0.6 * growth
 
         let parts = [
-            PlacedPart(part: PartKey(slot: .tail, shape: tail.rawValue, sex: nil), fills: [.tail: tailTone], scale: tailSize),
-            PlacedPart(part: PartKey(slot: .legs, shape: bl.legs.rawValue, sex: nil), fills: [.legs: legTone], scale: 1),
-            PlacedPart(part: PartKey(slot: .body, shape: (fluffy ? BodyShape.fluffy : bl.body).rawValue, sex: sex),
-                       fills: [.body: feathers, .hackle: hackle], scale: 1),
-            PlacedPart(part: PartKey(slot: .head, shape: bl.head.rawValue, sex: nil), fills: [.head: hackle, .beak: .horn], scale: 1),
-            PlacedPart(part: PartKey(slot: .comb, shape: bl.comb.rawValue, sex: nil), fills: [.comb: bl.combTone], scale: combSize),
+            PlacedPart(
+                part: PartKey(slot: .tail, shape: tail.rawValue, sex: nil), fills: [.tail: tailTone], scale: tailSize),
+            PlacedPart(
+                part: PartKey(slot: .legs, shape: bl.legs.rawValue, sex: nil), fills: [.legs: legTone], scale: 1),
+            PlacedPart(
+                part: PartKey(slot: .body, shape: (fluffy ? BodyShape.fluffy : bl.body).rawValue, sex: sex),
+                fills: [.body: feathers, .hackle: hackle], scale: 1),
+            PlacedPart(
+                part: PartKey(slot: .head, shape: bl.head.rawValue, sex: nil), fills: [.head: hackle, .beak: .horn],
+                scale: 1),
+            PlacedPart(
+                part: PartKey(slot: .comb, shape: bl.comb.rawValue, sex: nil), fills: [.comb: bl.combTone],
+                scale: combSize),
         ]
         var overlays: [PatternOverlay] = []
         if p.isLaced { overlays.append(PatternOverlay(pattern: .lacing, tone: .black, masks: [.body, .hackle])) }
-        if p.isBarred { overlays.append(PatternOverlay(pattern: .barring, tone: .white, masks: [.body, .hackle, .tail, .head])) }
+        if p.isBarred {
+            overlays.append(PatternOverlay(pattern: .barring, tone: .white, masks: [.body, .hackle, .tail, .head]))
+        }
         return Look(stage: stage, parts: parts, overlays: overlays, scale: scale)
     }
 
@@ -212,7 +227,8 @@ public enum ArtChecklist {
             let key = PartKey(slot: slot, shape: shape, sex: sex)
             if !keys.contains(key) { keys.append(key) }
         }
-        for shape in BodyShape.allCases where looks.contains(where: { $0.body == shape }) || (shape == .fluffy && anyFluffy) {
+        for shape in BodyShape.allCases
+        where looks.contains(where: { $0.body == shape }) || (shape == .fluffy && anyFluffy) {
             for sex in Sex.allCases { add(.body, shape.rawValue, sex) }
         }
         for shape in CombShape.allCases where looks.contains(where: { $0.comb == shape }) { add(.comb, shape.rawValue) }

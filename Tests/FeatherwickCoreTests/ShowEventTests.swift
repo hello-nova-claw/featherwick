@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 /// The county show as an event: entering, judging against a field, placings and prizes.
@@ -19,8 +20,10 @@ struct ShowEventTests {
     static func setType(_ g: inout Genome, plus: Int) {
         var left = plus
         for locus in QuantitativeTrait.showType.loci {
-            let a = left > 0 ? "+" : "-"; left -= left > 0 ? 1 : 0
-            let b = left > 0 ? "+" : "-"; left -= left > 0 ? 1 : 0
+            let a = left > 0 ? "+" : "-"
+            left -= left > 0 ? 1 : 0
+            let b = left > 0 ? "+" : "-"
+            left -= left > 0 ? 1 : 0
             g.setAlleles([a, b], at: locus)
         }
     }
@@ -29,8 +32,9 @@ struct ShowEventTests {
     static func championOrpington(in s: GameState, rng: inout SeededRNG) -> Bird {
         var g = Breed.orpington.purebred(.hen, variety: .black)
         setType(&g, plus: QuantitativeTrait.showType.maxScore)
-        return Bird(id: makeID(using: &rng), name: "Champion", breed: .orpington, genome: g,
-                    hatchDay: s.day - s.rules.adultAge, origin: "test", revealed: true)
+        return Bird(
+            id: makeID(using: &rng), name: "Champion", breed: .orpington, genome: g,
+            hatchDay: s.day - s.rules.adultAge, origin: "test", revealed: true)
     }
 
     @Test func aShowFallsEverySeasonAndWeCanSeeTheNextOne() {
@@ -49,7 +53,7 @@ struct ShowEventTests {
         s.coop.append(champ)
 
         _ = Engine.apply(.enterShow(champ.id), to: &s, using: &rng)
-        #expect(s.coins == 100 - s.rules.showEntryFee)   // the fee is a coin sink, paid on entry
+        #expect(s.coins == 100 - s.rules.showEntryFee)  // the fee is a coin sink, paid on entry
         let afterEntry = s.coins
 
         _ = Engine.apply(.passNight, to: &s, using: &rng)
@@ -59,9 +63,9 @@ struct ShowEventTests {
         #expect(result?.placing == 1)
         #expect(result?.fieldSize == s.rules.showCompetitors + 1)
         #expect(result?.prize == s.rules.showPrizeFirst)
-        #expect(s.coins == afterEntry + s.rules.showPrizeFirst)   // prize paid on show day
+        #expect(s.coins == afterEntry + s.rules.showPrizeFirst)  // prize paid on show day
         #expect(s.firstPlaceRibbons == 1)
-        #expect(s.showEntries.isEmpty)                            // entries cleared after the show
+        #expect(s.showEntries.isEmpty)  // entries cleared after the show
     }
 
     @Test func placingsAreDeterministicUnderAFixedSeed() {
@@ -79,15 +83,16 @@ struct ShowEventTests {
     @Test func aPerfectPlateWinsTheEggClass() {
         var (s, rng) = Self.eveOfShow()
         for _ in 0..<ShowPoints.eggPlate {
-            var egg = Egg(id: makeID(using: &rng), layDay: s.day, motherID: makeID(using: &rng),
-                          colour: .brown, speckled: false)
+            var egg = Egg(
+                id: makeID(using: &rng), layDay: s.day, motherID: makeID(using: &rng),
+                colour: .brown, speckled: false)
             egg.collectedDay = s.day
             egg.shape = QuantitativeTrait.eggShape.maxScore
             egg.shell = 1.0
             s.carton.append(egg)
         }
         _ = Engine.apply(.enterEggs, to: &s, using: &rng)
-        #expect(s.carton.isEmpty)            // the plate goes to the show
+        #expect(s.carton.isEmpty)  // the plate goes to the show
         #expect(s.showEntries.count == 1)
 
         _ = Engine.apply(.passNight, to: &s, using: &rng)
@@ -110,8 +115,9 @@ struct ShowEventTests {
 
         // A chick is too young.
         let g = Breed.orpington.purebred(.hen, variety: .black)
-        let chick = Bird(id: makeID(using: &rng), name: "Peep", breed: .orpington, genome: g,
-                         hatchDay: s.day, origin: "test", revealed: true)
+        let chick = Bird(
+            id: makeID(using: &rng), name: "Peep", breed: .orpington, genome: g,
+            hatchDay: s.day, origin: "test", revealed: true)
         s.brooder.append(chick)
         #expect(Engine.apply(.enterShow(chick.id), to: &s, using: &rng).contains(.rejected(.notShowEligible)))
 

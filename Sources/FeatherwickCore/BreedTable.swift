@@ -10,7 +10,8 @@
 // If it needs a new gene, add the gene first (see Locus.swift).
 
 /// A breed's id. Written to saves. Never rename one.
-public struct Breed: RawRepresentable, Hashable, Codable, Sendable, ExpressibleByStringLiteral, CustomStringConvertible {
+public struct Breed: RawRepresentable, Hashable, Codable, Sendable, ExpressibleByStringLiteral, CustomStringConvertible
+{
     public let rawValue: String
     public init(rawValue: String) { self.rawValue = rawValue }
     public init(stringLiteral value: String) { rawValue = value }
@@ -118,10 +119,11 @@ public struct BreedDefinition: Sendable, Identifiable {
     public var eggColour: EggColour { Phenotype(id.purebred(.hen)).eggColour ?? .cream }
 
     static func placeholder(_ id: Breed) -> BreedDefinition {
-        BreedDefinition(id: id, displayName: id.rawValue.capitalized, status: .planned, isStarter: false,
-                        signature: [], varieties: [.black], broodiness: 0.2, calmness: 0.5,
-                        look: .mixed,
-                        note: "Not in this version of the game.")
+        BreedDefinition(
+            id: id, displayName: id.rawValue.capitalized, status: .planned, isStarter: false,
+            signature: [], varieties: [.black], broodiness: 0.2, calmness: 0.5,
+            look: .mixed,
+            note: "Not in this version of the game.")
     }
 }
 
@@ -133,7 +135,9 @@ public enum BreedTable {
             id: .silkie, displayName: "Silkie", status: .inGame, isStarter: false,
             signature: [.two(Feathering.silkie)],
             varieties: [.black, .blue, .buff, .lavender], broodiness: 0.6, calmness: 0.75,
-            look: BreedLook(body: .fluffy, comb: .walnut, combTone: .mulberry, legs: .featheredFiveToe, legTone: .slate, head: .crested, size: 0.7),
+            look: BreedLook(
+                body: .fluffy, comb: .walnut, combTone: .mulberry, legs: .featheredFiveToe, legTone: .slate,
+                head: .crested, size: 0.7),
             note: "Fluffy, gentle, famously broody. Cream eggs."),
         BreedDefinition(
             id: .orpington, displayName: "Orpington", status: .inGame, isStarter: true,

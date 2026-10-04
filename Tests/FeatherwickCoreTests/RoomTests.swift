@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 struct RoomTests {
@@ -30,7 +31,7 @@ struct RoomTests {
         #expect(s.brooder.count == 1)
         #expect(s.boarding.count == 2)
         #expect(ev.contains { if case .needsHome = $0 { true } else { false } })
-        #expect(ev.filter { if case .boardingWithNeighbour = $0 { true } else { false } }.count == 2)
+        #expect(ev.count(where: { if case .boardingWithNeighbour = $0 { true } else { false } }) == 2)
     }
 
     @Test func boardingBirdsPauseHatching() {
@@ -61,7 +62,10 @@ struct RoomTests {
         let firstBoarder = s.boarding[0].id
         let coins = s.coins
         let ev = Engine.apply(.rehome(henID), to: &s, using: &rng)
-        guard case .rehomed(henID, let paid) = ev.first else { Issue.record("not rehomed"); return }
+        guard case .rehomed(henID, let paid) = ev.first else {
+            Issue.record("not rehomed")
+            return
+        }
         #expect(s.coins == coins + paid)
         #expect(s.rehomed.map(\.id) == [henID])
         let morning = night(&s, &rng)
@@ -91,28 +95,33 @@ struct RoomTests {
     @Test func rarerBirdsAreWorthMore() {
         let r = Rules.standard
         var rng = SeededRNG(seed: 4)
-        let plain = Bird(id: makeID(using: &rng), name: "a", breed: .orpington,
-                         genome: Breed.orpington.purebred(.hen), hatchDay: 0, origin: "t")
+        let plain = Bird(
+            id: makeID(using: &rng), name: "a", breed: .orpington,
+            genome: Breed.orpington.purebred(.hen), hatchDay: 0, origin: "t")
         #expect(r.rehomeValue(of: plain, onDay: 0) == 2)  // black orpington chick
 
-        let lavenderAraucana = Bird(id: makeID(using: &rng), name: "b", breed: .araucana,
-                                    genome: Breed.araucana.purebred(.hen, colour: .lavender), hatchDay: 0, origin: "t",
-                                    revealed: true)
+        let lavenderAraucana = Bird(
+            id: makeID(using: &rng), name: "b", breed: .araucana,
+            genome: Breed.araucana.purebred(.hen, colour: .lavender), hatchDay: 0, origin: "t",
+            revealed: true)
         #expect(r.rehomeValue(of: lavenderAraucana, onDay: r.adultAge) == 6 + 6 + 2)  // adult + lavender + blue eggs
 
         var oliveGenome = Breed.araucana.purebred(.hen)
         oliveGenome.brownShell = AllelePair(.brown, .noCoating)
-        let oliveHen = Bird(id: makeID(using: &rng), name: "c", breed: .araucana,
-                            genome: oliveGenome, hatchDay: 0, origin: "t", revealed: true)
+        let oliveHen = Bird(
+            id: makeID(using: &rng), name: "c", breed: .araucana,
+            genome: oliveGenome, hatchDay: 0, origin: "t", revealed: true)
         #expect(r.rehomeValue(of: oliveHen, onDay: r.adultAge) == 6 + 5)
         // Hidden genes never raise the price: not in an unrevealed chick, not in a rooster's egg genes.
-        let hiddenLavender = Bird(id: makeID(using: &rng), name: "d", breed: .orpington,
-                                  genome: Breed.orpington.purebred(.hen, colour: .lavender), hatchDay: 0, origin: "t")
+        let hiddenLavender = Bird(
+            id: makeID(using: &rng), name: "d", breed: .orpington,
+            genome: Breed.orpington.purebred(.hen, colour: .lavender), hatchDay: 0, origin: "t")
         #expect(r.rehomeValue(of: hiddenLavender, onDay: 0) == 2)
         var oliveRoosterGenome = Breed.araucana.purebred(.rooster)
         oliveRoosterGenome.brownShell = AllelePair(.brown, .noCoating)
-        let oliveRooster = Bird(id: makeID(using: &rng), name: "e", breed: .araucana,
-                                genome: oliveRoosterGenome, hatchDay: 0, origin: "t", revealed: true)
+        let oliveRooster = Bird(
+            id: makeID(using: &rng), name: "e", breed: .araucana,
+            genome: oliveRoosterGenome, hatchDay: 0, origin: "t", revealed: true)
         #expect(r.rehomeValue(of: oliveRooster, onDay: r.adultAge) == 6)
     }
 }

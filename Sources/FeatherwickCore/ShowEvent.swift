@@ -45,7 +45,8 @@ extension Engine {
     /// otherwise the pet class (where crosses, growers and off-colour birds are all welcome).
     public static func showClass(for bird: Bird, in s: GameState) -> ShowClass {
         if bird.isPurebred, bird.stage(onDay: s.day, rules: s.rules) == .adult,
-           ShowStandard(bird.breed).accepts(Appearance(bird.phenotype)) {
+            ShowStandard(bird.breed).accepts(Appearance(bird.phenotype))
+        {
             return .breed(bird.breed)
         }
         return .pet
@@ -84,7 +85,10 @@ extension Engine {
         guard s.isShowDay else { return [] }
         var ev: [GameEvent] = [.showDay(day: s.day)]
         defer { s.showEntries = [] }  // the show is over, whatever happened
-        guard !s.showEntries.isEmpty else { ev.append(.showNoEntries); return ev }
+        guard !s.showEntries.isEmpty else {
+            ev.append(.showNoEntries)
+            return ev
+        }
 
         // Group the player's entries by class; absent birds (sold, lost, boarding) are quietly withdrawn.
         var byClass: [ShowClass: [(name: String, card: JudgeCard)]] = [:]
@@ -117,8 +121,9 @@ extension Engine {
                 let placing = e.card.grade == .disqualified ? 0 : i + 1
                 let prize = prizeFor(placing, s.rules)
                 totalPrize += prize
-                let result = ShowResult(day: s.day, showClass: cls, entrantName: e.name,
-                                        placing: placing, fieldSize: field.count, score: e.card.score, prize: prize)
+                let result = ShowResult(
+                    day: s.day, showClass: cls, entrantName: e.name,
+                    placing: placing, fieldSize: field.count, score: e.card.score, prize: prize)
                 s.showResults.append(result)
                 ev.append(.showPlacing(result))
             }
@@ -141,29 +146,36 @@ extension Engine {
 
     /// One AI entry for a class, generated from fresh random IDs so its quality varies (like the
     /// player's own founder birds). Judged by the same `Judge` code, so the field is a fair contest.
-    static func competitor<R: RandomNumberGenerator>(for cls: ShowClass, _ s: GameState, _ rng: inout R) -> (name: String, card: JudgeCard) {
+    static func competitor<R: RandomNumberGenerator>(
+        for cls: ShowClass, _ s: GameState, _ rng: inout R
+    ) -> (name: String, card: JudgeCard) {
         switch cls {
         case .breed(let breed):
             let colour = breed.definition.varieties.randomElement(using: &rng)!
-            let bird = Bird(id: makeID(using: &rng), name: "a \(breed.definition.displayName)", breed: breed,
-                            genome: breed.purebred(.hen, variety: colour), hatchDay: s.day - s.rules.adultAge,
-                            origin: "County show", revealed: true).withFounderQuality()
+            let bird = Bird(
+                id: makeID(using: &rng), name: "a \(breed.definition.displayName)", breed: breed,
+                genome: breed.purebred(.hen, variety: colour), hatchDay: s.day - s.rules.adultAge,
+                origin: "County show", revealed: true
+            ).withFounderQuality()
             return (bird.name, Judge.judge(bird, in: cls, state: s))
         case .pet:
             let breed = Breed.starters.randomElement(using: &rng)!
             let colour = breed.definition.varieties.randomElement(using: &rng)!
-            let bird = Bird(id: makeID(using: &rng), name: "a visitor's \(breed.definition.displayName)", breed: breed,
-                            genome: breed.purebred(.hen, variety: colour), hatchDay: s.day - s.rules.adultAge,
-                            origin: "County show", revealed: true)
-                .withFounderQuality().withTameness(Double.random(in: 0.2...0.95, using: &rng))
+            let bird = Bird(
+                id: makeID(using: &rng), name: "a visitor's \(breed.definition.displayName)", breed: breed,
+                genome: breed.purebred(.hen, variety: colour), hatchDay: s.day - s.rules.adultAge,
+                origin: "County show", revealed: true
+            )
+            .withFounderQuality().withTameness(Double.random(in: 0.2...0.95, using: &rng))
             return (bird.name, Judge.judge(bird, in: .pet, state: s))
         case .eggs(let colour):
             // A matched plate from one unseen hen: a single shape and shell across the plate.
             let shape = Int.random(in: 0...QuantitativeTrait.eggShape.maxScore, using: &rng)
             let shell = Double.random(in: 0.3...1.0, using: &rng)
             let eggs = (0..<ShowPoints.eggPlate).map { _ -> Egg in
-                var egg = Egg(id: makeID(using: &rng), layDay: s.day, motherID: makeID(using: &rng),
-                              colour: colour, speckled: false)
+                var egg = Egg(
+                    id: makeID(using: &rng), layDay: s.day, motherID: makeID(using: &rng),
+                    colour: colour, speckled: false)
                 egg.collectedDay = s.day
                 egg.shape = shape
                 egg.shell = shell

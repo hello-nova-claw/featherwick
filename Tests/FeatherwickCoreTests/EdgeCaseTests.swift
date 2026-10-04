@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 /// A started game where the starter hen is an adult in the coop.
@@ -10,8 +11,9 @@ func adultHenGame(_ rules: Rules = calmRules()) -> (GameState, SeededRNG) {
 }
 
 func plainBird(_ breed: Breed = .orpington, _ sex: Sex = .hen, hatchDay: Int = 0, rng: inout SeededRNG) -> Bird {
-    Bird(id: makeID(using: &rng), name: "\(breed.rawValue)-\(sex.rawValue)", breed: breed,
-         genome: breed.purebred(sex), hatchDay: hatchDay, origin: "Test", revealed: true)
+    Bird(
+        id: makeID(using: &rng), name: "\(breed.rawValue)-\(sex.rawValue)", breed: breed,
+        genome: breed.purebred(sex), hatchDay: hatchDay, origin: "Test", revealed: true)
 }
 
 func count(_ ev: [GameEvent], _ match: (GameEvent) -> Bool) -> Int { ev.filter(match).count }
@@ -36,7 +38,8 @@ struct StartingEdgeCases {
 
     @Test func choosingTwiceIsRejected() {
         var (s, rng) = startedGame(sex: .hen)
-        #expect(Engine.apply(.chooseStarter(index: 0, name: "Again"), to: &s, using: &rng) == [.rejected(.alreadyStarted)])
+        #expect(
+            Engine.apply(.chooseStarter(index: 0, name: "Again"), to: &s, using: &rng) == [.rejected(.alreadyStarted)])
         #expect(s.brooder.count == 1)
     }
 
@@ -145,7 +148,9 @@ struct FoxEdgeCases {
         let noLayUntil = s.coop[0].noLayUntilDay
         var layDays: [Int] = []
         for _ in 0..<5 {
-            if night(&s, &rng).contains(where: { if case .eggLaid = $0 { true } else { false } }) { layDays.append(s.day) }
+            if night(&s, &rng).contains(where: { if case .eggLaid = $0 { true } else { false } }) {
+                layDays.append(s.day)
+            }
         }
         #expect(layDays.first == noLayUntil)
     }
@@ -155,7 +160,8 @@ struct FoxEdgeCases {
         r.startPerches = 1
         var (s, rng) = startedGame(sex: .hen, rules: r)
         s.brooder.removeAll()
-        let early = plainBird(rng: &rng), late = plainBird(rng: &rng)
+        let early = plainBird(rng: &rng)
+        let late = plainBird(rng: &rng)
         s.lost = [LostBird(bird: late, returnsOnDay: s.day + 1), LostBird(bird: early, returnsOnDay: s.day)]
         let ev = night(&s, &rng)
         #expect(ev.contains(.birdReturned(early.id)))
@@ -175,7 +181,8 @@ struct FoxEdgeCases {
         r.startPerches = 1
         var (s, rng) = startedGame(sex: .hen, rules: r)
         s.brooder.removeAll()
-        let resident = plainBird(rng: &rng), wanderer = plainBird(.araucana, rng: &rng)
+        let resident = plainBird(rng: &rng)
+        let wanderer = plainBird(.araucana, rng: &rng)
         s.coop = [resident]
         s.lost = [LostBird(bird: wanderer, returnsOnDay: s.day)]
         #expect(night(&s, &rng).contains(.birdWaitingForPerch(wanderer.id)))
@@ -197,8 +204,9 @@ struct GrowthEdgeCases {
     @Test func identicalBirdsMakeOneBreedBookEntry() {
         var (s, rng) = startedGame(sex: .hen, rules: calmRules())
         var twin = s.brooder[0]
-        twin = Bird(id: makeID(using: &rng), name: "Twin", breed: twin.breed, genome: twin.genome,
-                    hatchDay: twin.hatchDay, origin: "Test")
+        twin = Bird(
+            id: makeID(using: &rng), name: "Twin", breed: twin.breed, genome: twin.genome,
+            hatchDay: twin.hatchDay, origin: "Test")
         s.brooder.append(twin)
         var ev: [GameEvent] = []
         for _ in 0..<10 { ev += night(&s, &rng) }
@@ -321,14 +329,16 @@ struct EggHandlingEdgeCases {
         let r = Rules.standard
         let id = UUID()
         let fresh = Egg(id: id, layDay: 0, motherID: id, colour: .brown, speckled: false, collectedDay: r.nestFreshDays)
-        let stale = Egg(id: id, layDay: 0, motherID: id, colour: .brown, speckled: false, collectedDay: r.nestFreshDays + 1)
+        let stale = Egg(
+            id: id, layDay: 0, motherID: id, colour: .brown, speckled: false, collectedDay: r.nestFreshDays + 1)
         #expect(!r.isStale(fresh, onDay: 100))
         #expect(r.isStale(stale, onDay: 100))
     }
 
     @Test func sellingClearEggsWhenAllAreKnownFertileSellsNothing() {
         var (s, rng) = startedGame(sex: .hen)
-        let hen = plainBird(.araucana, rng: &rng), rooster = plainBird(.orpington, .rooster, rng: &rng)
+        let hen = plainBird(.araucana, rng: &rng)
+        let rooster = plainBird(.orpington, .rooster, rng: &rng)
         var egg = fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng)
         egg.candled = true
         s.carton = [egg]
@@ -355,8 +365,10 @@ struct HatchingEdgeCases {
     func gameWithIncubator(fertile: Int, clear: Int = 0) -> (GameState, SeededRNG) {
         var (s, rng) = startedGame(sex: .hen, rules: calmRules())
         s.incubatorSize = 6
-        let hen = plainBird(.araucana, rng: &rng), rooster = plainBird(.orpington, .rooster, rng: &rng)
-        s.carton = (0..<fertile).map { _ in fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng) }
+        let hen = plainBird(.araucana, rng: &rng)
+        let rooster = plainBird(.orpington, .rooster, rng: &rng)
+        s.carton =
+            (0..<fertile).map { _ in fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng) }
             + (0..<clear).map { _ in clearEgg(mother: hen, day: 0, rng: &rng) }
         return (s, rng)
     }
@@ -394,7 +406,8 @@ struct HatchingEdgeCases {
         let until = s.day + 4
         s.coop[0].broodyUntilDay = until
         s.carton = (0..<2).map { _ in clearEgg(mother: s.coop[0], day: s.day, rng: &rng) }
-        #expect(Engine.apply(.sit(hen: s.coop[0].id, count: 2), to: &s, using: &rng) == [.candled(fertile: 0, clear: 2)])
+        #expect(
+            Engine.apply(.sit(hen: s.coop[0].id, count: 2), to: &s, using: &rng) == [.candled(fertile: 0, clear: 2)])
         #expect(s.clutches.isEmpty)
         #expect(s.coop[0].broodyUntilDay == until)
     }
@@ -451,7 +464,10 @@ struct HatchingEdgeCases {
         var (s, rng) = startedGame(sex: .hen)
         let price = s.rules.incubatorPrice
         s.coins = price - 1
-        #expect(Engine.apply(.buyIncubator, to: &s, using: &rng) == [.rejected(.notEnoughCoins(needed: price, have: price - 1))])
+        #expect(
+            Engine.apply(.buyIncubator, to: &s, using: &rng) == [
+                .rejected(.notEnoughCoins(needed: price, have: price - 1))
+            ])
         #expect(!s.hasIncubator && s.coins == price - 1)
     }
 }
@@ -500,7 +516,8 @@ struct RoomEdgeCases {
         var (s, rng) = startedGame(sex: .hen)
         s.coins = 1000
         s.perches = s.rules.maxPerches - 1
-        #expect(Engine.apply(.upgradeCoop, to: &s, using: &rng) == [.coopUpgraded(perches: s.rules.maxPerches, cost: 30)])
+        #expect(
+            Engine.apply(.upgradeCoop, to: &s, using: &rng) == [.coopUpgraded(perches: s.rules.maxPerches, cost: 30)])
     }
 
     @Test func renameRules() {
@@ -520,12 +537,15 @@ struct RoomEdgeCases {
 struct SaveEdgeCases {
     @Test func aBusySaveRoundTrips() throws {
         var (s, rng) = startedGame(sex: .hen, rules: calmRules())
-        let hen = plainBird(.araucana, rng: &rng), rooster = plainBird(.orpington, .rooster, rng: &rng)
+        let hen = plainBird(.araucana, rng: &rng)
+        let rooster = plainBird(.orpington, .rooster, rng: &rng)
         s.lost = [LostBird(bird: plainBird(rng: &rng), returnsOnDay: 5)]
         s.boarding = [plainBird(.wyandotte, rng: &rng)]
         s.rehomed = [plainBird(.silkie, rng: &rng)]
         s.henChicks = [plainBird(rng: &rng)]
-        s.clutches = [Clutch(henID: nil, eggs: [fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng)], hatchDay: 1)]
+        s.clutches = [
+            Clutch(henID: nil, eggs: [fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng)], hatchDay: 1)
+        ]
         var candled = fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng)
         candled.candled = true
         s.carton = [candled, clearEgg(mother: hen, day: 0, rng: &rng)]

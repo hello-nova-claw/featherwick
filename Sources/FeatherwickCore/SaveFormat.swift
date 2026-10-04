@@ -34,7 +34,7 @@ public enum SaveFormat {
 
     /// `migrations[n]` turns a version-n save into a version-(n+1) save.
     public static let migrations: [Int: Migration] = [
-        0: migrateGenomesToRegistry,
+        0: migrateGenomesToRegistry
     ]
 
     private struct Envelope: Codable {
@@ -64,7 +64,8 @@ public enum SaveFormat {
         if version > currentVersion { throw LoadError.tooNew(version: version) }
 
         guard var root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-              root["state"] is [String: Any] else { throw LoadError.notASave }
+            root["state"] is [String: Any]
+        else { throw LoadError.notASave }
         for v in version..<currentVersion {
             guard let migrate = migrations[v] else { throw LoadError.noMigration(from: v) }
             try migrate(&root)
@@ -80,8 +81,8 @@ public enum SaveFormat {
     /// So adding a field to GameState or Rules needs no migration.
     static func fillNewSettings(_ root: inout [String: Any]) {
         guard var state = root["state"] as? [String: Any],
-              let fresh = try? JSONSerialization.jsonObject(
-                  with: JSONEncoder().encode(GameState(rules: .standard, phase: .playing))) as? [String: Any]
+            let fresh = try? JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(GameState(rules: .standard, phase: .playing))) as? [String: Any]
         else { return }
         for (key, value) in fresh where state[key] == nil { state[key] = value }
         if var rules = state["rules"] as? [String: Any], let freshRules = fresh["rules"] as? [String: Any] {
@@ -124,7 +125,8 @@ public enum SaveFormat {
             } else if let rooster = chromosomes["rooster"] as? [String: Any] {
                 sex = "rooster"
                 if let pair = rooster["z"] as? [String: Any],
-                   let a = pair["first"] as? String, let b = pair["second"] as? String {
+                    let a = pair["first"] as? String, let b = pair["second"] as? String
+                {
                     z[Barring.locus.rawValue] = [a, b]
                 }
             }

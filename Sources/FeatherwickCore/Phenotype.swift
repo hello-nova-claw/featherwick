@@ -8,11 +8,11 @@ public enum EggColour: String, Hashable, Codable, Sendable, CaseIterable {
 
 /// How a chick's down looks. Shows the colour genes, not the breed.
 public enum ChickDown: String, Hashable, Codable, Sendable, CaseIterable {
-    case black          // often with a pale belly
-    case slate          // blue
-    case paleGrey       // splash
-    case silver         // lavender
-    case yellow         // buff
+    case black  // often with a pale belly
+    case slate  // blue
+    case paleGrey  // splash
+    case silver  // lavender
+    case yellow  // buff
     case darkWithHeadSpot  // barred
 }
 
@@ -67,12 +67,13 @@ public struct Phenotype: Hashable, Codable, Sendable {
         if sex == .hen {
             let blueShell = genome.blueShell.has(.blue)
             let brownCoat = genome.brownShell.has(.brown)
-            eggColour = switch (blueShell, brownCoat) {
-            case (true, true): .olive
-            case (true, false): .blue
-            case (false, true): .brown
-            case (false, false): .cream
-            }
+            eggColour =
+                switch (blueShell, brownCoat) {
+                case (true, true): .olive
+                case (true, false): .blue
+                case (false, true): .brown
+                case (false, false): .cream
+                }
             eggIsSpeckled = genome.speckle.isHomozygous(for: .speckled)
         } else {
             eggColour = nil

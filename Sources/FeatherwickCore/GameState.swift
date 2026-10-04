@@ -182,7 +182,7 @@ public struct GameState: Hashable, Codable, Sendable {
     /// True on the morning a show is held.
     public var isShowDay: Bool { rules.showIntervalDays > 0 && day > 0 && day % rules.showIntervalDays == 0 }
     /// First-place ribbons won so far: the trophy count.
-    public var firstPlaceRibbons: Int { showResults.filter { $0.placing == 1 }.count }
+    public var firstPlaceRibbons: Int { showResults.count(where: { $0.placing == 1 }) }
 
     /// Birds at home (brooder and coop). Lost birds are not fed.
     public var birdsAtHome: [Bird] { brooder + henChicks + coop }
