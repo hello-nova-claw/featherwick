@@ -44,7 +44,7 @@ struct HatchingTests {
         s.coop.append(adult(.araucana, .rooster, day: s.day, rules: r, rng: &rng))
         var all: [GameEvent] = []
         for _ in 0..<3 { all += night(&s, &rng) }
-        #expect(all.filter { if case .neighbourGaveIncubator = $0 { true } else { false } }.count == 1)
+        #expect(all.count(where: { if case .neighbourGaveIncubator = $0 { true } else { false } }) == 1)
         #expect(s.incubatorSize == r.giftIncubatorSize)
 
         _ = Engine.apply(.collectEggs, to: &s, using: &rng)

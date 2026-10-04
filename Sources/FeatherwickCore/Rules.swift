@@ -159,8 +159,8 @@ public struct Rules: Codable, Hashable, Sendable {
 
     /// Roosters in the coop beyond what the hens can bear. Cockerels count too.
     public func extraRoosters(inCoop coop: [Bird], onDay day: Int) -> Int {
-        let roosters = coop.filter { $0.sex == .rooster && $0.stage(onDay: day, rules: self) >= .grower }.count
-        let hens = coop.filter { $0.sex == .hen && $0.stage(onDay: day, rules: self) >= .grower }.count
+        let roosters = coop.count(where: { $0.sex == .rooster && $0.stage(onDay: day, rules: self) >= .grower })
+        let hens = coop.count(where: { $0.sex == .hen && $0.stage(onDay: day, rules: self) >= .grower })
         let allowed = max(1, (hens + hensPerRooster - 1) / hensPerRooster)
         return max(0, roosters - allowed)
     }

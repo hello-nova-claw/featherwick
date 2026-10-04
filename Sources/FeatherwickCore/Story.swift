@@ -142,7 +142,7 @@ extension Engine {
 
     /// Rewards are all-or-nothing and given once. A gift bird waits for a free perch.
     static func giveRewards<R: RandomNumberGenerator>(_ story: Storyline, _ s: inout GameState, _ rng: inout R) -> [GameEvent] {
-        let birds = story.rewards.filter { if case .giftBird = $0 { true } else { false } }.count
+        let birds = story.rewards.count(where: { if case .giftBird = $0 { true } else { false } })
         guard s.coop.count + birds <= s.perches else {
             let key = "\(story.id).waitingForRoom"
             if s.storyNotices.insert(key).inserted { return [.storyGiftWaitingForRoom(story.id)] }

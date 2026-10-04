@@ -399,7 +399,7 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
         return "Tip: one rooster is plenty. Rehome a spare and a neighbour will adopt him for coins "
             + "(rehome <name>; see what he's worth with value <name>) — or wait, and someone may offer a hen in trade."
     case .milestoneReached(let id):
-        let reached = Milestones.all.filter { s.milestonesReached.contains($0.id) }.count
+        let reached = Milestones.all.count(where: { s.milestonesReached.contains($0.id) })
         return "★ Milestone: \(milestoneText(id).title)! (\(reached)/\(Milestones.all.count) · see: journal)"
     case .enteredInShow(let id, let cls):
         let who = id.flatMap { s.bird($0)?.name } ?? "your eggs"
@@ -461,8 +461,8 @@ func look(_ s: GameState) {
     if !s.boarding.isEmpty {
         print("Staying with the neighbour (no eggs can be set until they have a home): " + s.boarding.map(\.name).joined(separator: ", "))
     }
-    let fertile = s.carton.filter { $0.isCandled && $0.isFertile }.count
-    let clear = s.carton.filter { $0.isCandled && !$0.isFertile }.count
+    let fertile = s.carton.count(where: { $0.isCandled && $0.isFertile })
+    let clear = s.carton.count(where: { $0.isCandled && !$0.isFertile })
     let unchecked = s.carton.count - fertile - clear
     var cartonInfo = "carton \(s.carton.count)/\(s.cartonCapacity)"
     if fertile + clear > 0 { cartonInfo += " (\(fertile) fertile, \(clear) clear, \(unchecked) not candled)" }
@@ -490,7 +490,7 @@ func milestoneText(_ id: String) -> (title: String, hint: String) {
 }
 
 func journal(_ s: GameState) {
-    let done = Milestones.all.filter { s.milestonesReached.contains($0.id) }.count
+    let done = Milestones.all.count(where: { s.milestonesReached.contains($0.id) })
     print("Keeper's journal — \(done)/\(Milestones.all.count) milestones:")
     for m in Milestones.all {
         let got = s.milestonesReached.contains(m.id)

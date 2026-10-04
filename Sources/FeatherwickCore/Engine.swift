@@ -225,7 +225,7 @@ public enum Engine {
             let selling = s.carton.filter { !(keepFertile && $0.isCandled && $0.isFertile) }
             if selling.isEmpty { return [.rejected(.cartonEmpty)] }
             let total = selling.reduce(0) { $0 + s.rules.price(of: $1, onDay: s.day) }
-            let stale = selling.filter { s.rules.isStale($0, onDay: s.day) }.count
+            let stale = selling.count(where: { s.rules.isStale($0, onDay: s.day) })
             let sold = Set(selling.map(\.id))
             s.coins += total
             s.carton.removeAll { sold.contains($0.id) }
@@ -235,7 +235,7 @@ public enum Engine {
             let unchecked = s.carton.indices.filter { !s.carton[$0].isCandled }
             if unchecked.isEmpty { return [.rejected(s.carton.isEmpty ? .cartonEmpty : .nothingToCandle)] }
             for i in unchecked { s.carton[i].candled = true }
-            let fertile = unchecked.filter { s.carton[$0].isFertile }.count
+            let fertile = unchecked.count(where: { s.carton[$0].isFertile })
             return [.candled(fertile: fertile, clear: unchecked.count - fertile)]
 
         case .closeCoop:
@@ -519,7 +519,7 @@ public enum Engine {
         s.carton.removeAll { chosenIDs.contains($0.id) && $0.isFertile }
         for i in s.carton.indices where chosenIDs.contains(s.carton[i].id) { s.carton[i].candled = true }
         let newlyChecked = chosen.filter { !$0.isCandled }
-        let newlyFertile = newlyChecked.filter(\.isFertile).count
+        let newlyFertile = newlyChecked.count(where: \.isFertile)
         var ev: [GameEvent] = []
         if !newlyChecked.isEmpty {
             ev.append(.candled(fertile: newlyFertile, clear: newlyChecked.count - newlyFertile))

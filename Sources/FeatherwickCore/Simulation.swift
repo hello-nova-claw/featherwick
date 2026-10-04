@@ -45,7 +45,7 @@ public enum Simulation {
         r.finalFlock = s.ownedBirds.count
         r.breedBook = s.breedBook.count
         r.eggBook = s.eggBook.count
-        r.storiesFinished = s.stories.values.filter(\.rewarded).count
+        r.storiesFinished = s.stories.values.count(where: \.rewarded)
         return r
     }
 
@@ -69,7 +69,7 @@ public enum Simulation {
         if !s.hasIncubator, s.coins >= s.rules.incubatorPrice { apply(.buyIncubator, &s, &rng, &r) }
 
         // Set fertile eggs if the incubator is free and the brooder has room for every one.
-        let fertile = s.carton.filter { $0.isCandled && $0.isFertile }.count
+        let fertile = s.carton.count(where: { $0.isCandled && $0.isFertile })
         if s.hasIncubator, s.incubatorClutch == nil, s.boarding.isEmpty, fertile > 0 {
             let n = min(fertile, s.incubatorSize, max(0, s.brooderSize - s.brooder.count))
             if n > 0 { apply(.incubate(count: n), &s, &rng, &r) }

@@ -217,7 +217,7 @@ public enum Judge {
         // Eggs laid before these traits existed count as average.
         let shape = eggs.map { Double($0.shape ?? Int(shapeMax / 2)) / shapeMax }.reduce(0, +) / n
         let shell = eggs.map { $0.shell ?? 0.75 }.reduce(0, +) / n
-        let stale = eggs.filter { s.rules.isStale($0, onDay: s.day) }.count
+        let stale = eggs.count(where: { s.rules.isStale($0, onDay: s.day) })
         let fresh = 1 - Double(stale) / n
         let points = Double(ShowPoints.eggMatch) + shape * Double(ShowPoints.eggShape)
             + shell * Double(ShowPoints.eggShell) + fresh * Double(ShowPoints.eggFreshness)

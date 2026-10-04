@@ -78,7 +78,7 @@ struct StoryTests {
         }
         var ev: [GameEvent] = []
         for _ in 0..<8 { ev += Self.night(&s, &rng); #expect(s.coop.count <= s.perches) }
-        #expect(ev.filter { $0 == .storyGiftWaitingForRoom("broodySilkie") }.count == 1)  // said once, not nightly
+        #expect(ev.count(where: { $0 == .storyGiftWaitingForRoom("broodySilkie") }) == 1)  // said once, not nightly
         #expect(!ev.contains { if case .storyGift = $0 { true } else { false } })
         // Make room. Birds boarding with the neighbour come home first, so free perches until the gift fits.
         var arrived = false

@@ -30,7 +30,7 @@ struct RoomTests {
         #expect(s.brooder.count == 1)
         #expect(s.boarding.count == 2)
         #expect(ev.contains { if case .needsHome = $0 { true } else { false } })
-        #expect(ev.filter { if case .boardingWithNeighbour = $0 { true } else { false } }.count == 2)
+        #expect(ev.count(where: { if case .boardingWithNeighbour = $0 { true } else { false } }) == 2)
     }
 
     @Test func boardingBirdsPauseHatching() {

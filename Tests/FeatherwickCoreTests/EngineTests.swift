@@ -70,7 +70,7 @@ struct EngineTests {
         #expect(hen.sex == .hen && hen.revealed)
         #expect(hen.age(onDay: s.day) == s.rules.giftHenAge)
         for _ in 0..<10 { all += night(&s, &rng) }
-        #expect(all.filter { if case .neighbourGaveHen = $0 { true } else { false } }.count == 1)
+        #expect(all.count(where: { if case .neighbourGaveHen = $0 { true } else { false } }) == 1)
     }
 
     @Test func henStarterGetsNoGift() {

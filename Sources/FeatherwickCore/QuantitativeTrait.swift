@@ -26,7 +26,7 @@ public struct QuantitativeTrait: Sendable {
     public var maxScore: Int { loci.count * 2 }
 
     public func score(_ genome: Genome) -> Int {
-        loci.reduce(0) { sum, locus in sum + genome.alleles(at: locus).filter { $0 == Self.plus }.count }
+        loci.reduce(0) { sum, locus in sum + genome.alleles(at: locus).count(where: { $0 == Self.plus }) }
     }
 
     /// 0...1, for judging.

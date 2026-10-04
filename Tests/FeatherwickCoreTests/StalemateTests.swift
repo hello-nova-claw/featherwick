@@ -114,7 +114,7 @@ struct ShopTests {
         #expect(s.coop.contains { $0.id == id })
         _ = Engine.apply(.buy(.cockerel), to: &s, using: &rng)
         #expect(s.coins == 100 - 25 - 15)
-        #expect(s.coop.filter { $0.sex == .rooster }.count == 1)
+        #expect(s.coop.count(where: { $0.sex == .rooster }) == 1)
     }
 
     @Test func birdsNeedAFreePerch() {

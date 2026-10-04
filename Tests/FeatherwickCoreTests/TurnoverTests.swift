@@ -24,7 +24,7 @@ struct TurnoverTests {
     }
 
     func eggsLaid(_ ev: [GameEvent], by id: UUID) -> Int {
-        ev.filter { if case .eggLaid(_, let who) = $0 { who == id } else { false } }.count
+        ev.count(where: { if case .eggLaid(_, let who) = $0 { who == id } else { false } })
     }
 
     // MARK: - Age-based decline
