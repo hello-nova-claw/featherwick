@@ -6,6 +6,7 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  pull_request:  # TEMPORARY: one check of this workflow before merge; removed next commit
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
