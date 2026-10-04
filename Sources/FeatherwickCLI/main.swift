@@ -398,6 +398,9 @@ func text(_ e: GameEvent, _ s: GameState) -> String? {
     case .roosterAdvice:
         return "Tip: one rooster is plenty. Rehome a spare and a neighbour will adopt him for coins "
             + "(rehome <name>; see what he's worth with value <name>) — or wait, and someone may offer a hen in trade."
+    case .milestoneReached(let id):
+        let reached = Milestones.all.filter { s.milestonesReached.contains($0.id) }.count
+        return "★ Milestone: \(milestoneText(id).title)! (\(reached)/\(Milestones.all.count) · see: journal)"
     case .enteredInShow(let id, let cls):
         let who = id.flatMap { s.bird($0)?.name } ?? "your eggs"
         return "\(who) entered in the \(cls.name) class at the next county show (day \(s.nextShowDay))."
@@ -464,6 +467,36 @@ func look(_ s: GameState) {
     var cartonInfo = "carton \(s.carton.count)/\(s.cartonCapacity)"
     if fertile + clear > 0 { cartonInfo += " (\(fertile) fertile, \(clear) clear, \(unchecked) not candled)" }
     print("Nest: \(s.nest.count)/\(s.nestCapacity) eggs · \(cartonInfo)")
+}
+
+/// The goal ladder's words (kept in the UI, keyed by milestone id). Title, and a hint while locked.
+func milestoneText(_ id: String) -> (title: String, hint: String) {
+    switch id {
+    case "firstEgg": ("First egg", "Collect your first egg from the nest.")
+    case "firstHatch": ("First hatch", "Hatch a chick from a fertile egg.")
+    case "firstFriend": ("A friend", "Win a bird's trust up to 'friendly' with handling and treats.")
+    case "growingFlock": ("A proper flock", "Grow your flock to eight birds.")
+    case "blueEgg": ("Blue egg", "Keep an Araucana line laying blue eggs.")
+    case "oliveEgg": ("Olive egg", "Cross a blue-egg bird with a brown-egg bird for an olive egger.")
+    case "speckledEgg": ("Speckled egg", "Breed the speckle gene into a pair to get speckled eggs.")
+    case "colourCollector": ("Collector", "Record eight kinds in your Breed Book.")
+    case "showRibbon": ("In the ribbons", "Place in the top three at the county show.")
+    case "blueRibbon": ("Blue ribbon", "Win a class at the county show.")
+    case "lapChicken": ("Lap chicken", "Tame a bird all the way to a lap chicken.")
+    case "storyteller": ("Neighbourly", "Finish a Featherwick storyline.")
+    case "elderHen": ("Grand old lady", "Keep a hen into her beloved retirement.")
+    default: (id, "")
+    }
+}
+
+func journal(_ s: GameState) {
+    let done = Milestones.all.filter { s.milestonesReached.contains($0.id) }.count
+    print("Keeper's journal — \(done)/\(Milestones.all.count) milestones:")
+    for m in Milestones.all {
+        let got = s.milestonesReached.contains(m.id)
+        let t = milestoneText(m.id)
+        print("  \(got ? "✓" : "○") \(t.title)" + (got ? "" : " — \(t.hint)"))
+    }
 }
 
 func entryText(_ e: BreedBookEntry) -> String {
@@ -551,6 +584,7 @@ Commands:
   sleep                pass the night (door left open? birds forage: fed free + a small bonus, but fox risk)
   day [n]              do a full day n times: feed, collect, close, sleep
   book                 Breed Book and egg colours
+  journal              your milestones and what to aim for next
   slot [name]          list your saves, or switch to / create a save slot
   sim [days] [games]   balance report: simulate seeded games and show the numbers
   new yes [difficulty] delete the save and start again (relaxed | standard | challenge)
@@ -722,6 +756,7 @@ while true {
             run(.passNight)
         }
     case "book", "b": book(game.state)
+    case "journal", "goals", "j": journal(game.state)
     case "new":
         if words.count > 1, words[1] == "yes" {
             let name = words.count > 2 ? words[2] : "standard"

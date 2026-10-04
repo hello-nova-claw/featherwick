@@ -161,6 +161,8 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case birdsForaged(count: Int)
     /// First time rooster tension bites: a one-off tip on how to fix it (rehome a spare, or trade).
     case roosterAdvice
+    /// A goal-ladder milestone was reached this night (see Milestone.swift). Awarded once.
+    case milestoneReached(String)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -687,6 +689,9 @@ public enum Engine {
 
         // 9b. County show, on show days: entries are judged against a field and placed (see ShowEvent.swift).
         ev += runShowIfToday(&s, &rng)
+
+        // 9c. Goal ladder: award any milestone reached once the day's events have settled.
+        ev += advanceMilestones(&s)
 
         // 10. Reset for the new day. The door is opened in the morning.
         s.fedToday = false

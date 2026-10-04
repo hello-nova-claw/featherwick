@@ -208,6 +208,21 @@ words live in the UI.
 
 To add one: one `Storyline` in `Storylines.all`, plus its words in the UI.
 
+## Goal ladder
+
+`Milestone.swift`. Small, always-visible goals that give the no-loss sandbox a direction: first
+egg, first hatch, a blue/olive/speckled egg, a growing flock, a show ribbon, a lap chicken, a
+finished storyline, a hen into retirement. Cozy rule: a milestone is only ever *reached*, never
+failed — no deadlines, nothing lost by missing one.
+
+- Each `Milestone` is an id plus a test read from existing, player-visible state (so none can leak
+  a hidden gene). Checked each night, after the day settles (`advanceMilestones`, a `passNight` step).
+- Awarded once and recorded in `GameState.milestonesReached`; the engine emits `.milestoneReached(id)`
+  and the words live in the UI. Loading an older save simply back-fills what you've already done.
+- CLI: `journal` (the ladder, ✓ reached / ○ with a hint for what to aim for next).
+
+To add one: append a `Milestone` to `Milestones.all` (list order is the ladder), plus its words in the UI.
+
 ## Realism rules (tested)
 
 - Lacing shows only on a gold (buff) ground ("gold laced"); barring shows only on black-based birds.

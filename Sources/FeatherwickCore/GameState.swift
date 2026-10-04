@@ -135,6 +135,8 @@ public struct GameState: Hashable, Codable, Sendable {
     public var storyNotices: Set<String> = []
     /// Extra breeds Speckle & Down sells, unlocked by storylines.
     public var shopBreeds: Set<Breed> = []
+    /// Goal-ladder milestones already reached (see Milestone.swift). Ids only; the words live in the UI.
+    public var milestonesReached: Set<String> = []
     public var nest: [Egg] = []
     public var carton: [Egg] = []
 
