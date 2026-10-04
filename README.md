@@ -7,7 +7,9 @@ This repo is the game logic first. The iOS front end (SpriteKit + SwiftUI) comes
 ## Layout
 
 - `Sources/FeatherwickCore`: pure game logic. No printing, no input, no system clock, no global random.
+- `Sources/FeatherwickText`: the words players read, shared by the CLI and the app.
 - `Sources/FeatherwickCLI`: text front end (`featherwick`).
+- `App`: iOS test app (SwiftUI, no art yet). Make the Xcode project with `cd App && xcodegen`.
 - `Tests/FeatherwickCoreTests`: Swift Testing tests for the genetics rules.
 
 ## Commands

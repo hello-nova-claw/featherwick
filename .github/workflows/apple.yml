@@ -23,3 +23,9 @@ jobs:
           swift test --skip-build
       - name: Build the core for iOS
         run: xcodebuild build -scheme FeatherwickCore -destination 'generic/platform=iOS Simulator' -quiet
+      - name: Build the iOS app (App/project.yml)
+        run: |
+          brew install xcodegen
+          cd App && xcodegen
+          xcodebuild build -project Featherwick.xcodeproj -scheme Featherwick \
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -quiet

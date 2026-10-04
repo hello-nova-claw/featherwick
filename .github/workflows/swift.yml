@@ -16,11 +16,6 @@ jobs:
     container: swift:6.0-noble
     steps:
       - uses: actions/checkout@v5
-      - name: Check formatting
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          swift format --in-place --recursive --parallel Package.swift Sources Tests
-          git diff --exit-code || { echo "::error::Run: swift format --in-place --recursive Package.swift Sources Tests"; exit 1; }
       - uses: actions/cache@v4
         with:
           path: .build
@@ -30,3 +25,10 @@ jobs:
         run: swift build --build-tests -Xswiftc -warnings-as-errors
       - name: Test
         run: swift test --skip-build
+      # Last, so one run reports build, tests and formatting. The diff shows what to change.
+      - name: Check formatting
+        if: always()
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          swift format --in-place --recursive --parallel Package.swift Sources Tests App
+          git diff --exit-code || { echo "::error::Run: swift format --in-place --recursive Package.swift Sources Tests App"; exit 1; }
