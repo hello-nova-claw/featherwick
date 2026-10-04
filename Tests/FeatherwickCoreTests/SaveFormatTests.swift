@@ -53,6 +53,10 @@ struct SaveFormatTests {
         #expect(wyandotte.phenotype.colour == .black)
     }
 
+    @Test func anOldSaveKeepsItsCandlingSkill() throws {
+        #expect(try SaveFormat.decode(Self.fixture("save-v0")).state.canCandle)
+    }
+
     @Test func aLoadedOldSaveKeepsPlaying() throws {
         var game = try SaveFormat.decode(Self.fixture("save-v0"))
         for _ in 0..<30 { _ = Engine.apply(.passNight, to: &game.state, using: &game.rng) }

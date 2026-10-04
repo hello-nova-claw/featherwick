@@ -64,13 +64,16 @@ public enum Simulation {
     private static func playDay(_ s: inout GameState, _ rng: inout SeededRNG, _ r: inout Report) {
         apply(.feed, &s, &rng, &r)
         if !s.nest.isEmpty { apply(.collectEggs, &s, &rng, &r) }
-        apply(.candle, &s, &rng, &r)
+        if s.canCandle { apply(.candle, &s, &rng, &r) }
 
         ensureBreedingPair(&s, &rng, &r)
         if !s.hasIncubator, s.coins >= s.rules.incubatorPrice { apply(.buyIncubator, &s, &rng, &r) }
 
         // Set fertile eggs if the incubator is free and the brooder has room for every one.
-        let fertile = s.carton.count(where: { $0.isCandled && $0.isFertile })
+        // A keeper who can't candle yet tries unchecked eggs instead.
+        let known = s.carton.count(where: { $0.isCandled && $0.isFertile })
+        let unchecked = s.carton.count(where: { !$0.isCandled })
+        let fertile = s.canCandle ? known : unchecked
         if s.hasIncubator, s.incubatorClutch == nil, s.boarding.isEmpty, fertile > 0 {
             let n = min(fertile, s.incubatorSize, max(0, s.brooderSize - s.brooder.count))
             if n > 0 { apply(.incubate(count: n), &s, &rng, &r) }

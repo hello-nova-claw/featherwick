@@ -10,7 +10,8 @@ struct CoopSheet: View {
     @Environment(\.palette) private var palette
     let open: (FarmSheet) -> Void
     @State private var filter = EggFilter.all
-    @State private var selected: UUID?
+    /// The eggs the player has tapped. Hatch and sell act on exactly these.
+    @State private var selected: Set<UUID> = []
 
     enum EggFilter: Hashable { case all, fertile, clear, notCandled }
 
@@ -27,21 +28,32 @@ struct CoopSheet: View {
                     Button("Collect") { store.run(.collectEggs) }.buttonStyle(.secondary).frame(width: 110)
                 }
             }
-            WordTabs(
-                tabs: [
-                    (.all, "All \(s.carton.count)"), (.fertile, "Fertile"), (.clear, "Clear"),
-                    (.notCandled, "Not candled"),
-                ], selection: $filter)
-            Carton(eggs: shown, capacity: max(12, s.cartonCapacity), selected: $selected)
-            CandlingLegend()
+            // The fertile and clear filters only mean something once the keeper can candle.
+            if s.canCandle {
+                WordTabs(
+                    tabs: [
+                        (.all, "All \(s.carton.count)"), (.fertile, "Fertile"), (.clear, "Clear"),
+                        (.notCandled, "Not candled"),
+                    ], selection: $filter)
+            }
+            Carton(
+                eggs: s.canCandle ? shown : s.carton, capacity: max(12, s.cartonCapacity), canCandle: s.canCandle,
+                selected: $selected
+            )
+            .onChange(of: s.carton) { _, carton in selected.formIntersection(carton.map(\.id)) }
+            CandlingLegend(canCandle: s.canCandle)
             StitchDivider()
-            if let egg = s.carton.first(where: { $0.id == selected }) {
-                eggDetail(egg, s)
+            let chosen = s.carton.filter { selected.contains($0.id) }
+            if chosen.count == 1 {
+                eggDetail(chosen[0], s)
+            } else if chosen.count > 1 {
+                Text("\(chosen.count) eggs chosen. Tap an egg again to put it back.")
+                    .font(Typeface.body).foregroundStyle(palette.inkMuted)
             } else {
-                Text(s.carton.isEmpty ? "The carton is empty." : "Tap an egg to look at it.")
+                Text(s.carton.isEmpty ? "The carton is empty." : "Tap eggs to choose them.")
                     .font(Typeface.body).foregroundStyle(palette.inkMuted)
             }
-            eggActions(s)
+            eggActions(s, chosen: chosen)
             Group {
                 StitchDivider()
                 nightActions(s)
@@ -73,26 +85,32 @@ struct CoopSheet: View {
 
     private func eggStory(_ egg: Egg, _ s: GameState) -> String {
         let from = s.bird(egg.motherID)?.name ?? "a local flock"
-        let state = egg.isCandled ? (egg.isFertile ? "Fertile" : "Clear") : "Not candled yet"
+        let unknown = s.canCandle ? "Not candled yet" : "Fertile? You can't tell yet"
+        let state = egg.isCandled ? (egg.isFertile ? "Fertile" : "Clear") : unknown
         let stale = s.rules.isStale(egg, onDay: s.day) ? " Stale: it sat in the nest too long." : ""
         return "From \(from). \(state).\(stale)"
     }
 
     @ViewBuilder
-    private func eggActions(_ s: GameState) -> some View {
-        let fertile = s.carton.count(where: { $0.isCandled && $0.isFertile })
-        let total = s.carton.reduce(0) { $0 + s.rules.price(of: $1, onDay: s.day) }
+    private func eggActions(_ s: GameState, chosen: [Egg]) -> some View {
+        let selling = chosen.isEmpty ? s.carton : chosen
+        let total = selling.reduce(0) { $0 + s.rules.price(of: $1, onDay: s.day) }
         HStack(spacing: Space.m) {
-            if fertile > 0, s.hasIncubator, s.incubatorClutch == nil {
-                Button("Set to hatch") { store.run(.incubate(count: 1)) }.buttonStyle(.primary)
+            if let reason = hatchBlocker(s, chosen: chosen) {
+                Button(reason) {}.buttonStyle(.primary).disabled(true)
             } else {
-                Button(hatchReason(s, fertile: fertile)) {}.buttonStyle(.primary).disabled(true)
+                Button("Set \(chosen.count) to hatch") {
+                    store.run(.incubateEggs(chosen.map(\.id)))
+                    selected.removeAll()
+                }
+                .buttonStyle(.primary)
             }
             Button {
-                store.run(.sellEggs)
+                store.run(chosen.isEmpty ? .sellEggs : .sellChosenEggs(chosen.map(\.id)))
+                selected.removeAll()
             } label: {
                 HStack(spacing: Space.xs) {
-                    Text("Sell all")
+                    Text(chosen.isEmpty ? "Sell all" : "Sell \(chosen.count)")
                     CoinDisc()
                     Text("\(total)").monospacedDigit()
                 }
@@ -100,18 +118,30 @@ struct CoopSheet: View {
             .buttonStyle(.secondary)
             .disabled(s.carton.isEmpty)
         }
-        HStack(spacing: Space.l) {
-            Button("Candle the rest") { store.run(.candle) }
-            Button("Sell all but fertile") { store.run(.sellClearEggs) }
+        if s.canCandle {
+            HStack(spacing: Space.l) {
+                // Candling is one egg at a time: choose one egg that is not candled yet.
+                if chosen.count == 1, !chosen[0].isCandled {
+                    Button("Candle this egg") { store.run(.candleEgg(chosen[0].id)) }
+                }
+                Button("Sell all but fertile") { store.run(.sellClearEggs) }
+            }
+            .buttonStyle(.textAction)
+            .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.textAction)
-        .frame(maxWidth: .infinity)
     }
 
-    private func hatchReason(_ s: GameState, fertile: Int) -> String {
+    /// Why the chosen eggs can't go in the incubator, or nil if they can. The engine checks again.
+    private func hatchBlocker(_ s: GameState, chosen: [Egg]) -> String? {
         if !s.hasIncubator { return "No incubator yet" }
-        if s.incubatorClutch != nil { return "Incubator is full" }
-        return fertile == 0 ? "No fertile eggs" : "Set to hatch"
+        let inside = s.incubatorClutch
+        if let inside, inside.hatchDay != s.day + s.rules.incubatorHatchDays { return "Incubator is busy" }
+        let space = s.incubatorSize - (inside?.eggs.count ?? 0)
+        if space <= 0 { return "Incubator is full" }
+        if chosen.isEmpty { return "Choose eggs to hatch" }
+        if chosen.contains(where: { $0.isCandled && !$0.isFertile }) { return "Clear eggs won't hatch" }
+        if chosen.count > space { return "Room for \(space) more" }
+        return nil
     }
 
     @ViewBuilder
@@ -131,11 +161,13 @@ struct CoopSheet: View {
 }
 
 /// The carton: a dashed tray of cups. Filled ink dot = fertile, hollow ring = clear, no mark = not candled.
+/// Before the keeper can candle, an unknown egg shows "?".
 struct Carton: View {
     @Environment(\.palette) private var palette
     let eggs: [Egg]
     let capacity: Int
-    @Binding var selected: UUID?
+    let canCandle: Bool
+    @Binding var selected: Set<UUID>
 
     var body: some View {
         let columns = Array(repeating: GridItem(.flexible(), spacing: Space.s), count: 6)
@@ -149,9 +181,14 @@ struct Carton: View {
     }
 
     private func cup(_ egg: Egg?) -> some View {
-        let isSelected = egg != nil && egg?.id == selected
+        let isSelected = egg.map { selected.contains($0.id) } ?? false
         return Button {
-            selected = egg?.id
+            guard let egg else { return }
+            if isSelected {
+                selected.remove(egg.id)
+            } else {
+                selected.insert(egg.id)
+            }
         } label: {
             ZStack(alignment: .topTrailing) {
                 Circle().strokeBorder(palette.hairline, lineWidth: 1)
@@ -168,6 +205,8 @@ struct Carton: View {
                             }
                         }
                         .frame(width: 7, height: 7)
+                    } else if !canCandle {
+                        Text("?").font(Typeface.caption).foregroundStyle(palette.ink)
                     }
                 }
             }
@@ -176,16 +215,18 @@ struct Carton: View {
         .buttonStyle(.plain)
         .disabled(egg == nil)
         .accessibilityLabel(egg.map(cupLabel) ?? "Empty cup")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private func cupLabel(_ egg: Egg) -> String {
-        let state = egg.isCandled ? (egg.isFertile ? "fertile" : "clear") : "not candled"
+        let state = egg.isCandled ? (egg.isFertile ? "fertile" : "clear") : (canCandle ? "not candled" : "unknown")
         return "\(egg.speckled ? "Speckled " : "")\(egg.colour.rawValue) egg, \(state)"
     }
 }
 
 struct CandlingLegend: View {
     @Environment(\.palette) private var palette
+    let canCandle: Bool
     var body: some View {
         HStack(spacing: Space.l) {
             HStack(spacing: Space.xs) {
@@ -196,7 +237,7 @@ struct CandlingLegend: View {
                 Circle().strokeBorder(palette.ink, lineWidth: 1).frame(width: 7, height: 7)
                 Text("clear")
             }
-            Text("no mark: not candled yet")
+            Text(canCandle ? "no mark: not candled yet" : "?: can't tell yet")
         }
         .font(Typeface.caption)
         .foregroundStyle(palette.inkMuted)
@@ -312,6 +353,9 @@ struct PottingShedSheet: View {
         guard let c = s.incubatorClutch else {
             return "Empty. Holds \(s.incubatorSize) egg\(s.incubatorSize == 1 ? "" : "s"). Set eggs from the coop."
         }
-        return "\(c.eggs.count) egg\(c.eggs.count == 1 ? "" : "s") warming. They hatch on day \(c.hatchDay)."
+        let warming = "\(c.eggs.count) of \(s.incubatorSize) eggs warming. They hatch on day \(c.hatchDay)."
+        let space = s.incubatorSize - c.eggs.count
+        let canAdd = space > 0 && c.hatchDay == s.day + s.rules.incubatorHatchDays
+        return canAdd ? warming + " Room for \(space) more today." : warming
     }
 }

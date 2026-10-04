@@ -12,6 +12,10 @@ func startedGame(sex: Sex, rules: Rules = .standard, seed: UInt64 = 1) -> (GameS
         genome: Breed.orpington.purebred(sex), hatchDay: 0, origin: "Neighbour")
     s.phase = .choosingStarter([chick])
     _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+    // Most tests want a keeper who can candle, with an overnight incubator, so hatching is quick to test.
+    // `LearningToCandleTests` covers a real new keeper.
+    s.canCandle = true
+    s.rules.incubatorHatchDays = 1
     return (s, rng)
 }
 

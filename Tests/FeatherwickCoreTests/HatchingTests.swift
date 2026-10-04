@@ -91,7 +91,7 @@ struct HatchingTests {
         #expect(s.carton.count == 1 && !s.carton[0].isFertile)
         let embryos = s.incubatorClutch!.eggs.map(\.embryo)
         let hatched = night(&s, &rng)
-        #expect(hatched.contains { if case .chicksHatched(let ids, nil) = $0 { ids.count == 2 } else { false } })
+        #expect(hatched.contains { if case .chicksHatched(let ids, .none) = $0 { ids.count == 2 } else { false } })
         let chicks = s.brooder.filter { $0.origin == "Henhaven" }
         #expect(chicks.count == 2)
         #expect(chicks.map(\.genome) == embryos.compactMap { $0 })
@@ -223,5 +223,78 @@ struct FosterHenTests {
         #expect(s.henChicks[0].raisedBy == foster)
         #expect(Engine.apply(.rehome(foster), to: &s, using: &rng) == [.rejected(.birdIsBusy)])
         #expect(Engine.apply(.rehome(layer.id), to: &s, using: &rng) == [.rehomed(layer.id, coins: 8)])
+    }
+}
+
+/// A new keeper can't candle. Set eggs are a guess; clear ones come back. The first hatch teaches candling.
+struct LearningToCandleTests {
+    /// A new keeper (no candling) with a 6-egg incubator and room in the brooder, and 1 fertile + 2 clear eggs.
+    static func newKeeper() -> (GameState, SeededRNG) {
+        var (s, rng) = startedGame(sex: .hen, rules: calmRules())
+        s.canCandle = false
+        s.rules.incubatorHatchDays = Rules.standard.incubatorHatchDays
+        s.incubatorSize = 6
+        s.brooderSize = 6
+        let hen = adult(.araucana, .hen, day: 0, rules: s.rules, rng: &rng)
+        let rooster = adult(.orpington, .rooster, day: 0, rules: s.rules, rng: &rng)
+        s.carton = [
+            fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng),
+            clearEgg(mother: hen, day: 0, rng: &rng),
+            clearEgg(mother: hen, day: 0, rng: &rng),
+        ]
+        return (s, rng)
+    }
+
+    @Test func aNewGameCannotCandle() {
+        var rng = SeededRNG(seed: 3)
+        #expect(!Engine.newGame(using: &rng).canCandle)
+        var (s, rng2) = Self.newKeeper()
+        let before = s
+        #expect(Engine.apply(.candle, to: &s, using: &rng2) == [.rejected(.cannotCandleYet)])
+        #expect(Engine.apply(.candleEgg(s.carton[0].id), to: &s, using: &rng2) == [.rejected(.cannotCandleYet)])
+        #expect(s == before)
+    }
+
+    @Test func clearEggsAreSetThenComeBackAndTheFirstHatchTeachesCandling() {
+        var (s, rng) = Self.newKeeper()
+        let clearIDs = Set(s.carton.filter { !$0.isFertile }.map(\.id))
+        let hatchDay = s.day + s.rules.incubatorHatchDays
+        let set = Engine.apply(.incubate(count: 3), to: &s, using: &rng)
+        #expect(set == [.eggsSet(count: 3, hen: nil, hatchDay: hatchDay)])
+        #expect(s.carton.isEmpty && s.incubatorClutch?.eggs.count == 3)
+        var all: [GameEvent] = []
+        while s.day < hatchDay - 1 { all += night(&s, &rng) }
+        #expect(s.incubatorClutch != nil && !s.canCandle)  // still warming
+        all += night(&s, &rng)
+        #expect(all.contains(.eggsDidNotHatch(count: 2, hen: nil)))
+        #expect(all.contains(.learnedCandling))
+        #expect(all.contains { if case .chicksHatched(let ids, .none) = $0 { ids.count == 1 } else { false } })
+        #expect(s.canCandle && s.incubatorClutch == nil)
+        // The clear eggs are back in the carton, now known to be clear.
+        let back = s.carton.filter { clearIDs.contains($0.id) }
+        #expect(back.count == 2 && back.allSatisfy { $0.isCandled && !$0.isFertile })
+    }
+
+    @Test func aFullCartonSendsUnhatchedEggsToTheNest() {
+        var (s, rng) = Self.newKeeper()
+        let clear = s.carton.first { !$0.isFertile }!
+        _ = Engine.apply(.incubateEggs([clear.id]), to: &s, using: &rng)
+        let hen = adult(.araucana, .hen, day: 0, rules: s.rules, rng: &rng)
+        while s.carton.count < s.cartonCapacity { s.carton.append(clearEgg(mother: hen, day: 0, rng: &rng)) }
+        for _ in 0..<s.rules.incubatorHatchDays { night(&s, &rng) }
+        #expect(s.nest.contains { $0.id == clear.id && $0.isCandled })
+        #expect(!s.canCandle)  // nothing hatched, so no lesson yet
+    }
+
+    @Test func candlingOneEggAtATime() {
+        var (s, rng) = Self.newKeeper()
+        s.canCandle = true
+        let fertile = s.carton[0].id
+        let clear = s.carton[1].id
+        #expect(Engine.apply(.candleEgg(fertile), to: &s, using: &rng) == [.candled(fertile: 1, clear: 0)])
+        #expect(Engine.apply(.candleEgg(clear), to: &s, using: &rng) == [.candled(fertile: 0, clear: 1)])
+        #expect(Engine.apply(.candleEgg(clear), to: &s, using: &rng) == [.rejected(.alreadyCandled)])
+        #expect(Engine.apply(.candleEgg(UUID()), to: &s, using: &rng) == [.rejected(.noSuchEgg)])
+        #expect(s.carton.filter(\.isCandled).count == 2)
     }
 }
