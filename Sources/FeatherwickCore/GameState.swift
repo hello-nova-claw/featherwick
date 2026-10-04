@@ -202,4 +202,15 @@ public struct GameState: Hashable, Codable, Sendable {
             ?? boarding.first { $0.id == id }
             ?? rehomed.first { $0.id == id }
     }
+
+    /// Nights left before the neighbour finds this waiting bird a new home. Nil if it is not waiting,
+    /// or if it is the starter (never sent away).
+    public func nightsUntilRehomed(_ id: UUID) -> Int? {
+        guard id != starterID, let since = bird(id)?.waitingSinceDay, !rehomed.contains(where: { $0.id == id })
+        else { return nil }
+        return max(0, rules.homeWaitNights - (day - since))
+    }
+
+    /// Grown birds with no perch: waiting in the brooder or boarding with the neighbour.
+    public var birdsWaitingForPerch: [Bird] { (brooder + boarding).filter { $0.waitingSinceDay != nil } }
 }

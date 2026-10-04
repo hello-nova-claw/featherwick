@@ -129,6 +129,10 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case needsHome(UUID)
     /// No perch and no brooder room: the neighbour keeps it. Hatching pauses until it has a home.
     case boardingWithNeighbour(UUID)
+    /// No perch came free in time, so the neighbour found the bird a good home. The keeper is paid.
+    case rehomedByNeighbour(UUID, coins: Int)
+    /// A new bird kept no name for a while, so it took its suggested name. It can be renamed.
+    case namedForYou(UUID)
     case cameHomeFromBoarding(UUID)
     case noEggsHungry
     case eggLaid(UUID, by: UUID)
@@ -334,11 +338,13 @@ public enum Engine {
             if let (keyPath, i) = locate(id, in: s, groups: [\.brooder, \.henChicks, \.coop, \.boarding]) {
                 s[keyPath: keyPath][i].name = trimmed
                 s[keyPath: keyPath][i].needsName = nil
+                s[keyPath: keyPath][i].unnamedSinceDay = nil
                 return [.renamed(id)]
             }
             if let i = s.lost.firstIndex(where: { $0.bird.id == id }) {
                 s.lost[i].bird.name = trimmed
                 s.lost[i].bird.needsName = nil
+                s.lost[i].bird.unnamedSinceDay = nil
                 return [.renamed(id)]
             }
             return [.rejected(.noSuchBird)]
@@ -353,12 +359,7 @@ public enum Engine {
             }
             if let (keyPath, i) = locate(id, in: s, groups: [\.brooder, \.henChicks, \.coop, \.boarding]) {
                 let bird = s[keyPath: keyPath].remove(at: i)
-                let coins = s.rules.rehomeValue(of: bird, onDay: s.day)
-                s.coins += coins
-                s.rehomed.append(bird)
-                if s.starterID == id { s.starterID = nil }
-                if s.tradeOffer?.roosterID == id { s.tradeOffer = nil }  // a new offer comes in the morning if needed
-                return [.rehomed(id, coins: coins)]
+                return [.rehomed(id, coins: sendToNewHome(bird, &s))]
             }
             return [.rejected(.noSuchBird)]
 
@@ -822,8 +823,12 @@ public enum Engine {
         // 5. Eggs due today hatch: incubator chicks go to the brooder, broody-hatched chicks stay with their mother.
         ev += hatchDue(&s, &rng)
 
-        // 6. Grown chicks and boarding birds find homes (a free perch), or wait.
+        // 6. Grown chicks and boarding birds find homes (a free perch), or wait. A bird that has waited
+        //    `homeWaitNights` goes to a new home through the neighbour.
         ev += findHomes(&s)
+
+        // 6b. Birds left unnamed for `autoNameNights` take their suggested name.
+        ev += autoName(&s)
 
         // 7. Broody hens that have sat (and mothered) long enough get up.
         for i in s.coop.indices {
@@ -862,17 +867,24 @@ public enum Engine {
 
     /// Perches go first to birds boarding with the neighbour, then grown brooder birds, then grown hen chicks.
     /// A grown bird with no perch waits in the brooder; if the brooder is full too, the neighbour boards it.
+    /// After `homeWaitNights` of waiting, the neighbour finds it a new home, so the brooder and the
+    /// incubator never stay blocked. The starter is never sent away.
     static func findHomes(_ s: inout GameState) -> [GameEvent] {
         var ev: [GameEvent] = []
         let day = s.day
         let brooderDays = s.rules.brooderDays
         let grown = { (b: Bird) in b.age(onDay: day) >= brooderDays }
         let wereBoarding = Set(s.boarding.map(\.id))  // only birds that newly board tonight get the notice
+        func perch(_ b: Bird) {
+            var b = b
+            b.waitingSinceDay = nil
+            s.coop.append(b)
+        }
 
         var stillBoarding: [Bird] = []
         for b in s.boarding {
             if s.coop.count < s.perches {
-                s.coop.append(b)
+                perch(b)
                 ev.append(.cameHomeFromBoarding(b.id))
             } else {
                 stillBoarding.append(b)
@@ -881,17 +893,14 @@ public enum Engine {
         s.boarding = stillBoarding
 
         var inBrooder: [Bird] = []
+        var waiting: Set<UUID> = []
         for b in s.brooder {
-            guard grown(b) else {
-                inBrooder.append(b)
-                continue
-            }
-            if s.coop.count < s.perches {
-                s.coop.append(b)
+            if grown(b) && s.coop.count < s.perches {
+                perch(b)
                 ev.append(.movedToCoop(b.id))
             } else {
                 inBrooder.append(b)
-                ev.append(.needsHome(b.id))
+                if grown(b) { waiting.insert(b.id) }
             }
         }
         s.brooder = inBrooder
@@ -903,18 +912,79 @@ public enum Engine {
                 continue
             }
             if s.coop.count < s.perches {
-                s.coop.append(b)
+                perch(b)
                 ev.append(.movedToCoop(b.id))
             } else if brooderRoom(s) > 0 {  // leaves room for the chicks still in the incubator
                 s.brooder.append(b)
-                ev.append(.needsHome(b.id))
+                waiting.insert(b.id)
             } else {
                 s.boarding.append(b)
             }
         }
         s.henChicks = withMother
 
-        for b in s.boarding where !wereBoarding.contains(b.id) { ev.append(.boardingWithNeighbour(b.id)) }
+        // Birds still without a perch: count the nights, and send on any that have waited long enough.
+        func waitedTooLong(_ b: inout Bird) -> Bool {
+            let since = b.waitingSinceDay ?? day
+            b.waitingSinceDay = since
+            return day - since >= s.rules.homeWaitNights && b.id != s.starterID
+        }
+        var keptInBrooder: [Bird] = []
+        for var b in s.brooder {
+            guard waiting.contains(b.id) else {
+                keptInBrooder.append(b)
+                continue
+            }
+            if waitedTooLong(&b) {
+                ev.append(.rehomedByNeighbour(b.id, coins: sendToNewHome(b, &s)))
+            } else {
+                keptInBrooder.append(b)
+                ev.append(.needsHome(b.id))
+            }
+        }
+        s.brooder = keptInBrooder
+        var keptBoarding: [Bird] = []
+        for var b in s.boarding {
+            if waitedTooLong(&b) {
+                ev.append(.rehomedByNeighbour(b.id, coins: sendToNewHome(b, &s)))
+            } else {
+                keptBoarding.append(b)
+                if !wereBoarding.contains(b.id) { ev.append(.boardingWithNeighbour(b.id)) }
+            }
+        }
+        s.boarding = keptBoarding
+        return ev
+    }
+
+    /// A bird leaves the flock for a good home in Featherwick. The keeper is paid what it is worth.
+    /// The caller has already taken it out of its group.
+    static func sendToNewHome(_ bird: Bird, _ s: inout GameState) -> Int {
+        let coins = s.rules.rehomeValue(of: bird, onDay: s.day)
+        s.coins += coins
+        var bird = bird
+        bird.waitingSinceDay = nil
+        s.rehomed.append(bird)
+        if s.starterID == bird.id { s.starterID = nil }
+        if s.tradeOffer?.roosterID == bird.id { s.tradeOffer = nil }  // a new offer comes in the morning if needed
+        return coins
+    }
+
+    /// A bird left unnamed for `autoNameNights` takes its suggested name, so the naming prompt never
+    /// waits forever. The suggestion is neutral while the sex is hidden.
+    static func autoName(_ s: inout GameState) -> [GameEvent] {
+        var ev: [GameEvent] = []
+        for keyPath in [\GameState.brooder, \.henChicks, \.coop, \.boarding] {
+            for i in s[keyPath: keyPath].indices where s[keyPath: keyPath][i].needsName == true {
+                let since = s[keyPath: keyPath][i].unnamedSinceDay ?? s.day
+                s[keyPath: keyPath][i].unnamedSinceDay = since
+                guard s.day - since >= s.rules.autoNameNights else { continue }
+                let name = NameBook.suggestion(for: s[keyPath: keyPath][i], in: s)
+                s[keyPath: keyPath][i].name = name
+                s[keyPath: keyPath][i].needsName = nil
+                s[keyPath: keyPath][i].unnamedSinceDay = nil
+                ev.append(.namedForYou(s[keyPath: keyPath][i].id))
+            }
+        }
         return ev
     }
 

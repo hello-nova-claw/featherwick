@@ -128,6 +128,10 @@ final class GameStore {
             return ("Milestone: \(milestoneText(id).title)", nil, nil)
         case .storyGift(_, let id):
             return ("\(s.bird(id)?.name ?? "A hen") has joined the flock", "View", .bird(id))
+        case .rehomedByNeighbour(let id, let coins):
+            return ("\(s.bird(id)?.name ?? "A bird") went to a new home (+\(coins) coins)", nil, nil)
+        case .namedForYou(let id):
+            return ("The new bird is now called \(s.bird(id)?.name ?? "something")", "View", .bird(id))
         case .foxVisited(let ids):
             return ("A fox scared \(ids.count) bird\(ids.count == 1 ? "" : "s") away. They'll come home.", nil, nil)
         default:

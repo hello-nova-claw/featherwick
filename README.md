@@ -29,7 +29,7 @@ sets the difficulty of a new game. Type `help` in the game for commands. `day 10
 
 `Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. Command in, events out. All tunable numbers live in `Rules`.
 
-Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → hatching (eggs due today; clear ones go back to the carton; the first hatch teaches candling) → brooder to coop → broody hens wake → retirements → laying (only if fed) → stories & trade offer → county show (on show days) → door opens.
+Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → hatching (eggs due today; clear ones go back to the carton; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories & trade offer → county show (on show days) → door opens.
 
 ## Hatching and candling
 
@@ -43,6 +43,16 @@ Night order: fox (only if the coop is open) → foraging (if the door was left o
   at a time (`candleEgg`). The CLI can still candle the whole carton (`candle`).
 - Every egg known to be fertile hatches (cozy rule).
 - Saves from before this rule keep candling (`canCandle` is true when it is missing).
+
+## Birds never wait forever
+
+- A grown bird needs a perch. With no free perch, it waits in the brooder. If the brooder is full, it
+  boards with the neighbour. Boarding birds stop you setting eggs.
+- A bird waits at most `homeWaitNights` (3). Then the neighbour finds it a good home and pays you its
+  rehome value. So a full coop never blocks the brooder or the incubator for long.
+- The game tells you each night how many nights are left. Rehome a bird or upgrade the coop to keep it.
+- The starter is never sent away.
+- A new bird with no name for `autoNameNights` (2) takes its suggested name. You can rename it any time.
 
 ## Genome (current genes)
 
@@ -203,6 +213,8 @@ arrive already named by their keeper. Any bird you own can be renamed any time, 
 - Names are unique in the flock, ignoring case and spaces; up to 24 letters.
 - Suggestions come from the bird's own ID (no game randomness used) and skip taken names.
   A chick whose sex is still hidden gets a neutral suggestion, so the name never gives it away.
+- A bird still unnamed after `autoNameNights` takes its suggestion (see "Birds never wait forever").
+- The app shows "needs a name" under the place where the bird lives now: the potting shed or the coop.
 
 ## Storylines
 
