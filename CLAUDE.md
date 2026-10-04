@@ -13,7 +13,7 @@ swift build
 swift test                          # Swift Testing (`import Testing`), not XCTest
 swift test --filter ShowTests       # one suite
 swift run featherwick 2026          # play; the seed is used only for a new save
-swift format --in-place --recursive Package.swift Sources Tests   # format (CI fails on unformatted code)
+swift format --in-place --recursive Package.swift Sources Tests App   # format (CI fails on unformatted code)
 ```
 
 In the game: `day 10` runs ten full days; `sim [days] [games]` prints a balance report.
@@ -24,7 +24,9 @@ The CLI writes `featherwick-save*.json` in the current folder (git-ignored). Do 
 | Path | What |
 | --- | --- |
 | `Sources/FeatherwickCore` | Pure game logic. All rules live here. |
-| `Sources/FeatherwickCLI/main.swift` | Thin text front end. Parses input, prints events. No rules. |
+| `Sources/FeatherwickText` | The words players read (events, screens, milestones). Shared by CLI and app. |
+| `Sources/FeatherwickCLI/main.swift` | Thin text front end. Parses input, prints text. No rules, no words. |
+| `App/` | iOS test app (SwiftUI, no art yet). `project.yml` is the XcodeGen spec. |
 | `Tests/FeatherwickCoreTests` | One suite per system. `Fixtures/save-v0.json` is a real old save. |
 
 Key Core files:
@@ -38,12 +40,29 @@ Key Core files:
 - One file per feature: `Shows`, `ShowEvent`, `Friendliness`, `Pedigree`, `Names`, `Story`,
   `Milestone`, `Look`, `Simulation`.
 
+## iOS test app
+
+A plain SwiftUI app that makes the game playable on iPhone and iPad before the art exists. Tabs:
+Yard (daily jobs), Flock (bird pages), Eggs, Town (shop, stories, shows), Journal, Debug.
+
+```sh
+brew install xcodegen      # once
+cd App && xcodegen         # makes Featherwick.xcodeproj (git-ignored); run again after changing project.yml
+open Featherwick.xcodeproj
+```
+
+- `GameStore` holds the game, runs every `Command`, logs the words, and saves after each command
+  (Application Support, same `SaveStore` as the CLI).
+- Views only send commands and show state. No game rules in the app.
+- To run on a device: copy `App/Config/Local.xcconfig.example` to `Local.xcconfig` and set your team ID.
+- CI builds the app in `apple.yml` (on `main`, or run it by hand).
+
 ## Core rules (do not break)
 
 1. **Core is pure.** No `print`, no input, no `Date()`/system clock, no `Int.random()` without
    `using:`. All randomness comes from the `SeededRNG` passed in. Same seed = same game.
 2. **Command in, events out.** The engine returns IDs and enums only. Words for the player live in
-   the UI (CLI now). A new event or error needs CLI text in `main.swift`.
+   `FeatherwickText`. A new event or error needs its words in `eventText` (`Text.swift`).
 3. **Tunable numbers go in `Rules`**, never as literals in logic.
 4. **Append, never insert,** to `Loci`, `BreedTable.all`, `Storylines.all` and `Milestones.all`.
    Seeded breeding draws in list order; an insert changes every existing seed.
@@ -65,8 +84,8 @@ Most new content is a table entry. See README "Data layer" and the feature secti
 - Breed: a `BreedDefinition` in `BreedTable.all` (status `.planned` until art is ready) + a static id on `Breed`.
 - Colour: a `ColourVariety`, then list it on its breeds.
 - Gene: an allele enum in `Alleles.swift` (conforms to `GeneLocus`), append to `Loci` in `Locus.swift`, add its look in `Phenotype.swift`.
-- Storyline: a `Storyline` in `Storylines.all` + CLI words.
-- Milestone: a `Milestone` in `Milestones.all` (order = ladder) + CLI words.
+- Storyline: a `Storyline` in `Storylines.all` + its words in `storyText`.
+- Milestone: a `Milestone` in `Milestones.all` (order = ladder) + its words in `milestoneText`.
 - Night step: add it to `passNight` in order and update the "Night order" line in README.
 
 ## Workflow

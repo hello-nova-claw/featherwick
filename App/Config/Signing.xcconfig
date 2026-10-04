@@ -1,0 +1,7 @@
+// Signing for the test app. Defaults work in the Simulator with no account.
+// To run on your iPhone: copy Local.xcconfig.example to Local.xcconfig (git-ignored)
+// and set your team ID and a bundle ID that is yours.
+PRODUCT_BUNDLE_IDENTIFIER = dev.featherwick.app
+DEVELOPMENT_TEAM =
+
+#include? "Local.xcconfig"
