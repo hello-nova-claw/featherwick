@@ -390,6 +390,23 @@ struct HatchingEdgeCases {
         #expect(Engine.apply(.incubate(count: 1), to: &s, using: &rng) == [.rejected(.incubatorFull(room: 0))])
     }
 
+    @Test func incubatorEggsKeepTheirBrooderPlaces() {
+        var (s, rng) = gameWithIncubator(fertile: 1)
+        s.rules.incubatorHatchDays = 3
+        s.brooderSize = 2  // the starter and the chick to come
+        _ = Engine.apply(.incubate(count: 1), to: &s, using: &rng)
+        // A grown chick of a broody hen, with every perch taken, must not take the incubator chick's place.
+        var mother = plainBird(rng: &rng)
+        mother.broodyUntilDay = s.day + 10
+        s.coop = [mother]
+        s.perches = 1
+        var chick = plainBird(hatchDay: s.day - s.rules.brooderDays, rng: &rng)
+        chick.raisedBy = mother.id
+        s.henChicks = [chick]
+        _ = Engine.findHomes(&s)
+        #expect(s.brooder.count == 1 && s.boarding.map(\.id) == [chick.id])
+    }
+
     @Test func eggsFromAnEarlierDayKeepTheIncubatorBusy() {
         var (s, rng) = gameWithIncubator(fertile: 3)
         s.rules.incubatorHatchDays = 3

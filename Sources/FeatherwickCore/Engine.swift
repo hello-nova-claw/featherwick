@@ -604,7 +604,7 @@ public enum Engine {
         guard let hen = s.coop.first(where: { $0.id == henID }) else { return .noSuchBird }
         if !s.boarding.isEmpty { return .birdsBoarding }
         // Her chicks may need the brooder when grown, so a full brooder blocks hatching here too.
-        if s.brooder.count >= s.brooderSize { return .brooderFull(room: 0) }
+        if brooderRoom(s) <= 0 { return .brooderFull(room: 0) }
         if !hen.isBroody(onDay: s.day) { return .notBroody }
         if s.clutch(under: henID) != nil { return .henAlreadySitting }
         return nil
@@ -905,7 +905,7 @@ public enum Engine {
             if s.coop.count < s.perches {
                 s.coop.append(b)
                 ev.append(.movedToCoop(b.id))
-            } else if s.brooder.count < s.brooderSize {
+            } else if brooderRoom(s) > 0 {  // leaves room for the chicks still in the incubator
                 s.brooder.append(b)
                 ev.append(.needsHome(b.id))
             } else {
@@ -949,8 +949,8 @@ public enum Engine {
         s.giftHenGiven = true
         var ev: [GameEvent] = [.neighbourGaveHen(hen.id)]
         // The brooder if it has room, else a free perch; if both are full the neighbour boards her,
-        // just like any grown bird with nowhere to go (see findHomes).
-        if s.brooder.count < s.brooderSize {
+        // just like any grown bird with nowhere to go (see findHomes). Eggs in the incubator keep their places.
+        if brooderRoom(s) > 0 {
             s.brooder.append(hen)
         } else if s.coop.count < s.perches {
             s.coop.append(hen)
