@@ -40,10 +40,19 @@ Key Core files:
 - One file per feature: `Shows`, `ShowEvent`, `Friendliness`, `Pedigree`, `Names`, `Story`,
   `Milestone`, `Look`, `Simulation`.
 
-## iOS test app
+## iOS app
 
-A plain SwiftUI app that makes the game playable on iPhone and iPad before the art exists. Tabs:
-Yard (daily jobs), Flock (bird pages), Eggs, Town (shop, stories, shows), Journal, Debug.
+SwiftUI menus over the farm, built to the UI system in `docs/design/README.md` (tokens, type,
+components, screens 1a–8a). The painted farm and bird art come later; dashed boxes stand in for them.
+
+- `App/Featherwick/Design/`: tokens (`Theme.swift`: `Palette` day/night, `Typeface`, `Space`, `Radius`,
+  `Stitch`), marks (eggs, feathers, dabs) and components (buttons, tabs, sheet page, notices).
+  Use these; do not hard-code colours, fonts or sizes in screens.
+- `Farm/FarmView.swift`: HUD, the 5 places (Coop, Yard, Potting shed, Farm gate, Back fence), Books, ≡.
+  Each place opens a sheet (`Sheets/`). Notices under a place come from game state.
+- Day or night follows the device clock (18:00–05:59 is night), via `\.palette`.
+- Fonts (Libre Caslon Display/Text, Figtree; OFL) are bundled in `Fonts/` and registered at launch.
+- ≡ → "Open test tools" shows the old plain screens (`TestTools/`), with every action and the full log.
 
 ```sh
 brew install xcodegen      # once
