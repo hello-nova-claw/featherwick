@@ -220,8 +220,22 @@ extension Rules {
         return r
     }()
 
-    /// Named difficulty presets for a new game, case-insensitive.
-    public static let presets: [String: Rules] = ["standard": .standard, "relaxed": .relaxed, "challenge": .challenge]
-    public static let presetNames = ["relaxed", "standard", "challenge"]
-    public static func preset(named name: String) -> Rules? { presets[name.lowercased()] }
+    /// A difficulty preset by name, case-insensitive. Nil for an unknown name.
+    public static func preset(named name: String) -> Rules? { Difficulty(named: name)?.rules }
+}
+
+/// The difficulty presets a new game can start with, easiest first.
+public enum Difficulty: String, CaseIterable, Sendable {
+    case relaxed, standard, challenge
+
+    /// Case-insensitive: "Relaxed" and "relaxed" are the same preset.
+    public init?(named name: String) { self.init(rawValue: name.lowercased()) }
+
+    public var rules: Rules {
+        switch self {
+        case .relaxed: .relaxed
+        case .standard: .standard
+        case .challenge: .challenge
+        }
+    }
 }

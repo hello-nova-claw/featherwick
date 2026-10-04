@@ -20,7 +20,7 @@ func launchFlag(_ name: String) -> String? {
 let slotArg = launchFlag("--slot") ?? SaveStore.defaultSlot
 let presetArg = launchFlag("--preset")
 let seedArg = launchArgs.first { UInt64($0) != nil }.flatMap { UInt64($0) }
-let startRules = presetArg.flatMap(Rules.preset(named:)) ?? .standard
+let startRules = presetArg.flatMap(Difficulty.init(named:))?.rules ?? .standard
 
 var store = SaveStore(directory: URL(fileURLWithPath: FileManager.default.currentDirectoryPath), slot: slotArg)
 
@@ -759,14 +759,12 @@ while true {
     case "journal", "goals", "j": journal(game.state)
     case "new":
         if words.count > 1, words[1] == "yes" {
-            let name = words.count > 2 ? words[2] : "standard"
-            let rules = Rules.preset(named: name) ?? .standard
-            let used = Rules.preset(named: name) != nil ? name : "standard"
-            game = newSave(seed: UInt64(Date().timeIntervalSince1970), rules: rules)
-            print("A new game begins (\(used)).")
+            let difficulty = (words.count > 2 ? Difficulty(named: words[2]) : nil) ?? .standard
+            game = newSave(seed: UInt64(Date().timeIntervalSince1970), rules: difficulty.rules)
+            print("A new game begins (\(difficulty.rawValue)).")
             look(game.state)
         } else {
-            print("This deletes your save. Type: new yes [relaxed|standard|challenge]")
+            print("This deletes your save. Type: new yes [\(Difficulty.allCases.map(\.rawValue).joined(separator: "|"))]")
         }
     case "slot":
         guard words.count > 1 else {

@@ -22,9 +22,9 @@ struct SimulationTests {
         #expect(Simulation.run(seed: 5, days: 90) == Simulation.run(seed: 5, days: 90))
     }
 
-    @Test(arguments: Rules.presetNames)
-    func everyPresetIsPlayable(preset name: String) {
-        let rules = try! #require(Rules.preset(named: name))
+    @Test(arguments: Difficulty.allCases)
+    func everyPresetIsPlayable(preset difficulty: Difficulty) {
+        let rules = difficulty.rules
         for seed in UInt64(1)...6 {
             let r = Simulation.run(seed: seed, days: 150, rules: rules)
             #expect(r.finalFlock >= 1)
