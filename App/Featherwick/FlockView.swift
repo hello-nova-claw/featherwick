@@ -65,7 +65,8 @@ struct BirdDetailView: View {
                     }
                     LabeledContent("Friendliness", value: friendlyText(bird.friendliness))
                     LabeledContent("Inbreeding", value: "\(Int(((bird.inbreeding ?? 0) * 100).rounded()))%")
-                    LabeledContent("A neighbour would pay", value: "\(s.rules.rehomeValue(of: bird, onDay: s.day)) coins")
+                    LabeledContent(
+                        "A neighbour would pay", value: "\(s.rules.rehomeValue(of: bird, onDay: s.day)) coins")
                     LabeledContent("Show class", value: Engine.showClass(for: bird, in: s).name)
                 }
                 Section("Care") {

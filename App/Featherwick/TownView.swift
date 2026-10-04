@@ -23,13 +23,17 @@ struct TownView: View {
                     Text("Basic feed is free.").font(.caption).foregroundStyle(.secondary)
                 }
                 Section("The coop") {
-                    buy("Add \(r.perchesPerUpgrade) perches (now \(s.perches)/\(r.maxPerches))", r.coopUpgradePrice, .upgradeCoop)
+                    buy(
+                        "Add \(r.perchesPerUpgrade) perches (now \(s.perches)/\(r.maxPerches))", r.coopUpgradePrice,
+                        .upgradeCoop)
                 }
                 Section("Stories") {
                     ForEach(storyLines(s), id: \.self) { Text($0) }
                     if Engine.storyAwaitingDelivery(s) != nil {
                         Button("Give the eggs") {
-                            if let story = Engine.storyAwaitingDelivery(store.state) { store.run(.deliver(story: story)) }
+                            if let story = Engine.storyAwaitingDelivery(store.state) {
+                                store.run(.deliver(story: story))
+                            }
                         }
                     }
                 }

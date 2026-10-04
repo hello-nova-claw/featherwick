@@ -84,7 +84,6 @@ func findBird(_ query: String, _ s: GameState, includeLost: Bool = false) -> Bir
     return birds.first { NameBook.key($0.name) == q }
 }
 
-
 let help = """
     Commands:
       look                 see your birds and supplies

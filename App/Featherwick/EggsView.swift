@@ -17,7 +17,8 @@ struct EggsView: View {
                     LabeledContent("Nest", value: "\(s.nest.count)/\(s.nestCapacity)")
                     LabeledContent("Carton", value: "\(s.carton.count)/\(s.cartonCapacity)")
                     LabeledContent(
-                        "Candled", value: "\(fertile) fertile, \(clear) clear, \(s.carton.count - fertile - clear) not yet")
+                        "Candled",
+                        value: "\(fertile) fertile, \(clear) clear, \(s.carton.count - fertile - clear) not yet")
                     Button("Collect eggs") { store.run(.collectEggs) }
                     Button("Candle the carton") { store.run(.candle) }
                     Button("Sell every egg") { store.run(.sellEggs) }
@@ -28,7 +29,8 @@ struct EggsView: View {
                         if let c = s.incubatorClutch {
                             Text("Incubator: \(c.eggs.count) egg(s), hatching on day \(c.hatchDay).")
                         } else {
-                            Stepper("Incubate \(toIncubate) egg(s)", value: $toIncubate, in: 1...max(1, s.incubatorSize))
+                            Stepper(
+                                "Incubate \(toIncubate) egg(s)", value: $toIncubate, in: 1...max(1, s.incubatorSize))
                             Button("Set eggs in the incubator") { store.run(.incubate(count: toIncubate)) }
                         }
                     } else {

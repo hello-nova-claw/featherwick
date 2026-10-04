@@ -240,17 +240,20 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return "\(birdName(id, s)) is growing feathers: a \(variety) \(sex == .hen ? "pullet" : "cockerel")!"
     case .newBreedBookEntry(let entry): return "New Breed Book entry: \(entryText(entry))."
     case .neighbourGaveHen(let id):
-        return "The neighbour visits: \"He'll want some company.\" She gives you a young hen: \(birdLabel(s.bird(id)!, s))."
+        return
+            "The neighbour visits: \"He'll want some company.\" She gives you a young hen: \(birdLabel(s.bird(id)!, s))."
     case .movedToCoop(let id): return "\(birdName(id, s)) is big enough to move from the brooder to the coop."
     case .needsHome(let id):
-        return "\(birdName(id, s)) is ready for the coop, but there is no free perch. \(birdName(id, s)) waits in the brooder. "
+        return
+            "\(birdName(id, s)) is ready for the coop, but there is no free perch. \(birdName(id, s)) waits in the brooder. "
             + "Make room: rehome a bird (rehome <name>) or add perches (upgrade coop, \(s.rules.coopUpgradePrice) coins)."
     case .boardingWithNeighbour(let id):
         return "\(birdName(id, s)) is staying with the neighbour: no perch, and the brooder is full. "
             + "You can't set eggs until \(birdName(id, s)) has a home. Rehome a bird or upgrade the coop."
     case .cameHomeFromBoarding(let id): return "\(birdName(id, s)) comes home from the neighbour's to a free perch."
     case .rehomed(let id, let coins):
-        return "\(birdName(id, s)) goes to a new home in Featherwick. They pay you \(coins) coin\(coins == 1 ? "" : "s")."
+        return
+            "\(birdName(id, s)) goes to a new home in Featherwick. They pay you \(coins) coin\(coins == 1 ? "" : "s")."
     case .coopUpgraded(let perches, let cost):
         return "You add perches to the coop for \(cost) coins. It now has \(perches) perches."
     case .boughtBird(let id, _, let cost):
@@ -305,7 +308,8 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
             + "foraging for grubs and greens. They come back fed, so there's no need to feed today."
     case .noEggsHungry: return "No eggs today. The hens were not fed yesterday."
     case .eggLaid(_, let by): return "\(birdName(by, s)) laid an egg."
-    case .eggBroken(let by): return "The nest boxes were full, so \(birdName(by, s)) laid on the floor and the egg broke."
+    case .eggBroken(let by):
+        return "The nest boxes were full, so \(birdName(by, s)) laid on the floor and the egg broke."
     case .newEggBookEntry(let entry):
         return "New egg colour: \(entry.speckled ? "speckled " : "")\(entry.colour.rawValue)!"
     case .wentBroody(let id):
@@ -409,7 +413,9 @@ public func yardLines(_ s: GameState) -> [String] {
     }
     if !s.lost.isEmpty { out.append("Lost: " + s.lost.map(\.bird.name).joined(separator: ", ")) }
     if let offer = s.tradeOffer {
-        out.append("Trade offer: a young hen (\(birdLabel(offer.hen, s))) for \(birdName(offer.roosterID, s)). Type: accept trade")
+        out.append(
+            "Trade offer: a young hen (\(birdLabel(offer.hen, s))) for \(birdName(offer.roosterID, s)). Type: accept trade"
+        )
     }
     if !s.boarding.isEmpty {
         out.append(
