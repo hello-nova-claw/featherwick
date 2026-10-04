@@ -16,7 +16,7 @@ jobs:
     container: swift:6.0-noble
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .build
           key: linux-spm-${{ hashFiles('Package.swift', 'Sources/**', 'Tests/**') }}
