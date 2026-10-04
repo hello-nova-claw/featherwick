@@ -174,7 +174,8 @@ struct FarmScene: View {
 
     /// `Art/farm-<season>.png`, loaded once.
     static let paintings: [Season: UIImage] = Dictionary(
-        uniqueKeysWithValues: Season.allCases.compactMap { s in UIImage(named: "farm-\(s.rawValue).png").map { (s, $0) } })
+        uniqueKeysWithValues: Season.allCases.compactMap { s in UIImage(named: "farm-\(s.rawValue).png").map { (s, $0) }
+        })
 
     /// The paper the paintings sit on, sampled from their margins.
     static let paper = Color(hex: 0xF3F1EB)
