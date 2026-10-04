@@ -77,14 +77,24 @@ public enum Pedigree {
 
     /// Wright's kinship coefficient between two birds: the inbreeding their chick would have.
     public static func kinship(_ a: UUID?, _ b: UUID?, in s: GameState) -> Double {
-        var memo: [String: Double] = [:]
+        var memo: [BirdPair: Double] = [:]
         return kinship(a, b, s, &memo, depth: 0)
     }
 
-    private static func kinship(_ a: UUID?, _ b: UUID?, _ s: GameState, _ memo: inout [String: Double], depth: Int) -> Double {
+    /// Memo key for kinship: two birds, in a fixed order, since kinship(a, b) == kinship(b, a).
+    private struct BirdPair: Hashable {
+        let first: UUID, second: UUID
+        init(_ a: UUID, _ b: UUID) {
+            let ordered = a.uuidString < b.uuidString
+            first = ordered ? a : b
+            second = ordered ? b : a
+        }
+    }
+
+    private static func kinship(_ a: UUID?, _ b: UUID?, _ s: GameState, _ memo: inout [BirdPair: Double], depth: Int) -> Double {
         guard let a, let b, depth < maxGenerations * 2,
               let ra = record(a, in: s), let rb = record(b, in: s) else { return 0 }
-        let key = a.uuidString < b.uuidString ? "\(a)|\(b)" : "\(b)|\(a)"
+        let key = BirdPair(a, b)
         if let known = memo[key] { return known }
         let value: Double
         if a == b {

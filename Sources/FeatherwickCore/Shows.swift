@@ -224,14 +224,22 @@ public enum Judge {
 
     /// The best plate the player could make from these eggs, for each egg class, best first.
     public static func bestPlates(from eggs: [Egg], state s: GameState) -> [(eggs: [Egg], card: JudgeCard)] {
-        let groups = Dictionary(grouping: eggs) { "\($0.colour.rawValue)|\($0.speckled)" }
-        var plates: [(eggs: [Egg], card: JudgeCard)] = []
-        for group in groups.values where group.count >= ShowPoints.eggPlate {
-            let best = group.sorted { a, b in eggValue(a, s) > eggValue(b, s) || (eggValue(a, s) == eggValue(b, s) && a.id.uuidString < b.id.uuidString) }
-            let plate = Array(best.prefix(ShowPoints.eggPlate))
-            plates.append((plate, judgeEggs(plate, state: s)))
+        // A matched plate is one colour, all speckled or all plain: the same key as the Egg Book.
+        let groups = Dictionary(grouping: eggs) { EggBookEntry(colour: $0.colour, speckled: $0.speckled) }
+        var plates: [(eggs: [Egg], card: JudgeCard, speckled: Bool)] = []
+        for (kind, group) in groups where group.count >= ShowPoints.eggPlate {
+            // Best eggs first; the ID breaks ties so the same carton always makes the same plate.
+            let best = group.map { (egg: $0, value: eggValue($0, s)) }
+                .sorted { (-$0.value, $0.egg.id.uuidString) < (-$1.value, $1.egg.id.uuidString) }
+            let plate = best.prefix(ShowPoints.eggPlate).map(\.egg)
+            plates.append((plate, judgeEggs(plate, state: s), kind.speckled))
         }
-        return plates.sorted { $0.card.score > $1.card.score || ($0.card.score == $1.card.score && $0.card.showClass.name < $1.card.showClass.name) }
+        // Speckled and plain plates of one colour share a class name, so speckle breaks that tie
+        // (Dictionary order is not stable between runs).
+        func rank(_ p: (eggs: [Egg], card: JudgeCard, speckled: Bool)) -> (Int, String, Int) {
+            (-p.card.score, p.card.showClass.name, p.speckled ? 1 : 0)
+        }
+        return plates.sorted { rank($0) < rank($1) }.map { (eggs: $0.eggs, card: $0.card) }
     }
 
     static func eggValue(_ egg: Egg, _ s: GameState) -> Double {
