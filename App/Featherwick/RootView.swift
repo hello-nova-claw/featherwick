@@ -2,95 +2,80 @@ import FeatherwickCore
 import FeatherwickText
 import SwiftUI
 
+/// Picks day or night from the device clock (checked each minute) and shows the starter choice or the farm.
 struct RootView: View {
     @Environment(GameStore.self) private var store
 
     var body: some View {
-        if case .choosingStarter(let chicks) = store.state.phase {
-            StarterView(chicks: chicks)
-        } else {
-            TabView {
-                YardView().tabItem { Label("Yard", systemImage: "sun.max") }
-                FlockView().tabItem { Label("Flock", systemImage: "bird") }
-                EggsView().tabItem { Label("Eggs", systemImage: "oval.portrait") }
-                TownView().tabItem { Label("Town", systemImage: "house") }
-                JournalView().tabItem { Label("Journal", systemImage: "book") }
-                DebugView().tabItem { Label("Debug", systemImage: "wrench.and.screwdriver") }
+        TimelineView(.everyMinute) { context in
+            let palette = Palette.forHour(Calendar.current.component(.hour, from: context.date))
+            Group {
+                if case .choosingStarter(let chicks) = store.state.phase {
+                    StarterView(chicks: chicks)
+                } else {
+                    FarmView()
+                }
             }
-            .sheet(item: nameRequest) { bird in
-                NameSheet(bird: bird)
-                    .interactiveDismissDisabled()
-            }
+            .environment(\.palette, palette)
+            .preferredColorScheme(palette.isNight ? .dark : .light)
+            .animation(.easeInOut(duration: 1.5), value: palette)
         }
-    }
-
-    /// New birds you hatch or buy need a name before play goes on, one at a time.
-    private var nameRequest: Binding<Bird?> {
-        Binding(get: { store.state.unnamedBirds.first }, set: { _ in })
     }
 }
 
 /// The neighbour's three chicks. Pick one and name it.
 struct StarterView: View {
     @Environment(GameStore.self) private var store
+    @Environment(\.palette) private var palette
     let chicks: [Bird]
     @State private var name = ""
+    @State private var picked = 0
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    Text("The neighbour keeps orpingtons, wyandottes and araucanas. She offers you one chick.")
-                    TextField("Name your chick", text: $name)
-                }
-                Section("Choose one") {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Space.l) {
+                Text("Henhaven").font(Typeface.title)
+                Text("“I keep orpingtons, wyandottes and araucanas. Take whichever chick you like.”")
+                    .font(Typeface.speech)
+                Text("Mabel, over the fence").font(Typeface.label).foregroundStyle(palette.inkMuted)
+                HStack(spacing: Space.m) {
                     ForEach(Array(chicks.enumerated()), id: \.element.id) { index, chick in
                         Button {
-                            store.run(.chooseStarter(index: index, name: name))
+                            picked = index
                         } label: {
-                            HStack {
-                                BirdSwatch(bird: chick, state: store.state)
-                                Text("A chick with \(downText(chick.phenotype.chickDown))")
+                            VStack(spacing: Space.s) {
+                                ArtPlaceholder(label: "chick").aspectRatio(1, contentMode: .fit)
+                                Text(downText(chick.phenotype.chickDown)).font(Typeface.caption)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .padding(Space.s)
+                            .overlay {
+                                if picked == index {
+                                    RoundedRectangle(cornerRadius: Radius.tile).stroke(palette.ink, lineWidth: 1.5)
+                                }
                             }
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("A chick with \(downText(chick.phenotype.chickDown))")
+                        .accessibilityAddTraits(picked == index ? .isSelected : [])
                     }
                 }
-            }
-            .navigationTitle("Featherwick")
-        }
-    }
-}
-
-/// Asks for a new bird's name, with the game's suggestion ready to take.
-struct NameSheet: View {
-    @Environment(GameStore.self) private var store
-    let bird: Bird
-    @State private var typed = ""
-
-    var body: some View {
-        let suggestion = NameBook.suggestion(for: bird, in: store.state)
-        NavigationStack {
-            Form {
-                HStack {
-                    BirdSwatch(bird: bird, state: store.state, size: 56)
-                    Text(what)
-                }
-                TextField(suggestion, text: $typed)
+                Text("What shall we call this chick?").font(Typeface.title2)
+                TextField("A name", text: $name)
+                    .font(Typeface.serif(30, relativeTo: .title))
                     .textInputAutocapitalization(.words)
-                Button("Name \(typed.isEmpty ? suggestion : typed)") {
-                    store.run(.rename(bird.id, name: typed.isEmpty ? suggestion : typed))
-                    typed = ""
+                    .background(alignment: .bottom) {
+                        HLine().stroke(palette.ink.opacity(0.5), style: Stitch.underline).frame(height: 2).offset(y: 4)
+                    }
+                Button("Take this chick home") {
+                    store.run(.chooseStarter(index: picked, name: name))
                 }
+                .buttonStyle(.primary)
             }
-            .navigationTitle("A new bird")
+            .padding(.horizontal, Space.sheetSide)
+            .padding(.vertical, Space.xxl)
         }
-        .presentationDetents([.medium])
-    }
-
-    private var what: String {
-        let p = bird.phenotype
-        return bird.revealed
-            ? "Your new \(bird.varietyName) \(bird.sex == .hen ? "pullet" : "cockerel") (\(colourText(p)))"
-            : "Your new chick (\(downText(p.chickDown)))"
+        .foregroundStyle(palette.ink)
+        .background(palette.paper)
     }
 }

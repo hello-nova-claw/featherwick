@@ -12,12 +12,24 @@ struct LogLine: Identifiable, Hashable {
     let isRejection: Bool
 }
 
+/// A short note over the farm, with at most one action ("Name her", "View").
+struct Toast: Identifiable, Hashable {
+    let id: Int
+    let text: String
+    var action: String?
+    var opens: FarmSheet?
+}
+
 /// The app's one game. Every button sends a `Command` here; the engine answers with events, which
 /// become log lines through FeatherwickText. The game saves after every command.
 @MainActor @Observable
 final class GameStore {
     private(set) var save: SaveGame
     private(set) var log: [LogLine] = []
+    /// Notes over the farm, newest last. At most two show at once.
+    private(set) var toasts: [Toast] = []
+    /// A sheet something asked to open (a toast's action). The farm opens it and clears this.
+    var openRequest: FarmSheet?
     private var store: SaveStore
     private var nextLogID = 0
 
@@ -64,6 +76,7 @@ final class GameStore {
         let events = Engine.apply(command, to: &state, using: &rng)
         save = SaveGame(state: state, rng: rng)
         for event in events {
+            if let toast = toast(for: event, in: state) { showToast(toast) }
             guard let words = eventText(event, state) else { continue }
             var rejected = false
             if case .rejected = event { rejected = true }
@@ -92,6 +105,44 @@ final class GameStore {
     }
 
     func note(_ text: String) { append(text) }
+
+    // MARK: - Toasts
+
+    /// The few events worth a toast: new birds, reveals, collection entries, milestones, the fox.
+    private func toast(for event: GameEvent, in s: GameState) -> (String, String?, FarmSheet?)? {
+        switch event {
+        case .chicksHatched(let ids, _):
+            let one = ids.count == 1
+            return (one ? "A chick has hatched" : "\(ids.count) chicks have hatched", "Name", .naming)
+        case .revealed(let id, let sex, _):
+            let name = s.bird(id)?.name ?? "A chick"
+            return ("\(name) is a \(sex == .hen ? "pullet" : "cockerel")", "View", .bird(id))
+        case .newBreedBookEntry(let entry):
+            return ("\(entryText(entry).capitalized) added to the Breed Book", "View", .books)
+        case .newEggBookEntry(let entry):
+            return (
+                "\(entry.speckled ? "Speckled " : "")\(entry.colour.rawValue) eggs added to the Egg Book", "View",
+                .books
+            )
+        case .milestoneReached(let id):
+            return ("Milestone: \(milestoneText(id).title)", nil, nil)
+        case .storyGift(_, let id):
+            return ("\(s.bird(id)?.name ?? "A hen") has joined the flock", "View", .bird(id))
+        case .foxVisited(let ids):
+            return ("A fox scared \(ids.count) bird\(ids.count == 1 ? "" : "s") away. They'll come home.", nil, nil)
+        default:
+            return nil
+        }
+    }
+
+    private func showToast(_ t: (String, String?, FarmSheet?)) {
+        let toast = Toast(id: nextLogID, text: t.0, action: t.1, opens: t.2)
+        nextLogID += 1
+        toasts.append(toast)
+        if toasts.count > 2 { toasts.removeFirst(toasts.count - 2) }
+    }
+
+    func dismissToast(_ id: Int) { toasts.removeAll { $0.id == id } }
 
     // MARK: - Log and saving
 
