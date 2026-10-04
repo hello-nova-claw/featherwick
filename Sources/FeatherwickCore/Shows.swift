@@ -109,15 +109,11 @@ public enum JudgeNote: Hashable, Codable, Sendable {
 
 /// A grade card, like the ribbons at a country show. Grades are absolute; placings against other
 /// entries come with show days.
-public enum Grade: String, Hashable, Codable, Sendable, Comparable, CaseIterable {
+public enum Grade: String, Hashable, Codable, Sendable, CaseOrdered {
     case disqualified, fair, good, veryGood, excellent
 
     init(score: Int) {
         self = score >= 85 ? .excellent : score >= 70 ? .veryGood : score >= 55 ? .good : .fair
-    }
-
-    public static func < (a: Grade, b: Grade) -> Bool {
-        allCases.firstIndex(of: a)! < allCases.firstIndex(of: b)!
     }
 }
 

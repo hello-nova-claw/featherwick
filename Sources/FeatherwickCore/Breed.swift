@@ -21,13 +21,8 @@ public enum CrossName: String, Hashable, Codable, Sendable, CaseIterable {
     case barnyardMix = "barnyard mix"    // any other cross
 }
 
-public enum LifeStage: String, Codable, Sendable, Comparable {
+public enum LifeStage: String, Codable, Sendable, CaseOrdered {
     case chick, grower, adult
-
-    public static func < (a: LifeStage, b: LifeStage) -> Bool {
-        let order: [LifeStage] = [.chick, .grower, .adult]
-        return order.firstIndex(of: a)! < order.firstIndex(of: b)!
-    }
 }
 
 /// A bird. IDs are global and lineage is kept, so birds can be traded later.

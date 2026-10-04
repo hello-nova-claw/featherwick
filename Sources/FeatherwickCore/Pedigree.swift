@@ -41,16 +41,12 @@ public struct PedigreeRecord: Hashable, Codable, Sendable {
 }
 
 /// How closely related two birds are, as a keeper would say it.
-public enum Relatedness: String, Hashable, Codable, Sendable, Comparable, CaseIterable {
+public enum Relatedness: String, Hashable, Codable, Sendable, CaseOrdered {
     case unrelated, distant, cousins, halfSiblings, close
 
     /// From the kinship coefficient (= the inbreeding a chick of the two would have).
     public init(kinship k: Double) {
         self = k >= 0.25 ? .close : k >= 0.125 ? .halfSiblings : k >= 0.0625 ? .cousins : k > 0 ? .distant : .unrelated
-    }
-
-    public static func < (a: Relatedness, b: Relatedness) -> Bool {
-        allCases.firstIndex(of: a)! < allCases.firstIndex(of: b)!
     }
 }
 
