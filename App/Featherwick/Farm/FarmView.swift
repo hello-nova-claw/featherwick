@@ -17,21 +17,15 @@ enum Place: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Where the label sits, as a fraction of this season's painting (just below the place it names).
-    /// Measured on the seasonal mockups; change these when the paintings change.
-    func anchor(in season: Season) -> UnitPoint {
-        switch (self, season) {
-        case (.backFence, .spring), (.backFence, .summer): UnitPoint(x: 0.5, y: 0.55)
-        case (.backFence, _): UnitPoint(x: 0.5, y: 0.52)
-        case (.coop, .spring), (.coop, .summer): UnitPoint(x: 0.14, y: 0.715)
-        case (.coop, _): UnitPoint(x: 0.15, y: 0.685)
-        case (.pottingShed, .spring), (.pottingShed, .summer): UnitPoint(x: 0.8, y: 0.705)
-        case (.pottingShed, _): UnitPoint(x: 0.8, y: 0.68)
-        case (.yard, .spring), (.yard, .summer): UnitPoint(x: 0.5, y: 0.715)
-        case (.yard, _): UnitPoint(x: 0.44, y: 0.68)
-        case (.farmGate, .spring), (.farmGate, .summer): UnitPoint(x: 0.5, y: 0.935)
-        case (.farmGate, .autumn): UnitPoint(x: 0.52, y: 0.9)
-        case (.farmGate, .winter): UnitPoint(x: 0.5, y: 0.87)
+    /// Where the label sits, as a fraction of the farm painting (just below the place it names).
+    /// Measured on `Art/farm-day.png`; change these when the painting changes.
+    var anchor: UnitPoint {
+        switch self {
+        case .backFence: UnitPoint(x: 0.5, y: 0.585)
+        case .coop: UnitPoint(x: 0.2, y: 0.635)
+        case .pottingShed: UnitPoint(x: 0.8, y: 0.64)
+        case .yard: UnitPoint(x: 0.5, y: 0.67)
+        case .farmGate: UnitPoint(x: 0.55, y: 0.835)
         }
     }
 }
@@ -62,7 +56,7 @@ struct FarmView: View {
                 ZStack {
                     FarmScene(season: season)
                     ForEach(Place.allCases) { place in
-                        let anchor = place.anchor(in: season)
+                        let anchor = place.anchor
                         PlaceLabel(place: place, notices: notices(for: place)) { sheet = .place(place) }
                             .position(x: frame.minX + frame.width * anchor.x, y: frame.minY + frame.height * anchor.y)
                     }
@@ -172,10 +166,15 @@ struct FarmScene: View {
     @Environment(\.palette) private var palette
     let season: Season
 
-    /// `Art/farm-<season>.png`, loaded once.
-    static let paintings: [Season: UIImage] = Dictionary(
-        uniqueKeysWithValues: Season.allCases.compactMap { s in UIImage(named: "farm-\(s.rawValue).png").map { (s, $0) }
-        })
+    /// `Art/farm-<season>.png` if painted, else `Art/farm-day.png` for every season. Loaded once.
+    static let paintings: [Season: UIImage] = {
+        let fallback = UIImage(named: "farm-day.png")
+        var out: [Season: UIImage] = [:]
+        for s in Season.allCases {
+            out[s] = UIImage(named: "farm-\(s.rawValue).png") ?? fallback
+        }
+        return out
+    }()
 
     /// The paper the paintings sit on, sampled from their margins.
     static let paper = Color(hex: 0xF3F1EB)
