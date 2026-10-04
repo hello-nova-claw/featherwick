@@ -16,9 +16,9 @@ public enum StarterColour: String, Hashable, Codable, Sendable, CaseIterable {
 
 /// Real keepers' names for crossbred chickens.
 public enum CrossName: String, Hashable, Codable, Sendable, CaseIterable {
-    case oliveEgger = "olive egger"      // blue-egg × brown-egg cross
-    case easterEgger = "easter egger"    // other crosses with the blue-egg gene
-    case barnyardMix = "barnyard mix"    // any other cross
+    case oliveEgger = "olive egger"  // blue-egg × brown-egg cross
+    case easterEgger = "easter egger"  // other crosses with the blue-egg gene
+    case barnyardMix = "barnyard mix"  // any other cross
 }
 
 public enum LifeStage: String, Codable, Sendable, CaseOrdered {
@@ -65,7 +65,8 @@ public struct Bird: Identifiable, Hashable, Codable, Sendable {
     /// What keepers call a cross. Nil for purebreds.
     public var crossName: CrossName? {
         guard !isPurebred else { return nil }
-        let blue = genome.blueShell.has(.blue), brown = genome.brownShell.has(.brown)
+        let blue = genome.blueShell.has(.blue)
+        let brown = genome.brownShell.has(.brown)
         if blue && brown { return .oliveEgger }
         if blue { return .easterEgger }
         return .barnyardMix

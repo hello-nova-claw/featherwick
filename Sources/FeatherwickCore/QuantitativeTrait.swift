@@ -17,8 +17,9 @@ public struct QuantitativeTrait: Sendable {
     init(name: String, prefix: String, genes: Int, summary: String) {
         self.name = name
         loci = (1...genes).map { i in
-            LocusDefinition(id: LocusID(rawValue: "\(prefix)\(i)"), alleles: [Self.plus, Self.minus],
-                            defaultAllele: i <= genes / 2 ? Self.plus : Self.minus, summary: summary)
+            LocusDefinition(
+                id: LocusID(rawValue: "\(prefix)\(i)"), alleles: [Self.plus, Self.minus],
+                defaultAllele: i <= genes / 2 ? Self.plus : Self.minus, summary: summary)
         }
     }
 
@@ -34,7 +35,9 @@ public struct QuantitativeTrait: Sendable {
 
     /// Gives a bird from outside the player's flock random genes for this trait.
     /// Each allele is "+" with chance `plusChance`.
-    public func randomise<R: RandomNumberGenerator>(_ genome: inout Genome, plusChance: Double = 0.5, using rng: inout R) {
+    public func randomise<R: RandomNumberGenerator>(
+        _ genome: inout Genome, plusChance: Double = 0.5, using rng: inout R
+    ) {
         for locus in loci {
             let a = Double.roll(plusChance, using: &rng) ? Self.plus : Self.minus
             let b = Double.roll(plusChance, using: &rng) ? Self.plus : Self.minus
@@ -46,17 +49,20 @@ public struct QuantitativeTrait: Sendable {
 
     /// Show type: body shape, size, carriage and feather quality, as a show judge sees them.
     /// SIMPLIFIED: real type is many genes plus how the bird was raised. Rearing is in "condition".
-    public static let showType = QuantitativeTrait(name: "type", prefix: "type", genes: 10,
-                                                   summary: "Show type. One of many small additive genes.")
+    public static let showType = QuantitativeTrait(
+        name: "type", prefix: "type", genes: 10,
+        summary: "Show type. One of many small additive genes.")
     /// Egg shape: how close a hen's eggs are to the ideal egg shape. Real egg shape is heritable
     /// and very consistent for one hen.
-    public static let eggShape = QuantitativeTrait(name: "egg shape", prefix: "eggShape", genes: 6,
-                                                   summary: "Egg shape. One of many small additive genes.")
+    public static let eggShape = QuantitativeTrait(
+        name: "egg shape", prefix: "eggShape", genes: 6,
+        summary: "Egg shape. One of many small additive genes.")
 
     /// Calm temperament: how easily a bird learns to trust people. About 40% of friendliness;
     /// the rest is how it was raised and handled. Real fearfulness in chickens is partly heritable.
-    public static let calm = QuantitativeTrait(name: "calm", prefix: "calm", genes: 8,
-                                              summary: "Calm temperament. One of many small additive genes.")
+    public static let calm = QuantitativeTrait(
+        name: "calm", prefix: "calm", genes: 8,
+        summary: "Calm temperament. One of many small additive genes.")
 
     public static let all: [QuantitativeTrait] = [showType, eggShape, calm]
 }

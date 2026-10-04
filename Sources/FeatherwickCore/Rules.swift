@@ -2,10 +2,10 @@
 /// All values are first guesses, to tune with `pass night` in the CLI.
 public struct Rules: Codable, Hashable, Sendable {
     // Growth
-    public var growerAge = 7         // chick becomes pullet/cockerel; sex and breed show
-    public var adultAge = 21         // point of lay
-    public var brooderDays = 7       // chick moves from brooder to coop
-    public var giftHenAge = 3        // the neighbour's hen is younger than the starter
+    public var growerAge = 7  // chick becomes pullet/cockerel; sex and breed show
+    public var adultAge = 21  // point of lay
+    public var brooderDays = 7  // chick moves from brooder to coop
+    public var giftHenAge = 3  // the neighbour's hen is younger than the starter
 
     // Seasons
     public var daysPerSeason = 28
@@ -22,66 +22,67 @@ public struct Rules: Codable, Hashable, Sendable {
     // not collecting are: full boxes (floor eggs break), stale eggs (lower price), and broodiness.
     public var eggsPerNestBox = 4
     public var floorEggBreakChance = 0.5
-    public var nestFreshDays = 2           // eggs left in the nest longer than this sell as stale
+    public var nestFreshDays = 2  // eggs left in the nest longer than this sell as stale
     public var staleEggPriceFactor = 0.5
-    public var broodyNestEggs = 4          // a pile of this many eggs can set a hen broody
+    public var broodyNestEggs = 4  // a pile of this many eggs can set a hen broody
     /// From the breed table. A breed missing here never goes broody.
-    public var broodyChance: [Breed: Double] = Dictionary(uniqueKeysWithValues: BreedTable.all.map { ($0.id, $0.broodiness) })
-    public var broodyDays = 7              // a broody hen does not lay
+    public var broodyChance: [Breed: Double] = Dictionary(
+        uniqueKeysWithValues: BreedTable.all.map { ($0.id, $0.broodiness) })
+    public var broodyDays = 7  // a broody hen does not lay
 
     // Pairing and hatching
-    public var fertileChance = 0.85        // with an adult rooster in the coop
-    public var broodyHatchDays = 3         // under a broody hen
-    public var incubatorHatchDays = 1      // overnight
-    public var maxClutch = 6               // eggs under one broody hen
-    public var giftIncubatorSize = 1       // the neighbour's old incubator, given with the first fertile egg
-    public var bigIncubatorSize = 6        // the one you buy
+    public var fertileChance = 0.85  // with an adult rooster in the coop
+    public var broodyHatchDays = 3  // under a broody hen
+    public var incubatorHatchDays = 1  // overnight
+    public var maxClutch = 6  // eggs under one broody hen
+    public var giftIncubatorSize = 1  // the neighbour's old incubator, given with the first fertile egg
+    public var bigIncubatorSize = 6  // the one you buy
     public var incubatorPrice = 30
 
     // Rooster tension (never harm: hens just lay less)
-    public var hensPerRooster = 5          // one rooster is always fine; beyond that, 1 per 5 hens
+    public var hensPerRooster = 5  // one rooster is always fine; beyond that, 1 per 5 hens
     public var extraRoosterLayPenalty = 0.15
 
     // Speckle & Down shop
-    public var pulletPrice = 25            // a young hen, breed and sex known
-    public var cockerelPrice = 15          // a young rooster
-    public var fertileEggPrice = 6         // from a local flock, already candled
+    public var pulletPrice = 25  // a young hen, breed and sex known
+    public var cockerelPrice = 15  // a young rooster
+    public var fertileEggPrice = 6  // from a local flock, already candled
 
     // Making room
     public var coopUpgradePrice = 30
     public var perchesPerUpgrade = 2
     public var maxPerches = 15
     public var rehomeBase: [LifeStage: Int] = [.chick: 2, .grower: 4, .adult: 6]
-    public var rareLavenderOrSilkie = 6    // lavender, or silkie feathering on a non-Silkie
+    public var rareLavenderOrSilkie = 6  // lavender, or silkie feathering on a non-Silkie
     public var rareOliveEggs = 5
     public var rareSplash = 4
     public var rareSpeckledEggs = 3
-    public var rareSmall = 2               // each of: blue, barred, blue eggs
+    public var rareSmall = 2  // each of: blue, barred, blue eggs
 
     // Fox (never kills)
-    public var foxChance = 0.5       // chance the fox visits when the coop is left open
-    public var fleeChance = 0.5      // chance each bird runs off when it does
+    public var foxChance = 0.5  // chance the fox visits when the coop is left open
+    public var fleeChance = 0.5  // chance each bird runs off when it does
     public var lostDaysMin = 1
-    public var lostDaysMax = 3       // doubled for each earlier scare
+    public var lostDaysMax = 3  // doubled for each earlier scare
     public var lostDaysCap = 30
-    public var scaredNoLayDays = 3   // a frightened hen stops laying for a while
+    public var scaredNoLayDays = 3  // a frightened hen stops laying for a while
 
     // Friendliness (see Friendliness.swift)
-    public var petTamenessGain = 0.06        // picking a bird up, once a day
-    public var treatTamenessGain = 0.04      // a treat from your hand, once a day
-    public var chickHandlingBoost = 3.0      // chicks learn trust fastest
+    public var petTamenessGain = 0.06  // picking a bird up, once a day
+    public var treatTamenessGain = 0.04  // a treat from your hand, once a day
+    public var chickHandlingBoost = 3.0  // chicks learn trust fastest
     public var growerHandlingBoost = 1.5
-    public var motherHenHandlingFactor = 0.5 // a broody hen keeps her chicks wary
-    public var brooderChickTameness = 0.2    // hatched in the incubator, raised in the brooder
-    public var broodyChickTameness = 0.05    // hatched under a hen
-    public var boughtBirdTameness = 0.25     // a young bird from a shop or a neighbour
+    public var motherHenHandlingFactor = 0.5  // a broody hen keeps her chicks wary
+    public var brooderChickTameness = 0.2  // hatched in the incubator, raised in the brooder
+    public var broodyChickTameness = 0.05  // hatched under a hen
+    public var boughtBirdTameness = 0.25  // a young bird from a shop or a neighbour
     public var foxFrightTamenessLoss = 0.15
-    public var lostDayTamenessLoss = 0.02    // per day away
+    public var lostDayTamenessLoss = 0.02  // per day away
     public var maxLostTamenessLoss = 0.3
     public var treatBagSize = 10
     public var treatBagPrice = 5
-    public var rareBreedPulletPrice = 40     // a pullet of a breed unlocked by a storyline
-    public var lapChickenRehomeBonus = 3     // people pay more for a bird that loves a cuddle
+    public var rareBreedPulletPrice = 40  // a pullet of a breed unlocked by a storyline
+    public var lapChickenRehomeBonus = 3  // people pay more for a bird that loves a cuddle
 
     // Inbreeding (see Pedigree.swift). Lay chance and show condition drop by the bird's coefficient, capped.
     public var maxInbreedingLayLoss = 0.5
@@ -98,16 +99,16 @@ public struct Rules: Codable, Hashable, Sendable {
 
     // County show (see ShowEvent.swift). A recurring event that rewards selective breeding, taming
     // and egg quality. Entering costs a small fee (a coin sink); ribbons pay out.
-    public var showIntervalDays = 28   // one show each season
-    public var showCompetitors = 5     // AI entries in each class
-    public var showEntryFee = 3        // per entry, paid when you enter
+    public var showIntervalDays = 28  // one show each season
+    public var showCompetitors = 5  // AI entries in each class
+    public var showEntryFee = 3  // per entry, paid when you enter
     public var showPrizeFirst = 20
     public var showPrizeSecond = 10
     public var showPrizeThird = 5
     // Flock turnover (cozy: hens slow with age and retire, they never die).
-    public var layDeclineStartDays = 252   // full for about nine in-game months before slowing
-    public var layDeclineFloor = 0.4       // the least a laying hen's age factor falls to
-    public var retirementAgeDays = 504     // about 4.5 in-game years: she becomes a beloved non-layer
+    public var layDeclineStartDays = 252  // full for about nine in-game months before slowing
+    public var layDeclineFloor = 0.4  // the least a laying hen's age factor falls to
+    public var retirementAgeDays = 504  // about 4.5 in-game years: she becomes a beloved non-layer
 
     // Premium feed: an optional coin sink. Basic feed stays free; premium feed feeds the flock
     // for the day AND lifts laying a little. One bag is several day-portions.
@@ -116,7 +117,7 @@ public struct Rules: Codable, Hashable, Sendable {
     public var premiumFeedLayBonus = 0.25  // multiplies the day's lay chance when premium-fed
     // Foraging (see Engine.passNight). Leaving the coop door open overnight risks the fox, but if the
     // flock survives they free-range: they come back fed (no feeding needed) and a little the better for it.
-    public var forageLayBonus = 0.1        // hens lay a little more readily the day after foraging
+    public var forageLayBonus = 0.1  // hens lay a little more readily the day after foraging
     public var forageConditionBonus = 0.1  // foraging birds show in slightly better condition
 
     public init() {}
@@ -170,12 +171,13 @@ public struct Rules: Codable, Hashable, Sendable {
     }
 
     public func price(of egg: Egg, onDay day: Int) -> Int {
-        var base = switch egg.colour {
-        case .cream: creamEggPrice
-        case .brown: brownEggPrice
-        case .blue: blueEggPrice
-        case .olive: oliveEggPrice
-        }
+        var base =
+            switch egg.colour {
+            case .cream: creamEggPrice
+            case .brown: brownEggPrice
+            case .blue: blueEggPrice
+            case .olive: oliveEggPrice
+            }
         base += egg.speckled ? speckleBonus : 0
         guard isStale(egg, onDay: day) else { return base }
         return max(1, Int((Double(base) * staleEggPriceFactor).rounded(.down)))

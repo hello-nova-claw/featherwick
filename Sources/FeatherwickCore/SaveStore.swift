@@ -58,7 +58,10 @@ public struct SaveStore: Sendable {
         guard exists else { return nil }
         let fm = FileManager.default
         try? fm.removeItem(at: corruptURL)
-        do { try fm.moveItem(at: url, to: corruptURL); return corruptURL } catch { return nil }
+        do {
+            try fm.moveItem(at: url, to: corruptURL)
+            return corruptURL
+        } catch { return nil }
     }
 
     /// The most recent readable backup's bytes, if any. Used when the main save is gone or unreadable.
@@ -75,7 +78,7 @@ public struct SaveStore: Sendable {
         let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
         return names.compactMap { name in
             guard name.hasSuffix(".json"),
-                  !name.contains(".bak"), !name.contains(".corrupt"), !name.contains(".old")
+                !name.contains(".bak"), !name.contains(".corrupt"), !name.contains(".old")
             else { return nil }
             return String(name.dropLast(".json".count))
         }.sorted()

@@ -11,7 +11,9 @@
 // No save migration is needed.
 
 /// The name of one gene in the registry and in saves. Never rename one: saves use it.
-public struct LocusID: RawRepresentable, Hashable, Codable, Sendable, ExpressibleByStringLiteral, CustomStringConvertible {
+public struct LocusID: RawRepresentable, Hashable, Codable, Sendable, ExpressibleByStringLiteral,
+    CustomStringConvertible
+{
     public let rawValue: String
     public init(rawValue: String) { self.rawValue = rawValue }
     public init(stringLiteral value: String) { rawValue = value }
@@ -55,7 +57,9 @@ public struct LocusDefinition: Sendable, Identifiable {
     }
 
     /// A gene without its own allele enum. Used for the many small genes behind a quantitative trait.
-    public init(id: LocusID, inheritance: Inheritance = .autosomal, alleles: [String], defaultAllele: String, summary: String) {
+    public init(
+        id: LocusID, inheritance: Inheritance = .autosomal, alleles: [String], defaultAllele: String, summary: String
+    ) {
         self.id = id
         self.inheritance = inheritance
         self.alleles = alleles
@@ -72,19 +76,20 @@ public struct LocusDefinition: Sendable, Identifiable {
 /// Add new genes at the END of a list. Then old seeds still give the same alleles for the old genes.
 public enum Loci {
     public static let zLinked: [LocusDefinition] = [
-        LocusDefinition(Barring.self, "Barring. Dominant, sex-linked."),
+        LocusDefinition(Barring.self, "Barring. Dominant, sex-linked.")
     ]
 
-    public static let autosomal: [LocusDefinition] = [
-        LocusDefinition(Feathering.self, "Silkie feathering. Recessive."),
-        LocusDefinition(BaseColour.self, "Base colour. Black over buff."),
-        LocusDefinition(BlueDilution.self, "Blue. One copy blue, two copies splash."),
-        LocusDefinition(Lavender.self, "Lavender. Recessive dilution of black."),
-        LocusDefinition(Lacing.self, "Lacing. Recessive; shows on buff only."),
-        LocusDefinition(BlueShell.self, "Blue eggshell. Dominant."),
-        LocusDefinition(BrownShell.self, "Brown shell coating. Dominant."),
-        LocusDefinition(Speckle.self, "Speckled eggs. Game-only, recessive."),
-    ] + QuantitativeTrait.showType.loci + QuantitativeTrait.eggShape.loci
+    public static let autosomal: [LocusDefinition] =
+        [
+            LocusDefinition(Feathering.self, "Silkie feathering. Recessive."),
+            LocusDefinition(BaseColour.self, "Base colour. Black over buff."),
+            LocusDefinition(BlueDilution.self, "Blue. One copy blue, two copies splash."),
+            LocusDefinition(Lavender.self, "Lavender. Recessive dilution of black."),
+            LocusDefinition(Lacing.self, "Lacing. Recessive; shows on buff only."),
+            LocusDefinition(BlueShell.self, "Blue eggshell. Dominant."),
+            LocusDefinition(BrownShell.self, "Brown shell coating. Dominant."),
+            LocusDefinition(Speckle.self, "Speckled eggs. Game-only, recessive."),
+        ] + QuantitativeTrait.showType.loci + QuantitativeTrait.eggShape.loci
         + QuantitativeTrait.calm.loci
 
     public static let all: [LocusDefinition] = zLinked + autosomal

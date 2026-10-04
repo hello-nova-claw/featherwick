@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 /// Plays long random games (random but valid-looking commands, many nights) and checks after every
@@ -28,7 +29,10 @@ struct InvariantTests {
             if !c.eggs.allSatisfy(\.isFertile) { p.append("clear egg being hatched") }
             if c.hatchDay < s.day { p.append("clutch past its hatch day") }
             if let hen = c.henID {
-                guard let b = s.coop.first(where: { $0.id == hen }) else { p.append("sitting hen not in coop"); continue }
+                guard let b = s.coop.first(where: { $0.id == hen }) else {
+                    p.append("sitting hen not in coop")
+                    continue
+                }
                 if !b.isBroody(onDay: s.day) { p.append("sitting hen not broody") }
                 if c.eggs.count > s.rules.maxClutch { p.append("hen sitting on too many") }
             }
@@ -38,7 +42,8 @@ struct InvariantTests {
         }
         for chick in s.henChicks {
             guard let hen = chick.raisedBy, let b = s.coop.first(where: { $0.id == hen }) else {
-                p.append("hen chick without the hen raising it in the coop"); continue
+                p.append("hen chick without the hen raising it in the coop")
+                continue
             }
             if !b.isBroody(onDay: s.day) { p.append("hen raising chicks is not broody") }
         }
@@ -70,7 +75,7 @@ struct InvariantTests {
             if s.coopDoorOpen, Double.random(in: 0..<1, using: &pick) < 0.9 { return .closeCoop }
             return .passNight
         case 30..<54: return .feed
-        case 54..<58: return .collectEggs     // rarely, so nests fill up (broody hens, floor eggs)
+        case 54..<58: return .collectEggs  // rarely, so nests fill up (broody hens, floor eggs)
         case 58..<61: return .sellEggs
         case 61..<63: return .sellClearEggs
         case 63..<67: return .candle

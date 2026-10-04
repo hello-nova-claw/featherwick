@@ -82,7 +82,7 @@ public enum Storylines {
         trigger: .chicksHatched(atLeast: 4),
         after: ["broodySilkie"],
         steps: [
-            StoryStep(id: "admiring", goal: .waitDays(3)),
+            StoryStep(id: "admiring", goal: .waitDays(3))
         ],
         rewards: [.giftBird(.wyandotte, .hen)]
     )
@@ -120,11 +120,14 @@ extension Engine {
             guard var progress = s.stories[story.id], !progress.rewarded else { continue }
             // Timed steps finish at night. Delivery steps wait for the player.
             while progress.step < story.steps.count,
-                  !story.steps[progress.step].goal.needsDelivery,
-                  goalMet(story.steps[progress.step].goal, s, since: progress.stepStartedDay) {
+                !story.steps[progress.step].goal.needsDelivery,
+                goalMet(story.steps[progress.step].goal, s, since: progress.stepStartedDay)
+            {
                 progress.step += 1
                 progress.stepStartedDay = s.day
-                if progress.step < story.steps.count { ev.append(.storyStep(story.id, step: story.steps[progress.step].id)) }
+                if progress.step < story.steps.count {
+                    ev.append(.storyStep(story.id, step: story.steps[progress.step].id))
+                }
             }
             s.stories[story.id] = progress
             if progress.step == story.steps.count { ev += giveRewards(story, &s, &rng) }
@@ -141,7 +144,9 @@ extension Engine {
     }
 
     /// Rewards are all-or-nothing and given once. A gift bird waits for a free perch.
-    static func giveRewards<R: RandomNumberGenerator>(_ story: Storyline, _ s: inout GameState, _ rng: inout R) -> [GameEvent] {
+    static func giveRewards<R: RandomNumberGenerator>(
+        _ story: Storyline, _ s: inout GameState, _ rng: inout R
+    ) -> [GameEvent] {
         let birds = story.rewards.count(where: { if case .giftBird = $0 { true } else { false } })
         guard s.coop.count + birds <= s.perches else {
             let key = "\(story.id).waitingForRoom"
@@ -154,7 +159,8 @@ extension Engine {
             case .giftBird(let breed, let sex):
                 var bird = Bird(
                     id: makeID(using: &rng), name: "",
-                    breed: breed, genome: breed.purebred(sex, variety: breed.definition.varieties.randomElement(using: &rng)),
+                    breed: breed,
+                    genome: breed.purebred(sex, variety: breed.definition.varieties.randomElement(using: &rng)),
                     hatchDay: s.day - s.rules.growerAge, origin: "A Featherwick neighbour", revealed: true
                 ).withFounderQuality().namedByKeeper(in: s)
                 bird.tameness = s.rules.boughtBirdTameness
@@ -173,7 +179,7 @@ extension Engine {
     /// The player hands over what a story step asks for.
     static func deliver(_ storyID: String, _ s: inout GameState) -> [GameEvent] {
         guard let story = Storylines.story(storyID), var progress = s.stories[storyID],
-              progress.step < story.steps.count, story.steps[progress.step].goal.needsDelivery
+            progress.step < story.steps.count, story.steps[progress.step].goal.needsDelivery
         else { return [.rejected(.nothingToDeliver)] }
         switch story.steps[progress.step].goal {
         case .deliverFertileEggs(let n):

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 /// Every breed table entry, planned ones too, must make real-looking birds that breed true.
@@ -36,7 +37,8 @@ struct BreedTableTests {
     @Test func everyBreedAndVarietyBreedsTrue() throws {
         var rng = SeededRNG(seed: 31)
         for (def, variety) in Self.everyBreedAndVariety {
-            let mother = def.id.purebred(.hen, variety: variety), father = def.id.purebred(.rooster, variety: variety)
+            let mother = def.id.purebred(.hen, variety: variety)
+            let father = def.id.purebred(.rooster, variety: variety)
             let touched = Set((def.signature + def.varieties.flatMap(\.genes)).map(\.locus))
             for _ in 0..<200 {
                 let chick = try Breeding.cross(mother: mother, father: father, using: &rng)
@@ -45,8 +47,9 @@ struct BreedTableTests {
                     #expect(Set(chick.alleles(at: locus)) == [gene.first], "\(def.id) \(variety.id) lost \(gene.locus)")
                 }
                 for locus in Loci.all where !touched.contains(locus.id) {
-                    #expect(chick.alleles(at: locus).allSatisfy { $0 == locus.defaultAllele },
-                            "\(def.id) \(variety.id) chick has stray \(locus.id)")
+                    #expect(
+                        chick.alleles(at: locus).allSatisfy { $0 == locus.defaultAllele },
+                        "\(def.id) \(variety.id) chick has stray \(locus.id)")
                 }
                 let p = Phenotype(chick)
                 if chick.sex == .hen { #expect(p.eggColour == def.eggColour) }
@@ -61,7 +64,10 @@ struct BreedTableTests {
         for seed in UInt64(1)...300 {
             var rng = SeededRNG(seed: seed)
             let s = Engine.newGame(using: &rng)
-            guard case .choosingStarter(let chicks) = s.phase else { Issue.record("no starters"); return }
+            guard case .choosingStarter(let chicks) = s.phase else {
+                Issue.record("no starters")
+                return
+            }
             #expect(chicks.allSatisfy { !planned.contains($0.breed) })
             for sex in Sex.allCases {
                 #expect(!planned.contains(Engine.youngBird(sex, origin: "t", s, &rng).breed))
@@ -99,21 +105,29 @@ struct BreedTableTests {
         let g = try JSONDecoder().decode(Genome.self, from: Data(json.utf8))
         #expect(g.feathering.isHomozygous(for: .silkie))
         #expect(g.speckle == .homozygous(.plain) && g.lacing == .homozygous(.solid))
-        #expect(g == { var x = Genome(sex: .hen); x.feathering = .homozygous(.silkie); return x }())
+        #expect(
+            g
+                == {
+                    var x = Genome(sex: .hen)
+                    x.feathering = .homozygous(.silkie)
+                    return x
+                }())
     }
 
     @Test func badAllelesAndUnknownGenesDoNotBreakAGenome() throws {
-        let json = #"{"sex":"rooster","autosomal":{"blue":{"first":"zz","second":"Bl"},"comb":{"first":"R","second":"r"}},"z":{"barring":["B"]}}"#
+        let json =
+            #"{"sex":"rooster","autosomal":{"blue":{"first":"zz","second":"Bl"},"comb":{"first":"R","second":"r"}},"z":{"barring":["B"]}}"#
         let g = try JSONDecoder().decode(Genome.self, from: Data(json.utf8))
-        #expect(g.blue == .homozygous(.notBlue))                    // bad allele → default
-        #expect(g.zAlleles(Barring.self) == [.plain, .plain])        // wrong copy count → default
+        #expect(g.blue == .homozygous(.notBlue))  // bad allele → default
+        #expect(g.zAlleles(Barring.self) == [.plain, .plain])  // wrong copy count → default
         let round = try JSONDecoder().decode(Genome.self, from: JSONEncoder().encode(g))
-        #expect(round == g)                                          // unknown "comb" gene kept, not lost
+        #expect(round == g)  // unknown "comb" gene kept, not lost
     }
 
     @Test func migrationsRunInOrderAndReachObjectsAtAnyDepth() throws {
         let input: [String: Any] = ["a": [["tag": 1], ["b": ["tag": 2]]]]
-        let out = try #require(SaveFormat.transformObjects(in: input, where: { $0["tag"] != nil }) { $0["seen"] = true } as? [String: Any])
+        let out = try #require(
+            SaveFormat.transformObjects(in: input, where: { $0["tag"] != nil }) { $0["seen"] = true } as? [String: Any])
         let a = try #require(out["a"] as? [[String: Any]])
         #expect(a[0]["seen"] as? Bool == true)
         #expect((a[1]["b"] as? [String: Any])?["seen"] as? Bool == true)

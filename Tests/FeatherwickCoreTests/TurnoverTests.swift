@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 // Flock turnover (age-based lay decline + cozy retirement) and the premium-feed coin sink.
@@ -35,18 +36,18 @@ struct TurnoverTests {
         r.layDeclineFloor = 0.4
         r.retirementAgeDays = 300
         #expect(r.layAgeFactor(ageDays: 0) == 1)
-        #expect(r.layAgeFactor(ageDays: 100) == 1)          // full until the decline starts
-        #expect(r.layAgeFactor(ageDays: 200) < 1)           // falling in the middle
-        #expect(r.layAgeFactor(ageDays: 200) > r.layAgeFactor(ageDays: 299)) // monotonically down
-        #expect(r.layAgeFactor(ageDays: 299) >= r.layDeclineFloor)           // never below the floor while laying
-        #expect(r.layAgeFactor(ageDays: 300) == 0)          // retired: no laying at all
+        #expect(r.layAgeFactor(ageDays: 100) == 1)  // full until the decline starts
+        #expect(r.layAgeFactor(ageDays: 200) < 1)  // falling in the middle
+        #expect(r.layAgeFactor(ageDays: 200) > r.layAgeFactor(ageDays: 299))  // monotonically down
+        #expect(r.layAgeFactor(ageDays: 299) >= r.layDeclineFloor)  // never below the floor while laying
+        #expect(r.layAgeFactor(ageDays: 300) == 0)  // retired: no laying at all
         #expect(r.layAgeFactor(ageDays: 500) == 0)
     }
 
     @Test func anOldHenLaysLessThanAYoungOne() {
         var r = layRules()
         r.layDeclineStartDays = 20
-        r.retirementAgeDays = 400   // neither hen retires during the run
+        r.retirementAgeDays = 400  // neither hen retires during the run
         var (s, rng) = startedGame(sex: .hen, rules: r, seed: 7)
         let young = plainBird(.orpington, .hen, hatchDay: s.day - r.adultAge, rng: &rng)
         let old = plainBird(.orpington, .hen, hatchDay: s.day - 200, rng: &rng)
@@ -57,8 +58,8 @@ struct TurnoverTests {
         let youngEggs = eggsLaid(ev, by: young.id)
         let oldEggs = eggsLaid(ev, by: old.id)
         #expect(youngEggs > oldEggs)
-        #expect(oldEggs > 0)          // she still lays, just less
-        #expect(youngEggs >= 55)      // a young hen in her prime lays nearly every day
+        #expect(oldEggs > 0)  // she still lays, just less
+        #expect(youngEggs >= 55)  // a young hen in her prime lays nearly every day
     }
 
     // MARK: - Retirement (cozy: she stops laying but keeps her perch)
@@ -71,15 +72,15 @@ struct TurnoverTests {
         coopOfHens(&s, [hen])
         #expect(!hen.isRetired(onDay: s.day, rules: r))
 
-        let first = night(&s, &rng)   // she crosses retirement age tonight
+        let first = night(&s, &rng)  // she crosses retirement age tonight
         #expect(first.contains(.birdRetired(hen.id)))
         #expect(s.coop.first { $0.id == hen.id }?.isRetired(onDay: s.day, rules: r) == true)
-        #expect(s.coop.contains { $0.id == hen.id })   // turnover is gentle: she keeps her perch
+        #expect(s.coop.contains { $0.id == hen.id })  // turnover is gentle: she keeps her perch
 
         var later: [GameEvent] = []
         for _ in 0..<10 { later += night(&s, &rng) }
-        #expect(eggsLaid(later, by: hen.id) == 0)                  // a retired hen lays nothing
-        #expect(!later.contains(.birdRetired(hen.id)))             // announced once, not every night
+        #expect(eggsLaid(later, by: hen.id) == 0)  // a retired hen lays nothing
+        #expect(!later.contains(.birdRetired(hen.id)))  // announced once, not every night
     }
 
     // MARK: - Premium feed
@@ -123,7 +124,7 @@ struct TurnoverTests {
         #expect(ev.contains { if case .fedPremium = $0 { true } else { false } })
         #expect(s.premiumFeed == 1)
         #expect(s.fedPremiumToday)
-        #expect(s.fedToday)   // premium feed covers the day's feeding too
+        #expect(s.fedToday)  // premium feed covers the day's feeding too
         // Twice in one day is refused.
         #expect(Engine.apply(.feedPremium, to: &s, using: &rng) == [.rejected(.alreadyFedPremium)])
     }

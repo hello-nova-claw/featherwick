@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 /// Foraging (the fox risk/reward) and the two new storylines, including the Australorp unlock.
@@ -26,7 +27,7 @@ struct ForageTests {
         s.coop = [hen]
         s.brooder = []
         s.henChicks = []
-        s.day += s.rules.adultAge + 5   // age her well past point of lay
+        s.day += s.rules.adultAge + 5  // age her well past point of lay
         s.rules.layChance = [.spring: 1, .summer: 1, .autumn: 1, .winter: 1]
         #expect(hen.stage(onDay: s.day, rules: s.rules) == .adult)
     }
@@ -64,7 +65,7 @@ struct ForageTests {
             let ev = Self.night(&s, &rng)
             return ev.contains { if case .eggLaid = $0 { true } else { false } }
         }
-        #expect(run(doorOpen: true))    // foraged overnight → counts as fed → she lays
+        #expect(run(doorOpen: true))  // foraged overnight → counts as fed → she lays
         #expect(!run(doorOpen: false))  // shut in and unfed → no eggs
     }
 
@@ -127,7 +128,9 @@ struct ForageTests {
         let lacedEvents = nights(6)
         #expect(lacedEvents.contains(.storyStarted("lacedGift")))
         #expect(s.stories["lacedGift"]?.rewarded == true)
-        let gotWyandotte = lacedEvents.contains { if case .storyGift("lacedGift", let id) = $0 { s.bird(id)?.breed == .wyandotte } else { false } }
+        let gotWyandotte = lacedEvents.contains {
+            if case .storyGift("lacedGift", let id) = $0 { s.bird(id)?.breed == .wyandotte } else { false }
+        }
         #expect(gotWyandotte)
 
         // heritageBreed: triggers at 8 chicks, deliver 4 fertile eggs, wait 4 days, gifts an Australorp
@@ -140,20 +143,23 @@ struct ForageTests {
         let settle = nights(6)
         #expect(settle.contains(.shopUnlocked(.australorp)))
         #expect(s.stories["heritageBreed"]?.rewarded == true)
-        let gotAustralorp = settle.contains { if case .storyGift("heritageBreed", let id) = $0 { s.bird(id)?.breed == .australorp } else { false } }
+        let gotAustralorp = settle.contains {
+            if case .storyGift("heritageBreed", let id) = $0 { s.bird(id)?.breed == .australorp } else { false }
+        }
         #expect(gotAustralorp)
 
         // The shop now sells Australorp pullets, and one can be bought and judged.
         #expect(s.shopBreeds.contains(.australorp))
         let bought = Engine.apply(.buyBreed(.australorp), to: &s, using: &rng)
         guard case .boughtBreed(let id, .australorp, _)? = bought.first else {
-            Issue.record("could not buy an Australorp: \(bought)"); return
+            Issue.record("could not buy an Australorp: \(bought)")
+            return
         }
         let bird = s.bird(id)!
         #expect(bird.breed == .australorp && bird.isPurebred && bird.phenotype.eggColour == .brown)
         // A purebred adult Australorp enters its own breed class without being disqualified.
         var judgeState = s
-        judgeState.day = bird.hatchDay + s.rules.adultAge + 1   // old enough to show
+        judgeState.day = bird.hatchDay + s.rules.adultAge + 1  // old enough to show
         let card = Judge.judge(bird, in: .breed(.australorp), state: judgeState)
         #expect(card.grade != .disqualified, "australorp breed card: \(card.notes)")
     }

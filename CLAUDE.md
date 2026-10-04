@@ -13,6 +13,7 @@ swift build
 swift test                          # Swift Testing (`import Testing`), not XCTest
 swift test --filter ShowTests       # one suite
 swift run featherwick 2026          # play; the seed is used only for a new save
+swift format --in-place --recursive Package.swift Sources Tests   # format (CI fails on unformatted code)
 ```
 
 In the game: `day 10` runs ten full days; `sim [days] [games]` prints a balance report.

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 struct LookTests {
@@ -7,8 +8,9 @@ struct LookTests {
 
     static func bird(_ breed: Breed, _ sex: Sex, variety: ColourVariety? = nil, pure: Bool = true) -> Bird {
         var rng = SeededRNG(seed: 1)
-        var b = Bird(id: makeID(using: &rng), name: "b", breed: breed, genome: breed.purebred(sex, variety: variety),
-                     hatchDay: 0, origin: "t", revealed: true)
+        var b = Bird(
+            id: makeID(using: &rng), name: "b", breed: breed, genome: breed.purebred(sex, variety: variety),
+            hatchDay: 0, origin: "t", revealed: true)
         b.purebredFlag = pure
         return b
     }
@@ -18,8 +20,9 @@ struct LookTests {
     /// Every bird the genetics can make, at every age, is built only from parts in the kit,
     /// with every mask filled.
     @Test func everyBirdTheGameCanMakeUsesOnlyKitParts() {
-        let birds = GeneticsRealismTests.population(seed: 21, generations: 4, perGeneration: 1500,
-                                                    breeds: BreedTable.all.map(\.id))
+        let birds = GeneticsRealismTests.population(
+            seed: 21, generations: 4, perGeneration: 1500,
+            breeds: BreedTable.all.map(\.id))
         let kit = Set(ArtChecklist.required(includePlanned: true))
         var used: Set<PartKey> = []
         for b in birds {
@@ -45,7 +48,8 @@ struct LookTests {
     }
 
     @Test func breedsShareParts() {
-        let orp = Self.look(Self.bird(.orpington, .hen)), aus = Self.look(Self.bird(.australorp, .hen))
+        let orp = Self.look(Self.bird(.orpington, .hen))
+        let aus = Self.look(Self.bird(.australorp, .hen))
         #expect(orp.part(.body)?.part == aus.part(.body)?.part)
         #expect(orp.part(.legs)?.part == Self.look(Self.bird(.araucana, .hen)).part(.legs)?.part)
         #expect(Self.look(Self.bird(.wyandotte, .hen)).part(.comb)?.part.shape == "rose")
@@ -53,9 +57,11 @@ struct LookTests {
     }
 
     @Test func pulletsAndCockerelsAreTheAdultPartsGrowingIn() {
-        let hen = Self.bird(.orpington, .hen), rooster = Self.bird(.orpington, .rooster)
+        let hen = Self.bird(.orpington, .hen)
+        let rooster = Self.bird(.orpington, .rooster)
         #expect(Self.look(hen, age: 0).parts.map(\.part.slot) == [.chick])
-        let pullet = Self.look(hen, age: Self.rules.growerAge), adult = Self.look(hen)
+        let pullet = Self.look(hen, age: Self.rules.growerAge)
+        let adult = Self.look(hen)
         #expect(pullet.stage == .pullet && adult.stage == .hen)
         #expect(pullet.parts.map(\.part) == adult.parts.map(\.part))
         #expect(pullet.part(.comb)!.scale < adult.part(.comb)!.scale)
@@ -81,7 +87,10 @@ struct LookTests {
     @Test func silkiesAndSilkieCrosses() {
         let silkie = Self.look(Self.bird(.silkie, .hen))
         #expect(silkie.tone(.comb) == .mulberry)
-        #expect(silkie.parts.map(\.part.description) == ["tail/fluffy", "legs/featheredFiveToe", "body/fluffy/hen", "head/crested", "comb/walnut"])
+        #expect(
+            silkie.parts.map(\.part.description) == [
+                "tail/fluffy", "legs/featheredFiveToe", "body/fluffy/hen", "head/crested", "comb/walnut",
+            ])
         // A silkie-feathered cross gets the fluffy body (a real gene) but the plain farmyard head, comb and legs.
         var g = Breed.orpington.purebred(.hen)
         g.feathering = .homozygous(.silkie)
@@ -99,7 +108,8 @@ struct LookTests {
     }
 
     @Test func birdsGrowSmoothlyAndRoostersEndBigger() {
-        let hen = Self.bird(.orpington, .hen), rooster = Self.bird(.orpington, .rooster)
+        let hen = Self.bird(.orpington, .hen)
+        let rooster = Self.bird(.orpington, .rooster)
         var last = 0.0
         for age in 0...Self.rules.adultAge + 5 {
             let s = Self.look(hen, age: age).scale

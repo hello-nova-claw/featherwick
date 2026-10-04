@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 struct RoosterTensionTests {
@@ -8,18 +9,19 @@ struct RoosterTensionTests {
         s.brooder.removeAll()
         s.perches = 30
         let born = s.day - rules.adultAge
-        s.coop = (0..<roosters).map { _ in plainBird(.orpington, .rooster, hatchDay: born, rng: &rng) }
+        s.coop =
+            (0..<roosters).map { _ in plainBird(.orpington, .rooster, hatchDay: born, rng: &rng) }
             + (0..<hens).map { _ in plainBird(.araucana, .hen, hatchDay: born, rng: &rng) }
         return (s, rng)
     }
 
     @Test(arguments: [
         (roosters: 1, hens: 0, extra: 0),
-        (roosters: 1, hens: 1, extra: 0),   // the rooster start: always fine
+        (roosters: 1, hens: 1, extra: 0),  // the rooster start: always fine
         (roosters: 1, hens: 12, extra: 0),  // one rooster is always fine
         (roosters: 2, hens: 1, extra: 1),
         (roosters: 2, hens: 5, extra: 1),
-        (roosters: 2, hens: 6, extra: 0),   // 6 hens allow 2 roosters
+        (roosters: 2, hens: 6, extra: 0),  // 6 hens allow 2 roosters
         (roosters: 3, hens: 10, extra: 1),
         (roosters: 4, hens: 2, extra: 3),
     ])
@@ -57,8 +59,8 @@ struct RoosterTensionTests {
         for _ in 0..<10 { ev += night(&s, &rng) }
         let squabbles = ev.count(where: { if case .roostersSquabbling = $0 { true } else { false } })
         let nudges = ev.count(where: { $0 == .roosterAdvice })
-        #expect(squabbles > 1)   // the problem keeps being flagged
-        #expect(nudges == 1)     // but the how-to-fix tip shows only once
+        #expect(squabbles > 1)  // the problem keeps being flagged
+        #expect(nudges == 1)  // but the how-to-fix tip shows only once
         #expect(s.roosterAdviceGiven)
     }
 

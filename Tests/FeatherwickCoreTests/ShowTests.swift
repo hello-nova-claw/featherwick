@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 struct ShowTests {
@@ -11,12 +12,15 @@ struct ShowTests {
         return s
     }
 
-    static func bird(_ breed: Breed, _ sex: Sex = .hen, variety: ColourVariety? = nil, typePlus: Int? = nil,
-                     pure: Bool = true, age: Int = 30, s: GameState = showDay(), rng: inout SeededRNG) -> Bird {
+    static func bird(
+        _ breed: Breed, _ sex: Sex = .hen, variety: ColourVariety? = nil, typePlus: Int? = nil,
+        pure: Bool = true, age: Int = 30, s: GameState = showDay(), rng: inout SeededRNG
+    ) -> Bird {
         var g = breed.purebred(sex, variety: variety)
         if let typePlus { setType(&g, plus: typePlus) }
-        var b = Bird(id: makeID(using: &rng), name: "b", breed: breed, genome: g, hatchDay: s.day - age,
-                     origin: "t", revealed: true)
+        var b = Bird(
+            id: makeID(using: &rng), name: "b", breed: breed, genome: g, hatchDay: s.day - age,
+            origin: "t", revealed: true)
         b.purebredFlag = pure
         return b
     }
@@ -25,8 +29,10 @@ struct ShowTests {
     static func setType(_ g: inout Genome, plus: Int) {
         var left = plus
         for locus in QuantitativeTrait.showType.loci {
-            let a = left > 0 ? "+" : "-"; left -= left > 0 ? 1 : 0
-            let b = left > 0 ? "+" : "-"; left -= left > 0 ? 1 : 0
+            let a = left > 0 ? "+" : "-"
+            left -= left > 0 ? 1 : 0
+            let b = left > 0 ? "+" : "-"
+            left -= left > 0 ? 1 : 0
             g.setAlleles([a, b], at: locus)
         }
     }
@@ -46,8 +52,9 @@ struct ShowTests {
             let standard = ShowStandard(def.id)
             for variety in def.varieties {
                 for sex in Sex.allCases {
-                    #expect(standard.accepts(Appearance(Phenotype(def.id.purebred(sex, variety: variety)))),
-                            "\(def.id) \(variety.id) \(sex)")
+                    #expect(
+                        standard.accepts(Appearance(Phenotype(def.id.purebred(sex, variety: variety)))),
+                        "\(def.id) \(variety.id) \(sex)")
                 }
             }
         }
@@ -68,17 +75,25 @@ struct ShowTests {
     @Test func entryRules() {
         var rng = SeededRNG(seed: 2)
         let s = Self.showDay()
-        #expect(Judge.judge(Self.bird(.orpington, age: 5, rng: &rng), in: .breed(.orpington), state: s).notes == [.tooYoung])
-        #expect(Judge.judge(Self.bird(.orpington, pure: false, rng: &rng), in: .breed(.orpington), state: s).notes == [.notPurebred])
-        #expect(Judge.judge(Self.bird(.orpington, rng: &rng), in: .breed(.silkie), state: s).notes == [.wrongBreedClass])
+        #expect(
+            Judge.judge(Self.bird(.orpington, age: 5, rng: &rng), in: .breed(.orpington), state: s).notes == [.tooYoung]
+        )
+        #expect(
+            Judge.judge(Self.bird(.orpington, pure: false, rng: &rng), in: .breed(.orpington), state: s).notes == [
+                .notPurebred
+            ])
+        #expect(
+            Judge.judge(Self.bird(.orpington, rng: &rng), in: .breed(.silkie), state: s).notes == [.wrongBreedClass])
         #expect(Judge.judge(Self.bird(.orpington, rng: &rng), in: .eggs(.brown), state: s).grade == .disqualified)
     }
 
     @Test func typeIsWorthHalfThePoints() {
         var rng = SeededRNG(seed: 3)
         let s = Self.showDay()
-        let best = Judge.judge(Self.bird(.wyandotte, variety: .buff, typePlus: 20, rng: &rng), in: .breed(.wyandotte), state: s)
-        let worst = Judge.judge(Self.bird(.wyandotte, variety: .buff, typePlus: 0, rng: &rng), in: .breed(.wyandotte), state: s)
+        let best = Judge.judge(
+            Self.bird(.wyandotte, variety: .buff, typePlus: 20, rng: &rng), in: .breed(.wyandotte), state: s)
+        let worst = Judge.judge(
+            Self.bird(.wyandotte, variety: .buff, typePlus: 0, rng: &rng), in: .breed(.wyandotte), state: s)
         #expect(best.score == 100 && best.grade == .excellent)
         #expect(worst.score == 50)
         #expect(best.notes.contains(.type(.excellent)) && worst.notes.contains(.type(.poor)))
@@ -94,8 +109,9 @@ struct ShowTests {
         b.noLayUntilDay = s.day + 2
         b.broodyUntilDay = s.day + 3
         s.day = s.rules.daysPerSeason * 2 + 1  // autumn: moulting
-        b = Bird(id: b.id, name: b.name, breed: b.breed, genome: b.genome, hatchDay: s.day - 40, origin: "t",
-                 revealed: true, noLayUntilDay: s.day + 2)
+        b = Bird(
+            id: b.id, name: b.name, breed: b.breed, genome: b.genome, hatchDay: s.day - 40, origin: "t",
+            revealed: true, noLayUntilDay: s.day + 2)
         b.broodyUntilDay = s.day + 3
         let (value, notes) = Judge.condition(of: b, in: s)
         #expect(value == 0)
@@ -107,7 +123,8 @@ struct ShowTests {
     @Test func typeIsInheritedAndCanNeverPassTheMaximum() throws {
         var rng = SeededRNG(seed: 5)
         func meanChild(_ m: Int, _ f: Int) throws -> Double {
-            var mg = Breed.orpington.purebred(.hen), fg = Breed.orpington.purebred(.rooster)
+            var mg = Breed.orpington.purebred(.hen)
+            var fg = Breed.orpington.purebred(.rooster)
             Self.setType(&mg, plus: m)
             Self.setType(&fg, plus: f)
             var total = 0
@@ -120,7 +137,7 @@ struct ShowTests {
             return Double(total) / 2000
         }
         // The chick average sits midway between the parents.
-        #expect(abs(try meanChild(20, 20) - 20) < 0.01)   // two perfect parents breed true
+        #expect(abs(try meanChild(20, 20) - 20) < 0.01)  // two perfect parents breed true
         #expect(abs(try meanChild(16, 8) - 12) < 0.5)
         #expect(abs(try meanChild(0, 0)) < 0.01)
     }
@@ -131,11 +148,16 @@ struct ShowTests {
         var roosters = (0..<20).map { _ in Self.founderGenome(.rooster, &rng) }
         let start = Self.mean(hens + roosters)
         for _ in 0..<6 {
-            let pickH = hens.sorted { QuantitativeTrait.showType.score($0) > QuantitativeTrait.showType.score($1) }.prefix(5)
-            let pickR = roosters.sorted { QuantitativeTrait.showType.score($0) > QuantitativeTrait.showType.score($1) }.prefix(2)
+            let pickH = hens.sorted { QuantitativeTrait.showType.score($0) > QuantitativeTrait.showType.score($1) }
+                .prefix(5)
+            let pickR = roosters.sorted { QuantitativeTrait.showType.score($0) > QuantitativeTrait.showType.score($1) }
+                .prefix(2)
             var chicks: [Genome] = []
             for _ in 0..<80 {
-                chicks.append(try Breeding.cross(mother: pickH.randomElement(using: &rng)!, father: pickR.randomElement(using: &rng)!, using: &rng))
+                chicks.append(
+                    try Breeding.cross(
+                        mother: pickH.randomElement(using: &rng)!, father: pickR.randomElement(using: &rng)!,
+                        using: &rng))
             }
             hens = chicks.filter { $0.sex == .hen }
             roosters = chicks.filter { $0.sex == .rooster }
@@ -188,8 +210,10 @@ struct ShowTests {
 
     // MARK: - Egg classes
 
-    static func egg(_ colour: EggColour = .brown, speckled: Bool = false, shape: Int? = 12, shell: Double? = 1,
-                    layDay: Int = 25, rng: inout SeededRNG) -> Egg {
+    static func egg(
+        _ colour: EggColour = .brown, speckled: Bool = false, shape: Int? = 12, shell: Double? = 1,
+        layDay: Int = 25, rng: inout SeededRNG
+    ) -> Egg {
         var e = Egg(id: makeID(using: &rng), layDay: layDay, motherID: UUID(), colour: colour, speckled: speckled)
         e.collectedDay = layDay
         e.shape = shape
@@ -253,7 +277,8 @@ struct ShowTests {
 
     @Test func bestPlatesPickMatchingEggsBestFirst() {
         var rng = SeededRNG(seed: 14)
-        let carton = [Self.egg(shape: 2, rng: &rng)] + (0..<3).map { _ in Self.egg(rng: &rng) }
+        let carton =
+            [Self.egg(shape: 2, rng: &rng)] + (0..<3).map { _ in Self.egg(rng: &rng) }
             + (0..<3).map { _ in Self.egg(.blue, shape: 4, rng: &rng) } + [Self.egg(.olive, rng: &rng)]
         let plates = Judge.bestPlates(from: carton, state: Self.showDay())
         #expect(plates.map(\.card.showClass) == [.eggs(.brown), .eggs(.blue)])
@@ -263,7 +288,8 @@ struct ShowTests {
     // MARK: - Saves
 
     @Test func aSaveMissingNewRulesAndFieldsStillLoads() throws {
-        var json = try #require(JSONSerialization.jsonObject(with: SaveFormat.encode(SaveFormatTests.busyGame())) as? [String: Any])
+        var json = try #require(
+            JSONSerialization.jsonObject(with: SaveFormat.encode(SaveFormatTests.busyGame())) as? [String: Any])
         var state = try #require(json["state"] as? [String: Any])
         var rules = try #require(state["rules"] as? [String: Any])
         rules["foxChance"] = nil
@@ -277,7 +303,8 @@ struct ShowTests {
 
     @Test func scoresStayInRangeForEveryBirdInARandomGame() {
         for seed in UInt64(1)...20 {
-            var rng = SeededRNG(seed: seed), pick = SeededRNG(seed: seed &* 31)
+            var rng = SeededRNG(seed: seed)
+            var pick = SeededRNG(seed: seed &* 31)
             var s = Engine.newGame(using: &rng)
             _ = Engine.apply(.chooseStarter(index: 0, name: "S"), to: &s, using: &rng)
             for _ in 0..<600 { _ = Engine.apply(InvariantTests.randomCommand(s, &pick), to: &s, using: &rng) }

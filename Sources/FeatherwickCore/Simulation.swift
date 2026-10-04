@@ -31,9 +31,10 @@ public enum Simulation {
     public static func run(seed: UInt64, days: Int, rules: Rules = .standard) -> Report {
         var rng = SeededRNG(seed: seed)
         var s = Engine.newGame(rules: rules, using: &rng)
-        var r = Report(seed: seed, days: days, finalCoins: 0, peakCoins: 0, finalFlock: 0, peakFlock: 0,
-                       breedBook: 0, eggBook: 0, eggsLaid: 0, eggsSold: 0, coinsFromEggs: 0, coinsFromShows: 0,
-                       chicksHatched: 0, foxVisits: 0, storiesFinished: 0)
+        var r = Report(
+            seed: seed, days: days, finalCoins: 0, peakCoins: 0, finalFlock: 0, peakFlock: 0,
+            breedBook: 0, eggBook: 0, eggsLaid: 0, eggsSold: 0, coinsFromEggs: 0, coinsFromShows: 0,
+            chicksHatched: 0, foxVisits: 0, storiesFinished: 0)
         apply(.chooseStarter(index: Int(seed % 3), name: "Sim"), &s, &rng, &r)
 
         for _ in 0..<max(0, days) {
@@ -128,7 +129,7 @@ public enum Simulation {
         if s.coop.count >= s.perches, s.perches < s.rules.maxPerches, s.coins >= s.rules.coopUpgradePrice {
             apply(.upgradeCoop, &s, &rng, &r)
         }
-        if (!s.boarding.isEmpty || s.perches >= s.rules.maxPerches), let spare = spareBird(s) {
+        if !s.boarding.isEmpty || s.perches >= s.rules.maxPerches, let spare = spareBird(s) {
             apply(.rehome(spare), &s, &rng, &r)
         }
     }
@@ -146,7 +147,9 @@ public enum Simulation {
     private static func tally(_ e: GameEvent, _ r: inout Report) {
         switch e {
         case .eggLaid: r.eggsLaid += 1
-        case .eggsSold(let n, let coins, _): r.eggsSold += n; r.coinsFromEggs += coins
+        case .eggsSold(let n, let coins, _):
+            r.eggsSold += n
+            r.coinsFromEggs += coins
         case .showPrizesWon(let coins): r.coinsFromShows += coins
         case .chicksHatched(let ids, _): r.chicksHatched += ids.count
         case .foxVisited: r.foxVisits += 1
@@ -161,21 +164,23 @@ public enum Simulation {
         let reports = runMany(seeds: 1...UInt64(max(1, games)), days: days, rules: rules)
         func line(_ label: String, _ fmt: String = "%.0f", _ f: (Report) -> Double) -> String {
             let xs = reports.map(f)
-            let lo = xs.min() ?? 0, hi = xs.max() ?? 0
+            let lo = xs.min() ?? 0
+            let hi = xs.max() ?? 0
             let mean = xs.reduce(0, +) / Double(xs.count)
             let pad = label.padding(toLength: 12, withPad: " ", startingAt: 0)
-            return "  \(pad) min \(String(format: fmt, lo))   mean \(String(format: fmt, mean))   max \(String(format: fmt, hi))"
+            return
+                "  \(pad) min \(String(format: fmt, lo))   mean \(String(format: fmt, mean))   max \(String(format: fmt, hi))"
         }
         return """
-        Balance report — \(reports.count) games × \(days) days
-        \(line("coins") { Double($0.finalCoins) })
-        \(line("flock") { Double($0.finalFlock) })
-        \(line("breed book") { Double($0.breedBook) })
-        \(line("eggs/day", "%.2f") { $0.eggsPerDay })
-        \(line("egg income") { Double($0.coinsFromEggs) })
-        \(line("show income") { Double($0.coinsFromShows) })
-        \(line("hatched") { Double($0.chicksHatched) })
-        \(line("fox visits") { Double($0.foxVisits) })
-        """
+            Balance report — \(reports.count) games × \(days) days
+            \(line("coins") { Double($0.finalCoins) })
+            \(line("flock") { Double($0.finalFlock) })
+            \(line("breed book") { Double($0.breedBook) })
+            \(line("eggs/day", "%.2f") { $0.eggsPerDay })
+            \(line("egg income") { Double($0.coinsFromEggs) })
+            \(line("show income") { Double($0.coinsFromShows) })
+            \(line("hatched") { Double($0.chicksHatched) })
+            \(line("fox visits") { Double($0.foxVisits) })
+            """
     }
 }

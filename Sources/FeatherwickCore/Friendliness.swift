@@ -49,11 +49,12 @@ public enum Handling: String, Hashable, Codable, Sendable {
     /// Chicks learn fastest. A mother hen keeps her chicks wary of people, so they learn at half speed.
     static func gain(_ kind: Handling, for bird: Bird, withMotherHen: Bool, day: Int, rules r: Rules) -> Double {
         let base = kind == .pet ? r.petTamenessGain : r.treatTamenessGain
-        let stage = switch bird.stage(onDay: day, rules: r) {
-        case .chick: r.chickHandlingBoost
-        case .grower: r.growerHandlingBoost
-        case .adult: 1.0
-        }
+        let stage =
+            switch bird.stage(onDay: day, rules: r) {
+            case .chick: r.chickHandlingBoost
+            case .grower: r.growerHandlingBoost
+            case .adult: 1.0
+            }
         let mother = withMotherHen ? r.motherHenHandlingFactor : 1
         return base * stage * mother * (1 - bird.currentTameness)
     }

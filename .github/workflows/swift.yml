@@ -11,6 +11,11 @@ jobs:
     container: swift:6.0-noble
     steps:
       - uses: actions/checkout@v5
+      - name: Check formatting
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          swift format --in-place --recursive --parallel Package.swift Sources Tests
+          git diff --exit-code || { echo "::error::Run: swift format --in-place --recursive Package.swift Sources Tests"; exit 1; }
       - name: Build
         run: swift build
       - name: Test

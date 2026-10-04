@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 struct SaveFormatTests {
@@ -42,7 +43,7 @@ struct SaveFormatTests {
         let data = try Self.fixture("save-v0")
         let game = try SaveFormat.decode(data)
         #expect(game.state.day == 25)
-        #expect(game.rng == SeededRNG(seed: 17026080509101393278))  // big UInt64 survives
+        #expect(game.rng == SeededRNG(seed: 17_026_080_509_101_393_278))  // big UInt64 survives
         let birds = game.state.ownedBirds
         #expect(birds.contains { $0.sex == .hen } && birds.contains { $0.sex == .rooster })
         // The starter rooster was a black Wyandotte: laced (hidden), brown egg genes.
@@ -60,10 +61,13 @@ struct SaveFormatTests {
     }
 
     @Test func aSaveFromANewerGameIsRefused() throws {
-        var json = try #require(JSONSerialization.jsonObject(with: SaveFormat.encode(Self.busyGame())) as? [String: Any])
+        var json = try #require(
+            JSONSerialization.jsonObject(with: SaveFormat.encode(Self.busyGame())) as? [String: Any])
         json["version"] = SaveFormat.currentVersion + 1
         let data = try JSONSerialization.data(withJSONObject: json)
-        #expect(throws: SaveFormat.LoadError.tooNew(version: SaveFormat.currentVersion + 1)) { try SaveFormat.decode(data) }
+        #expect(throws: SaveFormat.LoadError.tooNew(version: SaveFormat.currentVersion + 1)) {
+            try SaveFormat.decode(data)
+        }
     }
 
     @Test(arguments: ["", "[]", "{}", "{\"version\": 1}", "not json"])

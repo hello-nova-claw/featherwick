@@ -1,13 +1,15 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 /// A game that has started with a known starter chick (an Orpington of the given sex).
 func startedGame(sex: Sex, rules: Rules = .standard, seed: UInt64 = 1) -> (GameState, SeededRNG) {
     var rng = SeededRNG(seed: seed)
     var s = Engine.newGame(rules: rules, using: &rng)
-    let chick = Bird(id: makeID(using: &rng), name: "", breed: .orpington,
-                     genome: Breed.orpington.purebred(sex), hatchDay: 0, origin: "Neighbour")
+    let chick = Bird(
+        id: makeID(using: &rng), name: "", breed: .orpington,
+        genome: Breed.orpington.purebred(sex), hatchDay: 0, origin: "Neighbour")
     s.phase = .choosingStarter([chick])
     _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
     return (s, rng)
@@ -34,7 +36,10 @@ struct EngineTests {
     @Test func newGameOffersOneChickPerStarterBreed() {
         var rng = SeededRNG(seed: 9)
         let s = Engine.newGame(using: &rng)
-        guard case .choosingStarter(let chicks) = s.phase else { Issue.record("not choosing"); return }
+        guard case .choosingStarter(let chicks) = s.phase else {
+            Issue.record("not choosing")
+            return
+        }
         #expect(Set(chicks.map(\.breed)) == Set(Breed.starters))
         #expect(chicks.allSatisfy { !$0.revealed && $0.hatchDay == 0 })
         #expect(!chicks.contains { $0.breed == .silkie })
@@ -46,7 +51,10 @@ struct EngineTests {
         #expect(Engine.apply(.feed, to: &s, using: &rng) == [.rejected(.chooseStarterFirst)])
         #expect(Engine.apply(.chooseStarter(index: 5, name: "x"), to: &s, using: &rng) == [.rejected(.noSuchChick)])
         let ev = Engine.apply(.chooseStarter(index: 1, name: "Pip"), to: &s, using: &rng)
-        guard case .starterChosen = ev.first else { Issue.record("no starter"); return }
+        guard case .starterChosen = ev.first else {
+            Issue.record("no starter")
+            return
+        }
         #expect(s.brooder.count == 1 && s.brooder[0].name == "Pip")
     }
 
@@ -95,11 +103,16 @@ struct EngineTests {
     @Test func cartonHoldsTwelve() {
         var (s, rng) = startedGame(sex: .hen)
         let mother = s.brooder[0].id
-        s.nest = (0..<15).map { _ in Egg(id: makeID(using: &rng), layDay: 0, motherID: mother, colour: .brown, speckled: false) }
+        s.nest = (0..<15).map { _ in
+            Egg(id: makeID(using: &rng), layDay: 0, motherID: mother, colour: .brown, speckled: false)
+        }
         #expect(Engine.apply(.collectEggs, to: &s, using: &rng) == [.eggsCollected(count: 12, leftInNest: 3)])
         #expect(Engine.apply(.collectEggs, to: &s, using: &rng) == [.rejected(.cartonFull)])
         let coins = s.coins
-        #expect(Engine.apply(.sellEggs, to: &s, using: &rng) == [.eggsSold(count: 12, coins: 12 * s.rules.brownEggPrice, stale: 0)])
+        #expect(
+            Engine.apply(.sellEggs, to: &s, using: &rng) == [
+                .eggsSold(count: 12, coins: 12 * s.rules.brownEggPrice, stale: 0)
+            ])
         #expect(s.coins == coins + 12 * s.rules.brownEggPrice)
     }
 
@@ -121,7 +134,9 @@ struct EngineTests {
         var (s, rng) = startedGame(sex: .hen, rules: r)
         while s.day < r.adultAge - 1 { night(&s, &rng) }
         let mother = s.coop[0].id
-        s.nest = (0..<s.nestCapacity).map { _ in Egg(id: makeID(using: &rng), layDay: s.day, motherID: mother, colour: .brown, speckled: false) }
+        s.nest = (0..<s.nestCapacity).map { _ in
+            Egg(id: makeID(using: &rng), layDay: s.day, motherID: mother, colour: .brown, speckled: false)
+        }
         s.rules.broodyChance = [:]
         let ev = night(&s, &rng)
         #expect(ev.contains(.eggBroken(by: mother)))
@@ -134,14 +149,19 @@ struct EngineTests {
         var (s, rng) = startedGame(sex: .hen, rules: r)
         while s.day < r.adultAge - 1 { night(&s, &rng) }
         let hen = s.coop[0].id
-        s.nest = (0..<r.broodyNestEggs).map { _ in Egg(id: makeID(using: &rng), layDay: s.day, motherID: hen, colour: .brown, speckled: false) }
+        s.nest = (0..<r.broodyNestEggs).map { _ in
+            Egg(id: makeID(using: &rng), layDay: s.day, motherID: hen, colour: .brown, speckled: false)
+        }
         #expect(night(&s, &rng).contains(.wentBroody(hen)))
         _ = Engine.apply(.collectEggs, to: &s, using: &rng)
         var laidWhileBroody = false
         var ended = false
         for _ in 0..<r.broodyDays {
             let ev = night(&s, &rng)
-            if ev.contains(.broodyEnded(hen)) { ended = true; break }
+            if ev.contains(.broodyEnded(hen)) {
+                ended = true
+                break
+            }
             if ev.contains(where: { if case .eggLaid = $0 { true } else { false } }) { laidWhileBroody = true }
         }
         #expect(!laidWhileBroody)
@@ -149,7 +169,13 @@ struct EngineTests {
     }
 
     @Test func hensKeepLayingWithEggsInTheNest() {
-        var (s, rng) = startedGame(sex: .hen, rules: { var r = calmRules(); r.broodyChance = [:]; return r }())
+        var (s, rng) = startedGame(
+            sex: .hen,
+            rules: {
+                var r = calmRules()
+                r.broodyChance = [:]
+                return r
+            }())
         while s.day < s.rules.adultAge { night(&s, &rng) }
         for _ in 0..<3 { night(&s, &rng) }
         #expect(s.nest.count == 4)  // one egg a day, nothing collected
@@ -199,8 +225,9 @@ struct EngineTests {
         night(&s, &rng, close: false)
         s.rules.foxChance = 0
         // The player fills the empty perch with another bird.
-        let other = Bird(id: makeID(using: &rng), name: "Other", breed: .araucana,
-                         genome: Breed.araucana.purebred(.hen), hatchDay: 0, origin: "Test", revealed: true)
+        let other = Bird(
+            id: makeID(using: &rng), name: "Other", breed: .araucana,
+            genome: Breed.araucana.purebred(.hen), hatchDay: 0, origin: "Test", revealed: true)
         s.coop.append(other)
         for _ in 0..<5 {
             let ev = night(&s, &rng)

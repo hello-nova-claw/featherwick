@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import FeatherwickCore
 
 struct StoryTests {
@@ -29,10 +30,12 @@ struct StoryTests {
         #expect(Engine.storyAwaitingDelivery(s) == "broodySilkie")
 
         // Not enough known-fertile eggs yet.
-        #expect(Engine.apply(.deliver(story: "broodySilkie"), to: &s, using: &rng)
+        #expect(
+            Engine.apply(.deliver(story: "broodySilkie"), to: &s, using: &rng)
                 == [.rejected(.needFertileEggs(need: 3, have: 0))])
         Self.fertileEggs(3, &s, &rng)
-        #expect(Engine.apply(.deliver(story: "broodySilkie"), to: &s, using: &rng)
+        #expect(
+            Engine.apply(.deliver(story: "broodySilkie"), to: &s, using: &rng)
                 == [.delivered("broodySilkie"), .storyStep("broodySilkie", step: "sitting")])
         #expect(s.carton.isEmpty)
         #expect(Engine.storyAwaitingDelivery(s) == nil)
@@ -51,13 +54,18 @@ struct StoryTests {
 
         // Now the shop sells Silkie pullets.
         let bought = Engine.apply(.buyBreed(.silkie), to: &s, using: &rng)
-        guard case .boughtBreed(let id, .silkie, let cost)? = bought.first else { Issue.record("no purchase: \(bought)"); return }
+        guard case .boughtBreed(let id, .silkie, let cost)? = bought.first else {
+            Issue.record("no purchase: \(bought)")
+            return
+        }
         #expect(cost == s.rules.rareBreedPulletPrice && s.bird(id)?.breed == .silkie)
 
         // Rewards are given once: more nights bring nothing new.
         var later: [GameEvent] = []
         for _ in 0..<10 { later += Self.night(&s, &rng) }
-        #expect(!later.contains { if case .storyGift = $0 { true } else if case .storyStarted = $0 { true } else { false } })
+        #expect(
+            !later.contains { if case .storyGift = $0 { true } else if case .storyStarted = $0 { true } else { false } }
+        )
     }
 
     @Test func theStoryWaitsForTheFirstHatch() {
@@ -77,7 +85,10 @@ struct StoryTests {
             s.coop.append(Engine.youngBird(.rooster, origin: "t", s, &rng))
         }
         var ev: [GameEvent] = []
-        for _ in 0..<8 { ev += Self.night(&s, &rng); #expect(s.coop.count <= s.perches) }
+        for _ in 0..<8 {
+            ev += Self.night(&s, &rng)
+            #expect(s.coop.count <= s.perches)
+        }
         #expect(ev.count(where: { $0 == .storyGiftWaitingForRoom("broodySilkie") }) == 1)  // said once, not nightly
         #expect(!ev.contains { if case .storyGift = $0 { true } else { false } })
         // Make room. Birds boarding with the neighbour come home first, so free perches until the gift fits.
