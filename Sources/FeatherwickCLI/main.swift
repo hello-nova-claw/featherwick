@@ -225,12 +225,13 @@ func cardText(_ c: JudgeCard) -> String {
     return "  \(c.showClass.name): \(grade) (\(c.score)/100) · " + c.notes.map(noteText).joined(separator: ", ")
 }
 
-/// Finds a bird by name, ignoring case. "chick 3" can be typed as "chick3" too.
+/// Finds a bird by name, matched the way names are kept unique (`NameBook.key`): case and spaces
+/// don't count, so "chick 3" can be typed as "chick3" too.
 /// Read-only and renaming commands pass `includeLost` so a bird the fox scared off can still be reached.
 func findBird(_ query: String, _ s: GameState, includeLost: Bool = false) -> Bird? {
-    let q = query.lowercased().replacingOccurrences(of: " ", with: "")
+    let q = NameBook.key(query)
     let birds = s.birdsAtHome + s.boarding + (includeLost ? s.lost.map(\.bird) : [])
-    return birds.first { $0.name.lowercased().replacingOccurrences(of: " ", with: "") == q }
+    return birds.first { NameBook.key($0.name) == q }
 }
 
 func text(_ e: GameEvent, _ s: GameState) -> String? {
