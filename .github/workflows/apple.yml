@@ -15,7 +15,7 @@ jobs:
   macos-and-ios:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - run: swift --version
       - name: Build and test on macOS (warnings are errors)
         run: |
