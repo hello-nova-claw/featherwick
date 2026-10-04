@@ -71,6 +71,11 @@ Most new content is a table entry. See README "Data layer" and the feature secti
 ## Workflow
 
 - Add or update tests in the matching suite for each change. Run `swift test` before a commit.
+- CI (`.github/workflows/swift.yml`) runs `swift build` and `swift test` on Linux (`swift:6.0-noble`)
+  for every pull request. Code must build on Linux too: no Apple-only APIs in Core.
 - After a `Rules` balance change, run `sim` and check `SimulationTests` still pass.
+- Prefer the standard library: `count(where:)`, tuple compares for sort tie-breaks, Hashable
+  structs (not joined strings) as dictionary keys. A ranked enum with String raw values conforms
+  to `CaseOrdered` instead of writing its own `<`.
 - Code style: short doc comments in plain English that say *why*. Match the file you are in.
 - Docs (README, this file) use Simplified Technical English: short sentences, one idea each.
