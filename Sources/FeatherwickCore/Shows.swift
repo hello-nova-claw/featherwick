@@ -48,6 +48,21 @@ public enum ShowClass: Hashable, Codable, Sendable {
         case .eggs(let c): "\(c.rawValue.capitalized) eggs"
         }
     }
+
+    /// The kind of class. Prizes, field size and rival strength are set per kind (see `Rules.show*`).
+    public var kind: ShowKind {
+        switch self {
+        case .breed: .breed
+        case .pet: .pet
+        case .eggs: .eggs
+        }
+    }
+}
+
+/// The three kinds of class. Ranked by difficulty: pet (easy) < eggs < breed (hard).
+/// A harder kind has a bigger, stronger field and pays more coins.
+public enum ShowKind: String, Hashable, Codable, Sendable, CaseIterable {
+    case pet, eggs, breed
 }
 
 /// A breed's show standard.

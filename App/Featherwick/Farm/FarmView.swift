@@ -46,6 +46,8 @@ struct FarmView: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
     @State private var sheet: FarmSheet?
+    /// The show on screen. Set from `store.showReport` once no sheet is in the way.
+    @State private var showDay: ShowReport?
 
     var body: some View {
         ZStack {
@@ -90,8 +92,12 @@ struct FarmView: View {
             .foregroundStyle(palette.ink)
             ToastStack()
         }
-        .sheet(item: $sheet) { which in
+        .sheet(item: $sheet, onDismiss: presentShowIfWaiting) { which in
             content(for: which)
+                .environment(\.palette, palette)
+        }
+        .fullScreenCover(item: $showDay, onDismiss: { store.finishShow() }) { report in
+            ShowDayView(report: report)
                 .environment(\.palette, palette)
         }
         .onChange(of: store.openRequest) { _, request in
@@ -100,6 +106,25 @@ struct FarmView: View {
                 store.openRequest = nil
             }
         }
+        .onChange(of: store.showReport) { _, report in showReportChanged(report) }
+    }
+
+    /// Show day takes the whole screen. A place sheet closes first (one presentation at a time);
+    /// settings stay open, so the test tools are not cut off, and the show waits until they close.
+    private func showReportChanged(_ report: ShowReport?) {
+        guard let report else {
+            showDay = nil
+            return
+        }
+        switch sheet {
+        case nil: showDay = report
+        case .settings?: break
+        default: sheet = nil
+        }
+    }
+
+    private func presentShowIfWaiting() {
+        if showDay == nil, let report = store.showReport { showDay = report }
     }
 
     @ViewBuilder

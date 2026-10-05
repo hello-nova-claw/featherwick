@@ -30,7 +30,7 @@ public enum Command: Hashable, Codable, Sendable {
     case deliver(story: String)
     /// Buy a pullet of a breed a storyline has unlocked at Speckle & Down.
     case buyBreed(Breed)
-    /// Enter a bird in the next county show. It competes in its breed class, or the pet class.
+    /// Enter a bird in the next county show in its default class: its breed class, or the pet class.
     case enterShow(UUID)
     /// Enter your best matched plate of eggs in the next county show.
     case enterEggs
@@ -44,6 +44,12 @@ public enum Command: Hashable, Codable, Sendable {
     case sellChosenEggs([UUID])
     /// Hold one egg up to a light: shows if it is fertile. Needs the candling lesson.
     case candleEgg(UUID)
+    /// Enter a bird in the next county show in a chosen class (see `Engine.eligibleClasses`).
+    case enterShowIn(UUID, ShowClass)
+    /// Enter exactly these carton eggs as a plate in the next county show: a matched plate of 3.
+    case enterEggPlate([UUID])
+    /// Buy Speckle & Down's daily special (see Shop.swift). One a day.
+    case buySpecial
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -84,11 +90,11 @@ public enum Rejection: Hashable, Codable, Sendable {
     case breedNotInShop
     case nameTaken
     case nameTooLong(max: Int)
-    /// A chick, or a bird not at home, cannot be shown.
+    /// A chick cannot be shown, and a bird may enter only the classes it is eligible for.
     case notShowEligible
     /// That bird is already entered in the next show.
     case alreadyEntered
-    /// No matched plate of 3 eggs in the carton to enter.
+    /// No matched plate of 3 eggs in the carton to enter, or the chosen eggs do not make one.
     case noMatchedPlate
     case noPremiumFeed
     case alreadyFedPremium
@@ -102,6 +108,8 @@ public enum Rejection: Hashable, Codable, Sendable {
     case cannotCandleYet
     /// That egg has already been held up to the light.
     case alreadyCandled
+    /// Today's special is already sold. A new one comes tomorrow.
+    case specialSoldOut
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -190,6 +198,10 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case roosterAdvice
     /// A goal-ladder milestone was reached this night (see Milestone.swift). Awarded once.
     case milestoneReached(String)
+    /// Treats won at the county show (the pet class pays treats). Added to the bag.
+    case showTreatsWon(treats: Int)
+    /// Bought Speckle & Down's daily special. The bird is in the coop, waiting for a name.
+    case boughtSpecial(UUID, cost: Int)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -208,7 +220,8 @@ public enum Engine {
                 ).withFounderQuality().withTameness(rules.brooderChickTameness))
         }
         var s = GameState(rules: rules, phase: .choosingStarter(chicks))
-        s.canCandle = false  // learned from the neighbour after the first hatch
+        s.canCandle = false  // learned from the neighbour after the first hatch, or for a story
+        s.shopSeed = chicks.first.map { ShopSpecial.seed(from: $0.id) } ?? 0  // no extra RNG draw
         return s
     }
 
@@ -411,16 +424,25 @@ public enum Engine {
             return [.coopUpgraded(perches: s.perches, cost: cost)]
 
         case .enterShow(let id):
-            return enterShow(id, &s)
+            return enterShow(id, in: nil, &s)
+
+        case .enterShowIn(let id, let cls):
+            return enterShow(id, in: cls, &s)
 
         case .enterEggs:
             return enterEggs(&s)
+
+        case .enterEggPlate(let ids):
+            return enterEggPlate(ids, &s)
+        case .buySpecial:
+            return buySpecial(&s, &rng)
         }
     }
 
     // MARK: - Shop and safety net
 
-    /// A young bird from a local flock: a starter breed, random colour, breed and sex known.
+    /// A young bird from a local flock: a random starter breed and colour. Breed and sex are known once
+    /// the keeper has it (the shop list does not name the breed: it is a surprise).
     static func youngBird<R: RandomNumberGenerator>(
         _ sex: Sex, origin: String, _ s: GameState, _ rng: inout R,
         breed chosen: Breed? = nil
@@ -959,7 +981,7 @@ public enum Engine {
     /// A bird leaves the flock for a good home in Featherwick. The keeper is paid what it is worth.
     /// The caller has already taken it out of its group.
     static func sendToNewHome(_ bird: Bird, _ s: inout GameState) -> Int {
-        let coins = s.rules.rehomeValue(of: bird, onDay: s.day)
+        let coins = s.rehomeValue(of: bird)
         s.coins += coins
         var bird = bird
         bird.waitingSinceDay = nil

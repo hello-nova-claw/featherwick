@@ -49,8 +49,8 @@ public struct Rules: Codable, Hashable, Sendable {
     public var hensPerRooster = 5  // one rooster is always fine; beyond that, 1 per 5 hens
     public var extraRoosterLayPenalty = 0.15
 
-    // Speckle & Down shop
-    public var pulletPrice = 25  // a young hen, breed and sex known
+    // Speckle & Down shop. Basic stock is a random starter breed: the keeper learns it on purchase.
+    public var pulletPrice = 25  // a young hen
     public var cockerelPrice = 15  // a young rooster
     public var fertileEggPrice = 6  // from a local flock, already candled
 
@@ -105,12 +105,21 @@ public struct Rules: Codable, Hashable, Sendable {
 
     // County show (see ShowEvent.swift). A recurring event that rewards selective breeding, taming
     // and egg quality. Entering costs a small fee (a coin sink); ribbons pay out.
+    // Each kind of class has its own difficulty and prizes: pet (easy) < eggs < breed (hard).
     public var showIntervalDays = 28  // one show each season
-    public var showCompetitors = 5  // AI entries in each class
     public var showEntryFee = 3  // per entry, paid when you enter
-    public var showPrizeFirst = 20
-    public var showPrizeSecond = 10
-    public var showPrizeThird = 5
+    /// AI entries in each class. The field grows with difficulty.
+    public var showCompetitorsByKind: [ShowKind: Int] = [.pet: 3, .eggs: 5, .breed: 7]
+    /// Each AI entry is the best of this many random candidates, so harder fields are stronger.
+    public var showRivalPicks: [ShowKind: Int] = [.pet: 1, .eggs: 2, .breed: 3]
+    /// Coins for 1st, 2nd and 3rd.
+    public var showPrizeCoins: [ShowKind: [Int]] = [.pet: [8, 4, 2], .eggs: [15, 8, 4], .breed: [30, 15, 8]]
+    /// Treats for 1st, 2nd and 3rd. The pet class pays in treats too.
+    public var showPrizeTreats: [ShowKind: [Int]] = [.pet: [3, 2, 1], .eggs: [0, 0, 0], .breed: [0, 0, 0]]
+    /// Coins are multiplied by this (and rounded) in the kind of class the season's show features.
+    public var showFeaturedBonus = 1.5
+    /// The Winter Championship draws the strongest field: every class's rival picks go up by this.
+    public var winterChampionshipExtraPicks = 1
     // Flock turnover (cozy: hens slow with age and retire, they never die).
     public var layDeclineStartDays = 252  // full for about nine in-game months before slowing
     public var layDeclineFloor = 0.4  // the least a laying hen's age factor falls to
@@ -125,6 +134,20 @@ public struct Rules: Codable, Hashable, Sendable {
     // flock survives they free-range: they come back fed (no feeding needed) and a little the better for it.
     public var forageLayBonus = 0.1  // hens lay a little more readily the day after foraging
     public var forageConditionBonus = 0.1  // foraging birds show in slightly better condition
+
+    // Rehoming a fine bird (see `rehomeValue`). An average bird gets no quality bonus; a top bird
+    // is worth several times a plain one.
+    public var rehomeTypeBonus = 16  // a perfect show type; scaled down to 0 at average type
+    public var rehomeEggShapeBonus = 6  // a laying hen with perfect egg shape; 0 at average
+    public var rehomeRibbonBonus = 6  // each 1st, 2nd or 3rd place the bird won at a show
+    public var rehomeMaxRibbons = 5  // ribbons past this many add no more
+    public var rehomeStandardPurebredFactor = 1.5  // quality bonuses count more on a purebred in a standard colour
+
+    // Speckle & Down's daily special: one young bird of a named breed, sex and colour.
+    public var shopSpecialPulletPrice = 35
+    public var shopSpecialCockerelPrice = 20
+    public var shopRareChance = 0.08  // chance the special is a rare colour for its breed
+    public var shopRarePremium = 15  // added to the price of a rare-colour special
 
     public init() {}
 
@@ -141,16 +164,21 @@ public struct Rules: Codable, Hashable, Sendable {
 
     public static let standard = Rules()
 
-    /// Coins a neighbour pays to adopt a bird. Rarer birds are worth more.
+    /// Coins a neighbour pays to adopt a bird. Rarer and finer birds are worth more.
     ///
     /// Anti-gaming rule: only traits the player can already see count. An unrevealed chick is worth
     /// the base price, so neither the price nor the `value` check leaks hidden genes, and hatching
     /// chicks to sell them unseen is not a shortcut. Egg traits count once a hen is laying.
-    public func rehomeValue(of bird: Bird, onDay day: Int) -> Int {
+    ///
+    /// Quality counts too: show type (a keeper can see it in a grown bird), egg shape for a laying hen,
+    /// and `ribbons` (1st to 3rd places the bird won). A purebred in a standard colour gets more for
+    /// its quality, because breeders pay for good stock. `GameState.rehomeValue(of:)` counts the ribbons.
+    public func rehomeValue(of bird: Bird, onDay day: Int, ribbons: Int = 0) -> Int {
         let stage = bird.stage(onDay: day, rules: self)
         var value = rehomeBase[stage] ?? 0
         guard bird.revealed else { return value }
         let p = bird.phenotype
+        value += qualityBonus(of: bird, onDay: day, ribbons: ribbons)
         if p.colour == .lavender { value += rareLavenderOrSilkie }
         if p.isSilkieFeathered && !bird.breed.definition.fixes(Feathering.silkie) { value += rareLavenderOrSilkie }
         if p.colour == .splash { value += rareSplash }
@@ -162,6 +190,25 @@ public struct Rules: Codable, Hashable, Sendable {
             if p.eggIsSpeckled { value += rareSpeckledEggs }
         }
         return value
+    }
+
+    /// The part of the rehome value that comes from quality: type, egg shape and ribbons.
+    /// Only above-average quality counts, so a plain bird keeps its plain price.
+    func qualityBonus(of bird: Bird, onDay day: Int, ribbons: Int) -> Int {
+        let stage = bird.stage(onDay: day, rules: self)
+        // 0 at average (or below), 1 at the best possible score.
+        func aboveAverage(_ trait: QuantitativeTrait) -> Double {
+            max(0, trait.fraction(bird.genome) - 0.5) * 2
+        }
+        var bonus = aboveAverage(.showType) * Double(rehomeTypeBonus)
+        if bird.sex == .hen, stage == .adult, !bird.isRetired(onDay: day, rules: self) {
+            bonus += aboveAverage(.eggShape) * Double(rehomeEggShapeBonus)
+        }
+        bonus += Double(min(max(0, ribbons), rehomeMaxRibbons) * rehomeRibbonBonus)
+        if bird.isPurebred, ShowStandard(bird.breed).accepts(Appearance(bird.phenotype)) {
+            bonus *= rehomeStandardPurebredFactor
+        }
+        return Int(bonus.rounded())
     }
 
     /// Roosters in the coop beyond what the hens can bear. Cockerels count too.

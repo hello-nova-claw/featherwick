@@ -158,6 +158,10 @@ public struct GameState: Hashable, Codable, Sendable {
     /// True when the flock free-ranged and foraged last night (door left open and survived).
     /// Gives a small lay and condition bonus for the day; recomputed each night. See `Rules.forage*`.
     public var foragedToday = false
+    /// Seeds Speckle & Down's daily special (see Shop.swift). 0 in saves from before the special.
+    public var shopSeed: UInt64 = 0
+    /// The day the keeper last bought the daily special. One a day.
+    public var specialBoughtDay: Int?
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules
@@ -169,8 +173,11 @@ public struct GameState: Hashable, Codable, Sendable {
         cartons = rules.startCartons
     }
 
-    public var season: Season {
-        Season.allCases[(day / rules.daysPerSeason) % Season.allCases.count]
+    public var season: Season { season(onDay: day) }
+
+    /// The season on any day, past or future (for example, the day of the next show).
+    public func season(onDay day: Int) -> Season {
+        Season.allCases[(max(0, day) / max(1, rules.daysPerSeason)) % Season.allCases.count]
     }
 
     public var cartonCapacity: Int { cartons * rules.cartonSize }
@@ -213,4 +220,19 @@ public struct GameState: Hashable, Codable, Sendable {
 
     /// Grown birds with no perch: waiting in the brooder or boarding with the neighbour.
     public var birdsWaitingForPerch: [Bird] { (brooder + boarding).filter { $0.waitingSinceDay != nil } }
+
+    /// Ribbons (1st to 3rd) this bird won at county shows. Bird classes only, matched by name.
+    public func ribbons(for bird: Bird) -> Int {
+        showResults.count(where: { r in
+            if case .eggs = r.showClass { return false }
+            // Results from before birdID existed match by name.
+            let isBird = r.birdID.map { $0 == bird.id } ?? (r.entrantName == bird.name)
+            return isBird && (1...3).contains(r.placing)
+        })
+    }
+
+    /// Coins a neighbour pays for this bird today, ribbons included. Front ends show this price.
+    public func rehomeValue(of bird: Bird) -> Int {
+        rules.rehomeValue(of: bird, onDay: day, ribbons: ribbons(for: bird))
+    }
 }

@@ -132,7 +132,18 @@ extension Engine {
             s.stories[story.id] = progress
             if progress.step == story.steps.count { ev += giveRewards(story, &s, &rng) }
         }
-        return ev
+        return ev + storyCandlingLesson(&s)
+    }
+
+    /// A story that asks for eggs known to be fertile needs a keeper who can candle. If the keeper
+    /// can't yet, the neighbour teaches candling now, so the step is never stuck.
+    static func storyCandlingLesson(_ s: inout GameState) -> [GameEvent] {
+        guard !s.canCandle, let id = storyAwaitingDelivery(s), let story = Storylines.story(id),
+            let step = s.stories[id]?.step, story.steps.indices.contains(step),
+            case .deliverFertileEggs = story.steps[step].goal
+        else { return [] }
+        s.canCandle = true
+        return [.learnedCandling]
     }
 
     static func goalMet(_ goal: StoryGoal, _ s: GameState, since day: Int) -> Bool {
@@ -195,7 +206,7 @@ extension Engine {
         s.stories[storyID] = progress
         var ev: [GameEvent] = [.delivered(storyID)]
         if progress.step < story.steps.count { ev.append(.storyStep(storyID, step: story.steps[progress.step].id)) }
-        return ev
+        return ev + storyCandlingLesson(&s)
     }
 
     /// The story waiting for the player to hand something over, if any.

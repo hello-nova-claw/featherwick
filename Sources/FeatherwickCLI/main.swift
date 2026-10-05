@@ -109,10 +109,12 @@ let help = """
       judge eggs           practice judging: your best plate of 3 matched eggs
       shows                the county show: schedule, your entries, and the trophy case
       enter <name>         enter a bird in the next show (breed class, or pet class)
+      enter <name> pet     enter a purebred adult in the pet class instead of its breed class
       enter eggs           enter your best plate of 3 matched eggs
       rehome <name>        a neighbour adopts the bird and pays you (rarer birds pay more)
       shop                 see what Speckle & Down sells
-      buy pullet|cockerel|egg   buy a young hen, a young rooster, or a fertile egg
+      buy pullet|cockerel|egg   buy a young hen, a young rooster, or a fertile egg (breed: a surprise)
+      buy special          buy today's special: a named breed, sex and colour (one a day)
       buy treats           a bag of mealworm treats
       buy feed             a sack of premium feed (several days)
       pet <name>           pick a bird up and hold it (once a day; chicks learn trust fastest)
@@ -184,17 +186,18 @@ while true {
         case "egg", "fertile": run(.buy(.fertileEgg))
         case "treats", "treat", "mealworms": run(.buy(.treats))
         case "feed", "premium", "premiumfeed": run(.buy(.premiumFeed))
+        case "special": run(.buySpecial)
         case let other where game.state.shopBreeds.contains(where: { $0.rawValue == other }):
             run(.buyBreed(Breed(rawValue: other)))
-        default: print("You can buy: pullet, cockerel, egg, treats, feed, incubator. Basic feed is free.")
+        default: print("You can buy: pullet, cockerel, egg, special, treats, feed, incubator. Basic feed is free.")
         }
     case "shop":
         let r = game.state.rules
         print(
             """
             Speckle & Down (you have \(game.state.coins) coins):
-              pullet      a young hen, breed known        \(r.pulletPrice) coins
-              cockerel    a young rooster, breed known    \(r.cockerelPrice) coins
+              pullet      a young hen, breed a surprise   \(r.pulletPrice) coins
+              cockerel    a young rooster, breed a surprise \(r.cockerelPrice) coins
               egg         a fertile egg from a local flock \(r.fertileEggPrice) coins
               incubator   holds \(r.bigIncubatorSize) eggs                   \(r.incubatorPrice) coins
               treats      \(r.treatBagSize) mealworms                        \(r.treatBagPrice) coins
@@ -204,6 +207,11 @@ while true {
             print(
                 "  \(breed.rawValue.padding(toLength: 11, withPad: " ", startingAt: 0)) a \(breed.definition.displayName) pullet          \(r.rareBreedPulletPrice) coins"
             )
+        }
+        if let special = game.state.todaysSpecial {
+            print("  special     today only: \(shopSpecialText(special))")
+        } else {
+            print("  special     sold today. A new one comes tomorrow.")
         }
     case "accept":
         run(.acceptTrade)
@@ -243,9 +251,7 @@ while true {
             print("Use: value <name>")
             break
         }
-        print(
-            "A neighbour would pay \(game.state.rules.rehomeValue(of: bird, onDay: game.state.day)) coins for \(bird.name)."
-        )
+        print("A neighbour would pay \(game.state.rehomeValue(of: bird)) coins for \(bird.name).")
     case "pet", "cuddle", "treat":
         guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else {
             print("Use: \(verb) <name>")
@@ -333,11 +339,15 @@ while true {
             run(.enterEggs)
             break
         }
-        guard let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else {
+        // "enter <name> pet" picks the pet class; a bird whose own name ends in "pet" still works.
+        let named = words.dropFirst().joined(separator: "")
+        let petClass = words.count > 2 && words.last == "pet" && findBird(named, game.state) == nil
+        let name = petClass ? words.dropFirst().dropLast().joined(separator: "") : named
+        guard let bird = findBird(name, game.state) else {
             print("There is no bird called \(words[1]).")
             break
         }
-        run(.enterShow(bird.id))
+        run(petClass ? Command.enterShowIn(bird.id, .pet) : .enterShow(bird.id))
     case "upgrade":
         guard words.count > 1, words[1] == "coop" else {
             print("You can upgrade: coop")

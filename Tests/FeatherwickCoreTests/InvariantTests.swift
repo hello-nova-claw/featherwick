@@ -110,6 +110,8 @@ struct InvariantTests {
         // Busier games: more fertile eggs and more broody hens.
         rules.fertileChance = 0.9
         rules.broodyChance = [.silkie: 0.8, .orpington: 0.5, .wyandotte: 0.4, .araucana: 0.4]
+        // Small nest boxes, so full nests and floor eggs happen in most games, not only a lucky few.
+        rules.eggsPerNestBox = 2
         var rng = SeededRNG(seed: seed)
         var pick = SeededRNG(seed: seed &* 7919)
         var s = Engine.newGame(rules: rules, using: &rng)

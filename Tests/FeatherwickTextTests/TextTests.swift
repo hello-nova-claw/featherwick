@@ -66,4 +66,35 @@ struct TextTests {
             #expect(!t.hint.isEmpty)
         }
     }
+
+    /// 4th, 5th and 6th used to show as "3rd" in the app. Every placing needs its own word.
+    @Test func placingsHaveTheirOwnOrdinals() {
+        #expect(placingText(0) == "not placed")
+        #expect(placingText(1) == "1st")
+        #expect(placingText(2) == "2nd")
+        #expect(placingText(3) == "3rd")
+        #expect(placingText(4) == "4th")
+        #expect(placingText(6) == "6th")
+        #expect(placingText(11) == "11th")
+        #expect(placingText(12) == "12th")
+        #expect(placingText(21) == "21st")
+        #expect(placingText(22) == "22nd")
+    }
+
+    /// The daily special names breed, sex and colour; basic stock never names its breed before purchase.
+    @Test func theShopSpecialHasWords() {
+        let rare = ShopSpecial(breed: .silkie, sex: .hen, colour: .splash, price: 50, isRare: true)
+        #expect(shopSpecialText(rare) == "Splash Silkie pullet — rare! 50 coins")
+        let laced = ShopSpecial(breed: .wyandotte, sex: .rooster, colour: .buff, price: 20, isRare: false)
+        #expect(shopSpecialText(laced) == "Gold laced Wyandotte cockerel 20 coins")
+
+        var rng = SeededRNG(seed: 4)
+        var s = Engine.newGame(using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        s.coins = 1000
+        for e in Engine.apply(.buySpecial, to: &s, using: &rng) + Engine.apply(.buySpecial, to: &s, using: &rng) {
+            let words = eventText(e, s) ?? ""
+            #expect(!words.isEmpty, "\(e)")
+        }
+    }
 }

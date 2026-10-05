@@ -26,6 +26,7 @@ struct StartingEdgeCases {
         .buyIncubator, .incubate(count: 1), .sit(hen: UUID(), count: 1),
         .rename(UUID(), name: "x"), .rehome(UUID()), .upgradeCoop,
         .incubateEggs([UUID()]), .sitEggs(hen: UUID(), eggs: [UUID()]), .sellChosenEggs([UUID()]),
+        .buySpecial,
     ]
 
     @Test(arguments: allCommandsButChoose)

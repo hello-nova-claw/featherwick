@@ -20,6 +20,18 @@ struct Toast: Identifiable, Hashable {
     var opens: FarmSheet?
 }
 
+/// One county show, as the show screen tells it: the day, the theme, and how each entry placed.
+struct ShowReport: Identifiable, Hashable {
+    let day: Int
+    let theme: ShowTheme
+    /// The player's placings, in the order the engine judged them (class by class).
+    let results: [ShowResult]
+    var id: Int { day }
+
+    var coinsWon: Int { results.reduce(0) { $0 + $1.prize } }
+    var treatsWon: Int { results.reduce(0) { $0 + ($1.treats ?? 0) } }
+}
+
 /// The app's one game. Every button sends a `Command` here; the engine answers with events, which
 /// become log lines through FeatherwickText. The game saves after every command.
 @MainActor @Observable
@@ -30,6 +42,8 @@ final class GameStore {
     private(set) var toasts: [Toast] = []
     /// A sheet something asked to open (a toast's action). The farm opens it and clears this.
     var openRequest: FarmSheet?
+    /// The show that was just held. The farm shows it full screen until the player goes back.
+    private(set) var showReport: ShowReport?
     private var store: SaveStore
     private var nextLogID = 0
 
@@ -82,6 +96,8 @@ final class GameStore {
             if case .rejected = event { rejected = true }
             append(words, rejected: rejected)
         }
+        // Several nights can pass in one go (`fullDays`): the newest show wins.
+        if let report = Self.report(from: events, in: state) { showReport = report }
         persist()
         return events
     }
@@ -97,9 +113,30 @@ final class GameStore {
         }
     }
 
+    /// The player is back from the show.
+    func finishShow() { showReport = nil }
+
+    /// The show held this night, if any. With no entries there is no result to carry the theme, so the
+    /// show day's season names it.
+    private static func report(from events: [GameEvent], in s: GameState) -> ShowReport? {
+        var day: Int?
+        var results: [ShowResult] = []
+        for event in events {
+            switch event {
+            case .showDay(let d): day = d
+            case .showPlacing(let r): results.append(r)
+            default: break
+            }
+        }
+        guard let day else { return nil }
+        let theme = results.first?.theme ?? ShowTheme.forSeason(s.season)
+        return ShowReport(day: day, theme: theme, results: results)
+    }
+
     func newGame(_ difficulty: Difficulty) {
         save = Self.newSave(rules: difficulty.rules)
         log = []
+        showReport = nil
         append("A new game begins (\(difficulty.rawValue)).")
         persist()
     }

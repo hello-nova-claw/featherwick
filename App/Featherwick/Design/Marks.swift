@@ -219,6 +219,33 @@ struct TreatDiamond: View {
     }
 }
 
+/// A show rosette with two tails, in ink: colour is kept for birds and eggs.
+/// 1st is filled, 2nd a solid outline, 3rd a dashed one. Always shown next to the placing in words.
+struct RibbonMark: View {
+    @Environment(\.palette) private var palette
+    let placing: Int
+    var size: CGFloat = 14
+
+    var body: some View {
+        ZStack {
+            tail(angle: 14).offset(x: -size * 0.16, y: size * 0.42)
+            tail(angle: -14).offset(x: size * 0.16, y: size * 0.42)
+            Circle().fill(placing == 1 ? palette.ink : palette.paper)
+                .overlay(Circle().strokeBorder(palette.ink, style: rim))
+                .frame(width: size, height: size)
+                .offset(y: -size * 0.2)
+        }
+        .frame(width: size, height: size * 1.4)
+        .accessibilityHidden(true)
+    }
+
+    private var rim: StrokeStyle { placing == 3 ? Stitch.unknown : StrokeStyle(lineWidth: 1.1) }
+
+    private func tail(angle: Double) -> some View {
+        Rectangle().fill(palette.ink).frame(width: size * 0.26, height: size * 0.6).rotationEffect(.degrees(angle))
+    }
+}
+
 /// Where painted art will go: a dashed box with a quiet label.
 struct ArtPlaceholder: View {
     @Environment(\.palette) private var palette
