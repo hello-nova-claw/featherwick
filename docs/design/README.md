@@ -189,7 +189,8 @@ Top to bottom:
 2. Art area, 240pt tall, art centred (placeholder 200×180).
 3. Name, centred, Caslon Display 54, with a dashed underline that descenders cross. Then the breed line in italic ("a Buff Orpington hen" or, for an unknown breed, "breed still a mystery").
 4. A 2×2 fact grid: Friendliness · Age · Feathers · Lays (hen) or Hen or rooster (chick: "Shows in ~6 days").
-5. Bottom: Cuddle (primary) and Treat (secondary, shows "· 6" remaining) side by side, then Rename and Family tree as text actions.
+5. Ribbons, only after the bird has been to a show: one line per show, newest first ("1st of 8 · Orpington class, day 84, Harvest Show"). The top three get an ink rosette (1st filled, 2nd outlined, 3rd dashed).
+6. Bottom: Cuddle (primary) and Treat (secondary, shows "· 6" remaining) side by side, then Rename and Family tree as text actions. "Enter the show" opens the class choice (see 8a).
 Swipe left or right moves between birds in the same place.
 
 ### 3a — Naming prompt (sheet, top at 330pt)
@@ -207,11 +208,13 @@ Title "Today's eggs", filters (All 7 / Fertile / Clear / Not candled). The carto
 ### 6a — Back fence (sheet, top at 420pt)
 See Dialogue. Tapping a reply advances the conversation ("1 of 3"). Gifts are added to the inventory with a toast.
 
-### 7a — Show judge card (sheet, top at 92pt)
-"Featherwick Autumn Show, hens", the bird name with a dashed underline, the grade ring, the grade word and 4-step scale, three judge's notes in italic separated by dashed rules, the judge's name, and the primary button "Take the ribbon home".
+### 7a — Show day (full screen)
+Opens over the farm on the morning of a show. A place sheet closes first. Context "The county show, day 84" and close, a show-tent art area, the theme name ("Harvest Show") with a dashed underline, and the featured kind ("Featured: breed classes, bonus prizes"). Then one section per class: the class name (Caslon Display 30), "Hard class" (and "featured" when it is), and each of your entries split by dashed rules: rosette, name, "72 of 100", the placing ("1st of 8", "4th of 6, no ribbon"), what it won, and the judge's notes in italic. The judge's notes appear only here. Then "Taken home" with coins and treats, and the primary button "Back to the farm". With no entries, the page says "You didn't enter this time." and gives the next show day.
 
 ### 8a — Speckle & Down (sheet, top at 92pt)
-Context "In the village", coin balance and close. A painted shop front (130pt), the title, an italic greeting from the shopkeeper, and tabs Feed / Treats / Hatching eggs. Item rows are 72pt: a 48pt item art, name (Caslon Text 17) with a one-line description, and a price button (coin dot + number, secondary style). If the player can't afford an item, its price button is disabled and says "Not enough coins".
+Context "In the village", coin balance and close. A painted shop front (130pt), the title, an italic greeting from the shopkeeper, and tabs Feed / Treats / Hatching / Show. Item rows are 72pt: a 48pt item art, name (Caslon Text 17) with a one-line description, and a price button (coin dot + number, secondary style). If the player can't afford an item, its price button is disabled and says "Not enough coins".
+
+The Show tab: the next show's theme name and day, the entry fee, and the featured kind. Then what is entered, a row per bird that can go (tap → a sheet with one row per class the bird may enter), and a row per matched plate of eggs in the carton. A class row gives the class name, its difficulty (pet: Easy, eggs: Medium, breed: Hard), what 1st place wins (coins, plus treats in the pet class), "Featured: bonus prizes" when the theme features it, and the entry fee as the price button. Past placings are listed last.
 
 ---
 

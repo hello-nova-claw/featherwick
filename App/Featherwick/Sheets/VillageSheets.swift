@@ -119,30 +119,108 @@ struct ShopRow: View {
     }
 }
 
-/// The county show: when it is, what is entered, and past ribbons.
+/// The county show: the next show's theme and day, what is entered, birds and plates to enter, and
+/// past placings. The judge's notes come only with the results, on show day.
 struct ShowPanel: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
+    @State private var choosing: BirdChoice?
 
     var body: some View {
         let s = store.state
-        VStack(alignment: .leading, spacing: Space.m) {
-            Text("The \(s.season.rawValue.capitalized) Show is on day \(s.nextShowDay).").font(Typeface.body)
-            Text(
-                "Entry \(s.rules.showEntryFee) coins. Ribbons pay \(s.rules.showPrizeFirst), \(s.rules.showPrizeSecond) and \(s.rules.showPrizeThird)."
-            )
-            .font(Typeface.label).foregroundStyle(palette.inkMuted)
-            if s.showEntries.isEmpty {
-                Text("Nothing entered yet. Enter a bird from its card.").font(Typeface.body)
-                    .foregroundStyle(palette.inkSoft)
-            } else {
+        VStack(alignment: .leading, spacing: Space.xl) {
+            ShowHeading(theme: s.nextShowTheme, day: s.nextShowDay, fee: s.rules.showEntryFee)
+            entered(s)
+            birdsToEnter(s)
+            platesToEnter(s)
+            pastResults(s)
+        }
+        .sheet(item: $choosing) { choice in
+            EnterShowSheet(birdID: choice.id).environment(\.palette, palette)
+        }
+    }
+
+    @ViewBuilder
+    private func entered(_ s: GameState) -> some View {
+        if s.showEntries.isEmpty {
+            Text("Nothing entered yet.").font(Typeface.body).foregroundStyle(palette.inkSoft)
+        } else {
+            VStack(alignment: .leading, spacing: Space.xs) {
+                Text("Entered").font(Typeface.item)
                 ForEach(Array(s.showEntries.enumerated()), id: \.offset) { _, e in
                     Text(entryLine(e, s)).font(Typeface.body)
                 }
             }
-            Button("Enter my best plate of eggs") { store.run(.enterEggs) }.buttonStyle(.secondary)
-            if !s.showResults.isEmpty {
-                Text("Ribbons").font(Typeface.item)
+        }
+    }
+
+    /// Birds that may go to the show and are not entered yet. Chicks have no class.
+    @ViewBuilder
+    private func birdsToEnter(_ s: GameState) -> some View {
+        let enteredIDs = Set(s.showEntries.compactMap(\.birdID))
+        let birds = s.birdsAtHome.filter {
+            !enteredIDs.contains($0.id) && !Engine.eligibleClasses(for: $0, in: s).isEmpty
+        }
+        if !birds.isEmpty {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Enter a bird").font(Typeface.item).padding(.bottom, Space.s)
+                ForEach(birds) { bird in birdRow(bird, s) }
+            }
+        }
+    }
+
+    private func birdRow(_ bird: Bird, _ s: GameState) -> some View {
+        let classes = Engine.eligibleClasses(for: bird, in: s).map(\.name).joined(separator: " or ")
+        return VStack(spacing: 0) {
+            Button {
+                choosing = BirdChoice(id: bird.id)
+            } label: {
+                HStack(spacing: Space.m) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(bird.name).font(Typeface.body)
+                        Text(classes).font(Typeface.caption).foregroundStyle(palette.inkMuted)
+                    }
+                    Spacer()
+                    Text("→")
+                }
+                .frame(minHeight: 52)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            StitchDivider()
+        }
+    }
+
+    /// Each matched plate the carton can make, best first. The chosen eggs go to the show.
+    private func platesToEnter(_ s: GameState) -> some View {
+        let plates = Judge.bestPlates(from: s.carton, state: s)
+        return VStack(alignment: .leading, spacing: 0) {
+            Text("Enter a plate of eggs").font(Typeface.item).padding(.bottom, Space.s)
+            if plates.isEmpty {
+                Text(
+                    "A plate is \(ShowPoints.eggPlate) carton eggs of one colour, all speckled or all plain."
+                )
+                .font(Typeface.label).foregroundStyle(palette.inkMuted)
+            }
+            ForEach(Array(plates.enumerated()), id: \.offset) { _, plate in
+                plateRow(plate.eggs, plate.card.showClass, s)
+            }
+        }
+    }
+
+    private func plateRow(_ eggs: [Egg], _ cls: ShowClass, _ s: GameState) -> some View {
+        let speckled = eggs.first?.speckled == true
+        let name = "A plate of \(speckled ? "speckled " : "")\(cls.name.lowercased())"
+        return ShowClassRow(name: name, showClass: cls, state: s) {
+            store.run(.enterEggPlate(eggs.map(\.id)))
+        }
+    }
+
+    @ViewBuilder
+    private func pastResults(_ s: GameState) -> some View {
+        if !s.showResults.isEmpty {
+            VStack(alignment: .leading, spacing: Space.s) {
+                Text("Past shows").font(Typeface.item)
                 ForEach(Array(s.showResults.suffix(6).reversed().enumerated()), id: \.offset) { _, r in
                     Text(resultLine(r)).font(Typeface.label).foregroundStyle(palette.inkSoft)
                     StitchDivider()
@@ -152,7 +230,10 @@ struct ShowPanel: View {
     }
 
     private func entryLine(_ e: ShowEntry, _ s: GameState) -> String {
-        if let id = e.birdID, let b = s.bird(id) { return "\(b.name), \(Engine.showClass(for: b, in: s).name) class" }
+        if let id = e.birdID, let b = s.bird(id) {
+            let cls = e.showClass ?? Engine.showClass(for: b, in: s)
+            return "\(b.name), \(cls.name) class"
+        }
         if let first = e.eggs.first {
             return "A plate of \(first.speckled ? "speckled " : "")\(first.colour.rawValue) eggs"
         }
@@ -160,21 +241,70 @@ struct ShowPanel: View {
     }
 
     private func resultLine(_ r: ShowResult) -> String {
-        // 4th and below are real placings, but only the top three take a ribbon home.
-        let place =
-            switch r.placing {
-            case 0: "not placed"
-            case 1...3: "\(placingText(r.placing)) of \(r.fieldSize)"
-            default: "\(placingText(r.placing)) of \(r.fieldSize), no ribbon"
-            }
-        return "Day \(r.day) · \(r.entrantName), \(r.showClass.name): \(place), \(r.score) of 100"
+        "Day \(r.day) · \(r.entrantName), \(r.showClass.name): \(placingLabel(r)), \(r.score) of 100"
     }
 }
 
-// MARK: - Judge card (7a)
+/// A bird picked from a list, for `.sheet(item:)`.
+struct BirdChoice: Identifiable, Hashable {
+    let id: UUID
+}
 
-/// The judge's card for one bird: a dashed ring with the score, the grade, and the judge's notes.
-struct JudgeCardSheet: View {
+/// The top of the show panel: the theme's name, the day, the fee, and which classes pay a bonus.
+struct ShowHeading: View {
+    @Environment(\.palette) private var palette
+    let theme: ShowTheme
+    let day: Int
+    let fee: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.xs) {
+            Text(showThemeName(theme)).font(Typeface.title2)
+            Text("Day \(day). Entry \(fee) coins.").font(Typeface.body)
+            Text("Featured: \(kindName(theme.featured).lowercased()) classes, bonus prizes")
+                .font(Typeface.label).foregroundStyle(palette.inkMuted)
+        }
+    }
+}
+
+/// One class to enter: its name, how hard it is, what 1st pays, and the entry fee as the button.
+struct ShowClassRow: View {
+    @Environment(\.palette) private var palette
+    let name: String
+    let showClass: ShowClass
+    let state: GameState
+    let enter: () -> Void
+
+    var body: some View {
+        let fee = state.rules.showEntryFee
+        VStack(spacing: 0) {
+            HStack(spacing: Space.m) {
+                details
+                Spacer(minLength: Space.s)
+                PriceButton(price: fee, canAfford: state.coins >= fee, action: enter)
+            }
+            .frame(minHeight: 72)
+            StitchDivider()
+        }
+    }
+
+    private var details: some View {
+        let theme = state.nextShowTheme
+        let first = Engine.prize(for: 1, in: showClass, theme: theme, rules: state.rules)
+        let prize = prizeWords(coins: first.coins, treats: first.treats)
+        return VStack(alignment: .leading, spacing: 2) {
+            Text(name).font(Typeface.item)
+            Text("\(difficultyName(showClass.kind)) · 1st wins \(prize)")
+                .font(Typeface.caption).foregroundStyle(palette.inkMuted)
+            if showClass.kind == theme.featured {
+                Text("Featured: bonus prizes").font(Typeface.caption).foregroundStyle(palette.inkSoft)
+            }
+        }
+    }
+}
+
+/// Choosing a class for one bird. A bird may fit two (its breed class and the pet class).
+struct EnterShowSheet: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
@@ -182,83 +312,78 @@ struct JudgeCardSheet: View {
 
     var body: some View {
         let s = store.state
-        if let bird = s.bird(birdID) {
-            let showClass = Engine.showClass(for: bird, in: s)
-            let card = Judge.judge(bird, in: showClass, state: s)
-            SheetPage(context: "Practice judging, \(showClass.name.lowercased())") {
-                UnderlinedName(text: bird.name, font: Typeface.display(40), size: 40)
-                    .frame(maxWidth: .infinity)
-                GradeRing(score: card.score)
-                    .frame(maxWidth: .infinity)
-                Text(gradeName(card.grade)).font(Typeface.epithet).frame(maxWidth: .infinity)
-                GradeScale(grade: card.grade)
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(card.notes.prefix(4).enumerated()), id: \.offset) { _, note in
-                        Text("“\(noteText(note).prefix(1).uppercased() + noteText(note).dropFirst()).”")
-                            .font(Typeface.serifItalic(18))
-                            .padding(.vertical, Space.m)
-                        StitchDivider()
-                    }
-                }
-                Text("Mrs Hartley, judge").font(Typeface.label).foregroundStyle(palette.inkMuted)
-                Button("Thank the judge") { dismiss() }.buttonStyle(.primary)
+        SheetPage(context: "\(showThemeName(s.nextShowTheme)), day \(s.nextShowDay)") {
+            if let bird = s.bird(birdID) {
+                Text("Enter \(bird.name)").font(Typeface.title2)
+                Text("Pick a class. Harder classes have a bigger field and bigger prizes.")
+                    .font(Typeface.label).foregroundStyle(palette.inkMuted)
+                classRows(bird, s)
             }
-            .presentationDetents([.large])
+            LastWords()
         }
+        .presentationDetents([.medium, .large])
     }
-}
 
-/// A 128pt dashed ink ring: the score, "of 100" underneath.
-struct GradeRing: View {
-    @Environment(\.palette) private var palette
-    let score: Int
-    var body: some View {
-        ZStack {
-            Circle().stroke(palette.ink, style: StrokeStyle(lineWidth: 1.3, dash: [4, 4]))
+    @ViewBuilder
+    private func classRows(_ bird: Bird, _ s: GameState) -> some View {
+        let classes = Engine.eligibleClasses(for: bird, in: s)
+        if s.showEntries.contains(where: { $0.birdID == birdID }) {
+            Text("\(bird.name) is entered for day \(s.nextShowDay).").font(Typeface.body)
+        } else if classes.isEmpty {
+            Text("Too young for the show. Chicks stay home.").font(Typeface.body).foregroundStyle(palette.inkSoft)
+        } else {
             VStack(spacing: 0) {
-                Text("\(score)").font(Typeface.display(48))
-                Text("of 100").font(Typeface.label).foregroundStyle(palette.inkMuted)
-            }
-        }
-        .frame(width: 128, height: 128)
-        .accessibilityElement(children: .combine)
-    }
-}
-
-/// Fair · Good · Very good · Excellent. Reached steps are solid, the rest dashed.
-struct GradeScale: View {
-    @Environment(\.palette) private var palette
-    let grade: Grade
-    private let steps: [Grade] = [.fair, .good, .veryGood, .excellent]
-
-    var body: some View {
-        HStack(alignment: .top, spacing: Space.s) {
-            ForEach(steps, id: \.self) { step in
-                VStack(spacing: Space.xs) {
-                    if step <= grade {
-                        HLine().stroke(palette.ink, lineWidth: 2).frame(height: 2)
-                    } else {
-                        HLine().stroke(palette.unknown, style: Stitch.unknown).frame(height: 2)
-                    }
-                    Text(gradeName(step))
-                        .font(step == grade ? Typeface.sansMedium(12, relativeTo: .caption) : Typeface.caption)
-                        .foregroundStyle(step == grade ? palette.ink : palette.inkMuted)
+                ForEach(classes, id: \.self) { cls in
+                    ShowClassRow(name: "\(cls.name) class", showClass: cls, state: s) { enter(cls) }
                 }
             }
         }
-        .accessibilityElement()
-        .accessibilityLabel("Grade: \(gradeName(grade))")
+    }
+
+    /// Close on success; stay open on a "no", so its reason shows in the last words.
+    private func enter(_ cls: ShowClass) {
+        let events = store.run(.enterShowIn(birdID, cls))
+        let rejected = events.contains {
+            if case .rejected = $0 { return true }
+            return false
+        }
+        if !rejected { dismiss() }
     }
 }
 
-func gradeName(_ g: Grade) -> String {
-    switch g {
-    case .disqualified: "Not judged"
-    case .fair: "Fair"
-    case .good: "Good"
-    case .veryGood: "Very good"
-    case .excellent: "Excellent"
+/// "1st of 8", "4th of 6, no ribbon", "not placed". 4th and below are real placings, but only the
+/// top three take a ribbon home.
+func placingLabel(_ r: ShowResult) -> String {
+    switch r.placing {
+    case 0: "not placed"
+    case 1...3: "\(placingText(r.placing)) of \(r.fieldSize)"
+    default: "\(placingText(r.placing)) of \(r.fieldSize), no ribbon"
     }
+}
+
+/// The pet class is the easy way in; breed classes are judged hardest, against the biggest field.
+func difficultyName(_ kind: ShowKind) -> String {
+    switch kind {
+    case .pet: "Easy"
+    case .eggs: "Medium"
+    case .breed: "Hard"
+    }
+}
+
+func kindName(_ kind: ShowKind) -> String {
+    switch kind {
+    case .pet: "Pet"
+    case .eggs: "Egg"
+    case .breed: "Breed"
+    }
+}
+
+/// "30 coins", "8 coins and 3 treats", "no prize".
+func prizeWords(coins: Int, treats: Int) -> String {
+    var parts: [String] = []
+    if coins > 0 { parts.append("\(coins) coin\(coins == 1 ? "" : "s")") }
+    if treats > 0 { parts.append("\(treats) treat\(treats == 1 ? "" : "s")") }
+    return parts.isEmpty ? "no prize" : parts.joined(separator: " and ")
 }
 
 // MARK: - Back fence (6a)

@@ -11,7 +11,7 @@ struct BirdCardSheet: View {
     @State private var renaming = false
     @State private var newName = ""
     @State private var showTree = false
-    @State private var showJudge = false
+    @State private var enteringShow = false
     @State private var confirmRehome = false
     @State private var cuddles = 0
     @State private var treats = 0
@@ -33,6 +33,7 @@ struct BirdCardSheet: View {
                 .frame(maxWidth: .infinity)
                 facts(bird, s)
                     .padding(.vertical, Space.l)
+                ribbons(bird, s)
                 HStack(spacing: Space.m) {
                     Button("Cuddle") {
                         store.run(.pet(birdID))
@@ -65,7 +66,7 @@ struct BirdCardSheet: View {
                 Text("\(bird.name) goes to a good home in Featherwick.")
             }
             .sheet(isPresented: $showTree) { FamilyTreeSheet(birdID: birdID).environment(\.palette, palette) }
-            .sheet(isPresented: $showJudge) { JudgeCardSheet(birdID: birdID).environment(\.palette, palette) }
+            .sheet(isPresented: $enteringShow) { EnterShowSheet(birdID: birdID).environment(\.palette, palette) }
         } else {
             SheetPage(context: context) {
                 Text("This bird has a new home.").font(Typeface.epithet).padding(.vertical, Space.xxl)
@@ -100,6 +101,20 @@ struct BirdCardSheet: View {
         }
     }
 
+    /// Every show this bird went to, newest first. Hidden until it has been to one.
+    @ViewBuilder
+    private func ribbons(_ bird: Bird, _ s: GameState) -> some View {
+        let results = s.showResults.filter { $0.birdID == bird.id }
+        if !results.isEmpty {
+            Fact(label: "Ribbons") {
+                ForEach(Array(results.reversed().enumerated()), id: \.offset) { _, r in
+                    RibbonLine(result: r)
+                }
+            }
+            .padding(.bottom, Space.l)
+        }
+    }
+
     @ViewBuilder
     private func laysFact(_ bird: Bird, _ stage: LifeStage, _ s: GameState) -> some View {
         if !bird.revealed {
@@ -128,7 +143,6 @@ struct BirdCardSheet: View {
                     renaming = true
                 }
                 Button("Family tree") { showTree = true }
-                if bird.stage(onDay: s.day, rules: s.rules) != .chick { Button("Ask the judge") { showJudge = true } }
             }
             HStack(spacing: Space.l) {
                 if bird.isBroody(onDay: s.day), s.clutch(under: birdID) == nil {
@@ -136,8 +150,8 @@ struct BirdCardSheet: View {
                         store.run(.sit(hen: birdID, count: min(s.rules.maxClutch, max(1, s.carton.count))))
                     }
                 }
-                if bird.stage(onDay: s.day, rules: s.rules) != .chick {
-                    Button("Enter the show") { store.run(.enterShow(birdID)) }
+                if !Engine.eligibleClasses(for: bird, in: s).isEmpty {
+                    Button("Enter the show") { enteringShow = true }
                 }
                 Button("Rehome") { confirmRehome = true }
             }
@@ -174,6 +188,25 @@ struct BirdCardSheet: View {
             case (.adult, nil): "Grown"
             }
         return "\(word), \(days) day\(days == 1 ? "" : "s")"
+    }
+}
+
+/// "1st of 8 · Orpington class, day 84, Harvest Show", with a rosette for the top three.
+struct RibbonLine: View {
+    let result: ShowResult
+
+    var body: some View {
+        HStack(spacing: Space.s) {
+            if (1...3).contains(result.placing) {
+                RibbonMark(placing: result.placing)
+            }
+            Text(words).font(Typeface.body)
+        }
+    }
+
+    private var words: String {
+        let show = result.theme.map { ", \(showThemeName($0))" } ?? ""
+        return "\(placingLabel(result)) · \(result.showClass.name) class, day \(result.day)\(show)"
     }
 }
 
