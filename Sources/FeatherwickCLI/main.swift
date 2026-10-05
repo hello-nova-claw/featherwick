@@ -112,7 +112,8 @@ let help = """
       enter eggs           enter your best plate of 3 matched eggs
       rehome <name>        a neighbour adopts the bird and pays you (rarer birds pay more)
       shop                 see what Speckle & Down sells
-      buy pullet|cockerel|egg   buy a young hen, a young rooster, or a fertile egg
+      buy pullet|cockerel|egg   buy a young hen, a young rooster, or a fertile egg (breed: a surprise)
+      buy special          buy today's special: a named breed, sex and colour (one a day)
       buy treats           a bag of mealworm treats
       buy feed             a sack of premium feed (several days)
       pet <name>           pick a bird up and hold it (once a day; chicks learn trust fastest)
@@ -184,17 +185,18 @@ while true {
         case "egg", "fertile": run(.buy(.fertileEgg))
         case "treats", "treat", "mealworms": run(.buy(.treats))
         case "feed", "premium", "premiumfeed": run(.buy(.premiumFeed))
+        case "special": run(.buySpecial)
         case let other where game.state.shopBreeds.contains(where: { $0.rawValue == other }):
             run(.buyBreed(Breed(rawValue: other)))
-        default: print("You can buy: pullet, cockerel, egg, treats, feed, incubator. Basic feed is free.")
+        default: print("You can buy: pullet, cockerel, egg, special, treats, feed, incubator. Basic feed is free.")
         }
     case "shop":
         let r = game.state.rules
         print(
             """
             Speckle & Down (you have \(game.state.coins) coins):
-              pullet      a young hen, breed known        \(r.pulletPrice) coins
-              cockerel    a young rooster, breed known    \(r.cockerelPrice) coins
+              pullet      a young hen, breed a surprise   \(r.pulletPrice) coins
+              cockerel    a young rooster, breed a surprise \(r.cockerelPrice) coins
               egg         a fertile egg from a local flock \(r.fertileEggPrice) coins
               incubator   holds \(r.bigIncubatorSize) eggs                   \(r.incubatorPrice) coins
               treats      \(r.treatBagSize) mealworms                        \(r.treatBagPrice) coins
@@ -204,6 +206,11 @@ while true {
             print(
                 "  \(breed.rawValue.padding(toLength: 11, withPad: " ", startingAt: 0)) a \(breed.definition.displayName) pullet          \(r.rareBreedPulletPrice) coins"
             )
+        }
+        if let special = game.state.todaysSpecial {
+            print("  special     today only: \(shopSpecialText(special))")
+        } else {
+            print("  special     sold today. A new one comes tomorrow.")
         }
     case "accept":
         run(.acceptTrade)
@@ -243,9 +250,7 @@ while true {
             print("Use: value <name>")
             break
         }
-        print(
-            "A neighbour would pay \(game.state.rules.rehomeValue(of: bird, onDay: game.state.day)) coins for \(bird.name)."
-        )
+        print("A neighbour would pay \(game.state.rehomeValue(of: bird)) coins for \(bird.name).")
     case "pet", "cuddle", "treat":
         guard words.count > 1, let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else {
             print("Use: \(verb) <name>")

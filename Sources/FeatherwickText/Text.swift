@@ -135,6 +135,17 @@ public func placingText(_ placing: Int) -> String {
     return "\(placing)\(suffix)"
 }
 
+/// One line for Speckle & Down's daily special: "Splash Silkie pullet — rare! 50 coins".
+/// The seller names breed, sex and colour, so nothing here is hidden.
+public func shopSpecialText(_ special: ShopSpecial) -> String {
+    let variety = ShopSpecial.variety(for: special.colour, on: special.breed)
+    let colour = colourText(Phenotype(special.breed.purebred(special.sex, variety: variety)))
+    let kind = special.sex == .hen ? "pullet" : "cockerel"
+    let name = "\(colour) \(special.breed.definition.displayName) \(kind)"
+    let rare = special.isRare ? " — rare!" : ""
+    return name.prefix(1).uppercased() + String(name.dropFirst()) + "\(rare) \(special.price) coins"
+}
+
 public func birdName(_ id: UUID, _ s: GameState) -> String { s.bird(id)?.name ?? "a bird" }
 
 /// "gold laced", "barred blue", "lavender"...
@@ -231,7 +242,8 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         case .noTreats: "Your treat bag is empty. Buy more: buy treats"
         case .nothingToDeliver: "Nobody is waiting for anything from you right now. See: story"
         case .needFertileEggs(let need, let have):
-            "You need \(need) eggs you KNOW are fertile in your carton (candle them first). You have \(have)."
+            "You need \(need) eggs you KNOW are fertile in your carton. You have \(have). "
+                + "Candle your eggs to find them (candle), or buy fertile eggs at Speckle & Down: they come candled."
         case .nameTaken: "Another bird in your flock already has that name."
         case .nameTooLong(let max): "That name is too long. Use \(max) letters or fewer."
         case .breedNotInShop: "Speckle & Down doesn't sell that breed. Type shop to see what they have."
@@ -245,6 +257,7 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
             "You need 3 matching eggs in your carton to enter the egg class. Collect and candle first."
         case .noPremiumFeed: "Your premium feed barrel is empty. Buy more: buy feed"
         case .alreadyFedPremium: "You already gave them premium feed today."
+        case .specialSoldOut: "Today's special is sold. Speckle & Down has a new one tomorrow."
         }
     case .starterChosen(let id): return "You take \(birdName(id, s)) home and settle them under the heat lamp."
     case .fed: return "You fill the feeder and top up the water."
@@ -293,8 +306,8 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .coopUpgraded(let perches, let cost):
         return "You add perches to the coop for \(cost) coins. It now has \(perches) perches."
     case .boughtBird(let id, _, let cost):
-        return
-            "Speckle & Down sells you a bird for \(cost) coins: \(s.bird(id).map { birdLabel($0, s) } ?? "a young bird")."
+        return "You pay \(cost) coins and open the box to see who you got: "
+            + "\(s.bird(id).map { birdLabel($0, s) } ?? "a young bird")."
     case .boughtEgg(let cost):
         return
             "Speckle & Down sells you a fertile egg from a local flock for \(cost) coins. It's in your carton, already candled."
@@ -389,8 +402,8 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
             + "You put \(n == 1 ? "it" : "them") back with your eggs."
     case .learnedCandling:
         return """
-            The neighbour comes to see your new chick. "Well done! Here, let me show you a trick." She holds an egg up \
-            to a torch. "See the shadow and the little veins? That one's fertile. A clear one just glows." \
+            The neighbour comes round with a torch. "Here, let me show you a trick." She holds an egg up \
+            to the light. "See the shadow and the little veins? That one's fertile. A clear one just glows." \
             You can candle eggs now.
               candle          hold the carton eggs up to a light to see which are fertile
               sell clear      sell your eggs but keep the fertile ones
@@ -402,6 +415,8 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .roosterAdvice:
         return "Tip: one rooster is plenty. Rehome a spare and a neighbour will adopt him for coins "
             + "(rehome <name>; see what he's worth with value <name>) — or wait, and someone may offer a hen in trade."
+    case .boughtSpecial(let id, let cost):
+        return "You buy today's special for \(cost) coins: \(s.bird(id).map { birdLabel($0, s) } ?? "a young bird")."
     case .milestoneReached(let id):
         let reached = Milestones.all.count(where: { s.milestonesReached.contains($0.id) })
         return "★ Milestone: \(milestoneText(id).title)! (\(reached)/\(Milestones.all.count) · see: journal)"
