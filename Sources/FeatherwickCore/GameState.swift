@@ -169,8 +169,11 @@ public struct GameState: Hashable, Codable, Sendable {
         cartons = rules.startCartons
     }
 
-    public var season: Season {
-        Season.allCases[(day / rules.daysPerSeason) % Season.allCases.count]
+    public var season: Season { season(onDay: day) }
+
+    /// The season on any day, past or future (for example, the day of the next show).
+    public func season(onDay day: Int) -> Season {
+        Season.allCases[(max(0, day) / max(1, rules.daysPerSeason)) % Season.allCases.count]
     }
 
     public var cartonCapacity: Int { cartons * rules.cartonSize }

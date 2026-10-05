@@ -109,6 +109,7 @@ let help = """
       judge eggs           practice judging: your best plate of 3 matched eggs
       shows                the county show: schedule, your entries, and the trophy case
       enter <name>         enter a bird in the next show (breed class, or pet class)
+      enter <name> pet     enter a purebred adult in the pet class instead of its breed class
       enter eggs           enter your best plate of 3 matched eggs
       rehome <name>        a neighbour adopts the bird and pays you (rarer birds pay more)
       shop                 see what Speckle & Down sells
@@ -333,11 +334,15 @@ while true {
             run(.enterEggs)
             break
         }
-        guard let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else {
+        // "enter <name> pet" picks the pet class; a bird whose own name ends in "pet" still works.
+        let named = words.dropFirst().joined(separator: "")
+        let petClass = words.count > 2 && words.last == "pet" && findBird(named, game.state) == nil
+        let name = petClass ? words.dropFirst().dropLast().joined(separator: "") : named
+        guard let bird = findBird(name, game.state) else {
             print("There is no bird called \(words[1]).")
             break
         }
-        run(.enterShow(bird.id))
+        run(petClass ? Command.enterShowIn(bird.id, .pet) : .enterShow(bird.id))
     case "upgrade":
         guard words.count > 1, words[1] == "coop" else {
             print("You can upgrade: coop")

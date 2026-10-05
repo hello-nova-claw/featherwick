@@ -30,7 +30,7 @@ public enum Command: Hashable, Codable, Sendable {
     case deliver(story: String)
     /// Buy a pullet of a breed a storyline has unlocked at Speckle & Down.
     case buyBreed(Breed)
-    /// Enter a bird in the next county show. It competes in its breed class, or the pet class.
+    /// Enter a bird in the next county show in its default class: its breed class, or the pet class.
     case enterShow(UUID)
     /// Enter your best matched plate of eggs in the next county show.
     case enterEggs
@@ -44,6 +44,10 @@ public enum Command: Hashable, Codable, Sendable {
     case sellChosenEggs([UUID])
     /// Hold one egg up to a light: shows if it is fertile. Needs the candling lesson.
     case candleEgg(UUID)
+    /// Enter a bird in the next county show in a chosen class (see `Engine.eligibleClasses`).
+    case enterShowIn(UUID, ShowClass)
+    /// Enter exactly these carton eggs as a plate in the next county show: a matched plate of 3.
+    case enterEggPlate([UUID])
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -84,11 +88,11 @@ public enum Rejection: Hashable, Codable, Sendable {
     case breedNotInShop
     case nameTaken
     case nameTooLong(max: Int)
-    /// A chick, or a bird not at home, cannot be shown.
+    /// A chick cannot be shown, and a bird may enter only the classes it is eligible for.
     case notShowEligible
     /// That bird is already entered in the next show.
     case alreadyEntered
-    /// No matched plate of 3 eggs in the carton to enter.
+    /// No matched plate of 3 eggs in the carton to enter, or the chosen eggs do not make one.
     case noMatchedPlate
     case noPremiumFeed
     case alreadyFedPremium
@@ -190,6 +194,8 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case roosterAdvice
     /// A goal-ladder milestone was reached this night (see Milestone.swift). Awarded once.
     case milestoneReached(String)
+    /// Treats won at the county show (the pet class pays treats). Added to the bag.
+    case showTreatsWon(treats: Int)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -411,10 +417,16 @@ public enum Engine {
             return [.coopUpgraded(perches: s.perches, cost: cost)]
 
         case .enterShow(let id):
-            return enterShow(id, &s)
+            return enterShow(id, in: nil, &s)
+
+        case .enterShowIn(let id, let cls):
+            return enterShow(id, in: cls, &s)
 
         case .enterEggs:
             return enterEggs(&s)
+
+        case .enterEggPlate(let ids):
+            return enterEggPlate(ids, &s)
         }
     }
 

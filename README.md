@@ -120,12 +120,42 @@ Saves: missing GameState fields and rules load with their starting values (`fill
 
 ### The county show (`ShowEvent.swift`)
 
-A recurring show (one every `showIntervalDays`, ~once a season) is where breeding, taming and egg
-quality finally pay off. Before a show you `enter <name>` (a bird routes to its breed class, or the
-pet class) or `enter eggs` (your best matched plate), paying a small entry fee — a coin sink. On the
-show day (a `passNight` step) each entry is judged by the same `Judge` code against `showCompetitors`
-AI entries generated from random IDs (so quality varies), placed 1st/2nd/3rd by score; ribbons pay
-coins and a first place is kept in the trophy case. CLI: `enter <name>`, `enter eggs`, `shows`.
+A recurring show (one every `showIntervalDays`, once a season) is where breeding, taming and egg
+quality pay off. Before a show, you enter birds and plates of eggs. Each entry costs a small fee
+(a coin sink).
+
+- `enter <name>` enters a bird in its default class: its breed class, or the pet class.
+- A purebred adult in a standard colour may enter its breed class OR the pet class
+  (`Engine.eligibleClasses`, command `enterShowIn`). CLI: `enter <name> pet`.
+- `enter eggs` enters your best matched plate. The app can choose the plate (`enterEggPlate`):
+  3 carton eggs of one colour, all speckled or all plain.
+- A bird can be entered once per show. If a bird no longer fits its chosen class on show day,
+  it competes in its default class.
+
+On show day (a `passNight` step), each entry is judged by the same `Judge` code against a field of
+AI entries. The entries are placed by score. Places 1–3 win prizes. A first place goes in the
+trophy case.
+
+Each kind of class has its own difficulty and prizes (`Rules`):
+
+| Kind | Rivals (`showCompetitorsByKind`) | Each rival is best of (`showRivalPicks`) | Prizes 1st/2nd/3rd |
+| --- | --- | --- | --- |
+| Pet (easy) | 3 | 1 | 8/4/2 coins + 3/2/1 treats |
+| Eggs | 5 | 2 | 15/8/4 coins |
+| Breed (hard) | 7 | 3 | 30/15/8 coins |
+
+Each show has a theme from the season of its day (`ShowTheme`). The featured kind pays
+`showFeaturedBonus` (×1.5, rounded) coins.
+
+| Season | Show | Featured |
+| --- | --- | --- |
+| Spring | Spring Egg Fair | Eggs |
+| Summer | Summer Fete | Pet |
+| Autumn | Harvest Show | Breed (birds moult: condition is harder) |
+| Winter | Winter Championship | Breed. Every rival picks `winterChampionshipExtraPicks` more candidates. |
+
+`GameState.nextShowTheme` gives the theme of the next show. Each `ShowResult` keeps the bird, coins,
+treats, the judge's notes and the theme. CLI: `enter <name>`, `enter <name> pet`, `enter eggs`, `shows`.
 
 ## Friendliness
 
