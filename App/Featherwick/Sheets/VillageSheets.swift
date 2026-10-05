@@ -65,11 +65,14 @@ struct FarmGateSheet: View {
                 name: "A fertile egg", detail: "From a local flock, already candled.", price: r.fertileEggPrice,
                 coins: s.coins
             ) { store.run(.buy(.fertileEgg)) }
-            ShopRow(name: "A pullet", detail: "A young hen. The breed is a surprise.", price: r.pulletPrice, coins: s.coins) {
+            ShopRow(
+                name: "A pullet", detail: "A young hen. The breed is a surprise.", price: r.pulletPrice, coins: s.coins
+            ) {
                 store.run(.buy(.pullet))
             }
             ShopRow(
-                name: "A cockerel", detail: "A young rooster. The breed is a surprise.", price: r.cockerelPrice, coins: s.coins
+                name: "A cockerel", detail: "A young rooster. The breed is a surprise.", price: r.cockerelPrice,
+                coins: s.coins
             ) { store.run(.buy(.cockerel)) }
             ForEach(s.shopBreeds.sorted { $0.rawValue < $1.rawValue }, id: \.self) { breed in
                 ShopRow(
