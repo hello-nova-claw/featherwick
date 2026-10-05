@@ -132,6 +132,10 @@ struct FarmView: View {
         switch place {
         case .coop:
             var n: [Notice] = []
+            // The naming notice sits where the bird lives, so a bird that moved to the coop is named there.
+            if let bird = s.unnamedBirds.first(where: { b in s.coop.contains { $0.id == b.id } }) {
+                n.append(Notice(kind: .decision, text: "\(bird.revealed ? "a bird" : "a chick") needs a name"))
+            }
             if !s.nest.isEmpty {
                 n.append(Notice(kind: .collect, text: "\(s.nest.count) egg\(s.nest.count == 1 ? "" : "s") waiting"))
             }
@@ -140,8 +144,16 @@ struct FarmView: View {
             return n
         case .pottingShed:
             var n: [Notice] = []
-            if let bird = s.unnamedBirds.first {
+            if let bird = s.unnamedBirds.first(where: { b in !s.coop.contains { $0.id == b.id } }) {
                 n.append(Notice(kind: .decision, text: "\(bird.revealed ? "a bird" : "a chick") needs a name"))
+            }
+            let waiting = s.birdsWaitingForPerch
+            if !waiting.isEmpty {
+                let soonest = waiting.compactMap { s.nightsUntilRehomed($0.id) }.min()
+                let note = soonest.map { $0 <= 1 ? ", rehomed tomorrow" : ", \($0) nights left" } ?? ""
+                n.append(
+                    Notice(
+                        kind: .decision, text: "\(waiting.count) need\(waiting.count == 1 ? "s" : "") a perch\(note)"))
             }
             if let c = s.incubatorClutch, c.hatchDay <= s.day + 1 {
                 n.append(Notice(kind: .collect, text: "hatching tonight"))

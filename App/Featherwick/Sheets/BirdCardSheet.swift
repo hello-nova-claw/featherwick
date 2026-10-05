@@ -218,7 +218,7 @@ struct NamingSheet: View {
     var body: some View {
         let s = store.state
         if let bird = s.unnamedBirds.first {
-            SheetPage(context: bird.revealed ? "New to the flock" : "Just hatched in the brooder") {
+            SheetPage(context: namingContext(bird, s)) {
                 ArtPlaceholder(label: "chick art")
                     .frame(width: 140, height: 110)
                     .frame(maxWidth: .infinity)
@@ -267,6 +267,13 @@ struct NamingSheet: View {
         forBird = bird.id
         tries = 0
         name = NameBook.suggestion(for: bird, in: s)
+    }
+
+    /// Where the bird is now. A bird left unnamed for a while may already be in the coop.
+    private func namingContext(_ bird: Bird, _ s: GameState) -> String {
+        if s.coop.contains(where: { $0.id == bird.id }) { return "In the coop" }
+        if s.henChicks.contains(where: { $0.id == bird.id }) { return "With a broody hen" }
+        return bird.revealed ? "New to the flock" : "Just hatched in the brooder"
     }
 
     /// No sex until the player can see it: an unrevealed chick is "this chick".

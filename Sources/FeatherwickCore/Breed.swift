@@ -59,6 +59,10 @@ public struct Bird: Identifiable, Hashable, Codable, Sendable {
     public var inbreeding: Double?
     /// True while the player still has to name this bird (hatched or bought). `name` is a placeholder until then.
     public var needsName: Bool?
+    /// The first night this bird was seen still without a name. Set and read by the night's auto-naming.
+    public var unnamedSinceDay: Int?
+    /// The first night this grown bird had no perch. Cleared when it gets one.
+    public var waitingSinceDay: Int?
 
     public var isPurebred: Bool { purebredFlag ?? true }
 

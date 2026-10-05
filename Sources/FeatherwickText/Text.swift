@@ -165,6 +165,13 @@ public func cardText(_ c: JudgeCard) -> String {
     return "  \(c.showClass.name): \(grade) (\(c.score)/100) · " + c.notes.map(noteText).joined(separator: ", ")
 }
 
+/// " If no perch is free in 2 nights, …" for a bird waiting for a perch.
+func homeDeadline(_ id: UUID, _ s: GameState) -> String {
+    guard let nights = s.nightsUntilRehomed(id) else { return "" }
+    let when = nights <= 1 ? "by tomorrow" : "in \(nights) nights"
+    return " If no perch is free \(when), the neighbour will find \(birdName(id, s)) a new home."
+}
+
 public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
     switch e {
     case .rejected(let r):
@@ -254,9 +261,17 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return
             "\(birdName(id, s)) is ready for the coop, but there is no free perch. \(birdName(id, s)) waits in the brooder. "
             + "Make room: rehome a bird (rehome <name>) or add perches (upgrade coop, \(s.rules.coopUpgradePrice) coins)."
+            + homeDeadline(id, s)
     case .boardingWithNeighbour(let id):
         return "\(birdName(id, s)) is staying with the neighbour: no perch, and the brooder is full. "
             + "You can't set eggs until \(birdName(id, s)) has a home. Rehome a bird or upgrade the coop."
+            + homeDeadline(id, s)
+    case .rehomedByNeighbour(let id, let coins):
+        return "No perch came free for \(birdName(id, s)), so the neighbour found \(birdName(id, s)) a good home "
+            + "down the lane. They pay you \(coins) coin\(coins == 1 ? "" : "s")."
+    case .namedForYou(let id):
+        return "Everyone has started calling the new bird \(birdName(id, s)). The name stuck. "
+            + "(You can rename a bird any time.)"
     case .cameHomeFromBoarding(let id): return "\(birdName(id, s)) comes home from the neighbour's to a free perch."
     case .rehomed(let id, let coins):
         return

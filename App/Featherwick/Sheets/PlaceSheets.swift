@@ -144,11 +144,24 @@ struct CoopSheet: View {
         return nil
     }
 
+    /// A grown bird with no perch, and when the neighbour will step in.
+    private func perchWaitText(_ bird: Bird, _ s: GameState) -> String {
+        guard let nights = s.nightsUntilRehomed(bird.id) else { return "\(bird.name) is waiting for a perch." }
+        let when = nights <= 1 ? "tomorrow" : "in \(nights) nights"
+        return "\(bird.name) is waiting for a perch. Without one, the neighbour finds \(bird.name) a home \(when)."
+    }
+
     @ViewBuilder
     private func nightActions(_ s: GameState) -> some View {
         Text("The coop").font(Typeface.item)
         Text("\(s.coop.count) of \(s.perches) perches taken · door \(s.coopDoorOpen ? "open" : "closed")")
             .font(Typeface.label).foregroundStyle(palette.inkMuted)
+        if s.unnamedBirds.contains(where: { b in s.coop.contains { $0.id == b.id } }) {
+            Button("Name the new birds") { open(.naming) }.buttonStyle(.primary)
+        }
+        ForEach(s.birdsWaitingForPerch) { bird in
+            Text(perchWaitText(bird, s)).font(Typeface.body).foregroundStyle(palette.inkSoft)
+        }
         HStack(spacing: Space.m) {
             Button(s.coopDoorOpen ? "Shut the door" : "Door is shut") { store.run(.closeCoop) }
                 .buttonStyle(.secondary)

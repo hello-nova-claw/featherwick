@@ -9,22 +9,15 @@ struct BirdSwatch: View {
     var size: CGFloat = 36
 
     var body: some View {
+        // Explicit types and small helpers keep the type checker fast. One big expression here
+        // crashed the compiler's diagnostics in Xcode 27 ("Failed to produce diagnostic").
         let look = bird.look(onDay: state.day, rules: state.rules)
-        let feathers = look.tone(.body) ?? look.tone(.down) ?? .buff
-        let pattern = look.overlays.first?.pattern
+        let feathers: Tone = look.tone(.body) ?? look.tone(.down) ?? Tone.buff
+        let pattern: FeatherwickCore.Pattern? = look.overlays.first?.pattern
+        let comb: Tone? = look.tone(.comb)
         ZStack(alignment: .top) {
-            Circle()
-                .fill(color(feathers))
-                .overlay(Circle().strokeBorder(Color.secondary.opacity(0.4), lineWidth: 1))
-                .overlay {
-                    if pattern == .barring {
-                        Image(systemName: "line.3.horizontal").foregroundStyle(Color.white.opacity(0.7))
-                    } else if pattern == .lacing {
-                        Circle().strokeBorder(Color.black.opacity(0.7), lineWidth: size / 10)
-                    }
-                }
-                .padding(.top, size * 0.15)
-            if let comb = look.tone(.comb) {
+            bodyCircle(feathers, pattern: pattern)
+            if let comb {
                 Capsule()
                     .fill(color(comb))
                     .frame(width: size * 0.35, height: size * 0.2)
@@ -32,6 +25,26 @@ struct BirdSwatch: View {
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
+    }
+
+    private func bodyCircle(_ feathers: Tone, pattern: FeatherwickCore.Pattern?) -> some View {
+        Circle()
+            .fill(color(feathers))
+            .overlay(Circle().strokeBorder(Color.secondary.opacity(0.4), lineWidth: 1))
+            .overlay { patternMark(pattern) }
+            .padding(.top, size * 0.15)
+    }
+
+    @ViewBuilder
+    private func patternMark(_ pattern: FeatherwickCore.Pattern?) -> some View {
+        switch pattern {
+        case .barring?:
+            Image(systemName: "line.3.horizontal").foregroundStyle(Color.white.opacity(0.7))
+        case .lacing?:
+            Circle().strokeBorder(Color.black.opacity(0.7), lineWidth: size / 10)
+        default:
+            EmptyView()
+        }
     }
 
     /// Placeholder colours for the art tokens. The art direction will choose the real ones.

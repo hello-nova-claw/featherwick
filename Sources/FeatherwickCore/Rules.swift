@@ -6,6 +6,11 @@ public struct Rules: Codable, Hashable, Sendable {
     public var adultAge = 21  // point of lay
     public var brooderDays = 7  // chick moves from brooder to coop
     public var giftHenAge = 3  // the neighbour's hen is younger than the starter
+    /// Nights a grown bird waits for a perch. Then the neighbour finds it a new home, so a full coop
+    /// never holds up the brooder or the incubator for long.
+    public var homeWaitNights = 3
+    /// Nights a new bird waits for a name. Then it takes the suggested name; the player can rename it.
+    public var autoNameNights = 2
 
     // Seasons
     public var daysPerSeason = 28
