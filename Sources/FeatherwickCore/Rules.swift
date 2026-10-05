@@ -105,12 +105,21 @@ public struct Rules: Codable, Hashable, Sendable {
 
     // County show (see ShowEvent.swift). A recurring event that rewards selective breeding, taming
     // and egg quality. Entering costs a small fee (a coin sink); ribbons pay out.
+    // Each kind of class has its own difficulty and prizes: pet (easy) < eggs < breed (hard).
     public var showIntervalDays = 28  // one show each season
-    public var showCompetitors = 5  // AI entries in each class
     public var showEntryFee = 3  // per entry, paid when you enter
-    public var showPrizeFirst = 20
-    public var showPrizeSecond = 10
-    public var showPrizeThird = 5
+    /// AI entries in each class. The field grows with difficulty.
+    public var showCompetitorsByKind: [ShowKind: Int] = [.pet: 3, .eggs: 5, .breed: 7]
+    /// Each AI entry is the best of this many random candidates, so harder fields are stronger.
+    public var showRivalPicks: [ShowKind: Int] = [.pet: 1, .eggs: 2, .breed: 3]
+    /// Coins for 1st, 2nd and 3rd.
+    public var showPrizeCoins: [ShowKind: [Int]] = [.pet: [8, 4, 2], .eggs: [15, 8, 4], .breed: [30, 15, 8]]
+    /// Treats for 1st, 2nd and 3rd. The pet class pays in treats too.
+    public var showPrizeTreats: [ShowKind: [Int]] = [.pet: [3, 2, 1], .eggs: [0, 0, 0], .breed: [0, 0, 0]]
+    /// Coins are multiplied by this (and rounded) in the kind of class the season's show features.
+    public var showFeaturedBonus = 1.5
+    /// The Winter Championship draws the strongest field: every class's rival picks go up by this.
+    public var winterChampionshipExtraPicks = 1
     // Flock turnover (cozy: hens slow with age and retire, they never die).
     public var layDeclineStartDays = 252  // full for about nine in-game months before slowing
     public var layDeclineFloor = 0.4  // the least a laying hen's age factor falls to

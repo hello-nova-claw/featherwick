@@ -121,6 +121,39 @@ public func treeLines(_ id: UUID, _ s: GameState) -> [String] {
     return out
 }
 
+/// The name of a county show, from its season's theme.
+public func showThemeName(_ theme: ShowTheme) -> String {
+    switch theme {
+    case .springEggFair: "Spring Egg Fair"
+    case .summerFete: "Summer Fete"
+    case .harvestShow: "Harvest Show"
+    case .winterChampionship: "Winter Championship"
+    }
+}
+
+/// "pet class", "egg classes", "breed classes".
+public func showKindName(_ kind: ShowKind) -> String {
+    switch kind {
+    case .pet: "pet class"
+    case .eggs: "egg classes"
+    case .breed: "breed classes"
+    }
+}
+
+/// What the theme means for the player, in one sentence.
+public func showThemeLine(_ theme: ShowTheme) -> String {
+    let bonus = "The \(showKindName(theme.featured)) pay extra coins."
+    return theme == .winterChampionship ? bonus + " The rivals are the strongest of the year." : bonus
+}
+
+/// "12 coins", "3 treats" or "8 coins and 3 treats". Empty when nothing was won.
+public func prizeWords(coins: Int, treats: Int) -> String {
+    var parts: [String] = []
+    if coins > 0 { parts.append("\(coins) coin\(coins == 1 ? "" : "s")") }
+    if treats > 0 { parts.append("\(treats) treat\(treats == 1 ? "" : "s")") }
+    return parts.joined(separator: " and ")
+}
+
 /// A show placing in words: "1st", "4th", "not placed". Only 1st to 3rd win a ribbon.
 public func placingText(_ placing: Int) -> String {
     guard placing > 0 else { return "not placed" }
@@ -239,10 +272,12 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
             room == 0
                 ? "The brooder is full. Make room first: rehome a bird or upgrade the coop so the brooder birds can move out."
                 : "The brooder only has room for \(room) more chick\(room == 1 ? "" : "s"). Set fewer eggs."
-        case .notShowEligible: "Chicks are too young for the show, and only birds at home can be entered."
+        case .notShowEligible:
+            "That bird can't enter that class. Chicks are too young for the show, only birds at home can be "
+                + "entered, and only purebred adults in a standard colour can enter their breed class."
         case .alreadyEntered: "That bird is already entered in the next show."
         case .noMatchedPlate:
-            "You need 3 matching eggs in your carton to enter the egg class. Collect and candle first."
+            "A plate needs 3 matching eggs from your carton: one colour, all speckled or all plain. Collect first."
         case .noPremiumFeed: "Your premium feed barrel is empty. Buy more: buy feed"
         case .alreadyFedPremium: "You already gave them premium feed today."
         }
@@ -407,9 +442,11 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return "★ Milestone: \(milestoneText(id).title)! (\(reached)/\(Milestones.all.count) · see: journal)"
     case .enteredInShow(let id, let cls):
         let who = id.flatMap { s.bird($0)?.name } ?? "your eggs"
-        return "\(who) entered in the \(cls.name) class at the next county show (day \(s.nextShowDay))."
+        let show = showThemeName(s.nextShowTheme)
+        return "\(who) entered in the \(cls.name) class at the \(show) (day \(s.nextShowDay))."
     case .showDay(let day):
-        return "\n🎪 The Featherwick county show, day \(day)!"
+        let theme = ShowTheme.forSeason(s.season(onDay: day))
+        return "\n🎪 The Featherwick county show, day \(day): the \(showThemeName(theme))! \(showThemeLine(theme))"
     case .showNoEntries:
         return "The show came and went. You didn't enter anything this time — next one is day \(s.nextShowDay)."
     case .showPlacing(let r):
@@ -421,10 +458,14 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
             default: ""
             }
         let ribbon = placingText(r.placing) + medal
+        let won = prizeWords(coins: r.prize, treats: r.treats ?? 0)
         return "  \(r.showClass.name): \(r.entrantName) — \(ribbon) of \(r.fieldSize) (\(r.score)/100)"
-            + (r.prize > 0 ? ", wins \(r.prize) coins!" : "")
+            + (won.isEmpty ? "" : ", wins \(won)!")
     case .showPrizesWon(let coins):
         return "Prize money: \(coins) coins. 🎉"
+    case .showTreatsWon(let treats):
+        let won = "\(treats) mealworm treat\(treats == 1 ? "" : "s")"
+        return "Prize treats: \(won) for the bag. You have \(s.treats) treats."
     }
 }
 
@@ -540,17 +581,33 @@ public func bookLines(_ s: GameState) -> [String] {
 public func showsLines(_ s: GameState) -> [String] {
     var out: [String] = []
     let r = s.rules
-    out.append("County show — next on day \(s.nextShowDay) (one every \(r.showIntervalDays) days).")
-    out.append(
-        "Entry fee \(r.showEntryFee) coins. Ribbons: 1st \(r.showPrizeFirst), 2nd \(r.showPrizeSecond), 3rd \(r.showPrizeThird) coins."
-    )
+    let theme = s.nextShowTheme
+    let every = "one every \(r.showIntervalDays) days"
+    out.append("County show — next: the \(showThemeName(theme)), day \(s.nextShowDay) (\(every)).")
+    out.append(showThemeLine(theme))
+    out.append("Entry fee \(r.showEntryFee) coins. Ribbons for 1st, 2nd and 3rd at this show:")
+    for kind in ShowKind.allCases {
+        let sample: ShowClass =
+            switch kind {
+            case .pet: .pet
+            case .eggs: .eggs(.brown)
+            case .breed: .breed(.orpington)
+            }
+        let prizes = (1...3).map { Engine.prize(for: $0, in: sample, theme: theme, rules: r) }
+        var line = "  \(showKindName(kind)): " + prizes.map { "\($0.coins)" }.joined(separator: " / ") + " coins"
+        if prizes.contains(where: { $0.treats > 0 }) {
+            line += " + " + prizes.map { "\($0.treats)" }.joined(separator: " / ") + " treats"
+        }
+        let rivals = r.showCompetitorsByKind[kind] ?? 0
+        out.append(line + " · \(rivals) rival\(rivals == 1 ? "" : "s")")
+    }
     if s.showEntries.isEmpty {
         out.append("No entries yet. Enter a bird (enter <name>) or your best plate of eggs (enter eggs).")
     } else {
         out.append("Entered for day \(s.nextShowDay):")
         for e in s.showEntries {
             if let id = e.birdID, let b = s.bird(id) {
-                out.append("  \(b.name) — \(Engine.showClass(for: b, in: s).name) class")
+                out.append("  \(b.name) — \(Engine.entryClass(e, of: b, in: s).name) class")
             } else if let first = e.eggs.first {
                 out.append("  a plate of \(first.speckled ? "speckled " : "")\(first.colour.rawValue) eggs")
             }
@@ -563,9 +620,10 @@ public func showsLines(_ s: GameState) -> [String] {
         out.append("Recent results:")
         for r in recent {
             let place = r.placing == 0 ? "unplaced" : "\(r.placing)/\(r.fieldSize)"
+            let won = prizeWords(coins: r.prize, treats: r.treats ?? 0)
             out.append(
                 "  day \(r.day) \(r.showClass.name): \(r.entrantName) \(place) (\(r.score)/100)"
-                    + (r.prize > 0 ? " · \(r.prize) coins" : ""))
+                    + (won.isEmpty ? "" : " · \(won)"))
         }
     }
     return out
