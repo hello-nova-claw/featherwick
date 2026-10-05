@@ -95,6 +95,9 @@ struct CoopSheet: View {
     private func eggActions(_ s: GameState, chosen: [Egg]) -> some View {
         let selling = chosen.isEmpty ? s.carton : chosen
         let total = selling.reduce(0) { $0 + s.rules.price(of: $1, onDay: s.day) }
+        if let note = incubatorSizeNote(s, chosen: chosen) {
+            Text(note).font(Typeface.caption).foregroundStyle(palette.inkMuted)
+        }
         HStack(spacing: Space.m) {
             if let reason = hatchBlocker(s, chosen: chosen) {
                 Button(reason) {}.buttonStyle(.primary).disabled(true)
@@ -142,6 +145,16 @@ struct CoopSheet: View {
         if chosen.contains(where: { $0.isCandled && !$0.isFertile }) { return "Clear eggs won't hatch" }
         if chosen.count > space { return "Room for \(space) more" }
         return nil
+    }
+
+    /// The neighbour's old incubator holds 1 egg. Say so when the keeper chooses more than fit.
+    private func incubatorSizeNote(_ s: GameState, chosen: [Egg]) -> String? {
+        guard s.hasIncubator, chosen.count > 1 else { return nil }
+        let space = s.incubatorSize - (s.incubatorClutch?.eggs.count ?? 0)
+        guard chosen.count > space else { return nil }
+        let holds = "Your incubator holds \(s.incubatorSize) egg\(s.incubatorSize == 1 ? "" : "s")."
+        guard s.incubatorSize < s.rules.bigIncubatorSize else { return holds }
+        return holds + " The Farm gate sells one for \(s.rules.bigIncubatorSize) (\(s.rules.incubatorPrice) coins)."
     }
 
     /// A grown bird with no perch, and when the neighbour will step in.
