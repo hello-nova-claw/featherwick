@@ -66,4 +66,18 @@ struct TextTests {
             #expect(!t.hint.isEmpty)
         }
     }
+
+    /// 4th, 5th and 6th used to show as "3rd" in the app. Every placing needs its own word.
+    @Test func placingsHaveTheirOwnOrdinals() {
+        #expect(placingText(0) == "not placed")
+        #expect(placingText(1) == "1st")
+        #expect(placingText(2) == "2nd")
+        #expect(placingText(3) == "3rd")
+        #expect(placingText(4) == "4th")
+        #expect(placingText(6) == "6th")
+        #expect(placingText(11) == "11th")
+        #expect(placingText(12) == "12th")
+        #expect(placingText(21) == "21st")
+        #expect(placingText(22) == "22nd")
+    }
 }

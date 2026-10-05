@@ -121,6 +121,20 @@ public func treeLines(_ id: UUID, _ s: GameState) -> [String] {
     return out
 }
 
+/// A show placing in words: "1st", "4th", "not placed". Only 1st to 3rd win a ribbon.
+public func placingText(_ placing: Int) -> String {
+    guard placing > 0 else { return "not placed" }
+    let suffix =
+        switch (placing % 10, placing % 100) {
+        case (_, 11...13): "th"
+        case (1, _): "st"
+        case (2, _): "nd"
+        case (3, _): "rd"
+        default: "th"
+        }
+    return "\(placing)\(suffix)"
+}
+
 public func birdName(_ id: UUID, _ s: GameState) -> String { s.bird(id)?.name ?? "a bird" }
 
 /// "gold laced", "barred blue", "lavender"...
@@ -399,14 +413,14 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .showNoEntries:
         return "The show came and went. You didn't enter anything this time — next one is day \(s.nextShowDay)."
     case .showPlacing(let r):
-        let ribbon =
+        let medal =
             switch r.placing {
-            case 1: "1st 🏆"
-            case 2: "2nd 🥈"
-            case 3: "3rd 🥉"
-            case 0: "not placed"
-            default: "\(r.placing)th"
+            case 1: " 🏆"
+            case 2: " 🥈"
+            case 3: " 🥉"
+            default: ""
             }
+        let ribbon = placingText(r.placing) + medal
         return "  \(r.showClass.name): \(r.entrantName) — \(ribbon) of \(r.fieldSize) (\(r.score)/100)"
             + (r.prize > 0 ? ", wins \(r.prize) coins!" : "")
     case .showPrizesWon(let coins):

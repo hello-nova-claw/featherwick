@@ -160,7 +160,13 @@ struct ShowPanel: View {
     }
 
     private func resultLine(_ r: ShowResult) -> String {
-        let place = r.placing == 0 ? "no ribbon" : r.placing == 1 ? "1st" : r.placing == 2 ? "2nd" : "3rd"
+        // 4th and below are real placings, but only the top three take a ribbon home.
+        let place =
+            switch r.placing {
+            case 0: "not placed"
+            case 1...3: "\(placingText(r.placing)) of \(r.fieldSize)"
+            default: "\(placingText(r.placing)) of \(r.fieldSize), no ribbon"
+            }
         return "Day \(r.day) · \(r.entrantName), \(r.showClass.name): \(place), \(r.score) of 100"
     }
 }
