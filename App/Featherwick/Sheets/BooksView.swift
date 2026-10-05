@@ -173,6 +173,7 @@ struct EggBook: View {
 struct SettingsSheet: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
+    @Environment(\.dismiss) private var dismiss
     @State private var difficulty = Difficulty.standard
     @State private var confirmNew = false
     @State private var testTools = false
@@ -189,6 +190,15 @@ struct SettingsSheet: View {
                 Button("1 day") { store.fullDays(1) }.buttonStyle(.secondary)
                 Button("7 days") { store.fullDays(7) }.buttonStyle(.secondary)
             }
+            // Runs every day up to and including the next show, then closes so the show screen opens.
+            Button("To show day (day \(store.state.nextShowDay))") {
+                let days = store.state.nextShowDay - store.state.day
+                dismiss()
+                store.fullDays(days)
+            }
+            .buttonStyle(.secondary)
+            Text("Feeds, collects, sells a full carton and shuts the coop each day. Your show entries stay.")
+                .font(Typeface.caption).foregroundStyle(palette.inkMuted)
             StitchDivider()
             Text("New game").font(Typeface.item)
             WordTabs(tabs: Difficulty.allCases.map { ($0, $0.rawValue.capitalized) }, selection: $difficulty)
