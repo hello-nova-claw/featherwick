@@ -127,4 +127,40 @@ struct StoryTests {
         let loaded = try SaveFormat.decode(SaveFormat.encode(SaveGame(state: s, rng: rng)))
         #expect(loaded.state.stories == s.stories)
     }
+
+    /// A story that asks for known-fertile eggs teaches candling, so the keeper is never stuck.
+    @Test func aFertileEggsStepTeachesCandling() {
+        var (s, rng) = Self.game()
+        s.rules.chicksToLearnCandling = 100  // only the story can teach it here
+        #expect(!s.canCandle)
+        let ev = Self.night(&s, &rng)
+        #expect(ev.contains(.storyStarted("broodySilkie")) && ev.contains(.learnedCandling))
+        #expect(s.canCandle)
+        #expect(ev.count(where: { $0 == .learnedCandling }) == 1)
+        // Taught once: later nights say nothing more.
+        #expect(!Self.night(&s, &rng).contains(.learnedCandling))
+    }
+
+    /// A save where the step is already waiting but the keeper never learned: the next night teaches it.
+    @Test func aWaitingFertileEggsStepTeachesCandlingOnTheNextNight() {
+        var (s, rng) = Self.game()
+        s.rules.chicksToLearnCandling = 100
+        _ = Self.night(&s, &rng)
+        s.canCandle = false
+        #expect(Engine.storyAwaitingDelivery(s) == "broodySilkie")
+        #expect(Self.night(&s, &rng).contains(.learnedCandling))
+        #expect(s.canCandle)
+    }
+
+    /// A timed step does not teach candling: only a step that needs fertile eggs does.
+    @Test func otherStepsDoNotTeachCandling() {
+        var (s, rng) = Self.game()
+        s.rules.chicksToLearnCandling = 100
+        _ = Self.night(&s, &rng)
+        Self.fertileEggs(3, &s, &rng)
+        _ = Engine.apply(.deliver(story: "broodySilkie"), to: &s, using: &rng)
+        s.canCandle = false
+        #expect(!Self.night(&s, &rng).contains(.learnedCandling))
+        #expect(!s.canCandle)
+    }
 }

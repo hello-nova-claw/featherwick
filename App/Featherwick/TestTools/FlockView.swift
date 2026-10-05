@@ -66,7 +66,7 @@ struct BirdDetailView: View {
                     LabeledContent("Friendliness", value: friendlyText(bird.friendliness))
                     LabeledContent("Inbreeding", value: "\(Int(((bird.inbreeding ?? 0) * 100).rounded()))%")
                     LabeledContent(
-                        "A neighbour would pay", value: "\(s.rules.rehomeValue(of: bird, onDay: s.day)) coins")
+                        "A neighbour would pay", value: "\(s.rehomeValue(of: bird)) coins")
                     LabeledContent("Show class", value: Engine.showClass(for: bird, in: s).name)
                 }
                 Section("Care") {
@@ -111,7 +111,7 @@ struct BirdDetailView: View {
                 Button("Cancel", role: .cancel) {}
             }
             .confirmationDialog("Rehome \(bird.name)?", isPresented: $confirmRehome, titleVisibility: .visible) {
-                Button("Rehome for \(s.rules.rehomeValue(of: bird, onDay: s.day)) coins", role: .destructive) {
+                Button("Rehome for \(s.rehomeValue(of: bird)) coins", role: .destructive) {
                     store.run(.rehome(id))
                 }
             }

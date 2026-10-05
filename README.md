@@ -29,7 +29,7 @@ sets the difficulty of a new game. Type `help` in the game for commands. `day 10
 
 `Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. Command in, events out. All tunable numbers live in `Rules`.
 
-Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → hatching (eggs due today; clear ones go back to the carton; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories & trade offer → county show (on show days) → door opens.
+Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → hatching (eggs due today; clear ones go back to the carton; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → door opens.
 
 ## Hatching and candling
 
@@ -41,6 +41,8 @@ Night order: fox (only if the coop is open) → foraging (if the door was left o
 - Bought eggs are already candled, so they show as fertile.
 - When `chicksToLearnCandling` chicks (1) have hatched, the neighbour teaches candling. Then you candle one egg
   at a time (`candleEgg`). The CLI can still candle the whole carton (`candle`).
+- A story step that asks for eggs you know are fertile also teaches candling. If you cannot candle when
+  the step starts (or on any night while it waits), the neighbour shows you at once. So the step never sticks.
 - Every egg known to be fertile hatches (cozy rule).
 - Saves from before this rule keep candling (`canCandle` is true when it is missing).
 
@@ -53,6 +55,38 @@ Night order: fox (only if the coop is open) → foraging (if the door was left o
 - The game tells you each night how many nights are left. Rehome a bird or upgrade the coop to keep it.
 - The starter is never sent away.
 - A new bird with no name for `autoNameNights` (2) takes its suggested name. You can rename it any time.
+
+## Rehoming
+
+`Rules.rehomeValue(of:onDay:ribbons:)`. A neighbour adopts a bird and pays for it. Front ends use
+`GameState.rehomeValue(of:)`, which counts the bird's ribbons.
+
+- Base by stage: chick 2, grower 4, adult 6.
+- Rare looks add a fixed bonus: lavender, splash, blue, barring, silkie feathers on a non-Silkie,
+  olive, blue or speckled eggs (laying hens only). A lap chicken adds `lapChickenRehomeBonus`.
+- Quality adds more. Show type above average adds up to `rehomeTypeBonus` (16). Egg shape above average
+  adds up to `rehomeEggShapeBonus` (6), for a laying hen only. Each 1st to 3rd place at a show adds
+  `rehomeRibbonBonus` (6), for up to `rehomeMaxRibbons` (5) ribbons. Egg-class ribbons do not count.
+- A purebred in a standard colour multiplies the quality bonus by `rehomeStandardPurebredFactor` (1.5).
+- An average bird gets no quality bonus. A plain adult is worth 6. A fine purebred hen with ribbons is worth 40 or more.
+- Only what the keeper can see counts. An unrevealed chick is worth its base price only.
+- Ribbons are matched by the bird's name for now. (The show code will match them by bird ID later.)
+
+## Speckle & Down (the shop)
+
+- Basic stock is always there: a pullet, a cockerel, or a fertile egg. The breed is a random starter
+  breed. You find out the breed when you buy it.
+- Treats, premium feed and the big incubator are always there too.
+- Breeds that a storyline unlocks are sold as pullets (`buyBreed`, `rareBreedPulletPrice`).
+- **The daily special** (`Shop.swift`): one young bird. The seller names its breed, sex and colour.
+  It changes each day. Its breed is any in-game breed. Its colour is one of the breed's usual colours.
+  With `shopRareChance` (8%) it is a rare colour: splash, lavender, or a colour the breed does not
+  usually come in. Its genes make that colour, so the bird looks as advertised.
+- Price: `shopSpecialPulletPrice` (35) or `shopSpecialCockerelPrice` (20), plus `shopRarePremium` (15)
+  for a rare colour. One special a day (`buySpecial`). It needs a free perch.
+- The special comes from `GameState.shopSeed` and the day, not from the game RNG. Looking at the shop
+  changes nothing. Old saves have seed 0, so they still get a special that changes each day.
+- CLI: `shop`, `buy pullet|cockerel|egg`, `buy special`.
 
 ## Genome (current genes)
 
@@ -260,7 +294,7 @@ words live in the UI.
 - **A laced gift** (after the broody Silkie): a neighbour admires your flock and gifts you a
   Wyandotte hen, so lacing enters your lines.
 - **A heritage breed** (deliver 4 fertile eggs): earns an Australorp hen and unlocks Australorp
-  pullets at Speckle & Down — the breed's only way into play.
+  pullets at Speckle & Down. (Now and then an Australorp is also the shop's daily special.)
 - CLI: `story`, `give eggs`, `buy silkie` / `buy australorp` (once unlocked).
 
 To add one: one `Storyline` in `Storylines.all`, plus its words in the UI.

@@ -60,15 +60,16 @@ struct FarmGateSheet: View {
     private func hatchingItems(_ s: GameState) -> some View {
         let r = s.rules
         return VStack(spacing: 0) {
+            specialRow(s)
             ShopRow(
                 name: "A fertile egg", detail: "From a local flock, already candled.", price: r.fertileEggPrice,
                 coins: s.coins
             ) { store.run(.buy(.fertileEgg)) }
-            ShopRow(name: "A pullet", detail: "A young hen, breed known.", price: r.pulletPrice, coins: s.coins) {
+            ShopRow(name: "A pullet", detail: "A young hen. The breed is a surprise.", price: r.pulletPrice, coins: s.coins) {
                 store.run(.buy(.pullet))
             }
             ShopRow(
-                name: "A cockerel", detail: "A young rooster, breed known.", price: r.cockerelPrice, coins: s.coins
+                name: "A cockerel", detail: "A young rooster. The breed is a surprise.", price: r.cockerelPrice, coins: s.coins
             ) { store.run(.buy(.cockerel)) }
             ForEach(s.shopBreeds.sorted { $0.rawValue < $1.rawValue }, id: \.self) { breed in
                 ShopRow(
@@ -89,6 +90,22 @@ struct FarmGateSheet: View {
                     price: r.coopUpgradePrice, coins: s.coins
                 ) { store.run(.upgradeCoop) }
             }
+        }
+    }
+}
+
+extension FarmGateSheet {
+    /// Today's special: one named bird (breed, sex, colour). It changes every day; sometimes it is rare.
+    @ViewBuilder
+    fileprivate func specialRow(_ s: GameState) -> some View {
+        if let special = s.todaysSpecial {
+            ShopRow(
+                name: "Today's special", detail: shopSpecialText(special), price: special.price, coins: s.coins
+            ) { store.run(.buySpecial) }
+        } else {
+            Text("Today's special is sold. A new one comes tomorrow.")
+                .font(Typeface.caption).foregroundStyle(palette.inkMuted)
+                .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, Space.s)
         }
     }
 }

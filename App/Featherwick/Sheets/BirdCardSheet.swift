@@ -59,7 +59,7 @@ struct BirdCardSheet: View {
                 Button("Cancel", role: .cancel) {}
             }
             .confirmationDialog("Rehome \(bird.name)?", isPresented: $confirmRehome, titleVisibility: .visible) {
-                Button("A neighbour pays \(s.rules.rehomeValue(of: bird, onDay: s.day)) coins", role: .destructive) {
+                Button("A neighbour pays \(s.rehomeValue(of: bird)) coins", role: .destructive) {
                     store.run(.rehome(birdID))
                 }
             } message: {
