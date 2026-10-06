@@ -545,7 +545,8 @@ public func jobText(_ job: Job, _ s: GameState) -> String {
         case .nameBird: "Give the new \(newBirdWord(job.birdID, s)) a name"
         case .enterShow: "Enter the \(showThemeName(s.nextShowTheme))"
         }
-    guard job.target > 1, !job.isDone else { return title }
+    // The count shows once the job is started: "Cuddle Juniper and Pip", then "(1 of 2)".
+    guard job.target > 1, job.progress > 0, !job.isDone else { return title }
     return title + " (\(job.progress) of \(job.target))"
 }
 
