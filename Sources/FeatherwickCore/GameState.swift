@@ -162,6 +162,11 @@ public struct GameState: Hashable, Codable, Sendable {
     public var shopSeed: UInt64 = 0
     /// The day the keeper last bought the daily special. One a day.
     public var specialBoughtDay: Int?
+    /// Early-game features introduced so far (see EarlyGame.swift). A new game starts with none.
+    /// Every feature by default, so saves from before the early game keep everything open.
+    public var introduced: Set<Feature> = Set(Feature.allCases)
+    /// The neighbour's advice for the next show. Cleared on show day.
+    public var showTip: ShowTip?
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

@@ -10,6 +10,9 @@ struct FarmGateSheet: View {
     @State private var tab = ShopTab.feed
 
     enum ShopTab: Hashable { case feed, treats, hatching, show }
+    static let tabs: [(ShopTab, String)] = [
+        (.feed, "Feed"), (.treats, "Treats"), (.hatching, "Hatching"), (.show, "Show"),
+    ]
 
     var body: some View {
         let s = store.state
@@ -24,9 +27,8 @@ struct FarmGateSheet: View {
             Text("Speckle & Down").font(Typeface.title)
             Text("“Morning! Fresh mealworms in today, and the feed's just come off the cart.”")
                 .font(Typeface.serifItalic(19)).foregroundStyle(palette.inkSoft)
-            WordTabs(
-                tabs: [(.feed, "Feed"), (.treats, "Treats"), (.hatching, "Hatching"), (.show, "Show")],
-                selection: $tab)
+            // The Show tab appears when the early game opens the show (a week before the first one).
+            WordTabs(tabs: Self.tabs.filter { $0.0 != .show || s.isOpen(.shows) }, selection: $tab)
             switch tab {
             case .feed: feedItems(s)
             case .treats: treatItems(s)
@@ -36,64 +38,95 @@ struct FarmGateSheet: View {
             LastWords()
         }
         .presentationDetents([.large])
+        .onAppear {
+            // The neighbour's show tip is waiting: open on the Show tab.
+            if let tip = s.showTip, !s.showEntries.contains(where: { $0.birdID == tip.birdID }) { tab = .show }
+        }
     }
 
     private func feedItems(_ s: GameState) -> some View {
         let r = s.rules
         return VStack(spacing: 0) {
-            ShopRow(
-                name: "Premium feed", detail: "\(r.premiumFeedBagSize) days. Feeds the flock and lifts laying.",
-                price: r.premiumFeedPrice, coins: s.coins
-            ) { store.run(.buy(.premiumFeed)) }
+            if s.isOpen(.premiumFeed) {
+                ShopRow(
+                    name: "Premium feed", detail: "\(r.premiumFeedBagSize) days. Feeds the flock and lifts laying.",
+                    price: r.premiumFeedPrice, coins: s.coins
+                ) { store.run(.buy(.premiumFeed)) }
+            }
             Text("Basic feed is free, always.").font(Typeface.caption).foregroundStyle(palette.inkMuted)
                 .frame(maxWidth: .infinity, alignment: .leading).padding(.top, Space.s)
         }
     }
 
+    @ViewBuilder
     private func treatItems(_ s: GameState) -> some View {
-        ShopRow(
-            name: "Mealworms", detail: "A bag of \(s.rules.treatBagSize). One a day wins a bird's trust.",
-            price: s.rules.treatBagPrice, coins: s.coins
-        ) { store.run(.buy(.treats)) }
+        if s.isOpen(.treats) {
+            ShopRow(
+                name: "Mealworms", detail: "A bag of \(s.rules.treatBagSize). One a day wins a bird's trust.",
+                price: s.rules.treatBagPrice, coins: s.coins
+            ) { store.run(.buy(.treats)) }
+        } else {
+            NotYetLine(feature: .treats)
+        }
     }
 
     private func hatchingItems(_ s: GameState) -> some View {
         let r = s.rules
         return VStack(spacing: 0) {
-            specialRow(s)
-            ShopRow(
-                name: "A fertile egg", detail: "From a local flock, already candled.", price: r.fertileEggPrice,
-                coins: s.coins
-            ) { store.run(.buy(.fertileEgg)) }
-            ShopRow(
-                name: "A pullet", detail: "A young hen. The breed is a surprise.", price: r.pulletPrice, coins: s.coins
-            ) {
-                store.run(.buy(.pullet))
-            }
-            ShopRow(
-                name: "A cockerel", detail: "A young rooster. The breed is a surprise.", price: r.cockerelPrice,
-                coins: s.coins
-            ) { store.run(.buy(.cockerel)) }
-            ForEach(s.shopBreeds.sorted { $0.rawValue < $1.rawValue }, id: \.self) { breed in
-                ShopRow(
-                    name: "A \(breed.definition.displayName) pullet", detail: breed.definition.note,
-                    price: r.rareBreedPulletPrice, coins: s.coins
-                ) { store.run(.buyBreed(breed)) }
-            }
-            if s.incubatorSize < r.bigIncubatorSize {
+            if s.isOpen(.birdShop) { birdStock(s) } else { NotYetLine(feature: .birdShop) }
+            if s.isOpen(.incubatorShop), s.incubatorSize < r.bigIncubatorSize {
                 ShopRow(
                     name: "Incubator",
                     detail: "Holds \(r.bigIncubatorSize) eggs. They hatch in \(r.incubatorHatchDays) nights.",
                     price: r.incubatorPrice, coins: s.coins
                 ) { store.run(.buyIncubator) }
             }
-            if s.perches < r.maxPerches {
+            if s.isOpen(.coopUpgrade), s.perches < r.maxPerches {
                 ShopRow(
                     name: "More perches", detail: "Adds \(r.perchesPerUpgrade) perches (now \(s.perches)).",
                     price: r.coopUpgradePrice, coins: s.coins
                 ) { store.run(.upgradeCoop) }
             }
         }
+    }
+
+    /// Birds and eggs: the daily special, basic stock, and breeds a storyline unlocked.
+    @ViewBuilder
+    private func birdStock(_ s: GameState) -> some View {
+        let r = s.rules
+        specialRow(s)
+        ShopRow(
+            name: "A fertile egg", detail: "From a local flock, already candled.", price: r.fertileEggPrice,
+            coins: s.coins
+        ) { store.run(.buy(.fertileEgg)) }
+        ShopRow(
+            name: "A pullet", detail: "A young hen. The breed is a surprise.", price: r.pulletPrice, coins: s.coins
+        ) {
+            store.run(.buy(.pullet))
+        }
+        ShopRow(
+            name: "A cockerel", detail: "A young rooster. The breed is a surprise.", price: r.cockerelPrice,
+            coins: s.coins
+        ) { store.run(.buy(.cockerel)) }
+        ForEach(s.shopBreeds.sorted { $0.rawValue < $1.rawValue }, id: \.self) { breed in
+            ShopRow(
+                name: "A \(breed.definition.displayName) pullet", detail: breed.definition.note,
+                price: r.rareBreedPulletPrice, coins: s.coins
+            ) { store.run(.buyBreed(breed)) }
+        }
+    }
+}
+
+/// What the shop says about stock that the early game has not brought in yet.
+struct NotYetLine: View {
+    @Environment(GameStore.self) private var store
+    @Environment(\.palette) private var palette
+    let feature: Feature
+
+    var body: some View {
+        Text(notYetText(feature, store.state))
+            .font(Typeface.caption).foregroundStyle(palette.inkMuted)
+            .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, Space.s)
     }
 }
 
@@ -150,6 +183,7 @@ struct ShowPanel: View {
         let s = store.state
         VStack(alignment: .leading, spacing: Space.xl) {
             ShowHeading(theme: s.nextShowTheme, day: s.nextShowDay, fee: s.rules.showEntryFee)
+            tip(s)
             entered(s)
             birdsToEnter(s)
             platesToEnter(s)
@@ -157,6 +191,23 @@ struct ShowPanel: View {
         }
         .sheet(item: $choosing) { choice in
             EnterShowSheet(birdID: choice.id).environment(\.palette, palette)
+        }
+    }
+
+    /// The neighbour's suggestion: one bird and one class, with a button to enter it. Gone once entered.
+    @ViewBuilder
+    private func tip(_ s: GameState) -> some View {
+        if let tip = s.showTip, let bird = s.bird(tip.birdID), !s.showEntries.contains(where: { $0.birdID == bird.id }),
+            Engine.eligibleClasses(for: bird, in: s).contains(tip.showClass)
+        {
+            VStack(alignment: .leading, spacing: Space.s) {
+                Text("The neighbour thinks \(bird.name) could do well in the \(tip.showClass.name) class.")
+                    .font(Typeface.serifItalic(17)).foregroundStyle(palette.inkSoft)
+                Button("Enter \(bird.name) · \(s.rules.showEntryFee) coins") {
+                    store.run(.enterShowIn(bird.id, tip.showClass))
+                }
+                .buttonStyle(.secondary)
+            }
         }
     }
 

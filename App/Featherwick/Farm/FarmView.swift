@@ -191,8 +191,21 @@ struct FarmView: View {
             if !s.fedToday { return [Notice(kind: .decision, text: "hungry")] }
             return s.lost.isEmpty ? [] : [Notice(kind: .story, text: "\(s.lost.count) wandered off")]
         case .farmGate:
+            var n: [Notice] = []
+            // Something the early game brought in this morning: new stock, or the show.
+            let shop: [Feature] = [.treats, .premiumFeed, .birdShop, .coopUpgrade, .incubatorShop]
+            if shop.contains(where: { s.isOpen($0) && s.rules.introductionDay(of: $0) == s.day }) {
+                n.append(Notice(kind: .story, text: "new in today"))
+            }
+            guard s.isOpen(.shows) else { return n }
+            if let tip = s.showTip, let bird = s.bird(tip.birdID),
+                !s.showEntries.contains(where: { $0.birdID == bird.id })
+            {
+                n.append(Notice(kind: .decision, text: "enter \(bird.name)?"))
+            }
             let until = s.nextShowDay - s.day
-            return until <= 3 ? [Notice(kind: .story, text: until == 0 ? "show today" : "show in \(until) days")] : []
+            if until <= 3 { n.append(Notice(kind: .story, text: until == 0 ? "show today" : "show in \(until) days")) }
+            return n
         }
     }
 }

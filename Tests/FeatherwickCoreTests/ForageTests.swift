@@ -99,7 +99,7 @@ struct ForageTests {
         var rng = SeededRNG(seed: 7)
         var r = Rules.standard
         r.foxChance = 0
-        var s = Engine.newGame(rules: r, using: &rng)
+        var s = Engine.newGame(rules: r, earlyGame: false, using: &rng)
         _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
         s.coins = 500
 

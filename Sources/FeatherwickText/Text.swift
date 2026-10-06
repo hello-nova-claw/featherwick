@@ -142,7 +142,7 @@ public func showKindName(_ kind: ShowKind) -> String {
 
 /// What the theme means for the player, in one sentence.
 public func showThemeLine(_ theme: ShowTheme) -> String {
-    let bonus = "The \(showKindName(theme.featured)) pay extra coins."
+    let bonus = "The \(showKindName(theme.featured)) \(theme.featured == .pet ? "pays" : "pay") extra coins."
     return theme == .winterChampionship ? bonus + " The rivals are the strongest of the year." : bonus
 }
 
@@ -293,6 +293,7 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         case .noPremiumFeed: "Your premium feed barrel is empty. Buy more: buy feed"
         case .alreadyFedPremium: "You already gave them premium feed today."
         case .specialSoldOut: "Today's special is sold. Speckle & Down has a new one tomorrow."
+        case .notYet(let f): notYetText(f, s)
         }
     case .starterChosen(let id): return "You take \(birdName(id, s)) home and settle them under the heat lamp."
     case .fed: return "You fill the feeder and top up the water."
@@ -450,6 +451,8 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .roosterAdvice:
         return "Tip: one rooster is plenty. Rehome a spare and a neighbour will adopt him for coins "
             + "(rehome <name>; see what he's worth with value <name>) — or wait, and someone may offer a hen in trade."
+    case .introduced(let f): return introducedText(f, s)
+    case .showAnnounced(let tip): return showTipText(tip, s)
     case .boughtSpecial(let id, let cost):
         return "You buy today's special for \(cost) coins: \(s.bird(id).map { birdLabel($0, s) } ?? "a young bird")."
     case .milestoneReached(let id):
@@ -663,4 +666,145 @@ public func storyLines(_ s: GameState) -> [String] {
         }
     }
     return out
+}
+
+// MARK: - The early game
+
+/// "she", "he", or the bird's name while its sex is hidden. Never leaks a hidden sex.
+public func subjectPronoun(_ b: Bird) -> String { b.revealed ? (b.sex == .hen ? "she" : "he") : b.name }
+
+/// "her", "him", or the bird's name while its sex is hidden.
+public func objectPronoun(_ b: Bird) -> String { b.revealed ? (b.sex == .hen ? "her" : "him") : b.name }
+
+/// "pullet", "hen", "cockerel", "rooster", or "chick" while the sex is hidden.
+public func kindWord(_ b: Bird, _ s: GameState) -> String {
+    guard b.revealed else { return "chick" }
+    switch (b.stage(onDay: s.day, rules: s.rules), b.sex) {
+    case (.chick, _): return "chick"
+    case (.grower, .hen): return "pullet"
+    case (.grower, .rooster): return "cockerel"
+    case (.adult, .hen): return "hen"
+    case (.adult, .rooster): return "rooster"
+    }
+}
+
+/// "a" or "an" for the word that follows.
+func article(_ next: String) -> String { "aeiou".contains(next.lowercased().first ?? "x") ? "an" : "a" }
+
+/// The starter's name, or "your chick" if the starter has gone.
+func starterName(_ s: GameState) -> String { s.starterID.flatMap { s.bird($0)?.name } ?? "your chick" }
+
+/// What the neighbour says when the early game reaches a feature. The show is announced by `showTipText`.
+public func introducedText(_ f: Feature, _ s: GameState) -> String? {
+    let r = s.rules
+    switch f {
+    case .handling:
+        let n = starterName(s)
+        return """
+            The neighbour leans over the fence. "How's \(n) settling in? Pick \(n) up every day. \
+            Chicks learn to trust you fastest while they're small." (pet \(n))
+            """
+    case .treats:
+        return """
+            The neighbour hands you a twist of paper. "Mealworms! Chickens adore them. One a day from your hand, \
+            and they'll follow you anywhere." You get \(r.welcomeTreats) treats. Speckle & Down sells more. \
+            (treat <name>, buy treats)
+            """
+    case .premiumFeed:
+        return "Speckle & Down has premium feed in. Basic feed stays free. Premium feed also lifts laying a little, "
+            + "so it helps once your hens lay. (buy feed, feed premium)"
+    case .coopDoor:
+        let n = starterName(s)
+        return """
+            The neighbour looks at \(n). "Nearly big enough for the coop! Remember to shut the coop door at night. \
+            A fox comes by now and then. It won't hurt anyone, but it gives them a terrible fright. \
+            Leave the door open and they forage all night, and come back fed. Your choice." (close)
+            """
+    case .breedBook:
+        guard let starter = s.starterID.flatMap({ s.bird($0) }), starter.revealed else {
+            return "Every breed and colour you keep goes in your Breed Book. (book)"
+        }
+        let what = "\(colourText(starter.phenotype)) \(starter.varietyName) \(kindWord(starter, s))"
+        return """
+            The neighbour peers at \(starter.name). "So that's what \(subjectPronoun(starter))'s turned into: \
+            \(article(what)) \(what)! Write that in your Breed Book. Every breed and colour you keep goes in it." (book)
+            """
+    case .laying:
+        let hens = s.birdsAtHome.filter { $0.revealed && $0.sex == .hen }
+        guard let hen = hens.min(by: { $0.hatchDay < $1.hatchDay }) else {
+            return "The neighbour's hens are laying well. \"Roosters don't lay, mind. A pullet from Speckle & Down "
+                + "would.\" (shop)"
+        }
+        let n = hen.name
+        return """
+            The neighbour nods at \(n). "\(n) will start to lay soon. Hens lay when they were fed the day before. \
+            Collect the eggs every day: full nest boxes mean broken eggs, and old eggs sell for less." (collect, sell)
+            """
+    case .birdShop:
+        return "Speckle & Down has birds in! Pullets, cockerels, fertile eggs, and a special bird each day. "
+            + "Your flock can grow now. (shop)"
+    case .coopUpgrade:
+        return "The carpenter can add perches to your coop now: \(r.perchesPerUpgrade) more perches for "
+            + "\(r.coopUpgradePrice) coins. More perches, more birds. (upgrade coop)"
+    case .shows:
+        return nil  // the neighbour announces the show herself (showTipText)
+    case .incubatorShop:
+        return "Speckle & Down now sells a big incubator. It holds \(r.bigIncubatorSize) eggs, for "
+            + "\(r.incubatorPrice) coins. (buy incubator)"
+    }
+}
+
+/// Why a command is refused before the early game reaches its feature, and when it comes.
+public func notYetText(_ f: Feature, _ s: GameState) -> String {
+    let day = s.rules.introductionDay(of: f)
+    let when = day <= s.day + 1 ? "tomorrow" : "on day \(day)"
+    switch f {
+    case .treats: return "Speckle & Down has no mealworms in yet. They come \(when)."
+    case .premiumFeed: return "Speckle & Down has no premium feed in yet. It comes \(when)."
+    case .birdShop: return "Speckle & Down has no birds or eggs for sale yet. Look after \(starterName(s)) for now."
+    case .coopUpgrade: return "The carpenter is busy. Ask about more perches \(when)."
+    case .shows: return "There is no show to enter yet."
+    case .incubatorShop: return "Speckle & Down has no incubators in yet. They come \(when)."
+    case .handling, .coopDoor, .breedBook, .laying: return "Not yet."
+    }
+}
+
+/// The neighbour announces the county show, a week ahead, and names one of your birds and a class for it.
+public func showTipText(_ tip: ShowTip?, _ s: GameState) -> String {
+    let day = tip?.showDay ?? s.nextShowDay
+    let theme = ShowTheme.forSeason(s.season(onDay: day))
+    let show = "The \(showThemeName(theme)) is coming up next week, on day \(day)."
+    guard let tip, let bird = s.bird(tip.birdID) else {
+        return """
+            The neighbour waves a poster over the fence. "\(show) Your birds are a bit young to show this time. \
+            There's one every season." (shows)
+            """
+    }
+    let n = bird.name
+    let her = objectPronoun(bird)
+    let she = subjectPronoun(bird)
+    let classes = Engine.eligibleClasses(for: bird, in: s)
+    var said: String
+    switch tip.showClass {
+    case .breed(let breed):
+        let looks = "\(colourText(bird.phenotype)) \(breed.definition.displayName)"
+        said =
+            "Oh hey, I notice that \(n) is a beautiful \(looks)! \(show) I think you should enter \(her) "
+            + "in the \(breed.definition.displayName) class."
+    default:
+        let kind = kindWord(bird, s)
+        let opener =
+            bird.friendliness >= .friendly
+            ? "Oh hey, \(n) is such a sweet, friendly \(kind)!"
+            : "Oh hey, I've been watching \(n). What a character!"
+        said = "\(opener) \(show) I think you should enter \(her) in the pet class."
+        if bird.friendliness >= .friendly {
+            said += " The judges love a bird that's happy to be held."
+        } else {
+            said += " A cuddle every day until then, and \(she)'ll be a different bird on the day."
+        }
+        if classes.count > 1 { said += " The \(classes[0].name) class is a tough crowd this year." }
+    }
+    let command = tip.showClass == .pet && classes.count > 1 ? "enter \(n) pet" : "enter \(n)"
+    return "The neighbour leans over the fence with a poster. \"\(said)\" \(showThemeLine(theme)) (\(command))"
 }

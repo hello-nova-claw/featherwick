@@ -169,6 +169,11 @@ final class GameStore {
             return ("\(s.bird(id)?.name ?? "A bird") went to a new home (+\(coins) coins)", nil, nil)
         case .namedForYou(let id):
             return ("The new bird is now called \(s.bird(id)?.name ?? "something")", "View", .bird(id))
+        case .showAnnounced(let tip):
+            let show = showThemeName(ShowTheme.forSeason(s.season(onDay: tip?.showDay ?? s.nextShowDay)))
+            return ("The \(show) is next week", "View", .place(.farmGate))
+        case .introduced(let f) where [.treats, .premiumFeed, .birdShop, .coopUpgrade, .incubatorShop].contains(f):
+            return ("New at Speckle & Down", "View", .place(.farmGate))
         case .foxVisited(let ids):
             return ("A fox scared \(ids.count) bird\(ids.count == 1 ? "" : "s") away. They'll come home.", nil, nil)
         default:

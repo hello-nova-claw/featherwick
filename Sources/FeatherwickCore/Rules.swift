@@ -149,6 +149,22 @@ public struct Rules: Codable, Hashable, Sendable {
     public var shopRareChance = 0.08  // chance the special is a rare colour for its breed
     public var shopRarePremium = 15  // added to the price of a rare-colour special
 
+    // Early game (see EarlyGame.swift): the morning each feature is introduced. A new keeper starts with
+    // one chick (sex shows on day `growerAge`) and learns one thing at a time.
+    public var featureDays: [Feature: Int] = [
+        .handling: 1, .treats: 2, .premiumFeed: 4, .coopDoor: 6, .breedBook: 8, .birdShop: 10,
+        .coopUpgrade: 14, .laying: 18, .incubatorShop: 29,
+    ]
+    /// The county show opens this many days before the first show (`.shows` has no entry above).
+    public var showNoticeDays = 7
+    /// Mealworms the neighbour gives when she shows you treats.
+    public var welcomeTreats = 3
+    /// The neighbour suggests a bird's breed class when it places 1st to 3rd in at least this share
+    /// of practice fields. Otherwise she suggests the pet class.
+    public var showTipBreedClassOdds = 0.4
+    /// Practice fields judged to find the neighbour's show tip.
+    public var showTipTrials = 24
+
     public init() {}
 
     /// How an adult hen's laying falls with age: full until `layDeclineStartDays`, then down to

@@ -113,7 +113,7 @@ struct PedigreeTests {
 
     @Test func aBoughtEggKeepsItsParentsOnRecord() {
         var rng = SeededRNG(seed: 3)
-        var s = Engine.newGame(using: &rng)
+        var s = Engine.newGame(earlyGame: false, using: &rng)
         _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
         s.coins = 100
         _ = Engine.apply(.buy(.fertileEgg), to: &s, using: &rng)
