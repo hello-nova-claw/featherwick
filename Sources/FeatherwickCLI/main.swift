@@ -126,6 +126,7 @@ let help = """
       day [n]              do a full day n times: feed, collect, close, sleep
       book                 Breed Book and egg colours
       journal              your milestones and what to aim for next
+      jobs                 today's jobs and this season's goal (do all the jobs for a small reward)
       slot [name]          list your saves, or switch to / create a save slot
       sim [days] [games]   balance report: simulate seeded games and show the numbers
       new yes [difficulty] delete the save and start again (relaxed | standard | challenge)
@@ -384,6 +385,7 @@ while true {
         }
     case "book", "b": book(game.state)
     case "journal", "goals", "j": journal(game.state)
+    case "jobs", "today": jobsLines(game.state).forEach { print($0) }
     case "new":
         if words.count > 1, words[1] == "yes" {
             let difficulty = (words.count > 2 ? Difficulty(named: words[2]) : nil) ?? .standard

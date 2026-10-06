@@ -53,10 +53,39 @@ struct TextTests {
         #expect(!journalLines(s).isEmpty)
         #expect(!bookLines(s).isEmpty)
         #expect(!showsLines(s).isEmpty)
+        #expect(!jobsLines(s).isEmpty)
         for b in s.ownedBirds {
             #expect(birdLabel(b, s).contains(b.name))
             #expect(!treeLines(b.id, s).isEmpty)
         }
+    }
+
+    @Test func everyJobAndGoalHasWords() {
+        guard let (_, s) = Self.play(seed: 2, days: 3).last else {
+            Issue.record("no events")
+            return
+        }
+        for kind in JobKind.allCases {
+            #expect(!jobText(Job(kind: kind), s).isEmpty)
+            #expect(jobText(Job(kind: kind, target: 3, progress: 1), s).hasSuffix("(1 of 3)"))
+        }
+        for kind in GoalKind.allCases {
+            let goal = SeasonGoal(kind: kind, startDay: 0, endDay: 28, target: 3, baseline: 0)
+            #expect(!seasonGoalText(goal, s).isEmpty)
+            #expect(!goalName(kind).isEmpty)
+        }
+    }
+
+    /// An unfinished goal is never failed: the new goal's words say the last one can rest.
+    @Test func anUnfinishedGoalIsLetGoKindly() {
+        guard var (_, s) = Self.play(seed: 3, days: 3).last else {
+            Issue.record("no events")
+            return
+        }
+        s.seasonGoal = SeasonGoal(kind: .newFriend, startDay: s.day, endDay: s.day + 20, target: 1, baseline: 0)
+        let words = eventText(.seasonGoalSet(.newFriend, previous: .hatchChicks), s) ?? ""
+        #expect(words.contains("can rest"))
+        #expect(!words.lowercased().contains("fail"))
     }
 
     @Test func everyMilestoneHasATitleAndHint() {

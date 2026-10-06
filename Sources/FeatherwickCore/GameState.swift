@@ -167,6 +167,10 @@ public struct GameState: Hashable, Codable, Sendable {
     public var introduced: Set<Feature> = Set(Feature.allCases)
     /// The neighbour's advice for the next show. Cleared on show day.
     public var showTip: ShowTip?
+    /// Today's jobs (see Jobs.swift). Nil before the first morning, so old saves get jobs from the next one.
+    public var jobBoard: JobBoard?
+    /// The season's bigger goal (see Jobs.swift). Nil until a morning with something to aim for.
+    public var seasonGoal: SeasonGoal?
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules
