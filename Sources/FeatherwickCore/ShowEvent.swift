@@ -198,9 +198,12 @@ extension Engine {
 
     /// If today is a show day, judge every entry against a field of AI entries, place them, pay prizes.
     static func runShowIfToday<R: RandomNumberGenerator>(_ s: inout GameState, _ rng: inout R) -> [GameEvent] {
-        guard s.isShowDay else { return [] }
+        guard s.isShowDay, s.isOpen(.shows) else { return [] }
         var ev: [GameEvent] = [.showDay(day: s.day)]
-        defer { s.showEntries = [] }  // the show is over, whatever happened
+        defer {  // the show is over, whatever happened
+            s.showEntries = []
+            s.showTip = nil
+        }
         guard !s.showEntries.isEmpty else {
             ev.append(.showNoEntries)
             return ev

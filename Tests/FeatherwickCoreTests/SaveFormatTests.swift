@@ -24,8 +24,11 @@ struct SaveFormatTests {
         let loaded = try SaveFormat.decode(SaveFormat.encode(game))
         // Rules hold a breed-keyed dictionary, which JSON writes as an array in hash order. Compare it alone.
         #expect(loaded.state.rules.broodyChance == game.state.rules.broodyChance)
+        // Sets are written in hash order too.
+        #expect(loaded.state.introduced == game.state.introduced)
         var same = loaded.state
         same.rules = game.state.rules
+        same.introduced = game.state.introduced
         let sorted = JSONEncoder()
         sorted.outputFormatting = .sortedKeys
         #expect(try sorted.encode(same) == sorted.encode(game.state))

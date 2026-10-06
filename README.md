@@ -29,7 +29,46 @@ sets the difficulty of a new game. Type `help` in the game for commands. `day 10
 
 `Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. Command in, events out. All tunable numbers live in `Rules`.
 
-Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → hatching (eggs due today; clear ones go back to the carton; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → door opens.
+Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → hatching (eggs due today; clear ones go back to the carton; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → early game (features whose day has come; the show tip) → milestones → door opens.
+
+## The early game (tutorial timeline)
+
+`EarlyGame.swift`. A new keeper starts with one chick and learns one thing at a time. The game is
+a tutorial told as a fixed timeline. Each morning on the timeline, the neighbour introduces one
+`Feature`. A lesson locks nothing. Other features stay locked until their day: the command is
+refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
+
+| Day | Feature | What happens |
+| --- | --- | --- |
+| 0 | — | Choose one chick. Feed, cuddle, name. Nothing to buy. |
+| 1 | `handling` (lesson) | "Pick her up every day. Chicks learn trust fastest." |
+| 2 | `treats` | The neighbour gives `welcomeTreats` (3). Speckle & Down sells treats. |
+| 4 | `premiumFeed` | Speckle & Down sells premium feed. |
+| 6 | `coopDoor` (lesson) | The chick moves to the coop tomorrow: the door, the fox, foraging. |
+| 7 | — | The sex shows (`growerAge`). A rooster starter gets the gift hen. |
+| 8 | `breedBook` (lesson) | The neighbour names the starter's breed and colour: the Breed Book. |
+| 10 | `birdShop` | Pullets, cockerels, fertile eggs, the daily special, story breeds. |
+| 14 | `coopUpgrade` | More perches. |
+| 18 | `laying` (lesson) | Your hen starts to lay soon: feed, collect, sell. |
+| 21 | `shows` | The show opens, a week before the first show. The neighbour's show tip. |
+| 28 | — | The first county show. |
+| 29 | `incubatorShop` | The big incubator. (The neighbour's small one still comes with the first fertile egg.) |
+
+- The days are in `Rules.featureDays`. The show opens `showNoticeDays` (7) before the first show.
+- No birds, perches, incubators or shows before the sex shows (`EarlyGameTests` checks this).
+- **The show tip** (`Engine.showTip`). When the show opens, the neighbour names one of your birds and
+  one class, by name: "Oh hey, I notice that Basil is a beautiful buff Orpington! … I think you
+  should enter her in the Orpington class." She suggests the breed class if the bird places 1st to
+  3rd in at least `showTipBreedClassOdds` (40%) of `showTipTrials` practice fields. Otherwise she
+  suggests the pet class for the bird with the best odds there. Ties go to the starter.
+- The practice fields come from the bird's own ID, not the game RNG, so the tip changes nothing.
+  Only visible traits are judged, and chicks are never named, so the tip leaks no hidden gene.
+- The tip is kept in `GameState.showTip` until show day. The app shows it on the Show tab with an
+  "Enter" button, and a notice at the farm gate.
+- `Engine.newGame(earlyGame: false)` opens everything on day 0. Saves from before the early game
+  have every feature open (`GameState.introduced` defaults to all).
+- To add a step: a `Feature` case (in timeline order), its day in `featureDays`, the command it gates
+  in `Engine.feature(for:)`, and its words in `introducedText` and `notYetText`.
 
 ## Hatching and candling
 

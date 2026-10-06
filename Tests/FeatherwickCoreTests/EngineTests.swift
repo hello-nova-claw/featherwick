@@ -6,7 +6,8 @@ import Testing
 /// A game that has started with a known starter chick (an Orpington of the given sex).
 func startedGame(sex: Sex, rules: Rules = .standard, seed: UInt64 = 1) -> (GameState, SeededRNG) {
     var rng = SeededRNG(seed: seed)
-    var s = Engine.newGame(rules: rules, using: &rng)
+    // Every feature open: `EarlyGameTests` covers a new keeper's timeline.
+    var s = Engine.newGame(rules: rules, earlyGame: false, using: &rng)
     let chick = Bird(
         id: makeID(using: &rng), name: "", breed: .orpington,
         genome: Breed.orpington.purebred(sex), hatchDay: 0, origin: "Neighbour")

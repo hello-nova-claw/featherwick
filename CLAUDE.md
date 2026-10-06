@@ -37,7 +37,7 @@ Key Core files:
 - `GameState.swift`, `Genome.swift`, `Locus.swift`, `Alleles.swift`, `Phenotype.swift`: state and genetics.
 - `BreedTable.swift`, `Breed.swift`: breeds and colour varieties (data tables).
 - `SaveFormat.swift` (versions, migrations), `SaveStore.swift` (slots, atomic writes, backups).
-- One file per feature: `Shows`, `ShowEvent`, `Friendliness`, `Pedigree`, `Names`, `Story`,
+- One file per feature: `EarlyGame`, `Shows`, `ShowEvent`, `Friendliness`, `Pedigree`, `Names`, `Story`,
   `Milestone`, `Look`, `Simulation`.
 
 ## iOS app
@@ -96,6 +96,9 @@ Most new content is a table entry. See README "Data layer" and the feature secti
 - Storyline: a `Storyline` in `Storylines.all` + its words in `storyText`.
 - Milestone: a `Milestone` in `Milestones.all` (order = ladder) + its words in `milestoneText`.
 - Night step: add it to `passNight` in order and update the "Night order" line in README.
+- Early-game step: a `Feature` case (timeline order), its day in `Rules.featureDays`, its gate in
+  `Engine.feature(for:)`, and its words in `introducedText` and `notYetText`. Tests that are not about
+  the timeline start with `Engine.newGame(earlyGame: false)` (see `startedGame`).
 
 ## Workflow
 

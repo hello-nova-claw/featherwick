@@ -110,6 +110,8 @@ public enum Rejection: Hashable, Codable, Sendable {
     case alreadyCandled
     /// Today's special is already sold. A new one comes tomorrow.
     case specialSoldOut
+    /// The early game has not reached this feature yet (see EarlyGame.swift).
+    case notYet(Feature)
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -202,11 +204,19 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case showTreatsWon(treats: Int)
     /// Bought Speckle & Down's daily special. The bird is in the coop, waiting for a name.
     case boughtSpecial(UUID, cost: Int)
+    /// The early game introduced a lesson or opened a part of the game (see EarlyGame.swift).
+    case introduced(Feature)
+    /// The county show opened. The neighbour suggests a bird and a class (nil when no bird can be shown yet).
+    case showAnnounced(ShowTip?)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
 public enum Engine {
-    public static func newGame<R: RandomNumberGenerator>(rules: Rules = .standard, using rng: inout R) -> GameState {
+    /// A new game: the neighbour offers 3 chicks. With `earlyGame` (the default) the keeper learns one
+    /// thing at a time (EarlyGame.swift); without it, every feature is open from day 0.
+    public static func newGame<R: RandomNumberGenerator>(
+        rules: Rules = .standard, earlyGame: Bool = true, using rng: inout R
+    ) -> GameState {
         var chicks: [Bird] = []
         for breed in Breed.starters.shuffled(using: &rng) {
             let sex: Sex = Bool.random(using: &rng) ? .hen : .rooster
@@ -221,6 +231,7 @@ public enum Engine {
         }
         var s = GameState(rules: rules, phase: .choosingStarter(chicks))
         s.canCandle = false  // learned from the neighbour after the first hatch, or for a story
+        if earlyGame { s.introduced = [] }  // introduced one thing at a time (EarlyGame.swift)
         s.shopSeed = chicks.first.map { ShopSpecial.seed(from: $0.id) } ?? 0  // no extra RNG draw
         return s
     }
@@ -232,6 +243,7 @@ public enum Engine {
             return chooseStarter(index: index, name: name, &s)
         }
         guard s.phase == .playing else { return [.rejected(.chooseStarterFirst)] }
+        if let feature = feature(for: command), !s.isOpen(feature) { return [.rejected(.notYet(feature))] }
 
         switch command {
         case .chooseStarter:
@@ -877,7 +889,10 @@ public enum Engine {
         // 9b. County show, on show days: entries are judged against a field and placed (see ShowEvent.swift).
         ev += runShowIfToday(&s, &rng)
 
-        // 9c. Goal ladder: award any milestone reached once the day's events have settled.
+        // 9c. Early game: introduce the features whose day has come (and the neighbour's show tip).
+        ev += introduceFeatures(&s)
+
+        // 9d. Goal ladder: award any milestone reached once the day's events have settled.
         ev += advanceMilestones(&s)
 
         // 10. Reset for the new day. The door is opened in the morning.

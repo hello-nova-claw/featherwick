@@ -192,23 +192,39 @@ while true {
         default: print("You can buy: pullet, cockerel, egg, special, treats, feed, incubator. Basic feed is free.")
         }
     case "shop":
-        let r = game.state.rules
-        print(
-            """
-            Speckle & Down (you have \(game.state.coins) coins):
-              pullet      a young hen, breed a surprise   \(r.pulletPrice) coins
-              cockerel    a young rooster, breed a surprise \(r.cockerelPrice) coins
-              egg         a fertile egg from a local flock \(r.fertileEggPrice) coins
-              incubator   holds \(r.bigIncubatorSize) eggs                   \(r.incubatorPrice) coins
-              treats      \(r.treatBagSize) mealworms                        \(r.treatBagPrice) coins
-              feed        \(r.premiumFeedBagSize) days of premium feed          \(r.premiumFeedPrice) coins (basic feed is free)
-            """)
-        for breed in game.state.shopBreeds.sorted(by: { $0.rawValue < $1.rawValue }) {
+        let s = game.state
+        let r = s.rules
+        // Only what the early game has opened (see EarlyGame.swift).
+        var rows: [String] = []
+        if s.isOpen(.birdShop) {
+            rows += [
+                "  pullet      a young hen, breed a surprise   \(r.pulletPrice) coins",
+                "  cockerel    a young rooster, breed a surprise \(r.cockerelPrice) coins",
+                "  egg         a fertile egg from a local flock \(r.fertileEggPrice) coins",
+            ]
+        }
+        if s.isOpen(.incubatorShop) {
+            rows.append("  incubator   holds \(r.bigIncubatorSize) eggs                   \(r.incubatorPrice) coins")
+        }
+        if s.isOpen(.treats) {
+            rows.append("  treats      \(r.treatBagSize) mealworms                        \(r.treatBagPrice) coins")
+        }
+        if s.isOpen(.premiumFeed) {
+            rows.append(
+                "  feed        \(r.premiumFeedBagSize) days of premium feed          \(r.premiumFeedPrice) coins")
+        }
+        print("Speckle & Down (you have \(s.coins) coins). Basic feed is free.")
+        rows.forEach { print($0) }
+        guard s.isOpen(.birdShop) else {
+            if rows.isEmpty { print("  The shelves are bare today. Come back soon.") }
+            break
+        }
+        for breed in s.shopBreeds.sorted(by: { $0.rawValue < $1.rawValue }) {
             print(
                 "  \(breed.rawValue.padding(toLength: 11, withPad: " ", startingAt: 0)) a \(breed.definition.displayName) pullet          \(r.rareBreedPulletPrice) coins"
             )
         }
-        if let special = game.state.todaysSpecial {
+        if let special = s.todaysSpecial {
             print("  special     today only: \(shopSpecialText(special))")
         } else {
             print("  special     sold today. A new one comes tomorrow.")
@@ -329,7 +345,8 @@ while true {
         print("The judge looks over \(bird.name).")
         if bird.isPurebred { print(cardText(Judge.judge(bird, in: .breed(bird.breed), state: game.state))) }
         print(cardText(Judge.judge(bird, in: .pet, state: game.state)))
-    case "shows", "show": showsScreen(game.state)
+    case "shows", "show":
+        if game.state.isOpen(.shows) { showsScreen(game.state) } else { print(notYetText(.shows, game.state)) }
     case "enter":
         guard words.count > 1 else {
             print("Use: enter <name>, or enter eggs")
