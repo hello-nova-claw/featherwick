@@ -213,13 +213,21 @@ struct FarmScene: View {
         return out
     }()
 
+    /// Experimental: the farm as stacked layers, back to front (`Art/farm-layer-1-…png`, `-2-`, …).
+    /// Every layer is the same size, transparent where the layers behind show through.
+    /// When any layer exists it replaces the single painting for every season.
+    static let layers: [UIImage] = {
+        let names = ["farm-layer-1-sky", "farm-layer-2-hedges", "farm-layer-3-yard", "farm-layer-4-coop"]
+        return names.compactMap { UIImage(named: "\($0).png") }
+    }()
+
     /// The paper the paintings sit on, sampled from their margins.
     static let paper = Color(hex: 0xF3F1EB)
 
     /// Where the painting lands on a screen of this size. A painting wider than the screen is fitted to
     /// the width and centred on paper; a taller one fills the screen. Labels use this frame.
     static func paintingFrame(for season: Season, in size: CGSize) -> CGRect {
-        let image = paintings[season]
+        let image = layers.first ?? paintings[season]
         let aspect = image.map { $0.size.width / $0.size.height } ?? (6.0 / 13.0)
         let screenAspect = size.width / max(size.height, 1)
         let drawn: CGSize =
@@ -232,7 +240,28 @@ struct FarmScene: View {
     }
 
     var body: some View {
-        if let painting = Self.paintings[season] {
+        if !Self.layers.isEmpty {
+            GeometryReader { geo in
+                let frame = Self.paintingFrame(for: season, in: geo.size)
+                ZStack {
+                    Self.paper
+                    ForEach(Self.layers.indices, id: \.self) { i in
+                        Image(uiImage: Self.layers[i])
+                            .resizable()
+                            .frame(width: frame.width, height: frame.height)
+                            .position(x: frame.midX, y: frame.midY)
+                    }
+                }
+                .saturation(palette.isNight ? 0.55 : 1)
+                .overlay {
+                    if palette.isNight {
+                        Color(hex: 0x1B2233).opacity(0.62).blendMode(.multiply)
+                    }
+                }
+            }
+            .clipped()
+            .accessibilityHidden(true)
+        } else if let painting = Self.paintings[season] {
             GeometryReader { geo in
                 let frame = Self.paintingFrame(for: season, in: geo.size)
                 ZStack {
