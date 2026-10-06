@@ -195,6 +195,21 @@ struct Notice: Hashable {
     enum Kind: Hashable { case collect, decision, story }
     let kind: Kind
     let text: String
+
+    /// The dot colour for each kind. The words carry the meaning; the colour only draws the eye.
+    static func colour(_ kind: Kind, in palette: Palette) -> Color {
+        switch kind {
+        case .collect: Pigment.brownNotice
+        case .decision: Pigment.buffNotice
+        case .story: palette.ink
+        }
+    }
+
+    /// The kind that most wants the player: a choice first, then something to collect, then news.
+    static func mostPressing(_ notices: [Notice]) -> Kind? {
+        let kinds = notices.map(\.kind)
+        return [Kind.decision, .collect, .story].first { kinds.contains($0) }
+    }
 }
 
 struct NoticeLine: View {
@@ -203,16 +218,8 @@ struct NoticeLine: View {
 
     var body: some View {
         HStack(spacing: Space.xs) {
-            Circle().fill(dotColour).frame(width: 8, height: 8)
+            Circle().fill(Notice.colour(notice.kind, in: palette)).frame(width: 8, height: 8)
             Text(notice.text).font(Typeface.caption).foregroundStyle(palette.inkSoft)
-        }
-    }
-
-    private var dotColour: Color {
-        switch notice.kind {
-        case .collect: Pigment.brownNotice
-        case .decision: Pigment.buffNotice
-        case .story: palette.ink
         }
     }
 }

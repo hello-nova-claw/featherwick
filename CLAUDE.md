@@ -48,8 +48,9 @@ components, screens 1a–8a). The painted farm and bird art come later; dashed b
 - `App/Featherwick/Design/`: tokens (`Theme.swift`: `Palette` day/night, `Typeface`, `Space`, `Radius`,
   `Stitch`), marks (eggs, feathers, dabs) and components (buttons, tabs, sheet page, notices).
   Use these; do not hard-code colours, fonts or sizes in screens.
-- `Farm/FarmView.swift`: HUD, the 5 places (Coop, Yard, Potting shed, Farm gate, Back fence), Books, ≡.
-  Each place opens a sheet (`Sheets/`). Notices under a place come from game state.
+- `Farm/FarmView.swift`: HUD, 4 swipe panels, a panel rail (dots, right side), Books, ≡. Panels left to right: Barn (Coop,
+  Potting shed), Yard (Yard), Far yard (Back fence), Shop (Farm gate). A panel is a flat colour until its
+  painting exists. Each place opens a sheet (`Sheets/`). Notices under a place come from game state.
 - Day or night follows the device clock (18:00–05:59 is night), via `\.palette`.
 - Fonts (Libre Caslon Display/Text, Figtree; OFL) are bundled in `Fonts/` and registered at launch.
 - ≡ → "Open test tools" shows the old plain screens (`TestTools/`), with every action and the full log.

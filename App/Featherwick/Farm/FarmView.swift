@@ -16,17 +16,45 @@ enum Place: String, CaseIterable, Identifiable {
         case .farmGate: "Farm gate"
         }
     }
+}
 
-    /// Where the label sits, as a fraction of the farm painting (just below the place it names).
-    /// Measured on `Art/farm-day.png`; change these when the painting changes.
-    var anchor: UnitPoint {
+/// The farm is four panels side by side. Swipe left or right between them.
+/// Each panel is a flat colour until its painting exists.
+enum FarmPanel: Int, CaseIterable, Identifiable {
+    case barn, yard, farYard, shop
+    var id: Int { rawValue }
+
+    var name: String {
         switch self {
-        case .backFence: UnitPoint(x: 0.5, y: 0.585)
-        case .coop: UnitPoint(x: 0.2, y: 0.635)
-        case .pottingShed: UnitPoint(x: 0.8, y: 0.64)
-        case .yard: UnitPoint(x: 0.5, y: 0.67)
-        case .farmGate: UnitPoint(x: 0.55, y: 0.835)
+        case .barn: "Barn"
+        case .yard: "Yard"
+        case .farYard: "Far yard"
+        case .shop: "Shop"
         }
+    }
+
+    /// The places on this panel. The barn holds the coop and nests, the incubator and the brooder.
+    var places: [Place] {
+        switch self {
+        case .barn: [.coop, .pottingShed]
+        case .yard: [.yard]
+        case .farYard: [.backFence]
+        case .shop: [.farmGate]
+        }
+    }
+
+    /// Stand-in colour until the painting exists. Placeholder art, so it is not a palette token.
+    var colour: Color {
+        switch self {
+        case .barn: Color(hex: 0xE2B8A6)
+        case .yard: Color(hex: 0xC6D8A8)
+        case .farYard: Color(hex: 0xA9C69A)
+        case .shop: Color(hex: 0xEAD5A2)
+        }
+    }
+
+    static func containing(_ place: Place) -> FarmPanel {
+        allCases.first { $0.places.contains(place) } ?? .yard
     }
 }
 
@@ -37,37 +65,40 @@ enum FarmSheet: Identifiable, Hashable {
     case naming
     case books
     case settings
+    case neighbourNote
     var id: Self { self }
 }
 
-/// The farm screen: the painted scene (a placeholder until the art exists), the HUD, the five
-/// place labels, and Books and settings at the bottom.
+/// The farm screen: four panels to swipe between (flat colours until the art exists), the HUD,
+/// the place labels on each panel, and Books, the panel dots and settings at the bottom.
 struct FarmView: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
     @State private var sheet: FarmSheet?
+    /// The panel on screen. The game opens on the yard, with the barn to the left and the shop to the right.
+    @State private var panel: FarmPanel = .yard
     /// The show on screen. Set from `store.showReport` once no sheet is in the way.
     @State private var showDay: ShowReport?
 
     var body: some View {
         ZStack {
-            // The scene and its labels fill the whole screen, so labels line up with the painting.
-            GeometryReader { geo in
-                let season = store.state.season
-                let frame = FarmScene.paintingFrame(for: season, in: geo.size)
-                ZStack {
-                    FarmScene(season: season)
-                    ForEach(Place.allCases) { place in
-                        let anchor = place.anchor
+            // One panel per page. The pages fill the whole screen, under the HUD.
+            TabView(selection: $panel) {
+                ForEach(FarmPanel.allCases) { p in
+                    FarmPanelView(panel: p) { place in
                         PlaceLabel(place: place, notices: notices(for: place)) { sheet = .place(place) }
-                            .position(x: frame.minX + frame.width * anchor.x, y: frame.minY + frame.height * anchor.y)
                     }
+                    .tag(p)
                 }
-                .animation(.easeInOut(duration: 1.2), value: season)
             }
+            .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
             VStack {
                 HUD()
+                HStack {
+                    Spacer()
+                    PanelDots(selection: $panel, notices: panelNotices)
+                }
                 Spacer()
                 HStack {
                     FloatingBox {
@@ -102,6 +133,8 @@ struct FarmView: View {
         }
         .onChange(of: store.openRequest) { _, request in
             if let request {
+                // A sheet for a place also moves the farm to that place's panel.
+                if case .place(let place) = request { panel = .containing(place) }
                 sheet = request
                 store.openRequest = nil
             }
@@ -139,6 +172,7 @@ struct FarmView: View {
         case .naming: NamingSheet()
         case .books: BooksView()
         case .settings: SettingsSheet()
+        case .neighbourNote: NeighbourNoteSheet()
         }
     }
 
@@ -149,6 +183,11 @@ struct FarmView: View {
             try? await Task.sleep(for: .milliseconds(350))
             sheet = next
         }
+    }
+
+    /// Every notice on each panel, so the panel dots can show what waits off screen.
+    private var panelNotices: [FarmPanel: [Notice]] {
+        Dictionary(uniqueKeysWithValues: FarmPanel.allCases.map { p in (p, p.places.flatMap { notices(for: $0) }) })
     }
 
     /// What each place has waiting. The words carry the meaning; the dot only draws the eye.
@@ -210,115 +249,71 @@ struct FarmView: View {
     }
 }
 
-/// The painted farm for the current season, on white paper. Night is the same painting, darkened and
-/// cooled. Seasons crossfade when they turn. Without paintings in the bundle, the striped stand-in shows.
-struct FarmScene: View {
+/// One farm panel: its stand-in colour, a dashed box where its painting will go, and its place
+/// labels. Night darkens and cools the colour, as it will the paintings.
+struct FarmPanelView<PlaceButton: View>: View {
     @Environment(\.palette) private var palette
-    let season: Season
-
-    /// `Art/farm-<season>.png` if painted, else `Art/farm-day.png` for every season. Loaded once.
-    static let paintings: [Season: UIImage] = {
-        let fallback = UIImage(named: "farm-day.png")
-        var out: [Season: UIImage] = [:]
-        for s in Season.allCases {
-            out[s] = UIImage(named: "farm-\(s.rawValue).png") ?? fallback
-        }
-        return out
-    }()
-
-    /// Experimental: the farm as stacked layers, back to front (`Art/farm-layer-1-…png`, `-2-`, …).
-    /// Every layer is the same size, transparent where the layers behind show through.
-    /// When any layer exists it replaces the single painting for every season.
-    static let layers: [UIImage] = {
-        let names = ["farm-layer-1-sky", "farm-layer-2-hedges", "farm-layer-3-yard", "farm-layer-4-coop"]
-        return names.compactMap { UIImage(named: "\($0).png") }
-    }()
-
-    /// The paper the paintings sit on, sampled from their margins.
-    static let paper = Color(hex: 0xF3F1EB)
-
-    /// Where the painting lands on a screen of this size. A painting wider than the screen is fitted to
-    /// the width and centred on paper; a taller one fills the screen. Labels use this frame.
-    static func paintingFrame(for season: Season, in size: CGSize) -> CGRect {
-        let image = layers.first ?? paintings[season]
-        let aspect = image.map { $0.size.width / $0.size.height } ?? (6.0 / 13.0)
-        let screenAspect = size.width / max(size.height, 1)
-        let drawn: CGSize =
-            aspect > screenAspect
-            ? CGSize(width: size.width, height: size.width / aspect)
-            : CGSize(width: size.height * aspect, height: size.height)
-        return CGRect(
-            x: (size.width - drawn.width) / 2, y: (size.height - drawn.height) / 2, width: drawn.width,
-            height: drawn.height)
-    }
+    let panel: FarmPanel
+    @ViewBuilder let label: (Place) -> PlaceButton
 
     var body: some View {
-        if !Self.layers.isEmpty {
-            GeometryReader { geo in
-                let frame = Self.paintingFrame(for: season, in: geo.size)
-                ZStack {
-                    Self.paper
-                    ForEach(Self.layers.indices, id: \.self) { i in
-                        Image(uiImage: Self.layers[i])
-                            .resizable()
-                            .frame(width: frame.width, height: frame.height)
-                            .position(x: frame.midX, y: frame.midY)
-                    }
-                }
+        ZStack {
+            panel.colour
                 .saturation(palette.isNight ? 0.55 : 1)
                 .overlay {
                     if palette.isNight {
                         Color(hex: 0x1B2233).opacity(0.62).blendMode(.multiply)
                     }
                 }
+                .ignoresSafeArea()
+            ArtPlaceholder(label: "\(panel.name.lowercased()) scene")
+                .padding(.horizontal, Space.xl)
+                .padding(.vertical, 140)  // clear of the HUD and the bottom row
+            VStack(spacing: Space.xl) {
+                ForEach(panel.places) { label($0) }
             }
-            .clipped()
-            .accessibilityHidden(true)
-        } else if let painting = Self.paintings[season] {
-            GeometryReader { geo in
-                let frame = Self.paintingFrame(for: season, in: geo.size)
-                ZStack {
-                    Self.paper
-                    Image(uiImage: painting)
-                        .resizable()
-                        .frame(width: frame.width, height: frame.height)
-                        .position(x: frame.midX, y: frame.midY)
-                        .id(season)
-                        .transition(.opacity)
-                }
-                .saturation(palette.isNight ? 0.55 : 1)
-                .overlay {
-                    if palette.isNight {
-                        Color(hex: 0x1B2233).opacity(0.62).blendMode(.multiply)
-                    }
-                }
-            }
-            .clipped()
-            .accessibilityHidden(true)
-        } else {
-            FarmScenePlaceholder()
         }
     }
 }
 
-/// Stand-in for the painted farm: paper with soft diagonal stripes, as in the mocks.
-struct FarmScenePlaceholder: View {
+/// The panel rail: one dot per panel, top to bottom in swipe order, down the right side under the HUD.
+/// Tap a dot to jump there (VoiceOver cannot swipe pages). The dot on screen is ink. A panel off screen
+/// with something waiting gets a bigger dot in its notice colour with a ring, so it shows from any panel.
+struct PanelDots: View {
     @Environment(\.palette) private var palette
+    @Binding var selection: FarmPanel
+    let notices: [FarmPanel: [Notice]]
+
     var body: some View {
-        Canvas { context, size in
-            let stripe = palette.isNight ? Color.white.opacity(0.04) : Color(hex: 0xF4EEE6)
-            var x: CGFloat = -size.height
-            while x < size.width {
-                var p = Path()
-                p.move(to: CGPoint(x: x, y: size.height))
-                p.addLine(to: CGPoint(x: x + size.height, y: 0))
-                context.stroke(p, with: .color(stripe), lineWidth: 14)
-                x += 36
+        FloatingBox {
+            VStack(spacing: 0) {
+                ForEach(FarmPanel.allCases) { p in
+                    Button {
+                        withAnimation { selection = p }
+                    } label: {
+                        dot(for: p).frame(width: 44, height: 40)
+                    }
+                    .accessibilityLabel(([p.name] + (notices[p] ?? []).map(\.text)).joined(separator: ", "))
+                    .accessibilityAddTraits(p == selection ? .isSelected : [])
+                }
             }
+            .padding(.vertical, Space.xs)
         }
-        .background(palette.isNight ? Color(hex: 0x24201E) : Color(hex: 0xFBF8F4))
-        .ignoresSafeArea()
-        .accessibilityHidden(true)
+        .padding(.top, Space.s)
+    }
+
+    @ViewBuilder
+    private func dot(for p: FarmPanel) -> some View {
+        if p == selection {
+            Circle().fill(palette.ink).frame(width: 12, height: 12)
+        } else if let kind = Notice.mostPressing(notices[p] ?? []) {
+            let colour = Notice.colour(kind, in: palette)
+            Circle().fill(colour).frame(width: 12, height: 12)
+                .padding(4)
+                .overlay(Circle().stroke(colour, lineWidth: 1.5))
+        } else {
+            Circle().fill(palette.unknown).frame(width: 8, height: 8)
+        }
     }
 }
 
