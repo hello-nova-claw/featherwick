@@ -3,7 +3,7 @@ import Foundation
 // Today's jobs and the season goal: a gentle reason to come back each day.
 //
 // Each morning the game picks up to `Rules.jobsPerDay` small jobs from what the keeper can do now
-// (feed the flock, collect the eggs, pick up Pip...). A job ticks itself off when the keeper does it.
+// (feed the flock, collect the eggs, cuddle Pip...). A job ticks itself off when the keeper does it.
 // All of today's jobs done pays a small reward, once. Unfinished jobs simply go at the next morning:
 // nothing is lost.
 //
@@ -21,9 +21,9 @@ public enum JobKind: String, Hashable, Codable, Sendable, CaseIterable {
     case feed
     /// Collect the eggs from the nest boxes.
     case collectEggs
-    /// Pick up a number of birds (`Job.target`).
+    /// Cuddle a few birds, named on the job (`Job.birdIDs`, `Job.target` of them).
     case petBirds
-    /// Pick up one named bird (`Job.birdID`).
+    /// Cuddle one named bird (`Job.birdID`).
     case petBird
     /// Give a bird a treat from your hand.
     case giveTreat
@@ -44,17 +44,21 @@ public enum JobKind: String, Hashable, Codable, Sendable, CaseIterable {
 /// One of today's jobs.
 public struct Job: Hashable, Codable, Sendable {
     public var kind: JobKind
-    /// How many times to do it ("pick up 3 birds"). 1 for most jobs.
+    /// How many times to do it ("cuddle 3 birds"). 1 for most jobs.
     public var target: Int
     public var progress: Int
-    /// The bird the job is about (pick up Pip, name the new chick). Nil for the rest.
+    /// The bird the job is about (cuddle Pip, name the new chick). Nil for the rest.
     public var birdID: UUID?
+    /// The birds a `petBirds` job names ("cuddle Juniper and Pip"). Nil in saves made before jobs
+    /// named their birds: then any bird counts.
+    public var birdIDs: [UUID]?
 
-    public init(kind: JobKind, target: Int = 1, progress: Int = 0, birdID: UUID? = nil) {
+    public init(kind: JobKind, target: Int = 1, progress: Int = 0, birdID: UUID? = nil, birdIDs: [UUID]? = nil) {
         self.kind = kind
         self.target = target
         self.progress = progress
         self.birdID = birdID
+        self.birdIDs = birdIDs
     }
 
     public var isDone: Bool { progress >= target }
@@ -170,7 +174,10 @@ extension Engine {
                 if !s.nest.isEmpty { jobs.append(Job(kind: .collectEggs)) }
             case .petBirds:
                 if s.isOpen(.handling), home.count >= 2 {
-                    jobs.append(Job(kind: .petBirds, target: min(max(1, r.jobPetBirds), home.count)))
+                    // Its own seed, so naming the birds leaves the rest of the day's picks as they were.
+                    var pick = jobSeed(s, day: s.day, salt: 0x5045_5453)  // "PETS"
+                    let birds = home.map(\.id).shuffled(using: &pick).prefix(min(max(1, r.jobPetBirds), home.count))
+                    jobs.append(Job(kind: .petBirds, target: birds.count, birdIDs: Array(birds)))
                 }
             case .petBird:
                 if s.isOpen(.handling), !home.isEmpty {
@@ -220,7 +227,7 @@ extension Engine {
     }
 
     /// Picks today's jobs: timely ones first (the show, a name), then a seeded draw from the rest.
-    /// Only one of the two "pick up" jobs, so the list does not repeat itself.
+    /// Only one of the two "cuddle" jobs, so the list does not repeat itself.
     static func pickJobs(_ s: GameState) -> [Job] {
         var rng = jobSeed(s, day: s.day, salt: 0x4A4F_4253)  // "JOBS"
         var rest = availableJobs(s, &rng)
@@ -253,7 +260,7 @@ extension Engine {
         switch (job.kind, e) {
         case (.feed, .fed), (.feed, .fedPremium): true
         case (.collectEggs, .eggsCollected): true
-        case (.petBirds, .handled(_, .pet)): true
+        case (.petBirds, .handled(let id, .pet)): job.birdIDs?.contains(id) ?? true
         case (.petBird, .handled(let id, .pet)): id == job.birdID
         case (.giveTreat, .handled(_, .treat)): true
         case (.shutCoop, .coopClosed): true
@@ -274,18 +281,26 @@ extension Engine {
         if var board = s.jobBoard, board.day == s.day, !board.rewarded {
             var moved = false
             for i in board.jobs.indices where !board.jobs[i].isDone {
-                let steps = events.count(where: { counts($0, for: board.jobs[i]) })
-                guard steps > 0 else { continue }
+                let job = board.jobs[i]
+                let progress: Int
+                if job.kind == .petBirds, let ids = job.birdIDs {
+                    progress = namedBirdsCuddled(ids, s)
+                } else if job.kind == .petBird, let id = job.birdID {
+                    progress = namedBirdsCuddled([id], s)
+                } else {
+                    progress = job.progress + events.count(where: { counts($0, for: job) })
+                }
+                guard progress > job.progress else { continue }
                 moved = true
-                board.jobs[i].progress = min(board.jobs[i].target, board.jobs[i].progress + steps)
-                if board.jobs[i].isDone { out.append(.jobDone(board.jobs[i].kind)) }
+                board.jobs[i].progress = min(job.target, progress)
+                if board.jobs[i].isDone { out.append(.jobDone(job.kind)) }
             }
             if board.allDone {
                 board.rewarded = true
                 s.coins += s.rules.jobsRewardCoins
                 out.append(.allJobsDone(coins: s.rules.jobsRewardCoins))
             }
-            // Keep a step of a job that is not done yet too ("1 of 3 birds picked up").
+            // Keep a step of a job that is not done yet too ("1 of 3 birds cuddled").
             if moved { s.jobBoard = board }
         }
         if var goal = s.seasonGoal, goal.kind == .collectEggs, !goal.reached {
@@ -299,6 +314,17 @@ extension Engine {
             }
         }
         return out
+    }
+
+    /// Steps done on a "cuddle Juniper and Pip" (or "cuddle Pip") job: each named bird cuddled today
+    /// counts once. Cozy rule: a named bird that has left home (rehomed, lost, away) counts as done,
+    /// so the job can always be finished. It ticks off with the keeper's next command.
+    static func namedBirdsCuddled(_ ids: [UUID], _ s: GameState) -> Int {
+        let home = s.birdsAtHome
+        return ids.count(where: { id in
+            guard let bird = home.first(where: { $0.id == id }) else { return true }
+            return bird.lastPettedDay == s.day
+        })
     }
 
     // MARK: - The season goal

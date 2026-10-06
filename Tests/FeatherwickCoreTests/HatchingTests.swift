@@ -48,6 +48,7 @@ struct HatchingTests {
         var all: [GameEvent] = []
         for _ in 0..<3 { all += night(&s, &rng) }
         #expect(all.count(where: { if case .neighbourGaveIncubator = $0 { true } else { false } }) == 1)
+        #expect(all.contains(.neighbourGaveIncubator(size: r.giftIncubatorSize, ownRooster: true)))
         #expect(s.incubatorSize == r.giftIncubatorSize)
 
         _ = Engine.apply(.collectEggs, to: &s, using: &rng)
@@ -64,6 +65,67 @@ struct HatchingTests {
                 .incubatorBought(cost: r.incubatorPrice, size: r.bigIncubatorSize)
             ])
         #expect(Engine.apply(.buyIncubator, to: &s, using: &rng) == [.rejected(.alreadyHaveIncubator)])
+    }
+
+    /// A keeper who buys a fertile egg and has no incubator gets the neighbour's old one at once (once).
+    @Test func aBoughtFertileEggBringsTheNeighboursIncubator() {
+        var (s, rng) = startedGame(sex: .hen)
+        s.coins = 100
+        let price = s.rules.fertileEggPrice
+        let gift = GameEvent.neighbourGaveIncubator(size: s.rules.giftIncubatorSize, ownRooster: false)
+        #expect(Engine.apply(.buy(.fertileEgg), to: &s, using: &rng) == [.boughtEgg(cost: price), gift])
+        #expect(s.incubatorSize == s.rules.giftIncubatorSize && s.incubatorGiftGiven)
+        // Once: a second egg brings nothing more, and nor do the nights.
+        #expect(Engine.apply(.buy(.fertileEgg), to: &s, using: &rng) == [.boughtEgg(cost: price)])
+        let set = Engine.apply(.incubate(count: 1), to: &s, using: &rng)
+        #expect(set.contains { if case .eggsSet(1, nil, _) = $0 { true } else { false } })
+        let ev = night(&s, &rng)
+        #expect(!ev.contains { if case .neighbourGaveIncubator = $0 { true } else { false } })
+        #expect(ev.contains { if case .chicksHatched(let ids, nil) = $0 { ids.count == 1 } else { false } })
+    }
+
+    /// With the standard rules, an egg in the gift incubator hatches on the third night.
+    @Test func theGiftIncubatorHatchesInThreeNights() {
+        var rng = SeededRNG(seed: 2)
+        var r = Rules.standard
+        r.foxChance = 0
+        var s = Engine.newGame(rules: r, earlyGame: false, using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        #expect(r.incubatorHatchDays == 3)
+        s.coins = 100
+        _ = Engine.apply(.buy(.fertileEgg), to: &s, using: &rng)
+        #expect(s.hasIncubator)
+        let set = Engine.apply(.incubate(count: 1), to: &s, using: &rng)
+        #expect(set.contains(.eggsSet(count: 1, hen: nil, hatchDay: s.day + 3)))
+        func hatched(_ ev: [GameEvent]) -> Bool { ev.contains { if case .chicksHatched = $0 { true } else { false } } }
+        #expect(!hatched(night(&s, &rng)))
+        #expect(!hatched(night(&s, &rng)))
+        #expect(hatched(night(&s, &rng)))
+    }
+
+    /// A save from before the gift came with bought eggs: a fertile egg waits in the carton and there is
+    /// no incubator. The neighbour brings hers the next night.
+    @Test func aFertileEggWaitingInTheCartonBringsTheIncubatorNextNight() {
+        var (s, rng) = startedGame(sex: .hen)
+        let hen = adult(.araucana, .hen, day: 0, rules: s.rules, rng: &rng)
+        let rooster = adult(.orpington, .rooster, day: 0, rules: s.rules, rng: &rng)
+        var egg = fertileEgg(mother: hen, father: rooster, day: 0, rng: &rng)
+        egg.candled = true
+        s.carton = [egg]
+        let ev = night(&s, &rng)
+        #expect(ev.filter { if case .neighbourGaveIncubator = $0 { true } else { false } }.count == 1)
+        #expect(ev.contains(.neighbourGaveIncubator(size: s.rules.giftIncubatorSize, ownRooster: false)))
+        #expect(s.incubatorSize == s.rules.giftIncubatorSize)
+        #expect(!night(&s, &rng).contains { if case .neighbourGaveIncubator = $0 { true } else { false } })
+    }
+
+    /// A keeper who already has an incubator gets no gift for a bought egg.
+    @Test func noGiftIncubatorWhenTheKeeperHasOne() {
+        var (s, rng) = startedGame(sex: .hen)
+        s.coins = 100
+        s.incubatorSize = s.rules.bigIncubatorSize
+        #expect(Engine.apply(.buy(.fertileEgg), to: &s, using: &rng) == [.boughtEgg(cost: s.rules.fertileEggPrice)])
+        #expect(s.incubatorSize == s.rules.bigIncubatorSize)
     }
 
     @Test func noRoosterNoFertileEggs() {

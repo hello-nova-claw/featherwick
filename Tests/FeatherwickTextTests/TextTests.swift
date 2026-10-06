@@ -76,6 +76,53 @@ struct TextTests {
         }
     }
 
+    /// "Cuddle Juniper and Pip": the job names its birds. An unnamed bird gives nothing away.
+    @Test func cuddleJobsNameTheirBirds() {
+        var rng = SeededRNG(seed: 4)
+        var s = Engine.newGame(using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        let pip = s.brooder[0].id
+        func hen(_ name: String) -> Bird {
+            Bird(
+                id: UUID(), name: name, breed: .orpington, genome: Breed.orpington.purebred(.hen), hatchDay: 0,
+                origin: "Neighbour", revealed: true)
+        }
+        let juniper = hen("Juniper")
+        let hazel = hen("Hazel")
+        // A rooster chick with no name yet: its words must not say so.
+        var chick = Bird(
+            id: UUID(), name: "Chick 1", breed: .orpington, genome: Breed.orpington.purebred(.rooster), hatchDay: 0,
+            origin: "Henhaven")
+        chick.needsName = true
+        s.coop = [juniper, hazel]
+        s.brooder.append(chick)
+
+        let two = Job(kind: .petBirds, target: 2, birdIDs: [juniper.id, pip])
+        #expect(jobText(two, s) == "Cuddle Juniper and Pip")
+        let three = Job(kind: .petBirds, target: 3, birdIDs: [juniper.id, pip, hazel.id])
+        #expect(jobText(three, s) == "Cuddle Juniper, Pip and Hazel")
+        let started = Job(kind: .petBirds, target: 3, progress: 1, birdIDs: [juniper.id, pip, hazel.id])
+        #expect(jobText(started, s) == "Cuddle Juniper, Pip and Hazel (1 of 3)")
+        let withChick = Job(kind: .petBirds, target: 2, birdIDs: [juniper.id, chick.id])
+        #expect(jobText(withChick, s) == "Cuddle Juniper and the new chick")
+        #expect(jobText(Job(kind: .petBird, birdID: pip), s) == "Cuddle Pip")
+        #expect(jobText(Job(kind: .petBird, birdID: chick.id), s) == "Cuddle the new chick")
+        // A job from a save made before jobs named their birds.
+        #expect(jobText(Job(kind: .petBirds, target: 2), s) == "Cuddle 2 birds")
+    }
+
+    /// The family tree says how related a bird's parents are in words, never as an inbreeding number.
+    @Test func theTreeShowsNoInbreedingNumber() {
+        guard let (_, s) = Self.play(seed: 9, days: 60).last else {
+            Issue.record("no events")
+            return
+        }
+        for b in s.ownedBirds {
+            let lines = treeLines(b.id, s).joined(separator: "\n")
+            #expect(!lines.contains("%") && !lines.lowercased().contains("inbre"))
+        }
+    }
+
     /// An unfinished goal is never failed: the new goal's words say the last one can rest.
     @Test func anUnfinishedGoalIsLetGoKindly() {
         guard var (_, s) = Self.play(seed: 3, days: 3).last else {

@@ -6,7 +6,7 @@ import Testing
 /// Today's jobs and season goals (Jobs.swift): set each morning, ticked off by play, paid once, never failed.
 struct JobsTests {
     /// A started game with every feature open, no fox, and jobs and season goals on.
-    /// Its first morning has exactly 3 jobs to choose from: feed, pick up Pip, give a treat.
+    /// Its first morning has exactly 3 jobs to choose from: feed, cuddle Pip, give a treat.
     static func game(seed: UInt64 = 3) -> (GameState, SeededRNG) {
         var rng = SeededRNG(seed: seed)
         var r = Rules.standard
@@ -142,7 +142,30 @@ struct JobsTests {
         #expect(Engine.apply(.feed, to: &s, using: &rng) == [.fed(units: 1)])
     }
 
-    @Test func pickingUpSeveralBirdsCountsEachOne() {
+    @Test func cuddlingSeveralBirdsCountsEachNamedBirdOnce() throws {
+        var (s, rng) = Self.game()
+        _ = Self.sleep(&s, &rng)
+        let hen = adult(.orpington, .hen, day: s.day, rules: s.rules, rng: &rng)
+        let other = adult(.orpington, .hen, day: s.day, rules: s.rules, rng: &rng)
+        s.coop = [hen, other]
+        let pip = try #require(s.starterID)
+        s.jobBoard = JobBoard(day: s.day, jobs: [Job(kind: .petBirds, target: 2, birdIDs: [hen.id, pip])])
+        // A bird the job does not name counts nothing.
+        _ = Engine.apply(.pet(other.id), to: &s, using: &rng)
+        #expect(s.todaysJobs[0].progress == 0)
+        let first = Engine.apply(.pet(hen.id), to: &s, using: &rng)
+        #expect(!first.contains(.jobDone(.petBirds)))
+        #expect(s.todaysJobs[0].progress == 1)
+        // The same bird again counts nothing.
+        #expect(Engine.apply(.pet(hen.id), to: &s, using: &rng) == [.rejected(.alreadyPettedToday)])
+        #expect(s.todaysJobs[0].progress == 1)
+        let second = Engine.apply(.pet(pip), to: &s, using: &rng)
+        #expect(second.contains(.jobDone(.petBirds)))
+        #expect(second.contains(.allJobsDone(coins: s.rules.jobsRewardCoins)))
+    }
+
+    /// A save from before jobs named their birds: any bird counts, as it did then.
+    @Test func anOldCuddleJobCountsAnyBird() {
         var (s, rng) = Self.game()
         var job = Job(kind: .petBirds, target: 2)
         _ = Self.sleep(&s, &rng)
@@ -154,7 +177,40 @@ struct JobsTests {
         #expect(s.todaysJobs == [job])
         let second = Engine.apply(.pet(s.brooder[0].id), to: &s, using: &rng)
         #expect(second.contains(.jobDone(.petBirds)))
-        #expect(second.contains(.allJobsDone(coins: s.rules.jobsRewardCoins)))
+    }
+
+    /// The cuddle job names birds at home, from the job seed only, the same each time it is asked.
+    @Test func theCuddleJobPicksBirdsAtHome() throws {
+        var (s, rng) = Self.game()
+        _ = Self.sleep(&s, &rng)
+        s.coop = (0..<4).map { _ in adult(.orpington, .hen, day: s.day, rules: s.rules, rng: &rng) }
+        var a = SeededRNG(seed: 1)
+        var b = SeededRNG(seed: 2)
+        let job = try #require(Engine.availableJobs(s, &a).first { $0.kind == .petBirds })
+        let again = try #require(Engine.availableJobs(s, &b).first { $0.kind == .petBirds })
+        let ids = try #require(job.birdIDs)
+        #expect(job == again)  // not from the rng passed in
+        #expect(ids.count == min(s.rules.jobPetBirds, s.birdsAtHome.count) && job.target == ids.count)
+        #expect(Set(ids).count == ids.count)
+        #expect(ids.allSatisfy { id in s.birdsAtHome.contains { $0.id == id } })
+    }
+
+    /// Cozy rule: a named bird that leaves home counts as cuddled, so the job can still be finished.
+    @Test func aCuddleJobStaysFinishableWhenABirdLeaves() throws {
+        var (s, rng) = Self.game()
+        _ = Self.sleep(&s, &rng)
+        let hen = adult(.orpington, .hen, day: s.day, rules: s.rules, rng: &rng)
+        s.coop = [hen]
+        let pip = try #require(s.starterID)
+        let jobs = [Job(kind: .petBirds, target: 2, birdIDs: [hen.id, pip]), Job(kind: .petBird, birdID: hen.id)]
+        s.jobBoard = JobBoard(day: s.day, jobs: jobs)
+        _ = Engine.apply(.pet(pip), to: &s, using: &rng)
+        #expect(s.todaysJobs[0].progress == 1)
+        s.coop.removeAll()
+        s.rehomed.append(hen)  // she went to a new home
+        let ev = Engine.apply(.feed, to: &s, using: &rng)
+        #expect(ev.contains(.jobDone(.petBirds)) && ev.contains(.jobDone(.petBird)))
+        #expect(s.todaysJobs.allSatisfy(\.isDone))
     }
 
     @Test func theShowWeekBringsTheShowJobFirst() {

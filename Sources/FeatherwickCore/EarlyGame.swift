@@ -34,7 +34,8 @@ public enum Feature: String, Hashable, Codable, Sendable, CaseOrdered {
     case laying
     /// The county show: entering, and the show screens. Opens a week before the first show.
     case shows
-    /// The big incubator at Speckle & Down. (The neighbour's small one comes with the first fertile egg.)
+    /// The big incubator at Speckle & Down. (The neighbour's small one comes with the first fertile egg,
+    /// laid or bought.)
     case incubatorShop
 }
 

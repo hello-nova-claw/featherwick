@@ -109,10 +109,11 @@ final class GameStore {
         return events
     }
 
-    /// Lessons and show news from the neighbour: the words the keeper must not miss.
+    /// Lessons, show news and the gift incubator from the neighbour: the words the keeper must not miss.
+    /// The incubator note says what to do with a fertile egg, so it must not sit only in the log.
     private static func isNeighbourNote(_ event: GameEvent) -> Bool {
         switch event {
-        case .introduced, .showAnnounced: true
+        case .introduced, .showAnnounced, .neighbourGaveIncubator: true
         default: false
         }
     }
