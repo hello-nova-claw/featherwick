@@ -100,6 +100,8 @@ final class GameStore {
             if case .rejected = event { rejected = true }
             append(words, rejected: rejected)
         }
+        // Sound and haptics for what just happened (eggs, hatching, coins, a "no").
+        GameFeedback.play(for: events)
         if !neighbourNotes.isEmpty, openRequest == nil { openRequest = .neighbourNote }
         // Several nights can pass in one go (`fullDays`): the newest show wins.
         if let report = Self.report(from: events, in: state) { showReport = report }

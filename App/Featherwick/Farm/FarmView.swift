@@ -70,7 +70,7 @@ enum FarmSheet: Identifiable, Hashable {
 }
 
 /// The farm screen: four panels to swipe between (flat colours until the art exists), the HUD,
-/// the place labels on each panel, and Books, the panel dots and settings at the bottom.
+/// the place labels and the birds on each panel, and Books, the panel dots and settings at the bottom.
 struct FarmView: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
@@ -88,6 +88,8 @@ struct FarmView: View {
                     FarmPanelView(panel: p) { place in
                         PlaceLabel(place: place, notices: notices(for: place)) { sheet = .place(place) }
                     }
+                    // The flock, in the ground band under the place labels (see `FarmBirds.swift`).
+                    .overlay { PanelBirds(panel: p) { sheet = .bird($0) } }
                     .tag(p)
                 }
             }

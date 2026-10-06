@@ -14,7 +14,13 @@ targets:
   Featherwick:
     type: application
     platform: iOS
-    sources: [Featherwick]
+    # Every file under Featherwick/ is built in: Swift as code, the rest (fonts, Sounds/*.caf) as
+    # resources, copied flat to the bundle root. The READMEs are notes for people, so they stay out
+    # (two README.md files at the bundle root would also clash).
+    sources:
+      - path: Featherwick
+        excludes:
+          - "**/*.md"
     configFiles:
       Debug: Config/Signing.xcconfig
       Release: Config/Signing.xcconfig

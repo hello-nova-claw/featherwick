@@ -237,6 +237,8 @@ breeds) + 60% learned tameness. Bands: wild, skittish, friendly, lap chicken.
 
 - `pet <name>` and `treat <name>`: once a day per bird each. Gains shrink as a bird gets tamer
   and never pass 1. Chicks learn 3x faster, growers 1.5x. Chicks with a mother hen learn at half speed.
+- In the app, press and rub a bird on the farm to pet it (the same `pet` command). A bird already
+  petted today leans in. This is not an error.
 - Start: brooder chick 0.2, chick raised by a hen 0.05, bought bird 0.25.
 - A fox fright and days lost lower tameness. Neglect never does.
 - Effects: half of the pet show class; lap chickens rehome for more.
