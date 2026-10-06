@@ -484,7 +484,127 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .showTreatsWon(let treats):
         let won = "\(treats) mealworm treat\(treats == 1 ? "" : "s")"
         return "Prize treats: \(won) for the bag. You have \(s.treats) treats."
+    case .jobsSet:
+        let jobs = s.todaysJobs.map { jobText($0, s) }
+        guard !jobs.isEmpty else { return nil }
+        return "Today's jobs: " + jobs.joined(separator: " · ") + ". (see: jobs)"
+    case .jobDone(let kind):
+        let job = s.todaysJobs.first { $0.kind == kind } ?? Job(kind: kind)
+        return "✓ Job done: \(jobText(job, s))."
+    case .allJobsDone(let coins):
+        return "That's all of today's jobs done. A good day's work! You earn \(coins) coin\(coins == 1 ? "" : "s")."
+    case .seasonGoalSet(let kind, let previous):
+        guard let goal = s.seasonGoal, goal.kind == kind else { return nil }
+        let season = s.season(of: goal).rawValue.capitalized
+        let newGoal = "\(season) goal: \(seasonGoalText(goal, s)). (see: jobs)"
+        guard let previous else { return newGoal }
+        return "Last season's goal (\(goalName(previous))) can rest. There's no hurry: it may come round again. "
+            + newGoal
+    case .seasonGoalProgress(let kind, let progress, let target):
+        return "Season goal, \(goalWords(kind, s)): \(progress) of \(target)."
+    case .seasonGoalReached(let kind, let coins):
+        return "★ Season goal reached: \(goalWords(kind, s))! You earn \(coins) coins."
     }
+}
+
+/// The current goal in a sentence ("hatch 3 chicks"), or its short name if it has gone.
+func goalWords(_ kind: GoalKind, _ s: GameState) -> String {
+    guard let goal = s.seasonGoal, goal.kind == kind else { return goalName(kind) }
+    return seasonGoalText(goal, s).lowercasedFirst
+}
+
+// MARK: - Today's jobs and the season goal
+
+/// One of today's jobs, as a short line: "Pick up Pip", "Pick up 3 birds (1 of 3)".
+public func jobText(_ job: Job, _ s: GameState) -> String {
+    let title: String =
+        switch job.kind {
+        case .feed: "Feed the flock"
+        case .collectEggs: "Collect the eggs"
+        case .petBirds: "Pick up \(job.target) bird\(job.target == 1 ? "" : "s")"
+        case .petBird: "Pick up \(job.birdID.map { birdName($0, s) } ?? "a bird")"
+        case .giveTreat: "Give a bird a treat"
+        case .shutCoop: "Shut the coop door tonight"
+        case .sellEggs: "Sell some eggs"
+        case .candleEgg: "Hold an egg up to the light"
+        case .setEggs: "Set some eggs to hatch"
+        case .nameBird: "Give the new \(newBirdWord(job.birdID, s)) a name"
+        case .enterShow: "Enter the \(showThemeName(s.nextShowTheme))"
+        }
+    guard job.target > 1, !job.isDone else { return title }
+    return title + " (\(job.progress) of \(job.target))"
+}
+
+/// "chick" while the sex is hidden, else "pullet", "hen"... ("bird" if it has gone).
+func newBirdWord(_ id: UUID?, _ s: GameState) -> String {
+    guard let id, let bird = s.bird(id) else { return "bird" }
+    return kindWord(bird, s)
+}
+
+/// The season goal, as a short line: "Hatch 3 chicks". Progress is in `seasonGoalProgressText`.
+public func seasonGoalText(_ goal: SeasonGoal, _ s: GameState) -> String {
+    let n = goal.target
+    return switch goal.kind {
+    case .hatchChicks: "Hatch \(n) chick\(n == 1 ? "" : "s")"
+    case .breedBookPage: "Add a new page to the Breed Book"
+    case .newEgg: "Find an egg you have not seen before"
+    case .showRibbon: "Win a ribbon at the county show"
+    case .newFriend: "Help one more bird become friendly"
+    case .growFlock: "Grow the flock by \(n) bird\(n == 1 ? "" : "s")"
+    case .collectEggs: "Collect \(n) egg\(n == 1 ? "" : "s")"
+    }
+}
+
+/// "2 of 3", or "Reached" once it is done.
+public func seasonGoalProgressText(_ goal: SeasonGoal, _ s: GameState) -> String {
+    goal.reached ? "Reached" : "\(s.progress(of: goal)) of \(goal.target)"
+}
+
+/// A short name for a goal kind, when the goal itself has gone: "a new friend".
+public func goalName(_ kind: GoalKind) -> String {
+    switch kind {
+    case .hatchChicks: "hatching chicks"
+    case .breedBookPage: "a new Breed Book page"
+    case .newEgg: "a new egg"
+    case .showRibbon: "a show ribbon"
+    case .newFriend: "a new friend"
+    case .growFlock: "a bigger flock"
+    case .collectEggs: "a basket of eggs"
+    }
+}
+
+/// The `jobs` screen: today's jobs, ticked when done, and the season goal.
+public func jobsLines(_ s: GameState) -> [String] {
+    var out: [String] = []
+    let jobs = s.todaysJobs
+    if jobs.isEmpty {
+        out.append("No jobs yet today. New jobs come each morning.")
+    } else {
+        out.append("Today's jobs (day \(s.day)):")
+        for job in jobs { out.append("  \(job.isDone ? "✓" : "○") \(jobText(job, s))") }
+        let reward = s.rules.jobsRewardCoins
+        if s.todaysJobsRewarded {
+            out.append("  All done. Well done! (+\(reward) coins)")
+        } else {
+            out.append("  Do them all for \(reward) coins. Any you skip simply go tomorrow.")
+        }
+    }
+    guard let goal = s.seasonGoal else {
+        out.append("Season goal: none yet. One comes when there is something to aim for.")
+        return out
+    }
+    let season = s.season(of: goal).rawValue.capitalized
+    out.append("\(season) goal: \(seasonGoalText(goal, s)) · \(seasonGoalProgressText(goal, s))")
+    if !goal.reached {
+        out.append(
+            "  Until day \(goal.endDay), for \(s.rules.seasonGoalRewardCoins) coins. If it waits, a new goal comes.")
+    }
+    return out
+}
+
+extension String {
+    /// "Hatch 3 chicks" → "hatch 3 chicks", for use inside a sentence.
+    var lowercasedFirst: String { prefix(1).lowercased() + dropFirst() }
 }
 
 public func yardLines(_ s: GameState) -> [String] {

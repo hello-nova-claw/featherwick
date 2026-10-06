@@ -38,7 +38,7 @@ Key Core files:
 - `BreedTable.swift`, `Breed.swift`: breeds and colour varieties (data tables).
 - `SaveFormat.swift` (versions, migrations), `SaveStore.swift` (slots, atomic writes, backups).
 - One file per feature: `EarlyGame`, `Shows`, `ShowEvent`, `Friendliness`, `Pedigree`, `Names`, `Story`,
-  `Milestone`, `Look`, `Simulation`.
+  `Milestone`, `Jobs` (daily jobs, season goals), `Look`, `Simulation`.
 
 ## iOS app
 

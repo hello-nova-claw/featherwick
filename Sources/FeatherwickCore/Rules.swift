@@ -165,6 +165,18 @@ public struct Rules: Codable, Hashable, Sendable {
     /// Practice fields judged to find the neighbour's show tip.
     public var showTipTrials = 24
 
+    // Today's jobs and season goals (see Jobs.swift). Gentle nudges: nothing is lost by skipping them.
+    public var jobsPerDay = 3  // jobs picked each morning; 0 turns daily jobs off
+    public var jobsRewardCoins = 5  // paid once a day, when every job is done
+    public var jobPetBirds = 3  // "pick up 3 birds" (fewer if the flock is smaller)
+    public var seasonGoals = true  // false turns season goals off
+    public var seasonGoalRewardCoins = 25  // paid once, when the season goal is reached
+    public var seasonGoalMinDays = 7  // a goal set later in a season runs on through the next one
+    public var seasonGoalChicks = 3  // "hatch 3 chicks"
+    public var seasonGoalFlockGrowth = 2  // "grow the flock by 2 birds"
+    public var seasonGoalEggsPerHen = 8  // "collect N eggs": this many per hen in the coop...
+    public var seasonGoalMaxEggs = 40  // ...but never more than this
+
     public init() {}
 
     /// How an adult hen's laying falls with age: full until `layDeclineStartDays`, then down to

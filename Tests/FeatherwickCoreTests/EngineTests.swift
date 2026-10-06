@@ -17,6 +17,10 @@ func startedGame(sex: Sex, rules: Rules = .standard, seed: UInt64 = 1) -> (GameS
     // `LearningToCandleTests` covers a real new keeper.
     s.canCandle = true
     s.rules.incubatorHatchDays = 1
+    // No daily jobs or season goals, so their events and coin rewards stay out of other systems' tests.
+    // `JobsTests` covers them.
+    s.rules.jobsPerDay = 0
+    s.rules.seasonGoals = false
     return (s, rng)
 }
 

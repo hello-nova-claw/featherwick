@@ -66,6 +66,7 @@ enum FarmSheet: Identifiable, Hashable {
     case books
     case settings
     case neighbourNote
+    case jobs
     var id: Self { self }
 }
 
@@ -105,6 +106,13 @@ struct FarmView: View {
                         Button("Books") { sheet = .books }
                             .font(Typeface.display(23, relativeTo: .title2))
                             .frame(minWidth: 72, minHeight: 56)
+                    }
+                    FloatingBox {
+                        Button {
+                            sheet = .jobs
+                        } label: {
+                            TodayButtonLabel()
+                        }
                     }
                     Spacer()
                     FloatingBox {
@@ -173,6 +181,7 @@ struct FarmView: View {
         case .books: BooksView()
         case .settings: SettingsSheet()
         case .neighbourNote: NeighbourNoteSheet()
+        case .jobs: JobsSheet()
         }
     }
 

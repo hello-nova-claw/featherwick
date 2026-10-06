@@ -192,6 +192,10 @@ final class GameStore {
             return ("New at Speckle & Down", "View", .place(.farmGate))
         case .foxVisited(let ids):
             return ("A fox scared \(ids.count) bird\(ids.count == 1 ? "" : "s") away. They'll come home.", nil, nil)
+        case .allJobsDone(let coins):
+            return ("All of today's jobs are done (+\(coins) coins)", "View", .jobs)
+        case .seasonGoalReached(_, let coins):
+            return ("Season goal reached (+\(coins) coins)", "View", .jobs)
         default:
             return nil
         }

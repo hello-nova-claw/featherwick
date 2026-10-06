@@ -29,7 +29,7 @@ sets the difficulty of a new game. Type `help` in the game for commands. `day 10
 
 `Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. Command in, events out. All tunable numbers live in `Rules`.
 
-Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → hatching (eggs due today; clear ones go back to the carton; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → early game (features whose day has come; the show tip) → milestones → door opens.
+Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → hatching (eggs due today; clear ones go back to the carton; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
 
 ## The early game (tutorial timeline)
 
@@ -352,6 +352,35 @@ failed — no deadlines, nothing lost by missing one.
 - CLI: `journal` (the ladder, ✓ reached / ○ with a hint for what to aim for next).
 
 To add one: append a `Milestone` to `Milestones.all` (list order is the ladder), plus its words in the UI.
+
+## Today's jobs and season goals
+
+`Jobs.swift`. A gentle reason to come back each day. Nothing here can be failed.
+
+- **Today's jobs.** Each morning the game picks up to `jobsPerDay` (3) small jobs. It picks only from
+  what the keeper can do now, and it follows the early-game timeline. Examples: feed the flock, collect
+  the eggs, pick up 3 birds, pick up a named bird, give a treat, shut the coop door, sell eggs, candle
+  an egg, set eggs to hatch, name a new bird, enter the show (only in the week before a show).
+- A job ticks itself off when the keeper does it. `Engine.apply` checks each command's events
+  (`progressJobs`). Events: `.jobsSet`, `.jobDone(kind)`.
+- All of today's jobs done pays `jobsRewardCoins` (5), once a day (`.allJobsDone`). Unfinished jobs
+  simply go the next morning.
+- **Season goal.** One bigger goal for each season: hatch 3 chicks, a new Breed Book page, a new egg,
+  a show ribbon, one more friendly bird, grow the flock by 2, or collect a number of eggs. The game
+  picks only goals the keeper can work on now. Progress shows as "2 of 3".
+- The goal is checked each night, like the milestones. Reached, it pays `seasonGoalRewardCoins` (25),
+  once (`.seasonGoalReached`). New progress is told in the morning (`.seasonGoalProgress`).
+- When the season turns, a new goal comes (`.seasonGoalSet`). An unfinished goal is never failed: the
+  new goal's words say kindly that the last one can rest. A goal set late in a season (fewer than
+  `seasonGoalMinDays` left) runs on through the next season.
+- Jobs and goals come from `GameState.shopSeed` and the day, not from the game RNG. So existing seeds
+  keep their games, and the same day always gives the same jobs.
+- Jobs and goals read only what the keeper can see. A chick waiting for a name is "the new chick"
+  until its sex shows. No goal names a colour.
+- Old saves have no jobs and no goal. They get both on the next morning.
+- `jobsPerDay = 0` turns daily jobs off. `seasonGoals = false` turns season goals off. Most tests
+  turn both off (`startedGame`); `JobsTests` covers them.
+- CLI: `jobs`. App: the "Today" button on the farm opens the jobs sheet.
 
 ## Realism rules (tested)
 
