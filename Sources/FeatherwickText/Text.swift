@@ -52,6 +52,13 @@ public func friendlyText(_ f: Friendliness) -> String {
     }
 }
 
+/// A small, gentle note when a cuddle or a treat made a bird a little tamer: "Juniper liked that".
+/// A move up a band has its own words (`.friendlierNow` in `eventText`).
+public func handledToastText(_ id: UUID, _ kind: Handling, _ s: GameState) -> String {
+    let name = s.bird(id)?.name ?? "The bird"
+    return kind == .pet ? "\(name) liked that" : "\(name) enjoyed the mealworm"
+}
+
 public func storyText(_ id: String, step: String?) -> String {
     switch (id, step) {
     case ("broodySilkie", nil):

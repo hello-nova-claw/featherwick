@@ -39,6 +39,8 @@ struct FarmGateSheet: View {
         }
         .presentationDetents([.large])
         .onAppear {
+            // Whatever came in today has now been seen: the farm gate stops saying "new in today".
+            store.sawNewStock()
             // The neighbour's show tip is waiting: open on the Show tab.
             if let tip = s.showTip, !s.showEntries.contains(where: { $0.birdID == tip.birdID }) { tab = .show }
         }

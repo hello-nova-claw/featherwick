@@ -56,6 +56,28 @@ struct HLine: Shape {
     }
 }
 
+/// A tick: a short stroke down, then a long one up.
+struct TickShape: Shape {
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX + r.width * 0.08, y: r.minY + r.height * 0.55))
+        p.addLine(to: CGPoint(x: r.minX + r.width * 0.38, y: r.minY + r.height * 0.85))
+        p.addLine(to: CGPoint(x: r.minX + r.width * 0.92, y: r.minY + r.height * 0.15))
+        return p
+    }
+}
+
+/// A quiet ink tick for something done. It always sits next to a word ("Done").
+struct TickMark: View {
+    @Environment(\.palette) private var palette
+    var size: CGFloat = 14
+    var body: some View {
+        TickShape().stroke(palette.inkMuted, style: Stitch.tick)
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+    }
+}
+
 /// The signature dashed stitch between rows.
 struct StitchDivider: View {
     @Environment(\.palette) private var palette

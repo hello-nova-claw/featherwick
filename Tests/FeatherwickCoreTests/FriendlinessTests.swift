@@ -87,6 +87,21 @@ struct FriendlinessTests {
         #expect(Self.apply(.pet(id), &s).first == .handled(id, .pet))
     }
 
+    @Test func aBirdKnowsWhatItHadToday() {
+        var (s, id) = Self.game(age: 30, tameness: 0)
+        s.treats = 1
+        #expect(s.bird(id)?.wasHandled(.pet, onDay: s.day) == false)
+        #expect(s.bird(id)?.wasHandled(.treat, onDay: s.day) == false)
+        _ = Self.apply(.pet(id), &s)
+        #expect(s.bird(id)?.wasHandled(.pet, onDay: s.day) == true)
+        #expect(s.bird(id)?.wasHandled(.treat, onDay: s.day) == false)
+        _ = Self.apply(.giveTreat(id), &s)
+        #expect(s.bird(id)?.wasHandled(.treat, onDay: s.day) == true)
+        // A new day: both can be done again.
+        #expect(s.bird(id)?.wasHandled(.pet, onDay: s.day + 1) == false)
+        #expect(s.bird(id)?.wasHandled(.treat, onDay: s.day + 1) == false)
+    }
+
     // MARK: - No gaming, no punishment
 
     @Test func dailyCareApproachesButNeverPassesFullTrust() {
