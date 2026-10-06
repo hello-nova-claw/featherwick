@@ -172,6 +172,30 @@ struct TextTests {
         #expect(eventText(.friendlierNow(id, .friendly), s) == "Juniper seems friendly now.")
     }
 
+    /// A clear egg that sat the full time: a warm surprise, singular and plural, never a loss.
+    @Test func unhatchedEggsGetAGentleSurprise() {
+        var rng = SeededRNG(seed: 5)
+        var s = Engine.newGame(using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Juniper"), to: &s, using: &rng)
+        guard let id = s.ownedBirds.first?.id else {
+            Issue.record("no bird")
+            return
+        }
+        #expect(
+            eventText(.eggsDidNotHatch(count: 1, hen: nil), s)
+                == "Hm, 1 egg didn't hatch. It mustn't have been fertile. It's back in the carton.")
+        #expect(
+            eventText(.eggsDidNotHatch(count: 2, hen: id), s)
+                == "Juniper's clutch: 2 eggs didn't hatch. They mustn't have been fertile. They're back in the carton.")
+        s.cartons = 0  // a full carton sends them to the nest boxes
+        let full = eventText(.eggsDidNotHatch(count: 3, hen: nil), s) ?? ""
+        #expect(full.hasPrefix("Hm, 3 eggs didn't hatch.") && full.contains("nest boxes"))
+        for n in 1...3 {
+            let words = eventText(.eggsDidNotHatch(count: n, hen: nil), s) ?? ""
+            #expect(!words.contains("died") && !words.contains("dead"))
+        }
+    }
+
     /// The daily special names breed, sex and colour; basic stock never names its breed before purchase.
     @Test func theShopSpecialHasWords() {
         let rare = ShopSpecial(breed: .silkie, sex: .hen, colour: .splash, price: 50, isRare: true)

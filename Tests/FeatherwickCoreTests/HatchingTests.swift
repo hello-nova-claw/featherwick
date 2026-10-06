@@ -136,7 +136,8 @@ struct HatchingTests {
         #expect(!s.nest.isEmpty && s.nest.allSatisfy { !$0.isFertile })
     }
 
-    @Test func incubatorCandlesAndHatchesOvernightIntoTheBrooder() {
+    /// Setting never candles: the clear egg goes in too, and comes back known clear on hatch day.
+    @Test func incubatorHatchesFertileEggsIntoTheBrooderAndReturnsTheClearOne() {
         var (s, rng) = startedGame(sex: .hen, rules: calmRules())
         let hen = adult(.araucana, .hen, day: 0, rules: s.rules, rng: &rng)
         let rooster = adult(.orpington, .rooster, day: 0, rules: s.rules, rng: &rng)
@@ -148,12 +149,15 @@ struct HatchingTests {
         #expect(Engine.apply(.incubate(count: 3), to: &s, using: &rng) == [.rejected(.noIncubator)])
         s.coins = 100
         _ = Engine.apply(.buyIncubator, to: &s, using: &rng)
+        let clearID = s.carton[1].id
         let ev = Engine.apply(.incubate(count: 3), to: &s, using: &rng)
-        #expect(ev.first == .candled(fertile: 2, clear: 1))
-        #expect(s.carton.count == 1 && !s.carton[0].isFertile)
+        #expect(ev == [.eggsSet(count: 3, hen: nil, hatchDay: s.day + s.rules.incubatorHatchDays)])
+        #expect(s.carton.isEmpty && s.incubatorClutch?.eggs.count == 3)
         let embryos = s.incubatorClutch!.eggs.map(\.embryo)
         let hatched = night(&s, &rng)
         #expect(hatched.contains { if case .chicksHatched(let ids, .none) = $0 { ids.count == 2 } else { false } })
+        #expect(hatched.contains(.eggsDidNotHatch(count: 1, hen: nil)))
+        #expect(s.carton.map { $0.id } == [clearID] && s.carton[0].isCandled)
         let chicks = s.brooder.filter { $0.origin == "Henhaven" }
         #expect(chicks.count == 2)
         #expect(chicks.map(\.genome) == embryos.compactMap { $0 })
@@ -249,7 +253,7 @@ struct HatchingTests {
         s.carton = [clear, fertile]
         // Only 1 usable egg: the known-clear one is not offered.
         #expect(Engine.apply(.incubate(count: 2), to: &s, using: &rng) == [.rejected(.notEnoughEggsInCarton(have: 1))])
-        // Already candled, so no new candling event, just the set.
+        // Setting never candles, so the only event is the set.
         #expect(
             Engine.apply(.incubate(count: 1), to: &s, using: &rng) == [
                 .eggsSet(count: 1, hen: nil, hatchDay: s.day + 1)
@@ -289,6 +293,7 @@ struct FosterHenTests {
 }
 
 /// A new keeper can't candle. Set eggs are a guess; clear ones come back. The first hatch teaches candling.
+/// Even after the lesson, setting never candles: an unchecked clear egg still sits the full time.
 struct LearningToCandleTests {
     /// A new keeper (no candling) with a 6-egg incubator and room in the brooder, and 1 fertile + 2 clear eggs.
     static func newKeeper() -> (GameState, SeededRNG) {
@@ -335,6 +340,30 @@ struct LearningToCandleTests {
         // The clear eggs are back in the carton, now known to be clear.
         let back = s.carton.filter { clearIDs.contains($0.id) }
         #expect(back.count == 2 && back.allSatisfy { $0.isCandled && !$0.isFertile })
+    }
+
+    /// A keeper who can candle but sets an unchecked clear egg waits out the full hatch time,
+    /// then finds it didn't hatch. The fertile egg set with it hatches as usual.
+    @Test func anUncheckedClearEggSitsTheFullTimeThenComesBackKnownClear() {
+        var (s, rng) = Self.newKeeper()
+        s.canCandle = true
+        let fertile = s.carton[0].id
+        let clear = s.carton[1].id
+        let hatchDay = s.day + s.rules.incubatorHatchDays
+        let set = Engine.apply(.incubateEggs([fertile, clear]), to: &s, using: &rng)
+        #expect(set == [.eggsSet(count: 2, hen: nil, hatchDay: hatchDay)])
+        #expect(s.carton.count == 1 && !s.carton.contains { $0.id == clear })
+        var early: [GameEvent] = []
+        while s.day < hatchDay - 1 { early += night(&s, &rng) }
+        // Still warming: the clear egg keeps its place in the incubator until hatch day.
+        #expect(s.incubatorClutch?.eggs.count == 2)
+        #expect(!early.contains { if case .eggsDidNotHatch = $0 { true } else { false } })
+        let last = night(&s, &rng)
+        #expect(last.contains(.eggsDidNotHatch(count: 1, hen: nil)))
+        #expect(last.contains { if case .chicksHatched(let ids, .none) = $0 { ids.count == 1 } else { false } })
+        #expect(s.incubatorClutch == nil)
+        #expect(s.carton.contains { $0.id == clear && $0.isCandled && !$0.isFertile })
+        #expect(s.brooder.contains { $0.origin == "Henhaven" })
     }
 
     @Test func aFullCartonSendsUnhatchedEggsToTheNest() {

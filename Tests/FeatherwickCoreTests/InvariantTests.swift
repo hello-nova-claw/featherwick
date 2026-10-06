@@ -26,7 +26,7 @@ struct InvariantTests {
         if let c = incubator.first, c.eggs.count > s.incubatorSize { p.append("incubator overfilled") }
         for c in s.clutches {
             if c.eggs.isEmpty { p.append("empty clutch") }
-            // A new keeper can set clear eggs by mistake, but never one already known to be clear.
+            // Any keeper can set an unchecked clear egg, but never one already known to be clear.
             if c.eggs.contains(where: { $0.isCandled && !$0.isFertile }) { p.append("known-clear egg being hatched") }
             if c.hatchDay < s.day { p.append("clutch past its hatch day") }
             if let hen = c.henID {

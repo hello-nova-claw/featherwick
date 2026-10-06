@@ -458,11 +458,21 @@ struct HatchingEdgeCases {
         #expect(s.carton.count == 3 && !s.carton.contains { $0.id == picked })
     }
 
-    @Test func allClearEggsSetNothingAndLeaveTheIncubatorFree() {
+    /// Setting never candles. Unchecked clear eggs take the incubator until hatch day, then come back.
+    @Test func uncheckedClearEggsHoldTheIncubatorUntilHatchDay() {
         var (s, rng) = gameWithIncubator(fertile: 0, clear: 3)
-        #expect(Engine.apply(.incubate(count: 3), to: &s, using: &rng) == [.candled(fertile: 0, clear: 3)])
+        let hatchDay = s.day + s.rules.incubatorHatchDays
+        #expect(
+            Engine.apply(.incubate(count: 3), to: &s, using: &rng) == [
+                .eggsSet(count: 3, hen: nil, hatchDay: hatchDay)
+            ])
+        #expect(s.incubatorClutch?.eggs.count == 3 && s.carton.isEmpty)
+        var ev: [GameEvent] = []
+        while s.day < hatchDay { ev += night(&s, &rng) }
+        #expect(ev.contains(.eggsDidNotHatch(count: 3, hen: nil)))
+        #expect(!ev.contains { if case .chicksHatched = $0 { true } else { false } })
         #expect(s.incubatorClutch == nil)
-        #expect(s.carton.count == 3 && s.carton.allSatisfy(\.isCandled))
+        #expect(s.carton.count == 3 && s.carton.allSatisfy { $0.isCandled && !$0.isFertile })
         // Now all are known clear, so none can be offered.
         #expect(Engine.apply(.incubate(count: 1), to: &s, using: &rng) == [.rejected(.notEnoughEggsInCarton(have: 0))])
     }
@@ -472,17 +482,25 @@ struct HatchingEdgeCases {
         #expect(Engine.apply(.sit(hen: s.brooder[0].id, count: 1), to: &s, using: &rng) == [.rejected(.noSuchBird)])
     }
 
-    @Test func aBroodyHenWithOnlyClearEggsStaysBroodyButSitsOnNothing() {
+    /// A broody hen sits on unchecked clear eggs for the full time. On hatch day they come back known clear.
+    @Test func aBroodyHenSitsOnUncheckedClearEggsUntilHatchDay() {
         var r = calmRules()
         r.broodyChance = [:]
         var (s, rng) = adultHenGame(r)
-        let until = s.day + 4
-        s.coop[0].broodyUntilDay = until
+        s.coop[0].broodyUntilDay = s.day + 4
+        let hen = s.coop[0].id
         s.carton = (0..<2).map { _ in clearEgg(mother: s.coop[0], day: s.day, rng: &rng) }
+        let hatchDay = s.day + r.broodyHatchDays
         #expect(
-            Engine.apply(.sit(hen: s.coop[0].id, count: 2), to: &s, using: &rng) == [.candled(fertile: 0, clear: 2)])
-        #expect(s.clutches.isEmpty)
-        #expect(s.coop[0].broodyUntilDay == until)
+            Engine.apply(.sit(hen: hen, count: 2), to: &s, using: &rng) == [
+                .eggsSet(count: 2, hen: hen, hatchDay: hatchDay)
+            ])
+        #expect(s.clutch(under: hen)?.eggs.count == 2 && s.carton.isEmpty)
+        var ev: [GameEvent] = []
+        while s.day < hatchDay { ev += night(&s, &rng) }
+        #expect(ev.contains(.eggsDidNotHatch(count: 2, hen: hen)))
+        #expect(s.clutches.isEmpty && s.henChicks.isEmpty)
+        #expect(s.carton.count == 2 && s.carton.allSatisfy { $0.isCandled && !$0.isFertile })
     }
 
     @Test func aHenSitsOnAtMostSixAndOnlyOneClutch() {

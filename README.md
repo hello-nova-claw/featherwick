@@ -75,8 +75,13 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 - You choose the exact eggs to hatch or sell. The incubator takes more eggs on the same day until it is full.
 - Eggs hatch in the incubator after `incubatorHatchDays` nights (3). Under a broody hen, after `broodyHatchDays`.
 - A new keeper cannot candle. A set egg is a guess. The app shows "?" on an egg you cannot judge yet.
-- A clear egg never hatches. On hatch day it goes back to the carton, marked clear. If the carton is full, it
-  goes to the nest boxes.
+- Setting eggs never candles them. Every chosen egg goes in, unless it is already known to be clear
+  (`eggIsClear`). Candling is its own step. The set note says "Any fertile ones will hatch" unless every
+  egg in the clutch is known to be fertile.
+- A clear egg never hatches. It sits the full time and takes its place in the incubator (and its brooder
+  place) until hatch day. Then it goes back to the carton, marked clear: "Hm, 1 egg didn't hatch. It mustn't
+  have been fertile." (`eggsDidNotHatch`). If the carton is full, it goes to the nest boxes.
+- So candling pays: a keeper who candles first keeps clear eggs out, and saves the space and the wait.
 - Bought eggs are already candled, so they show as fertile.
 - **The neighbour's 1-egg incubator** (`giftIncubatorSize`) comes once, with the first fertile egg:
   - laid by a hen, with an adult rooster in the coop (in the night's laying step), or
@@ -89,7 +94,7 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
   at a time (`candleEgg`). The CLI can still candle the whole carton (`candle`).
 - A story step that asks for eggs you know are fertile also teaches candling. If you cannot candle when
   the step starts (or on any night while it waits), the neighbour shows you at once. So the step never sticks.
-- Every egg known to be fertile hatches (cozy rule).
+- Every fertile egg hatches (cozy rule).
 - Saves from before this rule keep candling (`canCandle` is true when it is missing).
 
 ## Birds never wait forever

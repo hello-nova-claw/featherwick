@@ -36,7 +36,8 @@ public enum Command: Hashable, Codable, Sendable {
     case enterEggs
     /// Feed the flock premium feed for the day: feeds them AND lifts laying a little. Uses one portion.
     case feedPremium
-    /// Set these exact eggs from the carton in the incubator. Clear ones are found and stay in the carton.
+    /// Set these exact eggs from the carton in the incubator. Setting never candles them: a clear egg sits
+    /// the full time and comes back on hatch day. Eggs already known to be clear are refused.
     case incubateEggs([UUID])
     /// Set these exact eggs from the carton under a broody hen.
     case sitEggs(hen: UUID, eggs: [UUID])
@@ -160,8 +161,8 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case candled(fertile: Int, clear: Int)
     case eggsSet(count: Int, hen: UUID?, hatchDay: Int)
     case chicksHatched([UUID], hen: UUID?)
-    /// Clear eggs set before the keeper could candle. They never hatch and go back to the carton (or the nest
-    /// boxes if the carton is full), now known to be clear.
+    /// Clear eggs that were set without being candled first. They sit the full time, never hatch, and go back
+    /// to the carton (or the nest boxes if the carton is full), now known to be clear.
     case eggsDidNotHatch(count: Int, hen: UUID?)
     /// The neighbour shows the keeper how to candle eggs.
     case learnedCandling
@@ -683,31 +684,15 @@ public enum Engine {
         return ev
     }
 
-    /// Candles the chosen eggs. Clear (infertile) eggs stay in the carton, now marked as clear.
-    /// Only fertile eggs are set, so every egg that is set will hatch (cozy rule).
-    /// A keeper who can't candle yet sets every chosen egg; the clear ones come back on hatch day.
-    /// Incubator eggs join a clutch set earlier the same day.
+    /// Sets every chosen egg. Setting never candles: candling is its own, deliberate step (`candleEgg`).
+    /// So a clear egg that was not candled first sits the full time and comes back on hatch day
+    /// (`hatchDue`). The keeper who candles first saves the space and the wait.
+    /// Callers refuse eggs already known to be clear. Incubator eggs join a clutch set earlier the same day.
     static func setEggs(_ chosen: [Egg], hen: UUID?, hatchDay: Int, _ s: inout GameState) -> [GameEvent] {
         let chosenIDs = Set(chosen.map(\.id))
-        if !s.canCandle {
-            s.carton.removeAll { chosenIDs.contains($0.id) }
-            addToClutch(chosen, hen: hen, hatchDay: hatchDay, &s)
-            return [.eggsSet(count: chosen.count, hen: hen, hatchDay: hatchDay)]
-        }
-        let fertile = chosen.filter(\.isFertile)
-        s.carton.removeAll { chosenIDs.contains($0.id) && $0.isFertile }
-        for i in s.carton.indices where chosenIDs.contains(s.carton[i].id) { s.carton[i].candled = true }
-        let newlyChecked = chosen.filter { !$0.isCandled }
-        let newlyFertile = newlyChecked.count(where: \.isFertile)
-        var ev: [GameEvent] = []
-        if !newlyChecked.isEmpty {
-            ev.append(.candled(fertile: newlyFertile, clear: newlyChecked.count - newlyFertile))
-        }
-        if !fertile.isEmpty {
-            addToClutch(fertile, hen: hen, hatchDay: hatchDay, &s)
-            ev.append(.eggsSet(count: fertile.count, hen: hen, hatchDay: hatchDay))
-        }
-        return ev
+        s.carton.removeAll { chosenIDs.contains($0.id) }
+        addToClutch(chosen, hen: hen, hatchDay: hatchDay, &s)
+        return [.eggsSet(count: chosen.count, hen: hen, hatchDay: hatchDay)]
     }
 
     static func addToClutch(_ eggs: [Egg], hen: UUID?, hatchDay: Int, _ s: inout GameState) {

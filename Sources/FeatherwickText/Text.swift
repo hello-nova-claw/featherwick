@@ -439,7 +439,10 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return "You hold each egg up to the light: \(fertile) fertile" + (clear > 0 ? ", \(clear) clear." : ".")
     case .eggsSet(let n, let hen, let hatchDay):
         let who = hen.map { "under \(birdName($0, s))" } ?? "in the incubator"
-        let which = s.canCandle ? "They" : "Any fertile ones"
+        // "They will hatch" only when every egg in the clutch is known fertile. Unchecked eggs are a guess.
+        let clutch = s.clutches.first { $0.henID == hen && $0.hatchDay == hatchDay }
+        let allKnown = clutch?.eggs.allSatisfy { $0.isCandled && $0.isFertile } ?? false
+        let which = allKnown ? "They" : "Any fertile ones"
         return "You set \(n) egg\(n == 1 ? "" : "s") \(who). \(which) will hatch on day \(hatchDay)."
     case .chicksHatched(let ids, let hen):
         let where_ = hen.map { "under \(birdName($0, s))" } ?? "in the incubator"
@@ -447,14 +450,19 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
             + ids.compactMap { s.bird($0) }.map { "\($0.name) (\(downText($0.phenotype.chickDown)))" }.joined(
                 separator: ", ")
     case .eggsDidNotHatch(let n, let hen):
-        let from = hen.map { "under \(birdName($0, s))" } ?? "in the incubator"
-        return "\(n) egg\(n == 1 ? "" : "s") \(from) did not hatch. \(n == 1 ? "It was" : "They were") clear. "
-            + "You put \(n == 1 ? "it" : "them") back with your eggs."
+        // Warm surprise, not loss: a clear egg was never going to hatch. Every fertile egg does (cozy rule).
+        let opener = hen.map { "\(birdName($0, s))'s clutch:" } ?? "Hm,"
+        let eggs = "\(n) egg\(n == 1 ? "" : "s") didn't hatch."
+        let why = n == 1 ? "It mustn't have been fertile." : "They mustn't have been fertile."
+        // A full carton sends them to the nest boxes (`returnUnhatched`).
+        var back = n == 1 ? "It's back in the carton." : "They're back in the carton."
+        if s.carton.count >= s.cartonCapacity { back = "The carton is full, so look in the nest boxes." }
+        return "\(opener) \(eggs) \(why) \(back)"
     case .learnedCandling:
         return """
             The neighbour comes round with a torch. "Here, let me show you a trick." She holds an egg up \
             to the light. "See the shadow and the little veins? That one's fertile. A clear one just glows." \
-            You can candle eggs now.
+            You can candle eggs now. Candle before you set them, and a clear egg won't take a place in the incubator.
               candle          hold the carton eggs up to a light to see which are fertile
               sell clear      sell your eggs but keep the fertile ones
             """
