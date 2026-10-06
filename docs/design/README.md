@@ -225,6 +225,19 @@ The Show tab: the next show's theme name and day, the entry fee, and the feature
 - **Day/night:** follows the device clock. Tokens crossfade over 30 minutes at 18:00 and 06:00.
 - **Toasts:** slide down under the HUD over 250ms ease-out, fade out after 4 seconds.
 - **Buttons:** pressed scale 0.97 over 120ms. Light haptic on Cuddle, Treat and Set to hatch.
+
+### Birds on the farm
+Until the bird art exists, each bird is a soft blob (`BirdSwatch`): feather colour, comb, and lacing or barring from its real look. Chicks are small, growers are medium, adults are full size.
+- **Where:** birds stay in a ground band in the lower part of each panel, below the place labels and above Books and ≡. Coop birds wander the Yard. With more than 6, every third bird wanders the Far yard. Brooder chicks and hen chicks sit in a dashed "brooder" box on the Barn panel. At night, or with the coop door shut, the coop birds roost in rows on dashed perches on the Barn panel. Lost and boarding birds are not shown.
+- **Movement:** every 2–4 seconds a bird walks a short way slowly, or stops to peck (a small bob). Reduce Motion: birds stand still.
+- **No labels** by default. Tap a bird (a short touch, no movement) to open its bird card.
+- **Petting:** press and rub a bird (3 turns back and forth, or 120pt of rubbing with one turn). One pet per press. The bird squishes and leans with the finger, then 3 small buff dabs float up. A bird already petted today only leans in. It is not an error.
+- **VoiceOver:** each bird is a button named for the bird. "Pet" is an action.
+
+### Sound and haptics
+Soft and few. Settings (≡) has a switch for each; both start on.
+- **Haptics:** light ticks while rubbing, a soft tap when a pet lands, a light tap when opening a bird, success on egg collection and hatching, a gentle warning when the game says no.
+- **Sound:** a cluck for tapping or petting a bird; egg, hatch and coin sounds for those events. At most one of each sound per action. The `.ambient` audio session obeys the silent switch. Until the sound files exist (`App/Featherwick/Sounds/README.md`), the game is silent.
 - **Unknown → known reveals** (breed, sex): animate the dashed outline to a filled state (~400ms), then show a toast ("Lavender added to the Breed Book").
 - **Reduce Motion:** replace slides and scales with fades.
 - **VoiceOver:** every dab or dot group reads as text ("Friendliness: friendly, 3 of 4"). Carton cups read "Blue egg, fertile".
