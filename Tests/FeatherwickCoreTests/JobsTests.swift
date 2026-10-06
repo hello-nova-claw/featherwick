@@ -210,7 +210,7 @@ struct JobsTests {
         s.rehomed.append(hen)  // she went to a new home
         let ev = Engine.apply(.feed, to: &s, using: &rng)
         #expect(ev.contains(.jobDone(.petBirds)) && ev.contains(.jobDone(.petBird)))
-        #expect(s.todaysJobs.allSatisfy(\.isDone))
+        #expect(s.todaysJobs.allSatisfy { $0.isDone })
     }
 
     @Test func theShowWeekBringsTheShowJobFirst() {
