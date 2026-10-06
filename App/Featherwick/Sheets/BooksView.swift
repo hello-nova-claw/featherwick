@@ -187,6 +187,8 @@ struct SettingsSheet: View {
             StitchDivider()
             FeedbackToggles()
             StitchDivider()
+            TimeOfDayPicker()
+            StitchDivider()
             Text("Fast forward").font(Typeface.item)
             HStack(spacing: Space.m) {
                 Button("1 day") { store.fullDays(1) }.buttonStyle(.secondary)
@@ -214,6 +216,21 @@ struct SettingsSheet: View {
             Button("Start again", role: .destructive) { store.newGame(difficulty) }
         }
         .fullScreenCover(isPresented: $testTools) { TestToolsView() }
+    }
+}
+
+/// For testing: see the farm by day or by night without waiting for the clock.
+struct TimeOfDayPicker: View {
+    @Environment(\.palette) private var palette
+    @AppStorage(TimeOfDayPin.key) private var pinned: TimeOfDayPin = .clock
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.s) {
+            Text("Time of day").font(Typeface.item)
+            WordTabs(tabs: TimeOfDayPin.allCases.map { ($0, $0.label) }, selection: $pinned)
+            Text("For testing. Clock: night is 6 pm to 6 am. Day or Night stays until you set Clock again.")
+                .font(Typeface.caption).foregroundStyle(palette.inkMuted)
+        }
     }
 }
 

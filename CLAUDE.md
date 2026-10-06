@@ -54,7 +54,7 @@ components, screens 1a–8a). The painted farm and bird art come later; dashed b
 - `Farm/FarmBirds.swift`: the flock as blobs (`BirdSwatch`) on their panels. Tap opens the bird card;
   press and rub sends `.pet`. `Feedback/`: `Haptics` and `Sound` (bundled `Sounds/*.caf`, silent if missing),
   with on/off switches in Settings. `GameStore.run` plays event feedback through `GameFeedback`.
-- Day or night follows the device clock (18:00–05:59 is night), via `\.palette`.
+- Day or night follows the device clock (18:00–05:59 is night), via `\.palette`. Settings ▸ Time of day (`TimeOfDayPin`) pins day or night for testing.
 - Fonts (Libre Caslon Display/Text, Figtree; OFL) are bundled in `Fonts/` and registered at launch.
 - ≡ → "Open test tools" shows the old plain screens (`TestTools/`), with every action and the full log.
 

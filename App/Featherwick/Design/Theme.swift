@@ -44,6 +44,30 @@ struct Palette: Equatable, Sendable {
 
     /// Night is 18:00 to 05:59 on the device clock.
     static func forHour(_ hour: Int) -> Palette { hour >= 18 || hour < 6 ? .night : .day }
+
+    /// The palette for this moment: the device clock, unless a tester has pinned day or night.
+    static func forHour(_ hour: Int, pinned: TimeOfDayPin) -> Palette {
+        switch pinned {
+        case .clock: forHour(hour)
+        case .day: .day
+        case .night: .night
+        }
+    }
+}
+
+/// A tester setting (Settings ▸ For testing): follow the clock, or pin the farm to day or night.
+enum TimeOfDayPin: String, CaseIterable {
+    case clock, day, night
+
+    static let key = "tester.timeOfDay"
+
+    var label: String {
+        switch self {
+        case .clock: "Clock"
+        case .day: "Day"
+        case .night: "Night"
+        }
+    }
 }
 
 extension EnvironmentValues {

@@ -226,7 +226,7 @@ The Show tab: the next show's theme name and day, the entry fee, and the feature
 
 ## Interactions & behaviour
 - **Tap place → sheet.** SpriteKit hit-tests the tap area and presents the matching SwiftUI sheet. Sheets dismiss by swipe or ×.
-- **Day/night:** follows the device clock. Tokens crossfade over 30 minutes at 18:00 and 06:00.
+- **Day/night:** follows the device clock. Tokens crossfade over 30 minutes at 18:00 and 06:00. For testing, Settings ▸ Time of day pins Day or Night (Clock goes back to the device clock).
 - **Toasts:** slide down under the HUD over 250ms ease-out, fade out after 4 seconds.
 - **Friendliness toasts:** a cuddle or treat that makes a bird tamer gives a small toast ("Juniper liked that", "Juniper enjoyed the mealworm"). A move up a friendliness band gives its own toast instead ("Juniper seems friendly now."). No action on either.
 - **Buttons:** pressed scale 0.97 over 120ms. Light haptic on Cuddle, Treat and Set to hatch.
