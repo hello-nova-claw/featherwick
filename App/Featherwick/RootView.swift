@@ -3,12 +3,15 @@ import FeatherwickText
 import SwiftUI
 
 /// Picks day or night from the device clock (checked each minute) and shows the starter choice or the farm.
+/// A tester can pin day or night in Settings.
 struct RootView: View {
     @Environment(GameStore.self) private var store
+    @AppStorage(TimeOfDayPin.key) private var pinned: TimeOfDayPin = .clock
 
     var body: some View {
         TimelineView(.everyMinute) { context in
-            let palette = Palette.forHour(Calendar.current.component(.hour, from: context.date))
+            let hour = Calendar.current.component(.hour, from: context.date)
+            let palette = Palette.forHour(hour, pinned: pinned)
             Group {
                 if case .choosingStarter(let chicks) = store.state.phase {
                     StarterView(chicks: chicks)
