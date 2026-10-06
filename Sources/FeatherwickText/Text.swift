@@ -52,6 +52,13 @@ public func friendlyText(_ f: Friendliness) -> String {
     }
 }
 
+/// A small, gentle note when a cuddle or a treat made a bird a little tamer: "Juniper liked that".
+/// A move up a band has its own words (`.friendlierNow` in `eventText`).
+public func handledToastText(_ id: UUID, _ kind: Handling, _ s: GameState) -> String {
+    let name = s.bird(id)?.name ?? "The bird"
+    return kind == .pet ? "\(name) liked that" : "\(name) enjoyed the mealworm"
+}
+
 public func storyText(_ id: String, step: String?) -> String {
     switch (id, step) {
     case ("broodySilkie", nil):
@@ -114,8 +121,8 @@ public func treeLines(_ id: UUID, _ s: GameState) -> [String] {
     }
     out.append(line(tree.record))
     walk(tree, "")
-    let f = Pedigree.inbreeding(of: id, in: s)
-    out.append("Parents: \(relatedText(Relatedness(kinship: f))) · \(Int((f * 100).rounded()))% inbred")
+    // How related the parents are, in words. No percentage: playtesters found the number a worry.
+    out.append("Parents: \(relatedText(Relatedness(kinship: Pedigree.inbreeding(of: id, in: s))))")
     let kids = Pedigree.offspring(of: id, in: s)
     if !kids.isEmpty { out.append("Chicks (\(kids.count)): " + kids.map { $0.name }.joined(separator: ", ")) }
     return out
@@ -403,19 +410,26 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .incubatorBought(let cost, let size):
         let nights = s.rules.incubatorHatchDays
         return "You buy a bigger incubator for \(cost) coins. It holds \(size) eggs. They hatch in \(nights) nights."
-    case .neighbourGaveIncubator(let size):
-        return """
-            The neighbour leans over the fence. "I see your rooster has been busy. Some of your eggs will be fertile now. \
-            Here, take my old incubator. It only fits \(size) egg\(size == 1 ? "" : "s"), but it works. \
-            You can't tell which eggs are fertile yet, so try a few. The clear ones just won't hatch."
-
-            How to hatch eggs:
-              incubate \(size)      set eggs in the incubator; fertile ones hatch into the brooder in \
-            \(s.rules.incubatorHatchDays) nights, clear ones come back to the carton
-              sit <hen> <n>   if a hen goes broody, she can sit on up to \(s.rules.maxClutch) eggs; they hatch in \
-            \(s.rules.broodyHatchDays) days and she raises the chicks herself
-              buy incubator   a bigger incubator holds \(s.rules.bigIncubatorSize) eggs (\(s.rules.incubatorPrice) coins)
-            """
+    case .neighbourGaveIncubator(let size, let ownRooster):
+        let fits = "It only fits \(size) egg\(size == 1 ? "" : "s"), but it works."
+        let nights = s.rules.incubatorHatchDays
+        let note: String
+        if ownRooster {
+            note =
+                "\"I see your rooster has been busy. Some of your eggs will be fertile now. "
+                + "Here, take my old incubator. \(fits) "
+                + "You can't tell which eggs are fertile yet, so try a few. The clear ones just won't hatch.\""
+        } else {
+            // An egg bought at Speckle & Down: it is already known to be fertile.
+            note =
+                "\"I see you brought home a fertile egg. It needs keeping warm to hatch. "
+                + "Here, take my old incubator. \(fits) "
+                + "Set your egg in it, and in about \(nights) night\(nights == 1 ? "" : "s") you'll have a chick.\""
+        }
+        // Plain words, not command names: the app and the CLI both show this note.
+        return "The neighbour leans over the fence. \(note)\n\n"
+            + "To hatch eggs, choose them from the carton and set them in the incubator. "
+            + "Fertile eggs hatch into the brooder; clear ones come back to the carton."
     case .candled(let fertile, let clear):
         if fertile == 1 && clear == 0 {
             return "You hold the egg up to the light. You see a shadow and fine veins: it's fertile."
@@ -425,7 +439,10 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return "You hold each egg up to the light: \(fertile) fertile" + (clear > 0 ? ", \(clear) clear." : ".")
     case .eggsSet(let n, let hen, let hatchDay):
         let who = hen.map { "under \(birdName($0, s))" } ?? "in the incubator"
-        let which = s.canCandle ? "They" : "Any fertile ones"
+        // "They will hatch" only when every egg in the clutch is known fertile. Unchecked eggs are a guess.
+        let clutch = s.clutches.first { $0.henID == hen && $0.hatchDay == hatchDay }
+        let allKnown = clutch?.eggs.allSatisfy { $0.isCandled && $0.isFertile } ?? false
+        let which = allKnown ? "They" : "Any fertile ones"
         return "You set \(n) egg\(n == 1 ? "" : "s") \(who). \(which) will hatch on day \(hatchDay)."
     case .chicksHatched(let ids, let hen):
         let where_ = hen.map { "under \(birdName($0, s))" } ?? "in the incubator"
@@ -433,14 +450,19 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
             + ids.compactMap { s.bird($0) }.map { "\($0.name) (\(downText($0.phenotype.chickDown)))" }.joined(
                 separator: ", ")
     case .eggsDidNotHatch(let n, let hen):
-        let from = hen.map { "under \(birdName($0, s))" } ?? "in the incubator"
-        return "\(n) egg\(n == 1 ? "" : "s") \(from) did not hatch. \(n == 1 ? "It was" : "They were") clear. "
-            + "You put \(n == 1 ? "it" : "them") back with your eggs."
+        // Warm surprise, not loss: a clear egg was never going to hatch. Every fertile egg does (cozy rule).
+        let opener = hen.map { "\(birdName($0, s))'s clutch:" } ?? "Hm,"
+        let eggs = "\(n) egg\(n == 1 ? "" : "s") didn't hatch."
+        let why = n == 1 ? "It mustn't have been fertile." : "They mustn't have been fertile."
+        // A full carton sends them to the nest boxes (`returnUnhatched`).
+        var back = n == 1 ? "It's back in the carton." : "They're back in the carton."
+        if s.carton.count >= s.cartonCapacity { back = "The carton is full, so look in the nest boxes." }
+        return "\(opener) \(eggs) \(why) \(back)"
     case .learnedCandling:
         return """
             The neighbour comes round with a torch. "Here, let me show you a trick." She holds an egg up \
             to the light. "See the shadow and the little veins? That one's fertile. A clear one just glows." \
-            You can candle eggs now.
+            You can candle eggs now. Candle before you set them, and a clear egg won't take a place in the incubator.
               candle          hold the carton eggs up to a light to see which are fertile
               sell clear      sell your eggs but keep the fertile ones
             """
@@ -515,14 +537,14 @@ func goalWords(_ kind: GoalKind, _ s: GameState) -> String {
 
 // MARK: - Today's jobs and the season goal
 
-/// One of today's jobs, as a short line: "Pick up Pip", "Pick up 3 birds (1 of 3)".
+/// One of today's jobs, as a short line: "Cuddle Pip", "Cuddle Juniper, Pip and Hazel (1 of 3)".
 public func jobText(_ job: Job, _ s: GameState) -> String {
     let title: String =
         switch job.kind {
         case .feed: "Feed the flock"
         case .collectEggs: "Collect the eggs"
-        case .petBirds: "Pick up \(job.target) bird\(job.target == 1 ? "" : "s")"
-        case .petBird: "Pick up \(job.birdID.map { birdName($0, s) } ?? "a bird")"
+        case .petBirds: "Cuddle \(petBirdsWords(job, s))"
+        case .petBird: "Cuddle \(job.birdID.map { birdList([$0], s) } ?? "a bird")"
         case .giveTreat: "Give a bird a treat"
         case .shutCoop: "Shut the coop door tonight"
         case .sellEggs: "Sell some eggs"
@@ -531,8 +553,41 @@ public func jobText(_ job: Job, _ s: GameState) -> String {
         case .nameBird: "Give the new \(newBirdWord(job.birdID, s)) a name"
         case .enterShow: "Enter the \(showThemeName(s.nextShowTheme))"
         }
-    guard job.target > 1, !job.isDone else { return title }
+    // The count shows once the job is started: "Cuddle Juniper and Pip", then "(1 of 2)".
+    guard job.target > 1, job.progress > 0, !job.isDone else { return title }
     return title + " (\(job.progress) of \(job.target))"
+}
+
+/// The birds a "cuddle" job names. A job from a save made before jobs named birds: "2 birds".
+func petBirdsWords(_ job: Job, _ s: GameState) -> String {
+    guard let ids = job.birdIDs, !ids.isEmpty else { return "\(job.target) bird\(job.target == 1 ? "" : "s")" }
+    return birdList(ids, s)
+}
+
+/// Birds by name, for a job: "Juniper", "Juniper and Pip", "Juniper, Pip and Hazel".
+/// A bird with no name yet is "the new chick" (or "2 new chicks"): the word never tells a hidden sex.
+func birdList(_ ids: [UUID], _ s: GameState) -> String {
+    var names: [String] = []
+    var newWords: [String] = []  // kind words of unnamed birds, first seen first
+    var newCounts: [String: Int] = [:]
+    for id in ids {
+        guard let bird = s.bird(id) else { continue }
+        if bird.needsName == true {
+            let word = kindWord(bird, s)
+            if newCounts[word] == nil { newWords.append(word) }
+            newCounts[word, default: 0] += 1
+        } else {
+            names.append(bird.name)
+        }
+    }
+    var parts = names
+    for word in newWords {
+        let n = newCounts[word] ?? 1
+        parts.append(n == 1 ? "the new \(word)" : "\(n) new \(word)s")
+    }
+    guard let last = parts.last else { return "a bird" }
+    guard parts.count > 1 else { return last }
+    return parts.dropLast().joined(separator: ", ") + " and " + last
 }
 
 /// "chick" while the sex is hidden, else "pullet", "hen"... ("bird" if it has gone).

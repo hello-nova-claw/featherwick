@@ -8,7 +8,9 @@ import Foundation
 //
 // Inbreeding uses Wright's coefficient, as real breeders do: the chance that a chick gets two
 // copies of the same ancestor's gene. Brother × sister = 0.25. Unrelated parents = 0.
-// Cozy rule: inbreeding never kills or blocks a hatch. It lightly lowers laying and show condition.
+// Cozy rule: inbreeding never kills or blocks a hatch. The coefficient is recorded at hatch, but the
+// player never sees it, and it has no effect unless `Rules.inbreedingMatters` is on (off by default).
+// When on, it lightly lowers laying and show condition.
 
 /// What the family tree needs to know about one bird.
 public struct PedigreeRecord: Hashable, Codable, Sendable {

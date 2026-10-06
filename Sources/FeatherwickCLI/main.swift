@@ -291,10 +291,7 @@ while true {
             print("Use: kin <name> <name> (names without spaces, e.g. chick3)")
             break
         }
-        let k = Pedigree.kinship(a.id, b.id, in: game.state)
-        print(
-            "\(a.name) and \(b.name): \(relatedText(Relatedness(kinship: k))). A chick of theirs would be \(Int((k * 100).rounded()))% inbred."
-        )
+        print("\(a.name) and \(b.name): \(relatedText(Pedigree.relatedness(a.id, b.id, in: game.state))).")
     case "draw":
         guard words.count > 1,
             let bird = findBird(words.dropFirst().joined(separator: ""), game.state, includeLost: true)

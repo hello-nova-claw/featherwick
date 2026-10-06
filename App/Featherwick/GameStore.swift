@@ -47,7 +47,11 @@ final class GameStore {
     private(set) var neighbourNotes: [String] = []
     /// The show that was just held. The farm shows it full screen until the player goes back.
     private(set) var showReport: ShowReport?
+    /// Shop stock the keeper has looked at since the early game brought it in. The game has no idea of
+    /// "seen", so the app keeps it (per save slot), and the farm gate stops saying "new in today".
+    private(set) var seenNewStock: Set<Feature>
     private var store: SaveStore
+    private let seenStockKey: String
     private var nextLogID = 0
 
     var state: GameState { save.state }
@@ -58,6 +62,9 @@ final class GameStore {
         let store = SaveStore(directory: directory, slot: slot)
         self.store = store
         save = Self.load(from: store) ?? Self.newSave(rules: .standard)
+        seenStockKey = "seenNewStock.\(slot)"
+        let seen = UserDefaults.standard.stringArray(forKey: seenStockKey) ?? []
+        seenNewStock = Set(seen.compactMap(Feature.init(rawValue:)))
         append(state.day == 0 ? "Welcome to Featherwick." : "Welcome back. It is day \(state.day).")
     }
 
@@ -88,12 +95,16 @@ final class GameStore {
 
     @discardableResult
     func run(_ command: Command) -> [GameEvent] {
+        let before = save.state
         var state = save.state
         var rng = save.rng
         let events = Engine.apply(command, to: &state, using: &rng)
         save = SaveGame(state: state, rng: rng)
+        if Self.isShopping(command) { sawNewStock() }
         for event in events {
-            if let toast = toast(for: event, in: state) { showToast(toast) }
+            if let toast = toast(for: event, in: state) ?? handlingToast(for: event, in: events, before, state) {
+                showToast(toast)
+            }
             guard let words = eventText(event, state) else { continue }
             if Self.isNeighbourNote(event) { neighbourNotes.append(words) }
             var rejected = false
@@ -109,10 +120,11 @@ final class GameStore {
         return events
     }
 
-    /// Lessons and show news from the neighbour: the words the keeper must not miss.
+    /// Lessons, show news and the gift incubator from the neighbour: the words the keeper must not miss.
+    /// The incubator note says what to do with a fertile egg, so it must not sit only in the log.
     private static func isNeighbourNote(_ event: GameEvent) -> Bool {
         switch event {
-        case .introduced, .showAnnounced: true
+        case .introduced, .showAnnounced, .neighbourGaveIncubator: true
         default: false
         }
     }
@@ -155,11 +167,43 @@ final class GameStore {
         save = Self.newSave(rules: difficulty.rules)
         log = []
         showReport = nil
+        // A new game brings its stock in again, so it is all new again.
+        seenNewStock = []
+        UserDefaults.standard.removeObject(forKey: seenStockKey)
         append("A new game begins (\(difficulty.rawValue)).")
         persist()
     }
 
     func note(_ text: String) { append(text) }
+
+    // MARK: - New stock at the farm gate
+
+    /// The early-game steps that bring new stock to Speckle & Down.
+    static let shopFeatures: [Feature] = [.treats, .premiumFeed, .birdShop, .coopUpgrade, .incubatorShop]
+
+    /// Stock the early game brought in this morning that the keeper has not looked at yet.
+    var hasNewStock: Bool {
+        let s = state
+        return Self.shopFeatures.contains {
+            s.isOpen($0) && s.rules.introductionDay(of: $0) == s.day && !seenNewStock.contains($0)
+        }
+    }
+
+    /// The keeper opened the shop (or bought from it): everything on sale there is no longer new.
+    func sawNewStock() {
+        let open = Set(Self.shopFeatures.filter { state.isOpen($0) })
+        guard !open.isSubset(of: seenNewStock) else { return }
+        seenNewStock.formUnion(open)
+        UserDefaults.standard.set(seenNewStock.map(\.rawValue).sorted(), forKey: seenStockKey)
+    }
+
+    /// Commands that buy from Speckle & Down. Buying also counts as having seen the new stock.
+    private static func isShopping(_ command: Command) -> Bool {
+        switch command {
+        case .buy, .buySpecial, .buyBreed, .upgradeCoop, .buyIncubator: true
+        default: false
+        }
+    }
 
     // MARK: - Toasts
 
@@ -176,12 +220,14 @@ final class GameStore {
             let name = s.bird(id)?.name ?? "A chick"
             return ("\(name) is a \(sex == .hen ? "pullet" : "cockerel")", "View", .bird(id))
         case .newBreedBookEntry(let entry):
-            return ("\(entryText(entry).capitalized) added to the Breed Book", "View", .books)
+            // No "View" until the neighbour has shown the keeper the books (see `FarmView`).
+            let view = s.isOpen(.breedBook)
+            let words = "\(entryText(entry).capitalized) added to the Breed Book"
+            return (words, view ? "View" : nil, view ? .books : nil)
         case .newEggBookEntry(let entry):
-            return (
-                "\(entry.speckled ? "Speckled " : "")\(entry.colour.rawValue) eggs added to the Egg Book", "View",
-                .books
-            )
+            let view = s.isOpen(.breedBook)
+            let words = "\(entry.speckled ? "Speckled " : "")\(entry.colour.rawValue) eggs added to the Egg Book"
+            return (words, view ? "View" : nil, view ? .books : nil)
         case .milestoneReached(let id):
             return ("Milestone: \(milestoneText(id).title)", nil, nil)
         case .storyGift(_, let id):
@@ -193,10 +239,13 @@ final class GameStore {
         case .showAnnounced(let tip):
             let show = showThemeName(ShowTheme.forSeason(s.season(onDay: tip?.showDay ?? s.nextShowDay)))
             return ("The \(show) is next week", "View", .place(.farmGate))
-        case .introduced(let f) where [.treats, .premiumFeed, .birdShop, .coopUpgrade, .incubatorShop].contains(f):
+        case .introduced(let f) where Self.shopFeatures.contains(f):
             return ("New at Speckle & Down", "View", .place(.farmGate))
         case .foxVisited(let ids):
             return ("A fox scared \(ids.count) bird\(ids.count == 1 ? "" : "s") away. They'll come home.", nil, nil)
+        case .friendlierNow:
+            // A move up a friendliness band: the same words as the log.
+            return eventText(event, s).map { ($0, nil, nil) }
         case .allJobsDone(let coins):
             return ("All of today's jobs are done (+\(coins) coins)", "View", .jobs)
         case .seasonGoalReached(_, let coins):
@@ -204,6 +253,23 @@ final class GameStore {
         default:
             return nil
         }
+    }
+
+    /// A small note when a cuddle or a treat made a bird a little tamer. Skipped when the same action
+    /// moved the bird up a band: that has its own toast.
+    private func handlingToast(
+        for event: GameEvent, in events: [GameEvent], _ before: GameState, _ after: GameState
+    ) -> (String, String?, FarmSheet?)? {
+        guard case .handled(let id, let kind) = event else { return nil }
+        let movedUp = events.contains { e in
+            if case .friendlierNow(let other, _) = e { return other == id }
+            return false
+        }
+        if movedUp { return nil }
+        let was = before.bird(id)?.currentTameness ?? 1
+        let now = after.bird(id)?.currentTameness ?? 0
+        guard now > was else { return nil }
+        return (handledToastText(id, kind, after), nil, nil)
     }
 
     private func showToast(_ t: (String, String?, FarmSheet?)) {

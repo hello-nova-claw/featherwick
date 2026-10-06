@@ -76,6 +76,53 @@ struct TextTests {
         }
     }
 
+    /// "Cuddle Juniper and Pip": the job names its birds. An unnamed bird gives nothing away.
+    @Test func cuddleJobsNameTheirBirds() {
+        var rng = SeededRNG(seed: 4)
+        var s = Engine.newGame(using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        let pip = s.brooder[0].id
+        func hen(_ name: String) -> Bird {
+            Bird(
+                id: UUID(), name: name, breed: .orpington, genome: Breed.orpington.purebred(.hen), hatchDay: 0,
+                origin: "Neighbour", revealed: true)
+        }
+        let juniper = hen("Juniper")
+        let hazel = hen("Hazel")
+        // A rooster chick with no name yet: its words must not say so.
+        var chick = Bird(
+            id: UUID(), name: "Chick 1", breed: .orpington, genome: Breed.orpington.purebred(.rooster), hatchDay: 0,
+            origin: "Henhaven")
+        chick.needsName = true
+        s.coop = [juniper, hazel]
+        s.brooder.append(chick)
+
+        let two = Job(kind: .petBirds, target: 2, birdIDs: [juniper.id, pip])
+        #expect(jobText(two, s) == "Cuddle Juniper and Pip")
+        let three = Job(kind: .petBirds, target: 3, birdIDs: [juniper.id, pip, hazel.id])
+        #expect(jobText(three, s) == "Cuddle Juniper, Pip and Hazel")
+        let started = Job(kind: .petBirds, target: 3, progress: 1, birdIDs: [juniper.id, pip, hazel.id])
+        #expect(jobText(started, s) == "Cuddle Juniper, Pip and Hazel (1 of 3)")
+        let withChick = Job(kind: .petBirds, target: 2, birdIDs: [juniper.id, chick.id])
+        #expect(jobText(withChick, s) == "Cuddle Juniper and the new chick")
+        #expect(jobText(Job(kind: .petBird, birdID: pip), s) == "Cuddle Pip")
+        #expect(jobText(Job(kind: .petBird, birdID: chick.id), s) == "Cuddle the new chick")
+        // A job from a save made before jobs named their birds.
+        #expect(jobText(Job(kind: .petBirds, target: 2), s) == "Cuddle 2 birds")
+    }
+
+    /// The family tree says how related a bird's parents are in words, never as an inbreeding number.
+    @Test func theTreeShowsNoInbreedingNumber() {
+        guard let (_, s) = Self.play(seed: 9, days: 60).last else {
+            Issue.record("no events")
+            return
+        }
+        for b in s.ownedBirds {
+            let lines = treeLines(b.id, s).joined(separator: "\n")
+            #expect(!lines.contains("%") && !lines.lowercased().contains("inbre"))
+        }
+    }
+
     /// An unfinished goal is never failed: the new goal's words say the last one can rest.
     @Test func anUnfinishedGoalIsLetGoKindly() {
         guard var (_, s) = Self.play(seed: 3, days: 3).last else {
@@ -108,6 +155,45 @@ struct TextTests {
         #expect(placingText(12) == "12th")
         #expect(placingText(21) == "21st")
         #expect(placingText(22) == "22nd")
+    }
+
+    /// A cuddle or a treat that made a bird tamer gets a gentle note that names the bird.
+    @Test func handlingHasGentleWords() {
+        var rng = SeededRNG(seed: 5)
+        var s = Engine.newGame(using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Juniper"), to: &s, using: &rng)
+        guard let id = s.ownedBirds.first?.id else {
+            Issue.record("no bird")
+            return
+        }
+        #expect(handledToastText(id, .pet, s) == "Juniper liked that")
+        #expect(handledToastText(id, .treat, s) == "Juniper enjoyed the mealworm")
+        #expect(!handledToastText(UUID(), .pet, s).isEmpty)
+        #expect(eventText(.friendlierNow(id, .friendly), s) == "Juniper seems friendly now.")
+    }
+
+    /// A clear egg that sat the full time: a warm surprise, singular and plural, never a loss.
+    @Test func unhatchedEggsGetAGentleSurprise() {
+        var rng = SeededRNG(seed: 5)
+        var s = Engine.newGame(using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Juniper"), to: &s, using: &rng)
+        guard let id = s.ownedBirds.first?.id else {
+            Issue.record("no bird")
+            return
+        }
+        #expect(
+            eventText(.eggsDidNotHatch(count: 1, hen: nil), s)
+                == "Hm, 1 egg didn't hatch. It mustn't have been fertile. It's back in the carton.")
+        #expect(
+            eventText(.eggsDidNotHatch(count: 2, hen: id), s)
+                == "Juniper's clutch: 2 eggs didn't hatch. They mustn't have been fertile. They're back in the carton.")
+        s.cartons = 0  // a full carton sends them to the nest boxes
+        let full = eventText(.eggsDidNotHatch(count: 3, hen: nil), s) ?? ""
+        #expect(full.hasPrefix("Hm, 3 eggs didn't hatch.") && full.contains("nest boxes"))
+        for n in 1...3 {
+            let words = eventText(.eggsDidNotHatch(count: n, hen: nil), s) ?? ""
+            #expect(!words.contains("died") && !words.contains("dead"))
+        }
     }
 
     /// The daily special names breed, sex and colour; basic stock never names its breed before purchase.

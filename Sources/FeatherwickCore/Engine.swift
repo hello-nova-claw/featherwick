@@ -36,7 +36,8 @@ public enum Command: Hashable, Codable, Sendable {
     case enterEggs
     /// Feed the flock premium feed for the day: feeds them AND lifts laying a little. Uses one portion.
     case feedPremium
-    /// Set these exact eggs from the carton in the incubator. Clear ones are found and stay in the carton.
+    /// Set these exact eggs from the carton in the incubator. Setting never candles them: a clear egg sits
+    /// the full time and comes back on hatch day. Eggs already known to be clear are refused.
     case incubateEggs([UUID])
     /// Set these exact eggs from the carton under a broody hen.
     case sitEggs(hen: UUID, eggs: [UUID])
@@ -154,13 +155,14 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case roostersSquabbling(extra: Int)
     // Hatching
     case incubatorBought(cost: Int, size: Int)
-    /// First fertile egg ever: the neighbour gives her old 1-egg incubator (and the CLI explains hatching).
-    case neighbourGaveIncubator(size: Int)
+    /// First fertile egg ever: the neighbour gives her old 1-egg incubator (and the words explain hatching).
+    /// `ownRooster`: a hen laid it. False when the egg came from elsewhere (bought at Speckle & Down).
+    case neighbourGaveIncubator(size: Int, ownRooster: Bool)
     case candled(fertile: Int, clear: Int)
     case eggsSet(count: Int, hen: UUID?, hatchDay: Int)
     case chicksHatched([UUID], hen: UUID?)
-    /// Clear eggs set before the keeper could candle. They never hatch and go back to the carton (or the nest
-    /// boxes if the carton is full), now known to be clear.
+    /// Clear eggs that were set without being candled first. They sit the full time, never hatch, and go back
+    /// to the carton (or the nest boxes if the carton is full), now known to be clear.
     case eggsDidNotHatch(count: Int, hen: UUID?)
     /// The neighbour shows the keeper how to candle eggs.
     case learnedCandling
@@ -534,7 +536,8 @@ public enum Engine {
             egg.candled = true
             s.coins -= cost
             s.carton.append(egg)
-            return [.boughtEgg(cost: cost)]
+            // A keeper with no incubator gets the neighbour's old one at once, so the egg can hatch.
+            return [.boughtEgg(cost: cost)] + incubatorGiftForFertileEggs(&s)
         }
     }
 
@@ -566,10 +569,10 @@ public enum Engine {
         var bird = s[keyPath: home][i]
         switch kind {
         case .pet:
-            if bird.lastPettedDay == s.day { return [.rejected(.alreadyPettedToday)] }
+            if bird.wasHandled(.pet, onDay: s.day) { return [.rejected(.alreadyPettedToday)] }
             bird.lastPettedDay = s.day
         case .treat:
-            if bird.lastTreatDay == s.day { return [.rejected(.alreadyHadTreatToday)] }
+            if bird.wasHandled(.treat, onDay: s.day) { return [.rejected(.alreadyHadTreatToday)] }
             if s.treats <= 0 { return [.rejected(.noTreats)] }
             s.treats -= 1
             bird.lastTreatDay = s.day
@@ -681,31 +684,15 @@ public enum Engine {
         return ev
     }
 
-    /// Candles the chosen eggs. Clear (infertile) eggs stay in the carton, now marked as clear.
-    /// Only fertile eggs are set, so every egg that is set will hatch (cozy rule).
-    /// A keeper who can't candle yet sets every chosen egg; the clear ones come back on hatch day.
-    /// Incubator eggs join a clutch set earlier the same day.
+    /// Sets every chosen egg. Setting never candles: candling is its own, deliberate step (`candleEgg`).
+    /// So a clear egg that was not candled first sits the full time and comes back on hatch day
+    /// (`hatchDue`). The keeper who candles first saves the space and the wait.
+    /// Callers refuse eggs already known to be clear. Incubator eggs join a clutch set earlier the same day.
     static func setEggs(_ chosen: [Egg], hen: UUID?, hatchDay: Int, _ s: inout GameState) -> [GameEvent] {
         let chosenIDs = Set(chosen.map(\.id))
-        if !s.canCandle {
-            s.carton.removeAll { chosenIDs.contains($0.id) }
-            addToClutch(chosen, hen: hen, hatchDay: hatchDay, &s)
-            return [.eggsSet(count: chosen.count, hen: hen, hatchDay: hatchDay)]
-        }
-        let fertile = chosen.filter(\.isFertile)
-        s.carton.removeAll { chosenIDs.contains($0.id) && $0.isFertile }
-        for i in s.carton.indices where chosenIDs.contains(s.carton[i].id) { s.carton[i].candled = true }
-        let newlyChecked = chosen.filter { !$0.isCandled }
-        let newlyFertile = newlyChecked.count(where: \.isFertile)
-        var ev: [GameEvent] = []
-        if !newlyChecked.isEmpty {
-            ev.append(.candled(fertile: newlyFertile, clear: newlyChecked.count - newlyFertile))
-        }
-        if !fertile.isEmpty {
-            addToClutch(fertile, hen: hen, hatchDay: hatchDay, &s)
-            ev.append(.eggsSet(count: fertile.count, hen: hen, hatchDay: hatchDay))
-        }
-        return ev
+        s.carton.removeAll { chosenIDs.contains($0.id) }
+        addToClutch(chosen, hen: hen, hatchDay: hatchDay, &s)
+        return [.eggsSet(count: chosen.count, hen: hen, hatchDay: hatchDay)]
     }
 
     static func addToClutch(_ eggs: [Egg], hen: UUID?, hatchDay: Int, _ s: inout GameState) {
@@ -770,6 +757,14 @@ public enum Engine {
             }
             if !ids.isEmpty { ev.append(.chicksHatched(ids, hen: clutch.henID)) }
             if unhatched > 0 { ev.append(.eggsDidNotHatch(count: unhatched, hen: clutch.henID)) }
+            // No chicks to raise: a hen whose eggs were all clear stops being broody and lays again.
+            // A hen already raising chicks (fostered ones) stays broody for them.
+            if ids.isEmpty, let hen = clutch.henID, let i = s.coop.firstIndex(where: { $0.id == hen }),
+                s.coop[i].broodyUntilDay != nil, !s.henChicks.contains(where: { $0.raisedBy == hen })
+            {
+                s.coop[i].broodyUntilDay = nil
+                ev.append(.broodyEnded(hen))
+            }
         }
         s.clutches = waiting
         return ev + candlingLesson(&s)
@@ -879,6 +874,10 @@ public enum Engine {
         s.henChicks = henChicks
         s.coop = coop
         ev += neighbourGiftIfNeeded(&s, &rng)
+
+        // 4b. A known-fertile egg in the carton and no incubator (a save from before the gift came
+        //     with bought eggs): the neighbour brings her old incubator.
+        ev += incubatorGiftForFertileEggs(&s)
 
         // 5. Eggs due today hatch: incubator chicks go to the brooder, broody-hatched chicks stay with their mother.
         ev += hatchDue(&s, &rng)
@@ -1125,10 +1124,10 @@ public enum Engine {
         // Any adult rooster in the coop fertilises the hens' eggs. (A breeding pen comes later.)
         let roosters = s.coop.filter { $0.sex == .rooster && $0.stage(onDay: s.day, rules: s.rules) == .adult }
         for hen in hens where s.day >= hen.noLayUntilDay && !hen.isBroody(onDay: s.day) {
-            // Inbred hens lay a little less (real inbreeding depression); older hens slow with age.
-            let henChance =
-                chance * (1 - min(s.rules.maxInbreedingLayLoss, hen.inbreeding ?? 0))
-                * s.rules.layAgeFactor(ageDays: hen.age(onDay: s.day))
+            // Inbred hens lay a little less (real inbreeding depression), when that rule is on.
+            // Older hens slow with age.
+            let inbredLoss = s.rules.inbreedingMatters ? min(s.rules.maxInbreedingLayLoss, hen.inbreeding ?? 0) : 0
+            let henChance = chance * (1 - inbredLoss) * s.rules.layAgeFactor(ageDays: hen.age(onDay: s.day))
             guard Double.roll(henChance, using: &rng) else { continue }
             // Nest boxes full: the hen lays on the floor, and the egg may break.
             if s.nest.count >= s.nestCapacity, Double.roll(s.rules.floorEggBreakChance, using: &rng) {
@@ -1148,13 +1147,24 @@ public enum Engine {
                 // Only offered if the player has no incubator yet (they may have bought the big one).
                 if !s.hasIncubator {
                     s.incubatorSize = s.rules.giftIncubatorSize
-                    ev.append(.neighbourGaveIncubator(size: s.rules.giftIncubatorSize))
+                    ev.append(.neighbourGaveIncubator(size: s.rules.giftIncubatorSize, ownRooster: true))
                 }
             }
             let entry = EggBookEntry(colour: egg.colour, speckled: egg.speckled)
             if s.eggBook.insert(entry).inserted { ev.append(.newEggBookEntry(entry)) }
         }
         return ev
+    }
+
+    /// The neighbour's old incubator, for a keeper with a known-fertile egg in the carton (bought at
+    /// Speckle & Down) and no incubator. Once a game, like the gift for the first laid fertile egg.
+    /// No randomness.
+    static func incubatorGiftForFertileEggs(_ s: inout GameState) -> [GameEvent] {
+        let fertileEgg = s.carton.contains { $0.isCandled && $0.isFertile }
+        guard fertileEgg, !s.incubatorGiftGiven, !s.hasIncubator else { return [] }
+        s.incubatorGiftGiven = true
+        s.incubatorSize = s.rules.giftIncubatorSize
+        return [.neighbourGaveIncubator(size: s.rules.giftIncubatorSize, ownRooster: false)]
     }
 
     /// A pile of uncollected eggs can set a hen broody (real behaviour). Some breeds go broody far more.

@@ -101,7 +101,8 @@ struct GoalBlock: View {
     }
 }
 
-/// The farm's "Today" button: the word, and how many of today's jobs are left (a dab once all are done).
+/// The farm's "Today" button: the word, and how many of today's jobs are left in a buff badge.
+/// Once all are done it goes quiet: muted ink, a tick and "Done", and no badge.
 struct TodayButtonLabel: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
@@ -109,20 +110,29 @@ struct TodayButtonLabel: View {
     var body: some View {
         let jobs = store.state.todaysJobs
         let left = jobs.count(where: { !$0.isDone })
+        let allDone = !jobs.isEmpty && left == 0
         HStack(spacing: Space.s) {
             Text("Today").font(Typeface.display(23, relativeTo: .title2))
-            if left > 0 {
+                .foregroundStyle(allDone ? palette.inkMuted : palette.ink)
+            if allDone {
+                doneMark
+            } else if left > 0 {
                 Text("\(left)").font(Typeface.number).monospacedDigit()
                     .frame(minWidth: 22, minHeight: 22)
                     .background(Circle().fill(Pigment.buffNotice))
-            } else if !jobs.isEmpty {
-                Dab(colour: palette.inkMuted, size: 12)
             }
         }
         .padding(.horizontal, Space.m)
         .frame(minHeight: 56)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText(jobs: jobs.count, left: left))
+    }
+
+    private var doneMark: some View {
+        HStack(spacing: Space.xs) {
+            TickMark()
+            Text("Done").font(Typeface.label).foregroundStyle(palette.inkMuted)
+        }
     }
 
     private func accessibilityText(jobs: Int, left: Int) -> String {

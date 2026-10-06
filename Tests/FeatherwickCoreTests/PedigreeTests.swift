@@ -124,9 +124,51 @@ struct PedigreeTests {
         #expect(throws: Never.self) { try SaveFormat.decode(SaveFormat.encode(SaveGame(state: s, rng: rng))) }
     }
 
-    @Test func inbredBirdsLackVigourAndLayLess() {
+    @Test func inbreedingHasNoEffectByDefault() {
+        #expect(!Rules.standard.inbreedingMatters)
+        #expect(Difficulty.allCases.allSatisfy { !$0.rules.inbreedingMatters })
         var rng = SeededRNG(seed: 4)
         var s = GameState(rules: .standard, phase: .playing)
+        s.day = 25
+        s.fedToday = true
+        var hen = Bird(
+            id: makeID(using: &rng), name: "h", breed: .orpington, genome: Breed.orpington.purebred(.hen),
+            hatchDay: 0, origin: "t", revealed: true)
+        hen.inbreeding = 0.5
+        #expect(Judge.condition(of: hen, in: s).notes == [.inFineCondition])
+
+        // Laying: a very inbred hen lays as often as any other.
+        var r = Rules.standard
+        r.layChance = [.spring: 1, .summer: 1, .autumn: 1, .winter: 1]
+        r.broodyChance = [:]
+        var g = GameState(rules: r, phase: .playing)
+        g.day = 40
+        g.fedToday = true
+        hen.inbreeding = 0.9
+        g.coop = [hen]
+        _ = Engine.lay(&g, &rng)
+        #expect(g.nest.count == 1)
+    }
+
+    @Test func oldSavesLoadWithInbreedingOff() throws {
+        var rng = SeededRNG(seed: 5)
+        let s = Engine.newGame(earlyGame: false, using: &rng)
+        var root = try #require(
+            JSONSerialization.jsonObject(with: SaveFormat.encode(SaveGame(state: s, rng: rng))) as? [String: Any])
+        var state = try #require(root["state"] as? [String: Any])
+        var rules = try #require(state["rules"] as? [String: Any])
+        rules["inbreedingMatters"] = nil
+        state["rules"] = rules
+        root["state"] = state
+        let loaded = try SaveFormat.decode(JSONSerialization.data(withJSONObject: root))
+        #expect(!loaded.state.rules.inbreedingMatters)
+    }
+
+    /// The penalty is off by default (see `Rules.inbreedingMatters`). This test turns it on.
+    @Test func inbredBirdsLackVigourAndLayLessWhenTheRuleIsOn() {
+        var rng = SeededRNG(seed: 4)
+        var s = GameState(rules: .standard, phase: .playing)
+        s.rules.inbreedingMatters = true
         s.day = 25
         s.fedToday = true
         var hen = Bird(
@@ -141,6 +183,7 @@ struct PedigreeTests {
 
         // Laying: a hen with inbreeding 0.5 lays about half as often (capped loss).
         var r = Rules.standard
+        r.inbreedingMatters = true
         r.layChance = [.spring: 1, .summer: 1, .autumn: 1, .winter: 1]
         r.broodyChance = [:]
         var laid = 0

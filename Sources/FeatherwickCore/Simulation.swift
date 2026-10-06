@@ -70,7 +70,8 @@ public enum Simulation {
         if !s.hasIncubator, s.coins >= s.rules.incubatorPrice { apply(.buyIncubator, &s, &rng, &r) }
 
         // Set fertile eggs if the incubator is free and the brooder has room for every one.
-        // A keeper who can't candle yet tries unchecked eggs instead.
+        // Setting never candles, so a keeper who can candle has already checked the carton (above) and sets
+        // only known-fertile eggs. A keeper who can't candle yet tries unchecked eggs instead.
         let known = s.carton.count(where: { $0.isCandled && $0.isFertile })
         let unchecked = s.carton.count(where: { !$0.isCandled })
         let fertile = s.canCandle ? known : unchecked

@@ -103,29 +103,7 @@ struct FarmView: View {
                     PanelDots(selection: $panel, notices: panelNotices)
                 }
                 Spacer()
-                HStack {
-                    FloatingBox {
-                        Button("Books") { sheet = .books }
-                            .font(Typeface.display(23, relativeTo: .title2))
-                            .frame(minWidth: 72, minHeight: 56)
-                    }
-                    FloatingBox {
-                        Button {
-                            sheet = .jobs
-                        } label: {
-                            TodayButtonLabel()
-                        }
-                    }
-                    Spacer()
-                    FloatingBox {
-                        Button {
-                            sheet = .settings
-                        } label: {
-                            Text("≡").font(Typeface.sans(24)).frame(width: 56, height: 56)
-                        }
-                        .accessibilityLabel("Settings")
-                    }
-                }
+                bottomBar
             }
             .padding(.horizontal, Space.l)
             .padding(.bottom, Space.xl)
@@ -150,6 +128,36 @@ struct FarmView: View {
             }
         }
         .onChange(of: store.showReport) { _, report in showReportChanged(report) }
+    }
+
+    /// Books, Today and settings. Books waits until the neighbour shows the keeper the Breed Book
+    /// (the early game's `breedBook` lesson). Settings is always there.
+    private var bottomBar: some View {
+        HStack {
+            if store.state.isOpen(.breedBook) {
+                FloatingBox {
+                    Button("Books") { sheet = .books }
+                        .font(Typeface.display(23, relativeTo: .title2))
+                        .frame(minWidth: 72, minHeight: 56)
+                }
+            }
+            FloatingBox {
+                Button {
+                    sheet = .jobs
+                } label: {
+                    TodayButtonLabel()
+                }
+            }
+            Spacer()
+            FloatingBox {
+                Button {
+                    sheet = .settings
+                } label: {
+                    Text("≡").font(Typeface.sans(24)).frame(width: 56, height: 56)
+                }
+                .accessibilityLabel("Settings")
+            }
+        }
     }
 
     /// Show day takes the whole screen. A place sheet closes first (one presentation at a time);
@@ -242,11 +250,8 @@ struct FarmView: View {
             return s.lost.isEmpty ? [] : [Notice(kind: .story, text: "\(s.lost.count) wandered off")]
         case .farmGate:
             var n: [Notice] = []
-            // Something the early game brought in this morning: new stock, or the show.
-            let shop: [Feature] = [.treats, .premiumFeed, .birdShop, .coopUpgrade, .incubatorShop]
-            if shop.contains(where: { s.isOpen($0) && s.rules.introductionDay(of: $0) == s.day }) {
-                n.append(Notice(kind: .story, text: "new in today"))
-            }
+            // Stock the early game brought in this morning. It goes once the keeper has looked (or bought).
+            if store.hasNewStock { n.append(Notice(kind: .story, text: "new in today")) }
             guard s.isOpen(.shows) else { return n }
             if let tip = s.showTip, let bird = s.bird(tip.birdID),
                 !s.showEntries.contains(where: { $0.birdID == bird.id })

@@ -91,6 +91,9 @@ public struct Rules: Codable, Hashable, Sendable {
     public var lapChickenRehomeBonus = 3  // people pay more for a bird that loves a cuddle
 
     // Inbreeding (see Pedigree.swift). Lay chance and show condition drop by the bird's coefficient, capped.
+    /// Off by default: playtests found the penalty (and its numbers) a worry, not fun, in a cozy game.
+    /// The coefficient is still recorded at hatch, so the penalty can return later. Old saves load as off.
+    public var inbreedingMatters = false
     public var maxInbreedingLayLoss = 0.5
     public var maxInbreedingConditionLoss = 0.3
 
@@ -168,7 +171,7 @@ public struct Rules: Codable, Hashable, Sendable {
     // Today's jobs and season goals (see Jobs.swift). Gentle nudges: nothing is lost by skipping them.
     public var jobsPerDay = 3  // jobs picked each morning; 0 turns daily jobs off
     public var jobsRewardCoins = 5  // paid once a day, when every job is done
-    public var jobPetBirds = 3  // "pick up 3 birds" (fewer if the flock is smaller)
+    public var jobPetBirds = 3  // "cuddle Juniper, Pip and Hazel" (fewer if the flock is smaller)
     public var seasonGoals = true  // false turns season goals off
     public var seasonGoalRewardCoins = 25  // paid once, when the season goal is reached
     public var seasonGoalMinDays = 7  // a goal set later in a season runs on through the next one
