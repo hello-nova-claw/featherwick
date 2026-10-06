@@ -164,6 +164,9 @@ final class GameStore {
     /// The few events worth a toast: new birds, reveals, collection entries, milestones, the fox.
     private func toast(for event: GameEvent, in s: GameState) -> (String, String?, FarmSheet?)? {
         switch event {
+        case .rejected:
+            // The engine said no: say why, so a tap is never silently ignored.
+            return eventText(event, s).map { ($0, nil, nil) }
         case .chicksHatched(let ids, _):
             let one = ids.count == 1
             return (one ? "A chick has hatched" : "\(ids.count) chicks have hatched", "Name", .naming)

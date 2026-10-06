@@ -375,13 +375,7 @@ public enum Engine {
             return [.rejected(.noSuchBird)]
 
         case .rehome(let id):
-            if s.clutch(under: id) != nil || s.henChicks.contains(where: { $0.raisedBy == id }) {
-                return [.rejected(.birdIsBusy)]
-            }
-            let owned = s.birdsAtHome.count + s.lost.count + s.boarding.count
-            if owned <= 1, s.bird(id) != nil, !s.rehomed.contains(where: { $0.id == id }) {
-                return [.rejected(.lastBird)]
-            }
+            if let blocker = rehomeBlocker(id, in: s), blocker != .noSuchBird { return [.rejected(blocker)] }
             if let (keyPath, i) = locate(id, in: s, groups: [\.brooder, \.henChicks, \.coop, \.boarding]) {
                 let bird = s[keyPath: keyPath].remove(at: i)
                 return [.rehomed(id, coins: sendToNewHome(bird, &s))]
@@ -449,6 +443,16 @@ public enum Engine {
         case .buySpecial:
             return buySpecial(&s, &rng)
         }
+    }
+
+    /// Why this bird can't go to a new home now, or nil if it can. Front ends hide "Rehome" when
+    /// this is not nil, so the keeper never taps a button that does nothing.
+    public static func rehomeBlocker(_ id: UUID, in s: GameState) -> Rejection? {
+        if s.clutch(under: id) != nil || s.henChicks.contains(where: { $0.raisedBy == id }) { return .birdIsBusy }
+        let owned = s.birdsAtHome.count + s.lost.count + s.boarding.count
+        if owned <= 1, s.bird(id) != nil, !s.rehomed.contains(where: { $0.id == id }) { return .lastBird }
+        let rehomable = s.birdsAtHome.contains { $0.id == id } || s.boarding.contains { $0.id == id }
+        return rehomable ? nil : .noSuchBird
     }
 
     // MARK: - Shop and safety net

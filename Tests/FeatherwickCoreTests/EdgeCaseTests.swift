@@ -576,6 +576,18 @@ struct RoomEdgeCases {
         #expect(Engine.apply(.rehome(UUID()), to: &s, using: &rng) == [.rejected(.noSuchBird)])
     }
 
+    /// The app hides "Rehome" from this answer, so it must match what the engine does.
+    @Test func rehomeBlockerMatchesTheEngine() {
+        var (s, rng) = startedGame(sex: .hen)
+        let starter = s.starterID!
+        #expect(Engine.rehomeBlocker(starter, in: s) == .lastBird)
+        #expect(Engine.apply(.rehome(starter), to: &s, using: &rng) == [.rejected(.lastBird)])
+        let friend = plainBird(rng: &rng)
+        s.coop.append(friend)
+        #expect(Engine.rehomeBlocker(friend.id, in: s) == nil)
+        #expect(Engine.rehomeBlocker(UUID(), in: s) == .noSuchBird)
+    }
+
     @Test func rehomeValueGrowsWithAge() {
         let r = Rules.standard
         var rng = SeededRNG(seed: 1)
