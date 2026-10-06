@@ -94,6 +94,10 @@ struct FarmView: View {
             .ignoresSafeArea()
             VStack {
                 HUD()
+                HStack {
+                    Spacer()
+                    PanelDots(selection: $panel, notices: panelNotices)
+                }
                 Spacer()
                 HStack {
                     FloatingBox {
@@ -101,8 +105,6 @@ struct FarmView: View {
                             .font(Typeface.display(23, relativeTo: .title2))
                             .frame(minWidth: 72, minHeight: 56)
                     }
-                    Spacer()
-                    PanelDots(selection: $panel)
                     Spacer()
                     FloatingBox {
                         Button {
@@ -179,6 +181,11 @@ struct FarmView: View {
             try? await Task.sleep(for: .milliseconds(350))
             sheet = next
         }
+    }
+
+    /// Every notice on each panel, so the panel dots can show what waits off screen.
+    private var panelNotices: [FarmPanel: [Notice]] {
+        Dictionary(uniqueKeysWithValues: FarmPanel.allCases.map { p in (p, p.places.flatMap { notices(for: $0) }) })
     }
 
     /// What each place has waiting. The words carry the meaning; the dot only draws the eye.
@@ -267,28 +274,43 @@ struct FarmPanelView<PlaceButton: View>: View {
     }
 }
 
-/// Which panel is on screen: one dot per panel. Tap a dot to go there (VoiceOver cannot swipe pages).
+/// The panel rail: one dot per panel, top to bottom in swipe order, down the right side under the HUD.
+/// Tap a dot to jump there (VoiceOver cannot swipe pages). The dot on screen is ink. A panel off screen
+/// with something waiting gets a bigger dot in its notice colour with a ring, so it shows from any panel.
 struct PanelDots: View {
     @Environment(\.palette) private var palette
     @Binding var selection: FarmPanel
+    let notices: [FarmPanel: [Notice]]
 
     var body: some View {
         FloatingBox {
-            HStack(spacing: 0) {
+            VStack(spacing: 0) {
                 ForEach(FarmPanel.allCases) { p in
                     Button {
                         withAnimation { selection = p }
                     } label: {
-                        Circle()
-                            .fill(p == selection ? palette.ink : palette.unknown)
-                            .frame(width: 8, height: 8)
-                            .frame(width: 32, height: 56)
+                        dot(for: p).frame(width: 44, height: 40)
                     }
-                    .accessibilityLabel(p.name)
+                    .accessibilityLabel(([p.name] + (notices[p] ?? []).map(\.text)).joined(separator: ", "))
                     .accessibilityAddTraits(p == selection ? .isSelected : [])
                 }
             }
-            .padding(.horizontal, Space.s)
+            .padding(.vertical, Space.xs)
+        }
+        .padding(.top, Space.s)
+    }
+
+    @ViewBuilder
+    private func dot(for p: FarmPanel) -> some View {
+        if p == selection {
+            Circle().fill(palette.ink).frame(width: 12, height: 12)
+        } else if let kind = Notice.mostPressing(notices[p] ?? []) {
+            let colour = Notice.colour(kind, in: palette)
+            Circle().fill(colour).frame(width: 12, height: 12)
+                .padding(4)
+                .overlay(Circle().stroke(colour, lineWidth: 1.5))
+        } else {
+            Circle().fill(palette.unknown).frame(width: 8, height: 8)
         }
     }
 }

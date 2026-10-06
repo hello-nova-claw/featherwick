@@ -181,7 +181,8 @@ All screens are 393×852 (iPhone 15/16). Sheets sit over the dimmed farm.
 - HUD top-left and top-right (see Components), 58–62pt from top.
 - 4 panels to swipe between: Barn, Yard, Far yard, Shop. Until the paintings exist, each panel is a flat colour with a dashed "scene" box.
 - Place labels on each panel, each anchored to the bottom-centre of its tap area. Barn: Coop and Potting shed. Yard: Yard. Far yard: Back fence. Shop: Farm gate.
-- Bottom: "Books" (Caslon Display 23) bottom-left, one dot per panel in the middle (the current one in ink; tap a dot to go there), and a settings button "≡" bottom-right, both white boxes with radius 10, 56pt tall, 24pt above the home indicator.
+- Panel rail: a white box down the right side, under the HUD, with one dot per panel in swipe order. Tap a dot to go there. The current panel is an ink dot. A panel off screen with a notice gets a bigger dot in its notice colour (decision, then collect, then story) with a ring. Others are small `unknown` dots. VoiceOver reads the panel name and its notices.
+- Bottom: "Books" (Caslon Display 23) bottom-left and a settings button "≡" bottom-right, both white boxes with radius 10, 56pt tall, 24pt above the home indicator.
 - Night: same layout with night tokens. Place labels can show state ("5 asleep"). A toast example: "A chick has hatched" with the action "Name her".
 
 ### 2a / 2b — Bird card (sheet, top at 92pt)
