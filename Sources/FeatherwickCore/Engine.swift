@@ -566,10 +566,10 @@ public enum Engine {
         var bird = s[keyPath: home][i]
         switch kind {
         case .pet:
-            if bird.lastPettedDay == s.day { return [.rejected(.alreadyPettedToday)] }
+            if bird.wasHandled(.pet, onDay: s.day) { return [.rejected(.alreadyPettedToday)] }
             bird.lastPettedDay = s.day
         case .treat:
-            if bird.lastTreatDay == s.day { return [.rejected(.alreadyHadTreatToday)] }
+            if bird.wasHandled(.treat, onDay: s.day) { return [.rejected(.alreadyHadTreatToday)] }
             if s.treats <= 0 { return [.rejected(.noTreats)] }
             s.treats -= 1
             bird.lastTreatDay = s.day

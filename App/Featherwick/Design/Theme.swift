@@ -170,4 +170,6 @@ enum Stitch {
     static let underline = StrokeStyle(lineWidth: 1.5, dash: [5, 4])
     /// "Not yet" outlines.
     static let unknown = StrokeStyle(lineWidth: 1.1, dash: [3, 3])
+    /// A solid, round-ended tick: something is done.
+    static let tick = StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round)
 }

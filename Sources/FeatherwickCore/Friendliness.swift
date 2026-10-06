@@ -39,6 +39,15 @@ extension Bird {
     mutating func changeTameness(by delta: Double) {
         tameness = min(1, max(0, currentTameness + delta))
     }
+
+    /// True when the bird already had this kind of handling on this day. Each kind counts once a day,
+    /// so a front end can say "Cuddled today" instead of offering it again.
+    public func wasHandled(_ kind: Handling, onDay day: Int) -> Bool {
+        switch kind {
+        case .pet: lastPettedDay == day
+        case .treat: lastTreatDay == day
+        }
+    }
 }
 
 /// How handling and treats change a bird.

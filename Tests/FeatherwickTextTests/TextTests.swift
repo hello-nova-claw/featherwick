@@ -110,6 +110,21 @@ struct TextTests {
         #expect(placingText(22) == "22nd")
     }
 
+    /// A cuddle or a treat that made a bird tamer gets a gentle note that names the bird.
+    @Test func handlingHasGentleWords() {
+        var rng = SeededRNG(seed: 5)
+        var s = Engine.newGame(using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Juniper"), to: &s, using: &rng)
+        guard let id = s.ownedBirds.first?.id else {
+            Issue.record("no bird")
+            return
+        }
+        #expect(handledToastText(id, .pet, s) == "Juniper liked that")
+        #expect(handledToastText(id, .treat, s) == "Juniper enjoyed the mealworm")
+        #expect(!handledToastText(UUID(), .pet, s).isEmpty)
+        #expect(eventText(.friendlierNow(id, .friendly), s) == "Juniper seems friendly now.")
+    }
+
     /// The daily special names breed, sex and colour; basic stock never names its breed before purchase.
     @Test func theShopSpecialHasWords() {
         let rare = ShopSpecial(breed: .silkie, sex: .hen, colour: .splash, price: 50, isRare: true)

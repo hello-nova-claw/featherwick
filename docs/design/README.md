@@ -182,7 +182,10 @@ All screens are 393×852 (iPhone 15/16). Sheets sit over the dimmed farm.
 - 4 panels to swipe between: Barn, Yard, Far yard, Shop. Until the paintings exist, each panel is a flat colour with a dashed "scene" box.
 - Place labels on each panel, each anchored to the bottom-centre of its tap area. Barn: Coop and Potting shed. Yard: Yard. Far yard: Back fence. Shop: Farm gate.
 - Panel rail: a white box down the right side, under the HUD, with one dot per panel in swipe order. Tap a dot to go there. The current panel is an ink dot. A panel off screen with a notice gets a bigger dot in its notice colour (decision, then collect, then story) with a ring. Others are small `unknown` dots. VoiceOver reads the panel name and its notices.
-- Bottom: "Books" (Caslon Display 23) bottom-left and a settings button "≡" bottom-right, both white boxes with radius 10, 56pt tall, 24pt above the home indicator.
+- Bottom: "Books" (Caslon Display 23) bottom-left, then "Today", and a settings button "≡" bottom-right, all white boxes with radius 10, 56pt tall, 24pt above the home indicator.
+- Books appears when the early game introduces the Breed Book (the `breedBook` lesson, the morning the first chick's sex shows). Until then, an "added to the Breed Book" toast has no "View". "≡" is always there.
+- Today shows how many of today's jobs are left in a buff badge. When all are done, the badge goes: "Today" turns `inkMuted`, with an ink tick and "Done" (Figtree 13). VoiceOver reads "Today, all jobs done".
+- Farm gate notice "new in today": stock the early game brought in this morning. It goes when the keeper opens the Farm gate or buys something there. The app keeps what was seen (per save slot); the game does not.
 - Night: same layout with night tokens. Place labels can show state ("5 asleep"). A toast example: "A chick has hatched" with the action "Name her".
 
 ### 2a / 2b — Bird card (sheet, top at 92pt)
@@ -192,7 +195,8 @@ Top to bottom:
 3. Name, centred, Caslon Display 54, with a dashed underline that descenders cross. Then the breed line in italic ("a Buff Orpington hen" or, for an unknown breed, "breed still a mystery").
 4. A 2×2 fact grid: Friendliness · Age · Feathers · Lays (hen) or Hen or rooster (chick: "Shows in ~6 days").
 5. Ribbons, only after the bird has been to a show: one line per show, newest first ("1st of 8 · Orpington class, day 84, Harvest Show"). The top three get an ink rosette (1st filled, 2nd outlined, 3rd dashed).
-6. Bottom: Cuddle (primary) and Treat (secondary, shows "· 6" remaining) side by side, then Rename and Family tree as text actions. "Enter the show" opens the class choice (see 8a).
+6. Bottom: Cuddle (primary) and Treat (secondary, shows "· 6" remaining) side by side, then Rename and Family tree as text actions. "Enter the show" opens the class choice (see 8a). Each counts once a day per bird. When done today, the button is disabled and says so: "Cuddled today", "Had a treat today" (like "Fed for today" in the yard).
+7. Toasts show over the bird card too, so the keeper sees what a cuddle or treat did.
 Swipe left or right moves between birds in the same place.
 
 ### 3a — Naming prompt (sheet, top at 330pt)
@@ -224,12 +228,13 @@ The Show tab: the next show's theme name and day, the entry fee, and the feature
 - **Tap place → sheet.** SpriteKit hit-tests the tap area and presents the matching SwiftUI sheet. Sheets dismiss by swipe or ×.
 - **Day/night:** follows the device clock. Tokens crossfade over 30 minutes at 18:00 and 06:00.
 - **Toasts:** slide down under the HUD over 250ms ease-out, fade out after 4 seconds.
+- **Friendliness toasts:** a cuddle or treat that makes a bird tamer gives a small toast ("Juniper liked that", "Juniper enjoyed the mealworm"). A move up a friendliness band gives its own toast instead ("Juniper seems friendly now."). No action on either.
 - **Buttons:** pressed scale 0.97 over 120ms. Light haptic on Cuddle, Treat and Set to hatch.
 
 ### Birds on the farm
 Until the bird art exists, each bird is a soft blob (`BirdSwatch`): feather colour, comb, and lacing or barring from its real look. Chicks are small, growers are medium, adults are full size.
-- **Where:** birds stay in a ground band in the lower part of each panel, below the place labels and above Books and ≡. Coop birds wander the Yard. With more than 6, every third bird wanders the Far yard. Brooder chicks and hen chicks sit in a dashed "brooder" box on the Barn panel. At night, or with the coop door shut, the coop birds roost in rows on dashed perches on the Barn panel. Lost and boarding birds are not shown.
-- **Movement:** every 2–4 seconds a bird walks a short way slowly, or stops to peck (a small bob). Reduce Motion: birds stand still.
+- **Where:** birds stay in a ground band in the lower part of each panel, below the place labels and above Books and ≡. Coop birds stroll between the Yard and the Far yard: each bird stays 20–60 seconds on one, then walks off the shared edge (the Yard's right, the Far yard's left) and walks in on the other. Each bird has its own rhythm from its id and the clock, not the game's dice, so it is the same on every panel. Even one bird strolls. Brooder chicks and hen chicks sit in a dashed "brooder" box on the Barn panel. At night, or with the coop door shut, the coop birds roost in rows on dashed perches on the Barn panel. Lost and boarding birds are not shown.
+- **Movement:** every 2–4 seconds a bird walks a short way slowly, or stops to peck (a small bob). A bird held under a finger waits. Reduce Motion: birds stand still and do not stroll. Coop birds then stay in the Yard, and with more than 6, every third bird stands in the Far yard.
 - **No labels** by default. Tap a bird (a short touch, no movement) to open its bird card.
 - **Petting:** press and rub a bird (3 turns back and forth, or 120pt of rubbing with one turn). One pet per press. The bird squishes and leans with the finger, then 3 small buff dabs float up. A bird already petted today only leans in. It is not an error.
 - **VoiceOver:** each bird is a button named for the bird. "Pet" is an action.

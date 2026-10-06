@@ -34,24 +34,12 @@ struct BirdCardSheet: View {
                 facts(bird, s)
                     .padding(.vertical, Space.l)
                 ribbons(bird, s)
-                HStack(spacing: Space.m) {
-                    Button("Cuddle") {
-                        store.run(.pet(birdID))
-                        cuddles += 1
-                    }
-                    .buttonStyle(.primary)
-                    .sensoryFeedback(.impact(weight: .light), trigger: cuddles)
-                    Button(s.treats > 0 ? "Treat · \(s.treats)" : "No treats left") {
-                        store.run(.giveTreat(birdID))
-                        treats += 1
-                    }
-                    .buttonStyle(.secondary)
-                    .disabled(s.treats == 0)
-                    .sensoryFeedback(.impact(weight: .light), trigger: treats)
-                }
+                handlingButtons(bird, s)
                 moreActions(bird, s)
                 LastWords()
             }
+            // The farm's toasts are under this sheet: show them here too, so "Juniper liked that" is seen.
+            .overlay { ToastStack() }
             .presentationDetents([.large])
             .alert("Rename \(bird.name)", isPresented: $renaming) {
                 TextField("Name", text: $newName)
@@ -131,6 +119,30 @@ struct BirdCardSheet: View {
             Fact(label: "Lays") {
                 Text("From day \(bird.hatchDay + s.rules.adultAge)").font(Typeface.body)
             }
+        }
+    }
+
+    /// Cuddle and Treat. Each counts once a day per bird, so once done the button rests and says so,
+    /// like "Fed for today" in the yard.
+    private func handlingButtons(_ bird: Bird, _ s: GameState) -> some View {
+        let cuddled = bird.wasHandled(.pet, onDay: s.day)
+        let hadTreat = bird.wasHandled(.treat, onDay: s.day)
+        let treatLabel = hadTreat ? "Had a treat today" : s.treats > 0 ? "Treat · \(s.treats)" : "No treats left"
+        return HStack(spacing: Space.m) {
+            Button(cuddled ? "Cuddled today" : "Cuddle") {
+                store.run(.pet(birdID))
+                cuddles += 1
+            }
+            .buttonStyle(.primary)
+            .disabled(cuddled)
+            .sensoryFeedback(.impact(weight: .light), trigger: cuddles)
+            Button(treatLabel) {
+                store.run(.giveTreat(birdID))
+                treats += 1
+            }
+            .buttonStyle(.secondary)
+            .disabled(hadTreat || s.treats == 0)
+            .sensoryFeedback(.impact(weight: .light), trigger: treats)
         }
     }
 
