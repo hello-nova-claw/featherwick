@@ -426,16 +426,10 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
                 + "Here, take my old incubator. \(fits) "
                 + "Set your egg in it, and in about \(nights) night\(nights == 1 ? "" : "s") you'll have a chick.\""
         }
-        return """
-            The neighbour leans over the fence. \(note)
-
-            How to hatch eggs:
-              incubate \(size)      set eggs in the incubator; fertile ones hatch into the brooder in \
-            \(s.rules.incubatorHatchDays) nights, clear ones come back to the carton
-              sit <hen> <n>   if a hen goes broody, she can sit on up to \(s.rules.maxClutch) eggs; they hatch in \
-            \(s.rules.broodyHatchDays) days and she raises the chicks herself
-              buy incubator   a bigger incubator holds \(s.rules.bigIncubatorSize) eggs (\(s.rules.incubatorPrice) coins)
-            """
+        // Plain words, not command names: the app and the CLI both show this note.
+        return "The neighbour leans over the fence. \(note)\n\n"
+            + "To hatch eggs, choose them from the carton and set them in the incubator. "
+            + "Fertile eggs hatch into the brooder; clear ones come back to the carton."
     case .candled(let fertile, let clear):
         if fertile == 1 && clear == 0 {
             return "You hold the egg up to the light. You see a shadow and fine veins: it's fertile."
