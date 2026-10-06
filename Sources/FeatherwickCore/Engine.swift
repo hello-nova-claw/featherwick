@@ -154,8 +154,9 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case roostersSquabbling(extra: Int)
     // Hatching
     case incubatorBought(cost: Int, size: Int)
-    /// First fertile egg ever: the neighbour gives her old 1-egg incubator (and the CLI explains hatching).
-    case neighbourGaveIncubator(size: Int)
+    /// First fertile egg ever: the neighbour gives her old 1-egg incubator (and the words explain hatching).
+    /// `ownRooster`: a hen laid it. False when the egg came from elsewhere (bought at Speckle & Down).
+    case neighbourGaveIncubator(size: Int, ownRooster: Bool)
     case candled(fertile: Int, clear: Int)
     case eggsSet(count: Int, hen: UUID?, hatchDay: Int)
     case chicksHatched([UUID], hen: UUID?)
@@ -534,7 +535,8 @@ public enum Engine {
             egg.candled = true
             s.coins -= cost
             s.carton.append(egg)
-            return [.boughtEgg(cost: cost)]
+            // A keeper with no incubator gets the neighbour's old one at once, so the egg can hatch.
+            return [.boughtEgg(cost: cost)] + incubatorGiftForFertileEggs(&s)
         }
     }
 
@@ -880,6 +882,10 @@ public enum Engine {
         s.coop = coop
         ev += neighbourGiftIfNeeded(&s, &rng)
 
+        // 4b. A known-fertile egg in the carton and no incubator (a save from before the gift came
+        //     with bought eggs): the neighbour brings her old incubator.
+        ev += incubatorGiftForFertileEggs(&s)
+
         // 5. Eggs due today hatch: incubator chicks go to the brooder, broody-hatched chicks stay with their mother.
         ev += hatchDue(&s, &rng)
 
@@ -1125,10 +1131,10 @@ public enum Engine {
         // Any adult rooster in the coop fertilises the hens' eggs. (A breeding pen comes later.)
         let roosters = s.coop.filter { $0.sex == .rooster && $0.stage(onDay: s.day, rules: s.rules) == .adult }
         for hen in hens where s.day >= hen.noLayUntilDay && !hen.isBroody(onDay: s.day) {
-            // Inbred hens lay a little less (real inbreeding depression); older hens slow with age.
-            let henChance =
-                chance * (1 - min(s.rules.maxInbreedingLayLoss, hen.inbreeding ?? 0))
-                * s.rules.layAgeFactor(ageDays: hen.age(onDay: s.day))
+            // Inbred hens lay a little less (real inbreeding depression), when that rule is on.
+            // Older hens slow with age.
+            let inbredLoss = s.rules.inbreedingMatters ? min(s.rules.maxInbreedingLayLoss, hen.inbreeding ?? 0) : 0
+            let henChance = chance * (1 - inbredLoss) * s.rules.layAgeFactor(ageDays: hen.age(onDay: s.day))
             guard Double.roll(henChance, using: &rng) else { continue }
             // Nest boxes full: the hen lays on the floor, and the egg may break.
             if s.nest.count >= s.nestCapacity, Double.roll(s.rules.floorEggBreakChance, using: &rng) {
@@ -1148,13 +1154,24 @@ public enum Engine {
                 // Only offered if the player has no incubator yet (they may have bought the big one).
                 if !s.hasIncubator {
                     s.incubatorSize = s.rules.giftIncubatorSize
-                    ev.append(.neighbourGaveIncubator(size: s.rules.giftIncubatorSize))
+                    ev.append(.neighbourGaveIncubator(size: s.rules.giftIncubatorSize, ownRooster: true))
                 }
             }
             let entry = EggBookEntry(colour: egg.colour, speckled: egg.speckled)
             if s.eggBook.insert(entry).inserted { ev.append(.newEggBookEntry(entry)) }
         }
         return ev
+    }
+
+    /// The neighbour's old incubator, for a keeper with a known-fertile egg in the carton (bought at
+    /// Speckle & Down) and no incubator. Once a game, like the gift for the first laid fertile egg.
+    /// No randomness.
+    static func incubatorGiftForFertileEggs(_ s: inout GameState) -> [GameEvent] {
+        let fertileEgg = s.carton.contains { $0.isCandled && $0.isFertile }
+        guard fertileEgg, !s.incubatorGiftGiven, !s.hasIncubator else { return [] }
+        s.incubatorGiftGiven = true
+        s.incubatorSize = s.rules.giftIncubatorSize
+        return [.neighbourGaveIncubator(size: s.rules.giftIncubatorSize, ownRooster: false)]
     }
 
     /// A pile of uncollected eggs can set a hen broody (real behaviour). Some breeds go broody far more.

@@ -29,7 +29,7 @@ sets the difficulty of a new game. Type `help` in the game for commands. `day 10
 
 `Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. Command in, events out. All tunable numbers live in `Rules`.
 
-Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → hatching (eggs due today; clear ones go back to the carton; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
+Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
 
 ## The early game (tutorial timeline)
 
@@ -52,7 +52,7 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 | 18 | `laying` (lesson) | Your hen starts to lay soon: feed, collect, sell. |
 | 21 | `shows` | The show opens, a week before the first show. The neighbour's show tip. |
 | 28 | — | The first county show. |
-| 29 | `incubatorShop` | The big incubator. (The neighbour's small one still comes with the first fertile egg.) |
+| 29 | `incubatorShop` | The big incubator. (The neighbour's small one still comes with the first fertile egg, laid or bought.) |
 
 - The days are in `Rules.featureDays`. The show opens `showNoticeDays` (7) before the first show.
 - No birds, perches, incubators or shows before the sex shows (`EarlyGameTests` checks this).
@@ -78,6 +78,13 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 - A clear egg never hatches. On hatch day it goes back to the carton, marked clear. If the carton is full, it
   goes to the nest boxes.
 - Bought eggs are already candled, so they show as fertile.
+- **The neighbour's 1-egg incubator** (`giftIncubatorSize`) comes once, with the first fertile egg:
+  - laid by a hen, with an adult rooster in the coop (in the night's laying step), or
+  - bought at Speckle & Down. It comes at once, with the egg. A save that already holds a bought
+    egg and no incubator gets it the next night (`incubatorGiftForFertileEggs`).
+  - No gift if the keeper already has an incubator. Event: `.neighbourGaveIncubator(size:ownRooster:)`.
+  - Its words say what to do: set the egg, and it hatches in `incubatorHatchDays` nights. The app shows
+    them as a neighbour note, not only in the log.
 - When `chicksToLearnCandling` chicks (1) have hatched, the neighbour teaches candling. Then you candle one egg
   at a time (`candleEgg`). The CLI can still candle the whole carton (`candle`).
 - A story step that asks for eggs you know are fertile also teaches candling. If you cannot candle when
@@ -305,8 +312,13 @@ too) stay in the state; outside parents, such as those of a bought egg, are kept
 - `Pedigree.tree(of:generations:)`, `offspring(of:)`, `kinship(a, b)`, `inbreeding(of:)`.
 - Inbreeding is Wright's coefficient, as real breeders use: brother × sister = 0.25, half
   siblings 0.125, cousins 0.0625. Brother-sister lines climb 0.25, 0.375, 0.5, 0.59.
-- Stored on each chick at hatch. Effects are light and never block a hatch: lay chance drops by
-  the coefficient (capped at 50%); show condition drops (capped at 0.3) with "lacks vigour".
+- Stored on each chick at hatch. The game keeps it, but the player never sees it.
+- The player sees no inbreeding number. The tree and `kin` say only how related two birds
+  are, in words ("related like cousins"). Playtests found the percentage a worry.
+- The penalty is off by default: `Rules.inbreedingMatters = false`. Old saves load with it
+  off (`SaveFormat.fillNewSettings`). When it is on, effects are light and never block a hatch:
+  lay chance drops by the coefficient (capped at 50%); show condition drops (capped at 0.3)
+  with "lacks vigour".
 - CLI: `tree <name>`, `kin <name> <name>`.
 
 ## Names
@@ -361,10 +373,16 @@ To add one: append a `Milestone` to `Milestones.all` (list order is the ladder),
 
 - **Today's jobs.** Each morning the game picks up to `jobsPerDay` (3) small jobs. It picks only from
   what the keeper can do now, and it follows the early-game timeline. Examples: feed the flock, collect
-  the eggs, pick up 3 birds, pick up a named bird, give a treat, shut the coop door, sell eggs, candle
-  an egg, set eggs to hatch, name a new bird, enter the show (only in the week before a show).
+  the eggs, cuddle Juniper, Pip and Hazel, cuddle Pip, give a treat, shut the coop door, sell eggs,
+  candle an egg, set eggs to hatch, name a new bird, enter the show (only in the week before a show).
 - A job ticks itself off when the keeper does it. `Engine.apply` checks each command's events
   (`progressJobs`). Events: `.jobsSet`, `.jobDone(kind)`.
+- **Cuddle jobs name their birds.** "Cuddle Juniper and Pip" picks up to `jobPetBirds` (3) birds at
+  home (`Job.birdIDs`), from its own seed. Each named bird counts once, when it is cuddled today.
+  A bird with no name yet is "the new chick". A job saved before this change has no names: then
+  any bird counts ("Cuddle 3 birds").
+- A named bird that leaves home (rehomed, lost to the fox, away) counts as cuddled. So a cuddle job
+  can always be finished. This is the cozy choice: the keeper is never stuck with a job she cannot do.
 - All of today's jobs done pays `jobsRewardCoins` (5), once a day (`.allJobsDone`). Unfinished jobs
   simply go the next morning.
 - **Season goal.** One bigger goal for each season: hatch 3 chicks, a new Breed Book page, a new egg,

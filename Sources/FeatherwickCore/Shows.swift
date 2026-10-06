@@ -105,7 +105,7 @@ public enum JudgeNote: Hashable, Codable, Sendable {
     case inFineCondition
     /// Free-ranged and foraged the night before: shows in slightly better condition.
     case foraged
-    /// Inbred: real judges see less vigour in closely bred birds.
+    /// Inbred: real judges see less vigour in closely bred birds. Only when `Rules.inbreedingMatters` is on.
     case lacksVigour
     case friendliness(Friendliness)
     // Eggs
@@ -174,7 +174,7 @@ public enum Judge {
             value = min(1, value + s.rules.forageConditionBonus)
             notes.append(.foraged)
         }
-        if let f = bird.inbreeding, f >= 0.0625 {
+        if s.rules.inbreedingMatters, let f = bird.inbreeding, f >= 0.0625 {
             value -= min(s.rules.maxInbreedingConditionLoss, f)
             notes.append(.lacksVigour)
         }

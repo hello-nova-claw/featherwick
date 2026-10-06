@@ -121,8 +121,8 @@ public func treeLines(_ id: UUID, _ s: GameState) -> [String] {
     }
     out.append(line(tree.record))
     walk(tree, "")
-    let f = Pedigree.inbreeding(of: id, in: s)
-    out.append("Parents: \(relatedText(Relatedness(kinship: f))) · \(Int((f * 100).rounded()))% inbred")
+    // How related the parents are, in words. No percentage: playtesters found the number a worry.
+    out.append("Parents: \(relatedText(Relatedness(kinship: Pedigree.inbreeding(of: id, in: s))))")
     let kids = Pedigree.offspring(of: id, in: s)
     if !kids.isEmpty { out.append("Chicks (\(kids.count)): " + kids.map { $0.name }.joined(separator: ", ")) }
     return out
@@ -410,11 +410,24 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .incubatorBought(let cost, let size):
         let nights = s.rules.incubatorHatchDays
         return "You buy a bigger incubator for \(cost) coins. It holds \(size) eggs. They hatch in \(nights) nights."
-    case .neighbourGaveIncubator(let size):
+    case .neighbourGaveIncubator(let size, let ownRooster):
+        let fits = "It only fits \(size) egg\(size == 1 ? "" : "s"), but it works."
+        let nights = s.rules.incubatorHatchDays
+        let note: String
+        if ownRooster {
+            note =
+                "\"I see your rooster has been busy. Some of your eggs will be fertile now. "
+                + "Here, take my old incubator. \(fits) "
+                + "You can't tell which eggs are fertile yet, so try a few. The clear ones just won't hatch.\""
+        } else {
+            // An egg bought at Speckle & Down: it is already known to be fertile.
+            note =
+                "\"I see you brought home a fertile egg. It needs keeping warm to hatch. "
+                + "Here, take my old incubator. \(fits) "
+                + "Set your egg in it, and in about \(nights) night\(nights == 1 ? "" : "s") you'll have a chick.\""
+        }
         return """
-            The neighbour leans over the fence. "I see your rooster has been busy. Some of your eggs will be fertile now. \
-            Here, take my old incubator. It only fits \(size) egg\(size == 1 ? "" : "s"), but it works. \
-            You can't tell which eggs are fertile yet, so try a few. The clear ones just won't hatch."
+            The neighbour leans over the fence. \(note)
 
             How to hatch eggs:
               incubate \(size)      set eggs in the incubator; fertile ones hatch into the brooder in \
@@ -522,14 +535,14 @@ func goalWords(_ kind: GoalKind, _ s: GameState) -> String {
 
 // MARK: - Today's jobs and the season goal
 
-/// One of today's jobs, as a short line: "Pick up Pip", "Pick up 3 birds (1 of 3)".
+/// One of today's jobs, as a short line: "Cuddle Pip", "Cuddle Juniper, Pip and Hazel (1 of 3)".
 public func jobText(_ job: Job, _ s: GameState) -> String {
     let title: String =
         switch job.kind {
         case .feed: "Feed the flock"
         case .collectEggs: "Collect the eggs"
-        case .petBirds: "Pick up \(job.target) bird\(job.target == 1 ? "" : "s")"
-        case .petBird: "Pick up \(job.birdID.map { birdName($0, s) } ?? "a bird")"
+        case .petBirds: "Cuddle \(petBirdsWords(job, s))"
+        case .petBird: "Cuddle \(job.birdID.map { birdList([$0], s) } ?? "a bird")"
         case .giveTreat: "Give a bird a treat"
         case .shutCoop: "Shut the coop door tonight"
         case .sellEggs: "Sell some eggs"
@@ -540,6 +553,38 @@ public func jobText(_ job: Job, _ s: GameState) -> String {
         }
     guard job.target > 1, !job.isDone else { return title }
     return title + " (\(job.progress) of \(job.target))"
+}
+
+/// The birds a "cuddle" job names. A job from a save made before jobs named birds: "2 birds".
+func petBirdsWords(_ job: Job, _ s: GameState) -> String {
+    guard let ids = job.birdIDs, !ids.isEmpty else { return "\(job.target) bird\(job.target == 1 ? "" : "s")" }
+    return birdList(ids, s)
+}
+
+/// Birds by name, for a job: "Juniper", "Juniper and Pip", "Juniper, Pip and Hazel".
+/// A bird with no name yet is "the new chick" (or "2 new chicks"): the word never tells a hidden sex.
+func birdList(_ ids: [UUID], _ s: GameState) -> String {
+    var names: [String] = []
+    var newWords: [String] = []  // kind words of unnamed birds, first seen first
+    var newCounts: [String: Int] = [:]
+    for id in ids {
+        guard let bird = s.bird(id) else { continue }
+        if bird.needsName == true {
+            let word = kindWord(bird, s)
+            if newCounts[word] == nil { newWords.append(word) }
+            newCounts[word, default: 0] += 1
+        } else {
+            names.append(bird.name)
+        }
+    }
+    var parts = names
+    for word in newWords {
+        let n = newCounts[word] ?? 1
+        parts.append(n == 1 ? "the new \(word)" : "\(n) new \(word)s")
+    }
+    guard let last = parts.last else { return "a bird" }
+    guard parts.count > 1 else { return last }
+    return parts.dropLast().joined(separator: ", ") + " and " + last
 }
 
 /// "chick" while the sex is hidden, else "pullet", "hen"... ("bird" if it has gone).
