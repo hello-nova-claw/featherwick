@@ -4,9 +4,10 @@ Work in progress and ideas, newest decisions first. Move an item to "Done" when 
 
 ## In progress
 
-- Chickens on the farm: placeholder birds wander their panel; tap opens the card; rub to pet.
-- Sound and haptics: a cluck, egg and hatch sounds, light haptics; on/off in settings.
-- Today's jobs and season goals: 3 small jobs a day, 1 bigger goal a season, small rewards.
+- In review (#13): chickens on the farm as blobs (tap opens the card, rub to pet); sound and
+  haptics with on/off in settings; today's jobs and season goals; Rehome hidden when not
+  possible; no incubator shown until the keeper has one.
+- Tune the rub-to-pet thresholds on a real phone (`RubTracker` constants).
 
 ## Next
 
@@ -24,6 +25,7 @@ Work in progress and ideas, newest decisions first. Move an item to "Done" when 
 - Live trading and a shared county show with other players (needs a server; builds on trade codes).
 - Art: the 4 panel paintings (Barn, Yard, Far yard, Shop) at 1320 × 2868 px, as layers; bird art
   from the shared parts kit (`Look`).
+- Sounds: 4 files (cluck, egg, hatch, coins). See `App/Featherwick/Sounds/README.md`.
 - Parallax between layers when swiping; trees that sway; seasonal layer swaps.
 
 ## Done
