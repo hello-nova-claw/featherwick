@@ -83,6 +83,21 @@ enum FarmFlock {
         return Stroll(spot: .farYard, since: start.addingTimeInterval(yard), until: start.addingTimeInterval(cycle))
     }
 
+    /// When each bird's stays end, over the next `ahead` seconds, soonest first. The yards redraw only then.
+    static func stayEnds(of ids: [UUID], from now: Date, ahead: TimeInterval = 2 * 3600) -> [Date] {
+        var ends: Set<Date> = []
+        for id in ids {
+            var t: Date = now
+            while t.timeIntervalSince(now) < ahead {
+                let end: Date = stroll(for: id, at: t).until
+                // A moment after the stay ends, so the redraw sees the bird in its new yard.
+                ends.insert(end.addingTimeInterval(0.05))
+                t = end.addingTimeInterval(0.01)
+            }
+        }
+        return ends.sorted()
+    }
+
     /// The ground band of a panel: below the place labels, above Books and ≡.
     static func area(of spot: BirdSpot, in size: CGSize) -> CGRect {
         let top: CGFloat = size.height * 0.62
@@ -131,7 +146,8 @@ enum FarmFlock {
 }
 
 /// The birds on one farm panel. It lies over the panel; only the birds take touches.
-/// A clock ticks once a second, so a bird whose stay is over leaves this panel for the next one.
+/// The yards redraw only when a bird's stay ends, so it leaves this panel for the next one.
+/// (A redraw every second on every panel made swiping between panels stutter.)
 struct PanelBirds: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
@@ -140,8 +156,14 @@ struct PanelBirds: View {
     let open: (UUID) -> Void
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: reduceMotion ? 3600 : 1)) { context in
-            flock(now: reduceMotion ? nil : context.date)
+        if reduceMotion || !panel.birdSpots.contains(where: { $0 == .yard || $0 == .farYard }) {
+            // Nothing strolls here: no clock at all.
+            flock(now: reduceMotion ? nil : .now)
+        } else {
+            let ends: [Date] = FarmFlock.stayEnds(of: store.state.coop.map(\.id), from: .now)
+            TimelineView(.explicit(ends)) { context in
+                flock(now: context.date)
+            }
         }
     }
 

@@ -162,8 +162,13 @@ struct BirdCardSheet: View {
                         store.run(.sit(hen: birdID, count: min(s.rules.maxClutch, max(1, s.carton.count))))
                     }
                 }
-                if !Engine.eligibleClasses(for: bird, in: s).isEmpty {
-                    Button("Enter the show") { enteringShow = true }
+                // Only once the county show has opened (early game), and only for a bird that can enter.
+                if s.isOpen(.shows), !Engine.eligibleClasses(for: bird, in: s).isEmpty {
+                    if s.showEntries.contains(where: { $0.birdID == birdID }) {
+                        Button("Entered in the show") {}.disabled(true)
+                    } else {
+                        Button("Enter the show") { enteringShow = true }
+                    }
                 }
                 // Hidden when it can't happen (the only bird, or a hen busy with eggs or chicks).
                 if Engine.rehomeBlocker(birdID, in: s) == nil {

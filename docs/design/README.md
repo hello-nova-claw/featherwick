@@ -195,7 +195,7 @@ Top to bottom:
 3. Name, centred, Caslon Display 54, with a dashed underline that descenders cross. Then the breed line in italic ("a Buff Orpington hen" or, for an unknown breed, "breed still a mystery").
 4. A 2×2 fact grid: Friendliness · Age · Feathers · Lays (hen) or Hen or rooster (chick: "Shows in ~6 days").
 5. Ribbons, only after the bird has been to a show: one line per show, newest first ("1st of 8 · Orpington class, day 84, Harvest Show"). The top three get an ink rosette (1st filled, 2nd outlined, 3rd dashed).
-6. Bottom: Cuddle (primary) and Treat (secondary, shows "· 6" remaining) side by side, then Rename and Family tree as text actions. "Enter the show" opens the class choice (see 8a). Each counts once a day per bird. When done today, the button is disabled and says so: "Cuddled today", "Had a treat today" (like "Fed for today" in the yard).
+6. Bottom: Cuddle (primary) and Treat (secondary, shows "· 6" remaining) side by side, then Rename and Family tree as text actions. "Enter the show" opens the class choice (see 8a). It shows only once the county show has opened in the early game, and becomes "Entered in the show" (disabled) after entry. Each counts once a day per bird. When done today, the button is disabled and says so: "Cuddled today", "Had a treat today" (like "Fed for today" in the yard).
 7. Toasts show over the bird card too, so the keeper sees what a cuddle or treat did.
 Swipe left or right moves between birds in the same place.
 
