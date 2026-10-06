@@ -42,6 +42,9 @@ final class GameStore {
     private(set) var toasts: [Toast] = []
     /// A sheet something asked to open (a toast's action). The farm opens it and clears this.
     var openRequest: FarmSheet?
+    /// What the neighbour told the keeper and they have not read yet (lessons, show news).
+    /// The farm opens them as a note, so a lesson is never only in the log.
+    private(set) var neighbourNotes: [String] = []
     /// The show that was just held. The farm shows it full screen until the player goes back.
     private(set) var showReport: ShowReport?
     private var store: SaveStore
@@ -92,15 +95,28 @@ final class GameStore {
         for event in events {
             if let toast = toast(for: event, in: state) { showToast(toast) }
             guard let words = eventText(event, state) else { continue }
+            if Self.isNeighbourNote(event) { neighbourNotes.append(words) }
             var rejected = false
             if case .rejected = event { rejected = true }
             append(words, rejected: rejected)
         }
+        if !neighbourNotes.isEmpty, openRequest == nil { openRequest = .neighbourNote }
         // Several nights can pass in one go (`fullDays`): the newest show wins.
         if let report = Self.report(from: events, in: state) { showReport = report }
         persist()
         return events
     }
+
+    /// Lessons and show news from the neighbour: the words the keeper must not miss.
+    private static func isNeighbourNote(_ event: GameEvent) -> Bool {
+        switch event {
+        case .introduced, .showAnnounced: true
+        default: false
+        }
+    }
+
+    /// The keeper has read the neighbour's notes.
+    func readNeighbourNotes() { neighbourNotes.removeAll() }
 
     /// A whole day, as a keeper in a hurry: feed, collect, sell if the carton is full, close, sleep.
     func fullDays(_ count: Int) {

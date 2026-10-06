@@ -65,6 +65,7 @@ enum FarmSheet: Identifiable, Hashable {
     case naming
     case books
     case settings
+    case neighbourNote
     var id: Self { self }
 }
 
@@ -171,6 +172,7 @@ struct FarmView: View {
         case .naming: NamingSheet()
         case .books: BooksView()
         case .settings: SettingsSheet()
+        case .neighbourNote: NeighbourNoteSheet()
         }
     }
 
