@@ -5,7 +5,7 @@ Featherwick is a calm, cozy chicken-keeping game for iPhone (portrait, one-hande
 
 This package covers the **menu layer only**: type, colour, spacing, components, sheets and screen layouts. The farm scene, chickens, portraits and backgrounds are hand-painted watercolour sprites made separately. In the mocks they appear as dashed placeholder boxes labelled "farm scene", "bird art", "portrait", "item" and so on.
 
-Architecture: **SwiftUI menus over a SpriteKit farm scene.** The farm is one fixed painted screen with 5 tap places (Coop, Yard, Potting shed, Farm gate, Back fence). Each place opens a SwiftUI bottom sheet.
+Architecture: **SwiftUI menus over a SpriteKit farm scene.** The farm is 4 painted panels side by side; swipe left or right between them. Left to right: Barn (Coop, Potting shed), Yard (Yard), Far yard (Back fence), Shop (Farm gate). The game opens on the Yard. Each place opens a SwiftUI bottom sheet.
 
 ## About the design files
 The `.dc.html` file in this bundle is a **design reference built in HTML**. It is not production code. Recreate the designs natively in **SwiftUI** using its own patterns (`.sheet` with `presentationDetents`, `Font.custom(_:size:relativeTo:)`, asset-catalog colours with light and dark variants, and so on). Do not embed the HTML.
@@ -179,8 +179,9 @@ All screens are 393×852 (iPhone 15/16). Sheets sit over the dimmed farm.
 ### 1a / 1b — Farm (day / night)
 - Full-bleed painted scene (SpriteKit).
 - HUD top-left and top-right (see Components), 58–62pt from top.
-- 5 place labels, each anchored to the bottom-centre of its tap area: Back fence (top middle), Coop (left), Potting shed (right), Yard (centre), Farm gate (bottom centre).
-- Bottom: "Books" (Caslon Display 23) bottom-left and a settings button "≡" bottom-right, both white boxes with radius 10, 56pt tall, 24pt above the home indicator.
+- 4 panels to swipe between: Barn, Yard, Far yard, Shop. Until the paintings exist, each panel is a flat colour with a dashed "scene" box.
+- Place labels on each panel, each anchored to the bottom-centre of its tap area. Barn: Coop and Potting shed. Yard: Yard. Far yard: Back fence. Shop: Farm gate.
+- Bottom: "Books" (Caslon Display 23) bottom-left, one dot per panel in the middle (the current one in ink; tap a dot to go there), and a settings button "≡" bottom-right, both white boxes with radius 10, 56pt tall, 24pt above the home indicator.
 - Night: same layout with night tokens. Place labels can show state ("5 asleep"). A toast example: "A chick has hatched" with the action "Name her".
 
 ### 2a / 2b — Bird card (sheet, top at 92pt)

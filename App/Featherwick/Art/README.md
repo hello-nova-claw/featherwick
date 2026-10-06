@@ -1,5 +1,9 @@
 # Farm art
 
+**Not in use now.** The farm is four swipe panels (Barn, Yard, Far yard, Shop). Each panel is a flat
+colour until its painting exists (`FarmPanel` in `Farm/FarmView.swift`). The files below are kept for
+the panel paintings to come.
+
 `farm-day.png` is the farm painting for now (a mockup). Portrait, about 6:13; 1290×2796 px is
 ideal. No text, no chickens: the game draws those.
 
