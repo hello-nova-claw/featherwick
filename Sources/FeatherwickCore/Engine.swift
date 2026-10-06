@@ -757,6 +757,13 @@ public enum Engine {
             }
             if !ids.isEmpty { ev.append(.chicksHatched(ids, hen: clutch.henID)) }
             if unhatched > 0 { ev.append(.eggsDidNotHatch(count: unhatched, hen: clutch.henID)) }
+            // No chicks to raise: a hen whose eggs were all clear stops being broody and lays again.
+            if ids.isEmpty, let hen = clutch.henID, let i = s.coop.firstIndex(where: { $0.id == hen }),
+                s.coop[i].broodyUntilDay != nil
+            {
+                s.coop[i].broodyUntilDay = nil
+                ev.append(.broodyEnded(hen))
+            }
         }
         s.clutches = waiting
         return ev + candlingLesson(&s)

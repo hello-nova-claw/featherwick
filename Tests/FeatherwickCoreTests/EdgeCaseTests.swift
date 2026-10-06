@@ -501,6 +501,9 @@ struct HatchingEdgeCases {
         #expect(ev.contains(.eggsDidNotHatch(count: 2, hen: hen)))
         #expect(s.clutches.isEmpty && s.henChicks.isEmpty)
         #expect(s.carton.count == 2 && s.carton.allSatisfy { $0.isCandled && !$0.isFertile })
+        // No chicks to raise, so she is done being broody.
+        #expect(ev.contains(.broodyEnded(hen)))
+        #expect(!s.coop[0].isBroody(onDay: s.day))
     }
 
     @Test func aHenSitsOnAtMostSixAndOnlyOneClutch() {
