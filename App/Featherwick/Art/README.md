@@ -10,3 +10,10 @@ ideal. No text, no chickens: the game draws those.
 - Place labels sit at `Place.anchor` in `Farm/FarmView.swift`, as fractions of the painting.
   Change the anchors when the painting's layout changes.
 - Without any painting here, the striped stand-in shows.
+
+## Layers (experiment)
+
+- `farm-layer-1-sky.png` … `farm-layer-4-coop.png` are the same scene cut into layers, back to front.
+- Every layer has the same size (707×1536). Each is transparent where the layers behind show.
+- When any layer is here, the farm draws the layers and ignores `farm-day.png`.
+- A later step can move each layer on its own: sway the trees, swap the season per layer.
