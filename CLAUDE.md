@@ -38,7 +38,7 @@ Key Core files:
 - `BreedTable.swift`, `Breed.swift`: breeds and colour varieties (data tables).
 - `SaveFormat.swift` (versions, migrations), `SaveStore.swift` (slots, atomic writes, backups).
 - One file per feature: `EarlyGame`, `Shows`, `ShowEvent`, `Friendliness`, `Pedigree`, `Names`, `Story`,
-  `Milestone`, `Look`, `Simulation`.
+  `Milestone`, `Jobs` (daily jobs, season goals), `Look`, `Simulation`.
 
 ## iOS app
 
@@ -51,6 +51,9 @@ components, screens 1a–8a). The painted farm and bird art come later; dashed b
 - `Farm/FarmView.swift`: HUD, 4 swipe panels, a panel rail (dots, right side), Books, ≡. Panels left to right: Barn (Coop,
   Potting shed), Yard (Yard), Far yard (Back fence), Shop (Farm gate). A panel is a flat colour until its
   painting exists. Each place opens a sheet (`Sheets/`). Notices under a place come from game state.
+- `Farm/FarmBirds.swift`: the flock as blobs (`BirdSwatch`) on their panels. Tap opens the bird card;
+  press and rub sends `.pet`. `Feedback/`: `Haptics` and `Sound` (bundled `Sounds/*.caf`, silent if missing),
+  with on/off switches in Settings. `GameStore.run` plays event feedback through `GameFeedback`.
 - Day or night follows the device clock (18:00–05:59 is night), via `\.palette`.
 - Fonts (Libre Caslon Display/Text, Figtree; OFL) are bundled in `Fonts/` and registered at launch.
 - ≡ → "Open test tools" shows the old plain screens (`TestTools/`), with every action and the full log.

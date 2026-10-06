@@ -100,6 +100,8 @@ final class GameStore {
             if case .rejected = event { rejected = true }
             append(words, rejected: rejected)
         }
+        // Sound and haptics for what just happened (eggs, hatching, coins, a "no").
+        GameFeedback.play(for: events)
         if !neighbourNotes.isEmpty, openRequest == nil { openRequest = .neighbourNote }
         // Several nights can pass in one go (`fullDays`): the newest show wins.
         if let report = Self.report(from: events, in: state) { showReport = report }
@@ -164,6 +166,9 @@ final class GameStore {
     /// The few events worth a toast: new birds, reveals, collection entries, milestones, the fox.
     private func toast(for event: GameEvent, in s: GameState) -> (String, String?, FarmSheet?)? {
         switch event {
+        case .rejected:
+            // The engine said no: say why, so a tap is never silently ignored.
+            return eventText(event, s).map { ($0, nil, nil) }
         case .chicksHatched(let ids, _):
             let one = ids.count == 1
             return (one ? "A chick has hatched" : "\(ids.count) chicks have hatched", "Name", .naming)
@@ -192,6 +197,10 @@ final class GameStore {
             return ("New at Speckle & Down", "View", .place(.farmGate))
         case .foxVisited(let ids):
             return ("A fox scared \(ids.count) bird\(ids.count == 1 ? "" : "s") away. They'll come home.", nil, nil)
+        case .allJobsDone(let coins):
+            return ("All of today's jobs are done (+\(coins) coins)", "View", .jobs)
+        case .seasonGoalReached(_, let coins):
+            return ("Season goal reached (+\(coins) coins)", "View", .jobs)
         default:
             return nil
         }

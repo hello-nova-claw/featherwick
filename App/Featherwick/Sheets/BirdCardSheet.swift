@@ -153,7 +153,10 @@ struct BirdCardSheet: View {
                 if !Engine.eligibleClasses(for: bird, in: s).isEmpty {
                     Button("Enter the show") { enteringShow = true }
                 }
-                Button("Rehome") { confirmRehome = true }
+                // Hidden when it can't happen (the only bird, or a hen busy with eggs or chicks).
+                if Engine.rehomeBlocker(birdID, in: s) == nil {
+                    Button("Rehome") { confirmRehome = true }
+                }
             }
         }
         .buttonStyle(.textAction)

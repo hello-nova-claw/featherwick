@@ -208,6 +208,18 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case introduced(Feature)
     /// The county show opened. The neighbour suggests a bird and a class (nil when no bird can be shown yet).
     case showAnnounced(ShowTip?)
+    /// This morning's jobs are set (see Jobs.swift). The jobs are in `GameState.todaysJobs`.
+    case jobsSet(count: Int)
+    /// One of today's jobs is done.
+    case jobDone(JobKind)
+    /// Every job today is done. The keeper is paid a small reward, once a day.
+    case allJobsDone(coins: Int)
+    /// A new season goal. `previous` is last season's goal if it was not reached: it simply makes way.
+    case seasonGoalSet(GoalKind, previous: GoalKind?)
+    /// The season goal moved on overnight.
+    case seasonGoalProgress(GoalKind, progress: Int, target: Int)
+    /// The season goal is reached. The keeper is paid a bigger reward, once.
+    case seasonGoalReached(GoalKind, coins: Int)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -237,6 +249,16 @@ public enum Engine {
     }
 
     public static func apply<R: RandomNumberGenerator>(
+        _ command: Command, to s: inout GameState, using rng: inout R
+    ) -> [GameEvent] {
+        let ev = perform(command, to: &s, using: &rng)
+        // Today's jobs tick off as the keeper does them. The night sets new ones itself.
+        if command == .passNight { return ev }
+        return ev + progressJobs(after: ev, &s)
+    }
+
+    /// One command, without the job tracking that `apply` adds.
+    static func perform<R: RandomNumberGenerator>(
         _ command: Command, to s: inout GameState, using rng: inout R
     ) -> [GameEvent] {
         if case .chooseStarter(let index, let name) = command {
@@ -375,13 +397,7 @@ public enum Engine {
             return [.rejected(.noSuchBird)]
 
         case .rehome(let id):
-            if s.clutch(under: id) != nil || s.henChicks.contains(where: { $0.raisedBy == id }) {
-                return [.rejected(.birdIsBusy)]
-            }
-            let owned = s.birdsAtHome.count + s.lost.count + s.boarding.count
-            if owned <= 1, s.bird(id) != nil, !s.rehomed.contains(where: { $0.id == id }) {
-                return [.rejected(.lastBird)]
-            }
+            if let blocker = rehomeBlocker(id, in: s), blocker != .noSuchBird { return [.rejected(blocker)] }
             if let (keyPath, i) = locate(id, in: s, groups: [\.brooder, \.henChicks, \.coop, \.boarding]) {
                 let bird = s[keyPath: keyPath].remove(at: i)
                 return [.rehomed(id, coins: sendToNewHome(bird, &s))]
@@ -449,6 +465,16 @@ public enum Engine {
         case .buySpecial:
             return buySpecial(&s, &rng)
         }
+    }
+
+    /// Why this bird can't go to a new home now, or nil if it can. Front ends hide "Rehome" when
+    /// this is not nil, so the keeper never taps a button that does nothing.
+    public static func rehomeBlocker(_ id: UUID, in s: GameState) -> Rejection? {
+        if s.clutch(under: id) != nil || s.henChicks.contains(where: { $0.raisedBy == id }) { return .birdIsBusy }
+        let owned = s.birdsAtHome.count + s.lost.count + s.boarding.count
+        if owned <= 1, s.bird(id) != nil, !s.rehomed.contains(where: { $0.id == id }) { return .lastBird }
+        let rehomable = s.birdsAtHome.contains { $0.id == id } || s.boarding.contains { $0.id == id }
+        return rehomable ? nil : .noSuchBird
     }
 
     // MARK: - Shop and safety net
@@ -894,6 +920,11 @@ public enum Engine {
 
         // 9d. Goal ladder: award any milestone reached once the day's events have settled.
         ev += advanceMilestones(&s)
+
+        // 9e. Today's jobs and the season goal (see Jobs.swift): check the goal, set a new one when the
+        //     season turns, and pick today's jobs. Seeded from the shop seed, not the game RNG.
+        ev += advanceSeasonGoal(&s)
+        ev += setTodaysJobs(&s)
 
         // 10. Reset for the new day. The door is opened in the morning.
         s.fedToday = false

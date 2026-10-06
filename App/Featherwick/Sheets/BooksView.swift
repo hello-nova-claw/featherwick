@@ -185,6 +185,8 @@ struct SettingsSheet: View {
             Text("The plain lists from the test build: every action, the full log, the simulator.")
                 .font(Typeface.caption).foregroundStyle(palette.inkMuted)
             StitchDivider()
+            FeedbackToggles()
+            StitchDivider()
             Text("Fast forward").font(Typeface.item)
             HStack(spacing: Space.m) {
                 Button("1 day") { store.fullDays(1) }.buttonStyle(.secondary)
@@ -212,5 +214,26 @@ struct SettingsSheet: View {
             Button("Start again", role: .destructive) { store.newGame(difficulty) }
         }
         .fullScreenCover(isPresented: $testTools) { TestToolsView() }
+    }
+}
+
+/// Sound and haptics on or off. `Sound` and `Haptics` read the same keys.
+struct FeedbackToggles: View {
+    @Environment(\.palette) private var palette
+    @AppStorage(FeedbackSettings.soundKey) private var soundOn = true
+    @AppStorage(FeedbackSettings.hapticsKey) private var hapticsOn = true
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.s) {
+            Toggle("Sound", isOn: $soundOn)
+                .font(Typeface.body)
+                .frame(minHeight: 44)
+            Toggle("Haptics", isOn: $hapticsOn)
+                .font(Typeface.body)
+                .frame(minHeight: 44)
+            Text("Sounds are quiet when the silent switch is on.")
+                .font(Typeface.caption).foregroundStyle(palette.inkMuted)
+        }
+        .tint(palette.ink)
     }
 }

@@ -99,7 +99,10 @@ struct CoopSheet: View {
             Text(note).font(Typeface.caption).foregroundStyle(palette.inkMuted)
         }
         HStack(spacing: Space.m) {
-            if let reason = hatchBlocker(s, chosen: chosen) {
+            if !s.hasIncubator {
+                // Nothing to set eggs in yet, so no hatch button at all.
+                EmptyView()
+            } else if let reason = hatchBlocker(s, chosen: chosen) {
                 Button(reason) {}.buttonStyle(.primary).disabled(true)
             } else {
                 Button("Set \(chosen.count) to hatch") {
@@ -363,8 +366,11 @@ struct PottingShedSheet: View {
                 Text("With their mother").font(Typeface.item)
                 BirdList(birds: s.henChicks, open: open)
             }
-            Text("Incubator").font(Typeface.item)
-            Text(incubatorText(s)).font(Typeface.body).foregroundStyle(palette.inkSoft)
+            // No incubator, no mention of one: the shed shows only what the keeper has.
+            if s.hasIncubator {
+                Text("Incubator").font(Typeface.item)
+                Text(incubatorText(s)).font(Typeface.body).foregroundStyle(palette.inkSoft)
+            }
             ForEach(s.clutches.filter { $0.henID != nil }, id: \.henID) { c in
                 Text("\(birdName(c.henID!, s)) is sitting on \(c.eggs.count) egg(s). They hatch on day \(c.hatchDay).")
                     .font(Typeface.body).foregroundStyle(palette.inkSoft)
@@ -375,7 +381,6 @@ struct PottingShedSheet: View {
     }
 
     private func incubatorText(_ s: GameState) -> String {
-        guard s.hasIncubator else { return "No incubator yet. A broody hen can sit on eggs instead." }
         guard let c = s.incubatorClutch else {
             return "Empty. Holds \(s.incubatorSize) egg\(s.incubatorSize == 1 ? "" : "s"). Set eggs from the coop."
         }
