@@ -272,9 +272,11 @@ extension Engine {
     static func progressJobs(after events: [GameEvent], _ s: inout GameState) -> [GameEvent] {
         var out: [GameEvent] = []
         if var board = s.jobBoard, board.day == s.day, !board.rewarded {
+            var moved = false
             for i in board.jobs.indices where !board.jobs[i].isDone {
                 let steps = events.count(where: { counts($0, for: board.jobs[i]) })
                 guard steps > 0 else { continue }
+                moved = true
                 board.jobs[i].progress = min(board.jobs[i].target, board.jobs[i].progress + steps)
                 if board.jobs[i].isDone { out.append(.jobDone(board.jobs[i].kind)) }
             }
@@ -283,7 +285,8 @@ extension Engine {
                 s.coins += s.rules.jobsRewardCoins
                 out.append(.allJobsDone(coins: s.rules.jobsRewardCoins))
             }
-            if !out.isEmpty { s.jobBoard = board }
+            // Keep a step of a job that is not done yet too ("1 of 3 birds picked up").
+            if moved { s.jobBoard = board }
         }
         if var goal = s.seasonGoal, goal.kind == .collectEggs, !goal.reached {
             let collected = events.reduce(0) { n, e in

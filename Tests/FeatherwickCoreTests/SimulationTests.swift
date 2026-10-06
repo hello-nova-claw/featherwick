@@ -35,7 +35,11 @@ struct SimulationTests {
     }
 
     @Test func relaxedLaysMoreThanChallenge() {
-        func meanEggs(_ rules: Rules) -> Double {
+        func meanEggs(_ preset: Rules) -> Double {
+            // Job and goal coins change what the keeper buys, which hides the lay chance. Leave them out.
+            var rules = preset
+            rules.jobsRewardCoins = 0
+            rules.seasonGoalRewardCoins = 0
             let xs = Simulation.runMany(seeds: 1...12, days: 150, rules: rules).map { Double($0.eggsLaid) }
             return xs.reduce(0, +) / Double(xs.count)
         }
