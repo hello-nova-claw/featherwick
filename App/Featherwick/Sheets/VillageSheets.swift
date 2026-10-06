@@ -73,32 +73,8 @@ struct FarmGateSheet: View {
     private func hatchingItems(_ s: GameState) -> some View {
         let r = s.rules
         return VStack(spacing: 0) {
-<<<<<<< HEAD
             if s.isOpen(.birdShop) { birdStock(s) } else { NotYetLine(feature: .birdShop) }
             if s.isOpen(.incubatorShop), s.incubatorSize < r.bigIncubatorSize {
-=======
-            specialRow(s)
-            ShopRow(
-                name: "A fertile egg", detail: "From a local flock, already candled.", price: r.fertileEggPrice,
-                coins: s.coins
-            ) { store.run(.buy(.fertileEgg)) }
-            ShopRow(
-                name: "A pullet", detail: "A young hen. The breed is a surprise.", price: r.pulletPrice, coins: s.coins
-            ) {
-                store.run(.buy(.pullet))
-            }
-            ShopRow(
-                name: "A cockerel", detail: "A young rooster. The breed is a surprise.", price: r.cockerelPrice,
-                coins: s.coins
-            ) { store.run(.buy(.cockerel)) }
-            ForEach(s.shopBreeds.sorted { $0.rawValue < $1.rawValue }, id: \.self) { breed in
-                ShopRow(
-                    name: "A \(breed.definition.displayName) pullet", detail: breed.definition.note,
-                    price: r.rareBreedPulletPrice, coins: s.coins
-                ) { store.run(.buyBreed(breed)) }
-            }
-            if s.incubatorSize < r.bigIncubatorSize {
->>>>>>> origin/main
                 ShopRow(
                     name: "Incubator",
                     detail: "Holds \(r.bigIncubatorSize) eggs. They hatch in \(r.incubatorHatchDays) nights.",
@@ -170,22 +146,6 @@ extension FarmGateSheet {
     }
 }
 
-extension FarmGateSheet {
-    /// Today's special: one named bird (breed, sex, colour). It changes every day; sometimes it is rare.
-    @ViewBuilder
-    fileprivate func specialRow(_ s: GameState) -> some View {
-        if let special = s.todaysSpecial {
-            ShopRow(
-                name: "Today's special", detail: shopSpecialText(special), price: special.price, coins: s.coins
-            ) { store.run(.buySpecial) }
-        } else {
-            Text("Today's special is sold. A new one comes tomorrow.")
-                .font(Typeface.caption).foregroundStyle(palette.inkMuted)
-                .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, Space.s)
-        }
-    }
-}
-
 /// A 72pt shop row: item art, name and one line, and a price button.
 struct ShopRow: View {
     @Environment(\.palette) private var palette
@@ -223,10 +183,7 @@ struct ShowPanel: View {
         let s = store.state
         VStack(alignment: .leading, spacing: Space.xl) {
             ShowHeading(theme: s.nextShowTheme, day: s.nextShowDay, fee: s.rules.showEntryFee)
-<<<<<<< HEAD
             tip(s)
-=======
->>>>>>> origin/main
             entered(s)
             birdsToEnter(s)
             platesToEnter(s)
@@ -237,7 +194,6 @@ struct ShowPanel: View {
         }
     }
 
-<<<<<<< HEAD
     /// The neighbour's suggestion: one bird and one class, with a button to enter it. Gone once entered.
     @ViewBuilder
     private func tip(_ s: GameState) -> some View {
@@ -255,8 +211,6 @@ struct ShowPanel: View {
         }
     }
 
-=======
->>>>>>> origin/main
     @ViewBuilder
     private func entered(_ s: GameState) -> some View {
         if s.showEntries.isEmpty {

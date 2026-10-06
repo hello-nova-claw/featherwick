@@ -191,16 +191,11 @@ struct SettingsSheet: View {
                 Button("7 days") { store.fullDays(7) }.buttonStyle(.secondary)
             }
             // Runs every day up to and including the next show, then closes so the show screen opens.
-<<<<<<< HEAD
             // Before the early game opens the show, it runs to the day the neighbour announces it.
             let showOpen = store.state.isOpen(.shows)
             let target = showOpen ? store.state.nextShowDay : store.state.rules.introductionDay(of: .shows)
             Button(showOpen ? "To show day (day \(target))" : "To the show news (day \(target))") {
                 let days = target - store.state.day
-=======
-            Button("To show day (day \(store.state.nextShowDay))") {
-                let days = store.state.nextShowDay - store.state.day
->>>>>>> origin/main
                 dismiss()
                 store.fullDays(days)
             }
