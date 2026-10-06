@@ -77,30 +77,19 @@ struct FarmView: View {
     @Environment(\.palette) private var palette
     @State private var sheet: FarmSheet?
     /// The panel on screen. The game opens on the yard, with the barn to the left and the shop to the right.
-    @State private var panel: FarmPanel = .yard
+    /// Optional because the scroll view can briefly report no page; `panel` reads that as the yard.
+    @State private var scrolled: FarmPanel? = .yard
     /// The show on screen. Set from `store.showReport` once no sheet is in the way.
     @State private var showDay: ShowReport?
 
     var body: some View {
         ZStack {
-            // One panel per page. The pages fill the whole screen, under the HUD.
-            TabView(selection: $panel) {
-                ForEach(FarmPanel.allCases) { p in
-                    FarmPanelView(panel: p) { place in
-                        PlaceLabel(place: place, notices: notices(for: place)) { sheet = .place(place) }
-                    }
-                    // The flock, in the ground band under the place labels (see `FarmBirds.swift`).
-                    .overlay { PanelBirds(panel: p) { sheet = .bird($0) } }
-                    .tag(p)
-                }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .ignoresSafeArea()
+            panels
             VStack {
                 HUD()
                 HStack {
                     Spacer()
-                    PanelDots(selection: $panel, notices: panelNotices)
+                    PanelDots(selection: panel, notices: panelNotices)
                 }
                 Spacer()
                 bottomBar
@@ -122,12 +111,43 @@ struct FarmView: View {
         .onChange(of: store.openRequest) { _, request in
             if let request {
                 // A sheet for a place also moves the farm to that place's panel.
-                if case .place(let place) = request { panel = .containing(place) }
+                if case .place(let place) = request { scrolled = .containing(place) }
                 sheet = request
                 store.openRequest = nil
             }
         }
         .onChange(of: store.showReport) { _, report in showReportChanged(report) }
+    }
+
+    /// One panel per page; the pages fill the whole screen, under the HUD. A paging scroll view, not a
+    /// paged TabView: a TabView drops a swipe whenever a panel redraws (a bird walking), so most swipes
+    /// failed.
+    private var panels: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 0) {
+                ForEach(FarmPanel.allCases) { p in
+                    FarmPanelView(panel: p) { place in
+                        PlaceLabel(place: place, notices: notices(for: place)) { sheet = .place(place) }
+                    }
+                    // The flock, in the ground band under the place labels (see `FarmBirds.swift`).
+                    .overlay { PanelBirds(panel: p) { sheet = .bird($0) } }
+                    .containerRelativeFrame(.horizontal)
+                    .id(p)
+                }
+            }
+            .scrollTargetLayout()
+        }
+        .scrollTargetBehavior(.paging)
+        .scrollIndicators(.hidden)
+        .scrollPosition(id: $scrolled)
+        // Open on the yard (page 2 of 4) from the first frame.
+        .defaultScrollAnchor(UnitPoint(x: 1.0 / 3, y: 0))
+        .ignoresSafeArea()
+    }
+
+    /// The panel on screen, for the dots. Tapping a dot scrolls there.
+    private var panel: Binding<FarmPanel> {
+        Binding(get: { scrolled ?? .yard }, set: { scrolled = $0 })
     }
 
     /// Books, Today and settings. Books waits until the neighbour shows the keeper the Breed Book
