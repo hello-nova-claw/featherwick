@@ -202,6 +202,12 @@ struct BirdCardSheet: View {
                     Button("Rehome") { confirmRehome = true }
                 }
             }
+            // The breeding pen: hidden until it is open, and for a bird whose sex does not show yet.
+            if s.isPenned(birdID) {
+                Button("Take out of the pen") { store.run(.unpenBird(birdID)) }
+            } else if Engine.canOfferPen(birdID, in: s) {
+                Button("Pen") { store.run(.penBird(birdID)) }
+            }
         }
         .buttonStyle(.textAction)
         .frame(maxWidth: .infinity)

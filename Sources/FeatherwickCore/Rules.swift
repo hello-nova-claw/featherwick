@@ -44,6 +44,8 @@ public struct Rules: Codable, Hashable, Sendable {
     public var giftIncubatorSize = 1  // the neighbour's old incubator, given with the first fertile egg
     public var bigIncubatorSize = 6  // the one you buy
     public var incubatorPrice = 30
+    /// Hens the breeding pen holds, with at most one rooster (see BreedingPen.swift).
+    public var penHens = 3
 
     // Rooster tension (never harm: hens just lay less)
     public var hensPerRooster = 5  // one rooster is always fine; beyond that, 1 per 5 hens
@@ -160,7 +162,7 @@ public struct Rules: Codable, Hashable, Sendable {
     // one chick (sex shows on day `growerAge`) and learns one thing at a time.
     public var featureDays: [Feature: Int] = [
         .handling: 1, .treats: 2, .premiumFeed: 4, .coopDoor: 6, .breedBook: 8, .birdShop: 10,
-        .coopUpgrade: 14, .laying: 18, .incubatorShop: 29,
+        .coopUpgrade: 14, .laying: 18, .incubatorShop: 29, .breedingPen: 35,
     ]
     /// The county show opens this many days before the first show (`.shows` has no entry above).
     public var showNoticeDays = 7

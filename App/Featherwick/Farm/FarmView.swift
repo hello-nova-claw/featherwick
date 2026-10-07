@@ -68,6 +68,8 @@ enum FarmSheet: Identifiable, Hashable {
     case settings
     case neighbourNote
     case jobs
+    /// The breeding pen, opened from the coop sheet.
+    case breedingPen
     var id: Self { self }
 }
 
@@ -224,6 +226,7 @@ struct FarmView: View {
         case .settings: SettingsSheet()
         case .neighbourNote: NeighbourNoteSheet()
         case .jobs: JobsSheet()
+        case .breedingPen: BreedingPenSheet(open: open)
         }
     }
 

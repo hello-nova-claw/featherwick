@@ -53,6 +53,7 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 | 21 | `shows` | The show opens, a week before the first show. The neighbour's show tip. |
 | 28 | — | The first county show. |
 | 29 | `incubatorShop` | The big incubator. (The neighbour's small one still comes with the first fertile egg, laid or bought.) |
+| 35 | `breedingPen` | The neighbour helps build the breeding pen. The keeper chooses the sire. |
 
 - The days are in `Rules.featureDays`. The show opens `showNoticeDays` (7) before the first show.
 - No birds, perches, incubators or shows before the sex shows (`EarlyGameTests` checks this).
@@ -96,6 +97,37 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
   the step starts (or on any night while it waits), the neighbour shows you at once. So the step never sticks.
 - Every fertile egg hatches (cozy rule).
 - Saves from before this rule keep candling (`canCandle` is true when it is missing).
+
+## Breeding pen
+
+`BreedingPen.swift`. The keeper chooses which rooster fathers which hens' eggs.
+
+- The pen is a corner of the coop. It holds at most one rooster and `Rules.penHens` (3) hens.
+- `GameState.pen` holds the ids of the penned birds. The birds stay in `coop`. They keep their perch,
+  so the pen adds no room and takes none away. The "birds never wait forever" rules do not change.
+- Commands: `penBird(id)` and `unpenBird(id)`. Events: `.birdPenned`, `.birdUnpenned`.
+- Refusals: `.penFull(hens:)`, `.penHasRooster`, `.notInPen`, `.alreadyInPen`, `.notInCoop` (a brooder
+  bird, or a chick with its mother), `.tooYoungForPen`, `.birdNotHome` (lost or boarding).
+- Laying (night step 8):
+  - A penned hen's egg is fathered by the penned rooster only, if he is an adult.
+  - A penned hen with no adult rooster in the pen lays eggs that are not fertile, like a coop with no rooster.
+  - A coop hen's egg is fathered by a random adult coop rooster. The penned rooster never fathers it.
+  - The pen's birds do not count toward coop rooster tension (`Rules.extraRoosters`). The coop
+    roosters do not unsettle the penned hens.
+  - With an empty pen, laying makes the same random draws as before the pen. Old seeds do not change.
+- The fox, foraging, feeding, handling and broodiness treat a penned bird like any coop bird.
+- A bird that leaves the coop leaves the pen too: rehomed, traded, or scared off by the fox. `Engine.apply`
+  removes such ids after every command, and the fox step removes them at once. A bird that comes
+  home is not penned again. The keeper pens it again.
+- No hidden sex leaks. A bird whose sex does not show yet is refused with `.tooYoungForPen`, before any
+  check that depends on its sex. The words do not say which sex it is. `Engine.canOfferPen` is false
+  for such a bird, so the app never shows "Pen" for it.
+- Early game: `Feature.breedingPen` opens on day 35 (`Rules.featureDays`). Before that, both commands are
+  refused with `.notYet(.breedingPen)`. A save made before the pen has no day for it in its rules: it
+  uses the standard day. Saves from before the early game have it open.
+- Old saves load with an empty pen (`SaveFormat.fillNewSettings`).
+- CLI: `pen` lists the pen, `pen <name>` and `unpen <name>` move a bird. App: "Breeding pen" in the
+  Coop sheet (a rooster place and hen places), and "Pen" or "Take out of the pen" on the bird card.
 
 ## Birds never wait forever
 
