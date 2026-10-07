@@ -68,6 +68,8 @@ enum FarmSheet: Identifiable, Hashable {
     case settings
     case neighbourNote
     case jobs
+    /// The breeding pen, opened from the coop sheet.
+    case breedingPen
     #if DEBUG || BETA
         /// A TestFlight question (`Beta/`). Never in an App Store build.
         case betaPrompt(BetaMoment)
@@ -268,6 +270,7 @@ struct FarmView: View {
         case .settings: SettingsSheet()
         case .neighbourNote: NeighbourNoteSheet()
         case .jobs: JobsSheet()
+        case .breedingPen: BreedingPenSheet(open: open)
         #if DEBUG || BETA
             case .betaPrompt(let moment): BetaPromptSheet(moment: moment)
         #endif

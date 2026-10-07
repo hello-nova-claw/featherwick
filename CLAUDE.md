@@ -37,7 +37,7 @@ Key Core files:
 - `GameState.swift`, `Genome.swift`, `Locus.swift`, `Alleles.swift`, `Phenotype.swift`: state and genetics.
 - `BreedTable.swift`, `Breed.swift`: breeds and colour varieties (data tables).
 - `SaveFormat.swift` (versions, migrations), `SaveStore.swift` (slots, atomic writes, backups).
-- One file per feature: `EarlyGame`, `Shows`, `ShowEvent`, `Friendliness`, `Pedigree`, `Names`, `Story`,
+- One file per feature: `EarlyGame`, `BreedingPen`, `Shows`, `ShowEvent`, `Friendliness`, `Pedigree`, `Names`, `Story`,
   `Milestone`, `Jobs` (daily jobs, season goals), `Look`, `Simulation`.
 
 ## iOS app
