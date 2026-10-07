@@ -3,7 +3,7 @@ import Testing
 
 @testable import FeatherwickCore
 
-/// The balance-sim harness: seeded games stay bounded and productive, and every difficulty is playable.
+/// The balance-sim harness: seeded games stay bounded and productive.
 /// These are the guards that catch a tuning change making the economy or the flock run away (or die).
 struct SimulationTests {
     @Test(arguments: [UInt64(1), 2, 3, 7, 42, 100])
@@ -23,33 +23,31 @@ struct SimulationTests {
         #expect(Simulation.run(seed: 5, days: 90) == Simulation.run(seed: 5, days: 90))
     }
 
-    @Test(arguments: Difficulty.allCases)
-    func everyPresetIsPlayable(preset difficulty: Difficulty) {
-        let rules = difficulty.rules
+    @Test func theStandardRulesArePlayable() {
         for seed in UInt64(1)...6 {
-            let r = Simulation.run(seed: seed, days: 150, rules: rules)
+            let r = Simulation.run(seed: seed, days: 150, rules: .standard)
             #expect(r.finalFlock >= 1)
             #expect(r.finalCoins >= 0 && r.finalCoins < 1_000_000)
             #expect(r.eggsLaid > 0)
         }
     }
 
-    /// A higher lay chance lays more eggs. Only the lay chance differs between the two runs: the full
-    /// presets lay about the same, because their other settings change how big the flock grows.
-    @Test func aHigherLayChanceLaysMore() {
-        func meanEggs(_ preset: Rules) -> Double {
-            // Standard rules with the preset's lay chance. Job and goal coins change what the keeper
-            // buys, which hides the lay chance. Leave them out.
+    /// A higher lay chance lays more eggs. Only the lay chance differs between the two runs.
+    @Test func aHigherLayChanceLaysMoreEggs() {
+        func meanEggs(_ layChance: [Season: Double]) -> Double {
+            // Job and goal coins change what the keeper buys, which hides the lay chance. Leave them out.
             var rules = Rules.standard
-            rules.layChance = preset.layChance
+            rules.layChance = layChance
             rules.jobsRewardCoins = 0
             rules.seasonGoalRewardCoins = 0
             let xs = Simulation.runMany(seeds: 1...12, days: 150, rules: rules).map { Double($0.eggsLaid) }
             return xs.reduce(0, +) / Double(xs.count)
         }
-        // The relaxed lay chance is higher than the challenge one, so it should lay more over the same games.
+        // A higher lay chance should show up as more eggs over the same games.
         // (Final coins is a poor signal here: the keeper reinvests its coins into stock and upgrades.)
-        #expect(meanEggs(.relaxed) > meanEggs(.challenge))
+        let high: [Season: Double] = [.spring: 0.95, .summer: 0.9, .autumn: 0.6, .winter: 0.7]
+        let low: [Season: Double] = [.spring: 0.75, .summer: 0.65, .autumn: 0.25, .winter: 0.3]
+        #expect(meanEggs(high) > meanEggs(low))
     }
 
     @Test func textReportRuns() {

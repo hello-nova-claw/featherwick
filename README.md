@@ -22,8 +22,7 @@ swift run featherwick 2026   # play; seed 2026 is used only for a new save
 ```
 
 The CLI autosaves to a named slot (default `featherwick-save.json`) in the current folder, writing
-atomically with rolling backups. Launch flags: `--slot <name>` picks a save, `--preset <relaxed|standard|challenge>`
-sets the difficulty of a new game. Type `help` in the game for commands. `day 10` runs ten full days
+atomically with rolling backups. Launch flag: `--slot <name>` picks a save. Type `help` in the game for commands. `day 10` runs ten full days
 (feed, collect, close, sleep) for fast tuning; `sim [days] [games]` prints a balance report.
 
 ## Engine
@@ -418,13 +417,14 @@ the night, the free-ranging birds forage: they return fed (no feeding needed tha
 better off — a small lay bonus (`forageLayBonus`) and show-condition bonus (`forageConditionBonus`).
 So each night you choose: close up safe but feed tomorrow, or leave open to forage and risk the fox.
 
-## Saves, difficulty and balance
+## Saves, rules and balance
 
 - **Saves** (`SaveStore.swift`): named slots, atomic writes, and rolling backups (`…bak1/bak2.json`),
   so a bad write can't lose a game. An unreadable save is quarantined, not overwritten. `SaveFormat`
   still versions and migrates the state itself.
-- **Difficulty** (`Rules.preset(named:)`): `relaxed`, `standard`, `challenge`. Presets only seed a new
-  game; loading an existing save is unaffected (new rules fields fall back to their defaults).
+- **One setting** (`Rules.standard`): the game has no difficulty levels. Every new game uses the
+  standard rules. A save from a Relaxed or Challenge game (save version 1) switches to the standard
+  rules when it loads (`SaveFormat.migrateToOneSetting`). Its birds, coins and progress stay.
 - **Balance sim** (`Simulation.swift`): plays many seeded games with a simple keeper policy and reports
   coins, flock size, Breed Book growth and eggs/day, so the first-guess `Rules` numbers can be tuned
   from data. CLI: `sim [days] [games]`; `SimulationTests` guards against balance regressions.

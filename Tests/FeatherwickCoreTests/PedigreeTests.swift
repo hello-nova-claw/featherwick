@@ -126,7 +126,6 @@ struct PedigreeTests {
 
     @Test func inbreedingHasNoEffectByDefault() {
         #expect(!Rules.standard.inbreedingMatters)
-        #expect(Difficulty.allCases.allSatisfy { !$0.rules.inbreedingMatters })
         var rng = SeededRNG(seed: 4)
         var s = GameState(rules: .standard, phase: .playing)
         s.day = 25

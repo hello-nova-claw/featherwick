@@ -19,7 +19,7 @@ public struct SaveGame: Codable, Sendable {
 /// A new gene, a new breed or a new optional field needs no migration.
 /// To add one: bump `currentVersion` and add `migrations[old]`, which edits the raw JSON of an `old` save.
 public enum SaveFormat {
-    public static let currentVersion = 1
+    public static let currentVersion = 2
 
     public enum LoadError: Error, Equatable, Sendable {
         /// The data is not a Featherwick save.
@@ -34,7 +34,8 @@ public enum SaveFormat {
 
     /// `migrations[n]` turns a version-n save into a version-(n+1) save.
     public static let migrations: [Int: Migration] = [
-        0: migrateGenomesToRegistry
+        0: migrateGenomesToRegistry,
+        1: migrateToOneSetting,
     ]
 
     private struct Envelope: Codable {
@@ -137,5 +138,23 @@ public enum SaveFormat {
         }
         guard let object = migrated as? [String: Any] else { throw LoadError.notASave }
         root = object
+    }
+
+    /// The rules that the old Relaxed and Challenge presets changed.
+    static let oldPresetRules = [
+        "layChance", "fertileChance", "foxChance", "fleeChance", "lostDaysMax", "lostDaysCap",
+        "pulletPrice", "incubatorPrice", "coopUpgradePrice",
+    ]
+
+    /// v1 → v2: the game has one setting now. A game started on Relaxed or Challenge plays by the
+    /// standard rules from here. Its birds, coins and progress stay.
+    static func migrateToOneSetting(_ root: inout [String: Any]) throws {
+        guard var state = root["state"] as? [String: Any] else { throw LoadError.notASave }
+        guard var rules = state["rules"] as? [String: Any] else { return }
+        let standard = try JSONEncoder().encode(Rules.standard)
+        guard let fresh = try JSONSerialization.jsonObject(with: standard) as? [String: Any] else { return }
+        for key in oldPresetRules { rules[key] = fresh[key] }
+        state["rules"] = rules
+        root["state"] = state
     }
 }

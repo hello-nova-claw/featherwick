@@ -15,7 +15,7 @@ Work in progress and ideas, newest decisions first. Move an item to "Done" when 
   keeper can see.
 - Trade codes: share a bird or an egg as a short signed code. No server needed. First step to
   playing with friends.
-- Balance pass: run `sim` over the early game, shows and shop; tune coins, prices and difficulty.
+- Balance pass: run `sim` over the early game, shows and shop; tune coins and prices.
 
 ## Later
 

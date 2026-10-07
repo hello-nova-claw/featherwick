@@ -33,7 +33,7 @@ Key Core files:
 
 - `Engine.swift`: `Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. `Command`,
   `GameEvent` and `GameError` are defined here. `passNight` runs the numbered night steps.
-- `Rules.swift`: every tunable number, plus difficulty presets (`relaxed`, `standard`, `challenge`).
+- `Rules.swift`: every tunable number. The game has one setting, `Rules.standard` (no difficulty levels).
 - `GameState.swift`, `Genome.swift`, `Locus.swift`, `Alleles.swift`, `Phenotype.swift`: state and genetics.
 - `BreedTable.swift`, `Breed.swift`: breeds and colour varieties (data tables).
 - `SaveFormat.swift` (versions, migrations), `SaveStore.swift` (slots, atomic writes, backups).
