@@ -94,6 +94,8 @@ struct FarmView: View {
     @State private var swapping: FarmSheet?
     /// A sheet asked for while a beta question was open. It opens when the question closes.
     @State private var afterBeta: FarmSheet?
+    /// The sheet on screen, kept after it closes so `sheetClosed` knows which one it was.
+    @State private var shownSheet: FarmSheet?
 
     var body: some View {
         ZStack {
@@ -121,7 +123,13 @@ struct FarmView: View {
             content(for: which)
                 .environment(\.palette, palette)
         }
-        .fullScreenCover(item: $showDay, onDismiss: { store.finishShow() }) { report in
+        .fullScreenCover(
+            item: $showDay,
+            onDismiss: {
+                store.finishShow()
+                presentNeighbourNoteIfWaiting()
+            }
+        ) { report in
             ShowDayView(report: report)
                 .environment(\.palette, palette)
         }
@@ -146,6 +154,7 @@ struct FarmView: View {
                 store.openRequest = nil
             }
         }
+        .onChange(of: sheet) { _, new in if let new { shownSheet = new } }
         .onChange(of: store.showReport) { _, report in showReportChanged(report) }
         // A show night: the show opens once the keeper is back from the morning report.
         .onChange(of: store.morningReport) { _, report in
@@ -266,9 +275,23 @@ struct FarmView: View {
         showDay = report
     }
 
-    /// A sheet closed: the show goes first, then any beta question that waited for a quiet farm.
+    /// The neighbour's note from the night, once the morning report (and any show) is closed.
+    private func presentNeighbourNoteIfWaiting() {
+        guard showDay == nil, sheet == nil, swapping == nil, store.morningReport == nil, !store.neighbourNotes.isEmpty
+        else { return }
+        sheet = .neighbourNote
+    }
+
+    /// A sheet closed: the show goes first, then the neighbour's note, then any beta question that waited
+    /// for a quiet farm.
     private func sheetClosed() {
+        let closed = shownSheet
+        shownSheet = nil
+        // Read, even if swiped away: so the note does not open again at once.
+        if closed == .neighbourNote { store.readNeighbourNotes() }
         presentShowIfWaiting()
+        presentNeighbourNoteIfWaiting()
+        if sheet != nil { return }
         #if DEBUG || BETA
             guard showDay == nil, sheet == nil, swapping == nil, store.morningReport == nil else { return }
             if let next = afterBeta {

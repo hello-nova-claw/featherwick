@@ -127,7 +127,8 @@ final class GameStore {
         save = SaveGame(state: state, rng: rng)
         noteEvening()
         if Self.isShopping(command) { sawNewStock() }
-        // The morning report shows the whole night, so its events get no toasts and no separate neighbour note.
+        // The morning report shows the whole night, so its events get no toasts. The neighbour's words also
+        // come as her own note, which opens once the keeper is back from the report.
         let morning =
             reportingNight && command == .passNight ? MorningReport.from(events: events, state: state) : nil
         for event in events {
@@ -137,7 +138,7 @@ final class GameStore {
                 showToast(toast)
             }
             guard let words = eventText(event, state) else { continue }
-            if morning == nil, Self.isNeighbourNote(event) { neighbourNotes.append(words) }
+            if Self.isNeighbourNote(event, overnight: command == .passNight) { neighbourNotes.append(words) }
             var rejected = false
             if case .rejected = event { rejected = true }
             append(words, rejected: rejected)
@@ -160,11 +161,13 @@ final class GameStore {
 
     /// Lessons, show news and the gift incubator from the neighbour: the words the keeper must not miss.
     /// The incubator note says what to do with a fertile egg, so it must not sit only in the log.
+    /// Overnight, everything else the neighbour says or does (the morning report's "neighbour" group) is
+    /// her note too. In the day, story steps and trades answer the keeper's own action, so they stay in the log.
     /// The light is gone, or not gone yet: also a note, not an error toast.
-    private static func isNeighbourNote(_ event: GameEvent) -> Bool {
+    private static func isNeighbourNote(_ event: GameEvent, overnight: Bool) -> Bool {
         switch event {
         case .introduced, .showAnnounced, .neighbourGaveIncubator: true
-        default: isDaylightRefusal(event)
+        default: (overnight && MorningReport.group(of: event) == .neighbour) || isDaylightRefusal(event)
         }
     }
 
