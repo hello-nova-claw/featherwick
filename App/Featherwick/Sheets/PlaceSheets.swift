@@ -184,7 +184,7 @@ struct CoopSheet: View {
             Button(s.coopDoorOpen ? "Shut the door" : "Door is shut") { store.run(.closeCoop) }
                 .buttonStyle(.secondary)
                 .disabled(!s.coopDoorOpen)
-            Button("Sleep") { store.run(.passNight) }.buttonStyle(.secondary)
+            Button("Sleep") { store.sleep() }.buttonStyle(.secondary)
         }
         Text("An open door lets the flock forage overnight, but the fox may visit.")
             .font(Typeface.caption).foregroundStyle(palette.inkMuted)
