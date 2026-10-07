@@ -128,8 +128,14 @@ enum SceneArt {
     }
 
     private static let treeLines: [FarmPanel: [PlacedTree]] = {
+        // The Yard and the Far yard are one landscape (see `scripts/make_scene_art.py`), so they share one
+        // tree line that runs across the join. Any other scene panel gets its own.
+        let joined: [FarmPanel] = [.yard, .farYard].filter { SceneArtLayout.hillLine($0) != nil }
         var out: [FarmPanel: [PlacedTree]] = [:]
-        for panel in FarmPanel.allCases {
+        if let first = joined.first, let hill = SceneArtLayout.hillLine(first) {
+            out = TreeLine.makeJoined(joined, seed: seed(first), hillY: hill)
+        }
+        for panel in FarmPanel.allCases where out[panel] == nil {
             guard let hill = SceneArtLayout.hillLine(panel) else { continue }
             out[panel] = TreeLine.make(panel: panel, seed: seed(panel), hillY: hill, mask: WalkMask.all[panel])
         }

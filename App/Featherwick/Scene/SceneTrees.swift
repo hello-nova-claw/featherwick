@@ -178,12 +178,58 @@ enum TreeLine {
         return trees
     }
 
+    /// How far past a panel edge a tree may stand and still show on that panel (its canopy reaches in).
+    static let edgeReach: CGFloat = 0.15
+
+    /// One tree line across panels that join (the Yard, then the Far yard to its right), so the hill
+    /// line runs on without a seam. A tree near the join shows on both panels, each copy clipped at
+    /// its edge. Lower trees stand only by a panel's outer edge, never at the join.
+    static func makeJoined(_ panels: [FarmPanel], seed: UInt64, hillY: CGFloat) -> [FarmPanel: [PlacedTree]] {
+        var rng = SeededRNG(seed: seed)
+        var line: [PlacedTree] = []
+        var x: CGFloat = CGFloat.random(in: -0.04...0.1, using: &rng)
+        while x < CGFloat(panels.count) + 0.04 {
+            let y: CGFloat = hillY + CGFloat.random(in: hillJitter, using: &rng)
+            line.append(tree(id: line.count, at: CGPoint(x: x, y: y), using: &rng))
+            x += CGFloat.random(in: spacing, using: &rng)
+        }
+        var out: [FarmPanel: [PlacedTree]] = [:]
+        for (index, panel) in panels.enumerated() {
+            let left: CGFloat = CGFloat(index)
+            let near: [PlacedTree] = line.filter { $0.base.x >= left - edgeReach && $0.base.x <= left + 1 + edgeReach }
+            var trees: [PlacedTree] = []
+            for t in near { trees.append(moved(t, by: -left, id: trees.count)) }
+            // Lower trees by the outer edge only: the first panel's left, the last panel's right.
+            var sides: [ClosedRange<CGFloat>] = []
+            if index == 0 { sides.append(0.02...0.12) }
+            if index == panels.count - 1 { sides.append(0.88...0.98) }
+            let lower: Int = Int.random(in: lowerCount, using: &rng)
+            for _ in 0..<lower where !sides.isEmpty {
+                let mask: WalkMask? = WalkMask.all[panel]
+                if let spot = lowerSpot(panel: panel, hillY: hillY, mask: mask, sides: sides, using: &rng) {
+                    trees.append(tree(id: trees.count, at: spot, using: &rng))
+                }
+            }
+            out[panel] = trees
+        }
+        return out
+    }
+
+    /// The same tree, its base moved across by `dx` panel widths, with a new id.
+    private static func moved(_ t: PlacedTree, by dx: CGFloat, id: Int) -> PlacedTree {
+        PlacedTree(
+            id: id, kind: t.kind, base: CGPoint(x: t.base.x + dx, y: t.base.y), size: t.size,
+            flipped: t.flipped, hueShift: t.hueShift, swayDegrees: t.swayDegrees, swaySeconds: t.swaySeconds,
+            swayDelay: t.swayDelay)
+    }
+
     /// A spot near the left or right edge, below the hill line, clear of the building ground.
     private static func lowerSpot(
-        panel: FarmPanel, hillY: CGFloat, mask: WalkMask?, using rng: inout SeededRNG
+        panel: FarmPanel, hillY: CGFloat, mask: WalkMask?,
+        sides: [ClosedRange<CGFloat>] = [0.02...0.12, 0.88...0.98], using rng: inout SeededRNG
     ) -> CGPoint? {
         for _ in 0..<8 {
-            let side: ClosedRange<CGFloat> = Bool.random(using: &rng) ? 0.02...0.12 : 0.88...0.98
+            guard let side: ClosedRange<CGFloat> = sides.randomElement(using: &rng) else { return nil }
             let spot = CGPoint(
                 x: CGFloat.random(in: side, using: &rng), y: hillY + CGFloat.random(in: lowerDrop, using: &rng))
             // Keep clear of the building ground, with room for the building to show.

@@ -272,6 +272,8 @@ Soft and few. Settings (≡) has a switch for each; both start on.
 ## Farm scene (2.5D)
 The Yard and the Far yard draw a 2.5D scene (`App/Featherwick/Scene/`). The art is a placeholder: a basic hill and sky, simple tree shapes and grass tufts. But it uses the same tools as the real paintings will. The Barn and the Shop stay flat colours for now.
 
+**One landscape.** The Yard and the Far yard are one landscape, side by side. The script paints both as one wide picture and cuts it in two, so the hills, sky and grass meet at the join without a seam. They share one hill line and one tree line: a tree near the join shows on both panels. Lower trees stand only by the outer edges, never at the join.
+
 **Three rules.** Each thing in the scene has a ground point: a bird's feet, a trunk's base. Its Y on screen sets everything (`SceneDepth`).
 - **Draw order = ground Y.** Lower on screen is nearer, so it draws on top. A bird walks behind a tree while its feet are above the tree's base, and in front when they are below.
 - **Size = ground Y.** Things are smallest at the hill line (scale 0.45) and full size at the bottom edge (1.0). A bird that walks up the yard gets smaller. The two numbers are `SceneDepth.farScale` and `nearScale`.
@@ -282,7 +284,7 @@ The Yard and the Far yard draw a 2.5D scene (`App/Featherwick/Scene/`). The art 
 2. **Middle:** trees, fences, the coop and the birds, in one stack, each sorted by its ground Y (`.zIndex(depth.zIndex(forGroundY:))`).
 3. **Front:** grass tufts along the bottom edge. Always on top.
 
-**Trees.** Five designs (`TreeKind`: oak, poplar, pine, apple, birch), each a trunk and a canopy in separate materials. Code places them along the hill line with random spacing, size and left/right flip, plus one or two lower in the yard near the edges (`TreeLine`). The dice are seeded per panel, never the game's, so a panel always has the same trees. A new panel gets its own tree line with no new painting. Each tree sways slowly on its own about its trunk base. Reduce Motion: no sway.
+**Trees.** Five designs (`TreeKind`: oak, poplar, pine, apple, birch), each a trunk and a canopy in separate materials. Code places them along the hill line with random spacing, size and left/right flip, plus one or two lower in the yard near the outer edges (`TreeLine.makeJoined`). The dice are seeded per panel, never the game's, so a panel always has the same trees. A new panel gets its own tree line with no new painting. Each tree sways slowly on its own about its trunk base. Reduce Motion: no sway.
 
 **Colour: ramps and masks.** The art holds value (light and dark) and material, not colour. One shader (`SeasonRamp.metal`) maps each value along the ramp of its material for the season (`SeasonRamp.swift`). So one painting serves every season:
 - Spring: fresh green. Summer: deep green. Autumn: gold grass under red and orange trees. Winter: pale.

@@ -25,8 +25,8 @@ enum SceneArtLayout {
     /// birds there are smallest.
     static func hillLine(_ panel: FarmPanel) -> CGFloat? {
         switch panel {
-        case .yard: 0.4
-        case .farYard: 0.3702
+        case .yard: 0.3898
+        case .farYard: 0.3898
         default: nil
         }
     }
