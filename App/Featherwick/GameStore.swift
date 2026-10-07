@@ -57,6 +57,8 @@ final class GameStore {
     private(set) var seenNewStock: Set<Feature>
     private var store: SaveStore
     private let seenStockKey: String
+    /// The save slot, so per-slot notes kept outside the save (new stock seen, beta prompts) find theirs.
+    let slot: String
     private var nextLogID = 0
 
     var state: GameState { save.state }
@@ -66,6 +68,7 @@ final class GameStore {
         // A local first: @Observable can't read `self.store` until every property is set.
         let store = SaveStore(directory: directory, slot: slot)
         self.store = store
+        self.slot = slot
         save = Self.load(from: store) ?? Self.newSave(rules: .standard)
         seenStockKey = "seenNewStock.\(slot)"
         let seen = UserDefaults.standard.stringArray(forKey: seenStockKey) ?? []
@@ -130,6 +133,9 @@ final class GameStore {
         if !neighbourNotes.isEmpty, openRequest == nil { openRequest = .neighbourNote }
         // Several nights can pass in one go (`fullDays`): the newest show wins.
         if let report = Self.report(from: events, in: state) { showReport = report }
+        #if DEBUG || BETA
+            noticeBetaMoments(in: events)
+        #endif
         persist()
         return events
     }
@@ -168,7 +174,16 @@ final class GameStore {
     }
 
     /// The player is back from the show.
-    func finishShow() { showReport = nil }
+    func finishShow() {
+        #if DEBUG || BETA
+            // The first show the keeper entered: ask once they are back on the farm, not over the results.
+            if showReport?.results.isEmpty == false { queueBetaPrompt(.firstShow) }
+        #endif
+        showReport = nil
+        #if DEBUG || BETA
+            offerBetaPrompt()
+        #endif
+    }
 
     /// The show held this night, if any. With no entries there is no result to carry the theme, so the
     /// show day's season names it.
@@ -309,6 +324,45 @@ final class GameStore {
     }
 
     func dismissToast(_ id: Int) { toasts.removeAll { $0.id == id } }
+
+    // MARK: - Beta prompts (TestFlight only, see `Beta/BetaNotes.swift`)
+
+    // No stored property here: the Observable macro and `#if` do not mix well, and the waiting question
+    // is not something a view draws. `BetaNotes.waiting` holds it.
+    #if DEBUG || BETA
+        /// The first hatch asks straight away. The first show waits until the results close (`finishShow`).
+        private func noticeBetaMoments(in events: [GameEvent]) {
+            let hatched = events.contains { e in
+                if case .chicksHatched = e { return true }
+                return false
+            }
+            if hatched { queueBetaPrompt(.firstHatch) }
+            offerBetaPrompt()
+        }
+
+        private func queueBetaPrompt(_ moment: BetaMoment) {
+            guard !BetaNotes.waiting.contains(moment), BetaNotes.isOn, !BetaNotes.wasAsked(moment, slot: slot)
+            else { return }
+            BetaNotes.waiting.append(moment)
+        }
+
+        /// Asks the farm to open the waiting question, unless a show or another sheet comes first.
+        /// The farm calls this again when its sheet closes.
+        func offerBetaPrompt() {
+            guard let moment = BetaNotes.waiting.first, showReport == nil, openRequest == nil else { return }
+            openRequest = .betaPrompt(moment)
+        }
+
+        /// Saved, skipped or swiped away: this slot is never asked again. Not on open, so a question that
+        /// another sheet pushed aside is still asked later.
+        func betaPromptAnswered(_ moment: BetaMoment) {
+            BetaNotes.waiting.removeAll { $0 == moment }
+            BetaNotes.markAsked(moment, slot: slot)
+        }
+
+        /// Settings (Debug): ask this question when Settings closes, asked before or not.
+        func tryBetaPrompt(_ moment: BetaMoment) { BetaNotes.waiting = [moment] }
+    #endif
 
     // MARK: - Log and saving
 

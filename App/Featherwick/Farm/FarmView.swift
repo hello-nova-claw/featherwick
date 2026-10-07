@@ -68,6 +68,10 @@ enum FarmSheet: Identifiable, Hashable {
     case settings
     case neighbourNote
     case jobs
+    #if DEBUG || BETA
+        /// A TestFlight question (`Beta/`). Never in an App Store build.
+        case betaPrompt(BetaMoment)
+    #endif
     case morningReport
     var id: Self { self }
 }
@@ -83,6 +87,10 @@ struct FarmView: View {
     @State private var scrolled: FarmPanel? = .yard
     /// The show on screen. Set from `store.showReport` once no sheet is in the way.
     @State private var showDay: ShowReport?
+    /// The sheet `open` is about to show after the current one closes. A beta question must not slip in between.
+    @State private var swapping: FarmSheet?
+    /// A sheet asked for while a beta question was open. It opens when the question closes.
+    @State private var afterBeta: FarmSheet?
 
     var body: some View {
         ZStack {
@@ -102,7 +110,7 @@ struct FarmView: View {
             .foregroundStyle(palette.ink)
             ToastStack()
         }
-        .sheet(item: $sheet, onDismiss: presentShowIfWaiting) { which in
+        .sheet(item: $sheet, onDismiss: sheetClosed) { which in
             content(for: which)
                 .environment(\.palette, palette)
         }
@@ -112,6 +120,19 @@ struct FarmView: View {
         }
         .onChange(of: store.openRequest) { _, request in
             if let request {
+                #if DEBUG || BETA
+                    // A beta question never pushes a sheet aside: it waits until that sheet closes.
+                    if case .betaPrompt = request, sheet != nil || swapping != nil {
+                        store.openRequest = nil
+                        return
+                    }
+                    // Nothing pushes a beta question aside either: the request waits until it closes.
+                    if case .betaPrompt? = sheet {
+                        afterBeta = request
+                        store.openRequest = nil
+                        return
+                    }
+                #endif
                 // A sheet for a place also moves the farm to that place's panel.
                 if case .place(let place) = request { scrolled = .containing(place) }
                 sheet = request
@@ -217,6 +238,21 @@ struct FarmView: View {
         showDay = report
     }
 
+    /// A sheet closed: the show goes first, then any beta question that waited for a quiet farm.
+    private func sheetClosed() {
+        presentShowIfWaiting()
+        #if DEBUG || BETA
+            guard showDay == nil, sheet == nil, swapping == nil, store.morningReport == nil else { return }
+            if let next = afterBeta {
+                afterBeta = nil
+                if case .place(let place) = next { scrolled = .containing(place) }
+                sheet = next
+                return
+            }
+            store.offerBetaPrompt()
+        #endif
+    }
+
     @ViewBuilder
     private func content(for which: FarmSheet) -> some View {
         switch which {
@@ -232,16 +268,21 @@ struct FarmView: View {
         case .settings: SettingsSheet()
         case .neighbourNote: NeighbourNoteSheet()
         case .jobs: JobsSheet()
+        #if DEBUG || BETA
+            case .betaPrompt(let moment): BetaPromptSheet(moment: moment)
+        #endif
         case .morningReport: MorningReportSheet()
         }
     }
 
     /// Swap the open sheet for another (a bird card from a list, the naming prompt).
     private func open(_ next: FarmSheet) {
+        swapping = next
         sheet = nil
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(350))
             sheet = next
+            swapping = nil
         }
     }
 
