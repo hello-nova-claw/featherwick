@@ -114,6 +114,9 @@ struct DebugView: View {
                         Text(report).font(.system(.caption, design: .monospaced))
                     }
                 }
+                Section("Art") {
+                    NavigationLink("Rig lab") { RigLabView() }
+                }
                 Section("Save file") {
                     Text(store.saveLocation).font(.caption2).textSelection(.enabled)
                 }

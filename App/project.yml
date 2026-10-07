@@ -14,8 +14,9 @@ targets:
   Featherwick:
     type: application
     platform: iOS
-    # Every file under Featherwick/ is built in: Swift as code, the rest (fonts, Sounds/*.caf) as
-    # resources, copied flat to the bundle root. The READMEs are notes for people, so they stay out
+    # Every file under Featherwick/ is built in: Swift and Metal (Scene/SeasonRamp.metal, into the
+    # default shader library) as code, the rest (fonts, Sounds/*.caf, Art/Scene/*.png) as resources,
+    # copied flat to the bundle root, so every file name must be unique. The READMEs are notes for people, so they stay out
     # (two README.md files at the bundle root would also clash).
     sources:
       - path: Featherwick

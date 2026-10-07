@@ -19,7 +19,8 @@ enum Place: String, CaseIterable, Identifiable {
 }
 
 /// The farm is four panels side by side. Swipe left or right between them.
-/// Each panel is a flat colour until its painting exists.
+/// The Yard and the Far yard draw a 2.5D scene (`Scene/FarmScene.swift`); the others are a flat colour until
+/// their painting exists.
 enum FarmPanel: Int, CaseIterable, Identifiable {
     case barn, yard, farYard, shop
     var id: Int { rawValue }
@@ -70,7 +71,7 @@ enum FarmSheet: Identifiable, Hashable {
     var id: Self { self }
 }
 
-/// The farm screen: four panels to swipe between (flat colours until the art exists), the HUD,
+/// The farm screen: four panels to swipe between (placeholder scenes and flat colours), the HUD,
 /// the place labels and the birds on each panel, and Books, the panel dots and settings at the bottom.
 struct FarmView: View {
     @Environment(GameStore.self) private var store
@@ -126,11 +127,14 @@ struct FarmView: View {
         ScrollView(.horizontal) {
             HStack(spacing: 0) {
                 ForEach(FarmPanel.allCases) { p in
-                    FarmPanelView(panel: p) { place in
+                    FarmPanelView(panel: p, openBird: { sheet = .bird($0) }) { place in
                         PlaceLabel(place: place, notices: notices(for: place)) { sheet = .place(place) }
                     }
-                    // The flock, in the ground band under the place labels (see `FarmBirds.swift`).
-                    .overlay { PanelBirds(panel: p) { sheet = .bird($0) } }
+                    // The Barn's birds, in the ground band under the place labels (see `FarmBirds.swift`).
+                    // The yards draw theirs inside the scene, so they sort against the trees.
+                    .overlay {
+                        if !SceneArt.hasScene(p) { PanelBirds(panel: p) { sheet = .bird($0) } }
+                    }
                     .containerRelativeFrame(.horizontal)
                     .id(p)
                 }
@@ -285,14 +289,31 @@ struct FarmView: View {
     }
 }
 
-/// One farm panel: its stand-in colour, a dashed box where its painting will go, and its place
-/// labels. Night darkens and cools the colour, as it will the paintings.
+/// One farm panel and its place labels. The Yard and the Far yard draw the 2.5D scene with the coop birds
+/// in it (`YardScene`). The others show a stand-in colour and a dashed box where the painting will go.
+/// Night darkens and cools both.
 struct FarmPanelView<PlaceButton: View>: View {
     @Environment(\.palette) private var palette
     let panel: FarmPanel
+    /// Opens a bird's card when a bird in the scene is tapped.
+    let openBird: (UUID) -> Void
     @ViewBuilder let label: (Place) -> PlaceButton
 
     var body: some View {
+        ZStack {
+            if SceneArt.hasScene(panel) {
+                YardScene(panel: panel, open: openBird)
+            } else {
+                standIn
+            }
+            VStack(spacing: Space.xl) {
+                ForEach(panel.places) { label($0) }
+            }
+        }
+    }
+
+    /// A flat colour and a dashed box, until the panel's scene exists.
+    private var standIn: some View {
         ZStack {
             panel.colour
                 .saturation(palette.isNight ? 0.55 : 1)
@@ -305,9 +326,6 @@ struct FarmPanelView<PlaceButton: View>: View {
             ArtPlaceholder(label: "\(panel.name.lowercased()) scene")
                 .padding(.horizontal, Space.xl)
                 .padding(.vertical, 140)  // clear of the HUD and the bottom row
-            VStack(spacing: Space.xl) {
-                ForEach(panel.places) { label($0) }
-            }
         }
     }
 }

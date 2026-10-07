@@ -1,10 +1,12 @@
 import FeatherwickCore
 import SwiftUI
 
-// The flock on the farm: soft blobs (`BirdSwatch`) where each bird lives, until the bird art exists.
+// The flock on the farm: where each bird lives, and how it is touched.
 // View only: the engine knows each bird's home; the farm only chooses where to draw it.
 // Tap a bird to open its card. Press and rub to pet it.
-// By day, each coop bird strolls between the Yard and the Far yard on its own slow rhythm.
+// By day, each coop bird strolls between the Yard and the Far yard on its own slow rhythm. Those two panels
+// draw their birds as rigged chickens inside the 2.5D scene (`Scene/SceneChicken.swift`), so they sort
+// against the trees. The Barn's birds (brooder, roost) are soft blobs (`BirdSwatch`) over the panel.
 
 /// Where a bird is drawn. Lost and boarding birds are away, so they are not drawn.
 enum BirdSpot: Hashable {
@@ -113,13 +115,23 @@ enum FarmFlock {
         }
     }
 
+    /// A grown bird's blob size. Chicks and growers are smaller (`size(of:in:)`).
+    static let adultSize: CGFloat = 38
+    /// A grown chicken's rig height in the yard scene, at the bottom of the panel. Depth shrinks it up the yard.
+    static let sceneAdultHeight: CGFloat = 64
+
     /// Chicks are small; growers in between.
     static func size(of bird: Bird, in s: GameState) -> CGFloat {
         switch bird.stage(onDay: s.day, rules: s.rules) {
         case .chick: 20
         case .grower: 28
-        case .adult: 38
+        case .adult: adultSize
         }
+    }
+
+    /// The bird's rig height in the yard scene, at full (nearest) size. Same ratios as the blobs.
+    static func sceneHeight(of bird: Bird, in s: GameState) -> CGFloat {
+        size(of: bird, in: s) / adultSize * sceneAdultHeight
     }
 
     /// The same start for a bird each time, from its id: a fraction of its area.
@@ -145,7 +157,8 @@ enum FarmFlock {
     }
 }
 
-/// The birds on one farm panel. It lies over the panel; only the birds take touches.
+/// The birds on one farm panel without a scene (the Barn). It lies over the panel; only the birds take touches.
+/// The Yard and the Far yard draw their birds inside the scene instead (`YardScene`).
 /// The yards redraw only when a bird's stay ends, so it leaves this panel for the next one.
 /// (A redraw every second on every panel made swiping between panels stutter.)
 struct PanelBirds: View {
@@ -390,15 +403,33 @@ private struct WanderingBird: View {
     }
 }
 
-/// One bird you can touch. A short touch opens its card; press and rub to pet it (once a gesture).
-/// A pet sends `.pet`: the bird wiggles and a few dabs float up. Already petted today, it just leans in.
+/// One bird you can touch, drawn as a blob. See `PettableBird` for the touch.
 struct BirdBlob: View {
     @Environment(GameStore.self) private var store
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let bird: Bird
     let size: CGFloat
     @Binding var held: Bool
     let open: (UUID) -> Void
+
+    var body: some View {
+        PettableBird(bird: bird, touch: CGSize(width: size, height: size), held: $held, open: open) {
+            BirdSwatch(bird: bird, state: store.state, size: size)
+        }
+    }
+}
+
+/// One bird you can touch, in any art (a blob on the barn, a rigged chicken in the yard scene).
+/// A short touch opens its card; press and rub to pet it (once a gesture). A pet sends `.pet`: the bird
+/// wiggles and a few dabs float up. Already petted today, it just leans in.
+struct PettableBird<Art: View>: View {
+    @Environment(GameStore.self) private var store
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let bird: Bird
+    /// The drawn bird's size on screen. The touch area is at least 44 pt each way, feet at the bottom.
+    let touch: CGSize
+    @Binding var held: Bool
+    let open: (UUID) -> Void
+    let art: Art
     @State private var rub = RubTracker()
     /// True while a finger is down. Resets itself if the system takes the touch (no `onEnded` then).
     @GestureState private var touching = false
@@ -408,14 +439,25 @@ struct BirdBlob: View {
     /// Goes up by one each time a pet lands, to float the dabs.
     @State private var pets = 0
 
+    init(
+        bird: Bird, touch: CGSize, held: Binding<Bool>, open: @escaping (UUID) -> Void,
+        @ViewBuilder art: () -> Art
+    ) {
+        self.bird = bird
+        self.touch = touch
+        self._held = held
+        self.open = open
+        self.art = art()
+    }
+
     var body: some View {
-        BirdSwatch(bird: bird, state: store.state, size: size)
+        art
             .scaleEffect(x: 1 + abs(squish) * 0.08, y: 1 - abs(squish) * 0.1, anchor: .bottom)
             .rotationEffect(.degrees(Double(squish) * 7), anchor: .bottom)
             .scaleEffect(leaning ? 1.1 : 1, anchor: .bottom)
             .overlay(alignment: .top) { RisingDabs(trigger: pets) }
             // At least 44 pt to touch, even for a chick. Feet at the bottom, on the ground or the perch.
-            .frame(width: max(44, size), height: max(44, size), alignment: .bottom)
+            .frame(width: max(44, touch.width), height: max(44, touch.height), alignment: .bottom)
             .contentShape(Rectangle())
             .gesture(rubGesture)
             .onChange(of: touching) { _, now in
