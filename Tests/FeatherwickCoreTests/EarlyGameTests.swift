@@ -51,7 +51,8 @@ struct EarlyGameTests {
         let before = s
         #expect(Engine.apply(command, to: &s, using: &rng) == [.rejected(.notYet(feature))])
         #expect(s == before)  // a refused command changes nothing
-        Self.play(until: s.rules.introductionDay(of: feature), &s, &rng)
+        // The game's own day: a gift incubator on the way can push the shop's one later.
+        while s.day < s.introductionDay(of: feature) { Self.play(until: s.introductionDay(of: feature), &s, &rng) }
         #expect(s.isOpen(feature))
         #expect(Engine.apply(command, to: &s, using: &rng) != [.rejected(.notYet(feature))])
     }
@@ -70,7 +71,7 @@ struct EarlyGameTests {
             if case .introduced(let f) = e { return f }
             return nil
         }
-        #expect(order == Feature.allCases.sorted { s.rules.introductionDay(of: $0) < s.rules.introductionDay(of: $1) })
+        #expect(order == Feature.allCases.sorted { s.introductionDay(of: $0) < s.introductionDay(of: $1) })
         #expect(s.introduced == Set(Feature.allCases))
         #expect(s.nextFeature == nil)
     }
