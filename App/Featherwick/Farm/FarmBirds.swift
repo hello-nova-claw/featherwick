@@ -7,12 +7,15 @@ import SwiftUI
 // By day, each coop bird strolls between the Yard and the Far yard on its own slow rhythm. Those two panels
 // draw their birds as rigged chickens inside the 2.5D scene (`Scene/SceneChicken.swift`), so they sort
 // against the trees. The Barn's birds (brooder, roost) are soft blobs (`BirdSwatch`) over the panel.
+// A hen's chicks go where she goes: on her stroll by day (they trail her in the scene), beside her on the
+// roost at night. Only a chick whose mother is not drawn (lost, boarding) sits in the brooder box.
 
 /// Where a bird is drawn. Lost and boarding birds are away, so they are not drawn.
 enum BirdSpot: Hashable {
     /// Coop birds by day with the door open. Each strolls between the two (see `FarmFlock.stroll`).
     case yard, farYard
-    /// Brooder chicks and hen chicks, in a small box on the barn panel.
+    /// Brooder chicks, in a small box on the barn panel. Hen chicks are drawn with their mother instead;
+    /// only one whose mother is not drawn (lost, boarding) sits here, so it is never invisible.
     case brooder
     /// Coop birds at night or with the door shut: in a row on the perch by the coop.
     case roost
@@ -37,6 +40,12 @@ struct Stroll: Hashable {
     let until: Date
 }
 
+/// A hen chick that is drawn with its mother: her id, and its place in her line of chicks (0 is first).
+struct ChickFollow: Hashable {
+    let mother: UUID
+    let place: Int
+}
+
 /// Which birds go where, how big they are, and where they start.
 enum FarmFlock {
     /// With Reduce Motion on, birds do not stroll. Then, with more coop birds than this, every third
@@ -46,25 +55,61 @@ enum FarmFlock {
     static let seat: CGFloat = 30
     /// A stay in the Yard or the Far yard lasts this long, in seconds (each bird its own length).
     static let stay: ClosedRange<Double> = 20...60
+    /// A chick trails this far behind its mother, times its place in her line, in points at full size.
+    static let chickGap: CGFloat = 16
+    /// Chicks in a line step this far up and down, in turn, so they do not hide each other. Points at full size.
+    static let chickSideStep: CGFloat = 5
+    /// A chick looks where its mother is going this often, in seconds: its lag behind her.
+    static let chickLag: ClosedRange<Double> = 0.4...0.9
+    /// A chick closer than this to its spot behind its mother, in points, stays and pecks.
+    static let chickSlack: CGFloat = 6
 
     /// `now` is the clock for the stroll between the yards. Nil (Reduce Motion): the birds stay put.
     static func birds(at spot: BirdSpot, in s: GameState, inside: Bool, now: Date?) -> [Bird] {
         switch spot {
         case .brooder:
-            return s.brooder + s.henChicks
+            let followers: [UUID: ChickFollow] = following(in: s)
+            return s.brooder + s.henChicks.filter { followers[$0.id] == nil }
         case .roost:
-            return inside ? s.coop : []
+            return inside ? withChicks(s.coop, in: s) : []
         case .yard, .farYard:
             if inside { return [] }
-            if let now { return s.coop.filter { stroll(for: $0.id, at: now).spot == spot } }
+            if let now { return withChicks(s.coop.filter { stroll(for: $0.id, at: now).spot == spot }, in: s) }
             let spill: Bool = s.coop.count > yardRoom
             let wantFar: Bool = spot == .farYard
             var birds: [Bird] = []
             for (i, bird) in s.coop.enumerated() where (spill && i % 3 == 2) == wantFar {
                 birds.append(bird)
             }
-            return birds
+            return withChicks(birds, in: s)
         }
+    }
+
+    /// The hen chicks whose mother is drawn (in the coop), by chick id. A chick whose mother is away is
+    /// not here: it falls back to the brooder box.
+    static func following(in s: GameState) -> [UUID: ChickFollow] {
+        let coop: Set<UUID> = Set(s.coop.map(\.id))
+        var follows: [UUID: ChickFollow] = [:]
+        var lineLength: [UUID: Int] = [:]
+        for chick in s.henChicks {
+            guard let mother = chick.raisedBy, coop.contains(mother) else { continue }
+            let place: Int = lineLength[mother, default: 0]
+            lineLength[mother] = place + 1
+            follows[chick.id] = ChickFollow(mother: mother, place: place)
+        }
+        return follows
+    }
+
+    /// Each bird, then the hen chicks it is raising, so the chicks are drawn next to their mother.
+    static func withChicks(_ birds: [Bird], in s: GameState) -> [Bird] {
+        birds.flatMap { (bird: Bird) -> [Bird] in
+            [bird] + s.henChicks.filter { $0.raisedBy == bird.id }
+        }
+    }
+
+    /// The id whose stroll a bird keeps: a hen chick keeps its mother's, so it changes yards with her.
+    static func strollID(for bird: Bird, in s: GameState) -> UUID {
+        following(in: s)[bird.id]?.mother ?? bird.id
     }
 
     /// Where a coop bird is on its stroll at this moment. Each bird keeps its own rhythm, from its id
@@ -198,6 +243,7 @@ struct PanelBirds: View {
 
 /// The birds in one spot: wandering, in the brooder, or on the perch.
 private struct BirdSpotView: View {
+    @Environment(GameStore.self) private var store
     let spot: BirdSpot
     let birds: [Bird]
     let area: CGRect
@@ -218,7 +264,8 @@ private struct BirdSpotView: View {
     }
 
     private func stroll(for bird: Bird) -> Stroll? {
-        now.map { FarmFlock.stroll(for: bird.id, at: $0) }
+        // A hen chick keeps its mother's stroll, so they leave and arrive together.
+        now.map { FarmFlock.stroll(for: FarmFlock.strollID(for: bird, in: store.state), at: $0) }
     }
 }
 
