@@ -86,10 +86,9 @@ import Testing
         ("planner", { try KnowledgeTests.encode(KnowledgeTests.blindForecasts($0)) }),
     ]
 
-    /// The planner's forecast for pairs a keeper could pen: the penned pair, and grown coop pairs (the
-    /// sim keeper never pens), at most `blindPlannerPairs`, so the blind test stays quick.
-    static let blindPlannerPairs = 6
-
+    /// The planner's forecast for pairs a keeper could pen: the penned pair, and each revealed adult
+    /// hen with each revealed adult rooster in the coop (the sim keeper never pens): every pair, about 6
+    /// a game. They add well under a minute to the blind test.
     static func blindForecasts(_ s: GameState) -> [[String: [Forecast]]] {
         var s = s
         s.plannerKnown = true
@@ -100,12 +99,12 @@ import Testing
         let family = Visible.all(in: s)
         let k = Knowledge.of(family)
         let key = { (b: Bird) in b.id.uuidString }
-        let grown = s.coop.filter { $0.revealed && $0.stage(onDay: s.day, rules: s.rules) >= .grower }
+        let adults = s.coop.filter { $0.revealed && $0.stage(onDay: s.day, rules: s.rules) == .adult }
             .sorted { key($0) < key($1) }
-        let pairs = grown.filter { $0.sex == .rooster }.flatMap { r in
-            grown.filter { $0.sex == .hen }.map { (hen: $0, rooster: r) }
+        let pairs = adults.filter { $0.sex == .rooster }.flatMap { r in
+            adults.filter { $0.sex == .hen }.map { (hen: $0, rooster: r) }
         }
-        for (hen, rooster) in pairs.prefix(blindPlannerPairs) {
+        for (hen, rooster) in pairs {
             let lines = Planner.forecast(
                 hen: Visible(bird: hen, in: s), rooster: Visible(bird: rooster, in: s), knowledge: k, family: family,
                 kinship: Pedigree.relatedness(hen.id, rooster.id, in: s), rules: s.rules)

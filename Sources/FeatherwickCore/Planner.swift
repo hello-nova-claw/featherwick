@@ -4,7 +4,10 @@ import Foundation
 //
 // The one rule: the planner reads `Visible` birds and `Knowledge`, nothing else. Where elimination
 // leaves more than one possibility, the forecast says "likely", "possible" or "not possible",
-// never a number. Ratios appear only when both parents are pinned at every locus that decides them.
+// never a number. Ratios appear only when no open gene can change the share: every gene that decides
+// it is pinned in both parents, or provably cannot change it (white, buff or lavender hides it).
+// Egg colours never get certain, ratio, possible or not-possible lines: the egg-colours line covers
+// them (and "likely no blue eggs").
 // The words live in FeatherwickText (`plannerText`).
 
 /// Something a chick (or a hen from this pair) can show.
@@ -166,6 +169,11 @@ extension Trait {
         .colour(.lavender), .colour(.blue), .colour(.buff), .colour(.white), .barred, .laced, .silkieFeathered,
         .colour(.splash),
     ]
+    /// Traits a bird can carry without showing them: recessives (lavender, buff, lacing, silkie, speckled
+    /// eggs) and barring, which buff and white hide. Only these get "possible" and "likely no" lines.
+    static let mayBeHiddenBits: UInt16 = bits([
+        .colour(.lavender), .colour(.buff), .barred, .laced, .silkieFeathered, .speckledEggs,
+    ])
     /// Traits white hides: under a white parent the white caveat speaks for them.
     static let hiddenByWhiteBits: UInt16 =
         bits(FeatherColour.allCases.filter { $0 != .white }.map { .colour($0) }) | bits([.barred, .laced])
@@ -472,6 +480,9 @@ private struct PairWork {
                 ratios.append(.ratio(t, numerator: share.0, denominator: share.1, ratioReason(t)))
             } else {
                 guard worthSaying(t) else { continue }
+                // Only a trait a hidden recessive or a masked gene can bring out. Black, blue, splash and
+                // white show whenever their genes are there: "hiding black" would make no sense.
+                guard t.bit & Trait.mayBeHiddenBits != 0 else { continue }
                 // White hides colour and pattern: the white caveat speaks for them.
                 if white != nil, t.bit & Trait.hiddenByWhiteBits != 0 { continue }
                 // "Likely no lavender": many chicks of an open parent, and none showed it.
@@ -699,6 +710,8 @@ private struct PairWork {
     }
 
     /// Why a trait may hatch: the first open gene that decides it. White hides what lies under it.
+    /// "Nobody in the family has shown it" only when that is true; when the family showed it, the
+    /// evidence of a parent whose gene is (half) known, such as "her mother was lavender".
     func possibleReason(_ t: Trait, _ o: Outcome) -> Reason {
         let whiteHides = [
             BaseColour.locus, BlueDilution.locus, Lavender.locus, Lacing.locus, Barring.locus, DominantWhite.locus,
@@ -709,10 +722,24 @@ private struct PairWork {
                 let masks = white == hen.id ? henMasks : roosterMasks
                 if masks[l].nonzeroBitCount > 1 { return .white(bird: white) }
             }
-            return .unknownFamily(locus: locusID(l))
+            if familyShown & t.bit == 0 { return .unknownFamily(locus: locusID(l)) }
+            return familyReason(l)
         }
         if let white { return .white(bird: white) }
         return evidence(hen, Mendel.position(t.loci[0]))
+    }
+
+    /// The family's evidence at an open gene: a parent's proven hidden allele there first, else the
+    /// look of a parent known at least in part there, else the family tree.
+    func familyReason(_ l: Int) -> Reason {
+        let known = [hen, rooster].filter { k.state($0.id, locusID(l)) != .open }
+        for bird in known {
+            let r = evidence(bird, l)
+            if case .look = r { continue }
+            return r
+        }
+        if let bird = known.first { return evidence(bird, l) }
+        return .family(hen: hen.id, rooster: rooster.id)
     }
 
     /// A bird's evidence at a gene, as a reason that names only seen birds: the bird's look when the
