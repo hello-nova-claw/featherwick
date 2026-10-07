@@ -90,7 +90,7 @@ struct BirdCardSheet: View {
         }
     }
 
-    /// Before a show: how the bird should look on the day (the moult, a broody spell), so nothing
+    /// Before a show: how the bird should look on the day (a broody spell, a fright), so nothing
     /// is a surprise. After one: what the judge said, kept on the bird's card.
     @ViewBuilder
     private func showNotes(_ bird: Bird, _ s: GameState) -> some View {

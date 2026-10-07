@@ -108,26 +108,27 @@ struct ShowTests {
         s.fedToday = false
         b.noLayUntilDay = s.day + 2
         b.broodyUntilDay = s.day + 3
-        s.day = s.rules.daysPerSeason * 2 + 1  // autumn: moulting
+        s.day = s.rules.daysPerSeason * 2 + 1  // autumn
         b = Bird(
             id: b.id, name: b.name, breed: b.breed, genome: b.genome, hatchDay: s.day - 40, origin: "t",
             revealed: true, noLayUntilDay: s.day + 2)
         b.broodyUntilDay = s.day + 3
         let (value, notes) = Judge.condition(of: b, in: s)
-        #expect(value == 0)
-        #expect(Set(notes) == [.moulting, .stressed, .broody, .hungry])
+        #expect(abs(value - 0.1) < 1e-9)  // 1 - 0.4 stressed - 0.3 broody - 0.2 hungry
+        #expect(Set(notes) == [.stressed, .broody, .hungry])
     }
 
     // MARK: - Forecast: what the keeper knows before the show
 
-    @Test func theForecastWarnsOfTheMoultBeforeAnAutumnShow() {
+    /// Every bird moults in autumn, so the moult sets no bird apart: the judge does not mark it.
+    @Test func anAutumnShowDoesNotMarkTheMoult() {
         var rng = SeededRNG(seed: 5)
         var s = Self.showDay(day: Rules.standard.daysPerSeason * 2 - 10)  // late summer
-        #expect(s.season == .summer && s.season(onDay: s.nextShowDay) == .autumn)
+        #expect(s.season(onDay: s.nextShowDay) == .autumn)
         let b = Self.bird(.orpington, s: s, rng: &rng)
-        #expect(Judge.forecast(for: b, in: s) == [.moulting])
-        s.day = 10  // spring, next show in summer
         #expect(Judge.forecast(for: b, in: s).isEmpty)
+        s.day = s.nextShowDay
+        #expect(Judge.condition(of: b, in: s) == (1, [.inFineCondition]))
     }
 
     @Test func theForecastSeesBroodyAndFrightsThatLastToShowDay() {

@@ -101,6 +101,8 @@ public enum JudgeNote: Hashable, Codable, Sendable {
     /// Show type: body size, shape and carriage (`QuantitativeTrait.showType`).
     case type(Band)
     // Condition
+    /// No longer given: every bird moulted in autumn, so it marked nothing that set one bird apart.
+    /// Kept so old show results still load.
     case moulting
     case stressed
     case broody
@@ -156,10 +158,6 @@ public enum Judge {
     public static func condition(of bird: Bird, in s: GameState) -> (value: Double, notes: [JudgeNote]) {
         var value = 1.0
         var notes: [JudgeNote] = []
-        if moults(in: s.season) {
-            value -= 0.3
-            notes.append(.moulting)
-        }
         if s.day < bird.noLayUntilDay {
             value -= 0.4
             notes.append(.stressed)
@@ -184,23 +182,19 @@ public enum Judge {
         return (max(0, value), notes)
     }
 
-    /// Real hens moult in autumn: shows avoid the moult for good reason. Every bird moults, rivals too.
-    static func moults(in season: Season) -> Bool { season == .autumn }
-
     /// Closely bred birds show less vigour. Only when `Rules.inbreedingMatters` is on.
     static func lacksVigour(_ bird: Bird, _ rules: Rules) -> Bool {
         guard rules.inbreedingMatters, let f = bird.inbreeding else { return false }
         return f >= 0.0625
     }
 
-    /// What the keeper can know now about a bird's condition on the next show day, so the moult or a
-    /// broody spell is never a surprise at the show. Empty when nothing is in the way.
+    /// What the keeper can know now about a bird's condition on the next show day, so a broody spell
+    /// or a fright is never a surprise at the show. Empty when nothing is in the way.
     /// The same checks as `condition(of:in:)`, looked at on the show day. Hunger shows only on the eve
     /// of the show: the judge sees whether the flock was fed the day before.
     public static func forecast(for bird: Bird, in s: GameState) -> [JudgeNote] {
         let day = s.nextShowDay
         var notes: [JudgeNote] = []
-        if moults(in: s.season(onDay: day)) { notes.append(.moulting) }
         if day < bird.noLayUntilDay { notes.append(.stressed) }
         if bird.isBroody(onDay: day) { notes.append(.broody) }
         if day == s.day + 1, !s.fedToday { notes.append(.hungry) }

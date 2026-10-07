@@ -197,18 +197,18 @@ struct TextTests {
     }
 
     /// The daily special names breed, sex and colour; basic stock never names its breed before purchase.
-    @Test func theKeeperIsToldOfTheMoultBeforeTheShow() {
+    @Test func theKeeperIsToldOfABroodySpellBeforeTheShow() {
         var rng = SeededRNG(seed: 3)
         var s = Engine.newGame(earlyGame: false, using: &rng)
         _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
-        s.day = s.rules.daysPerSeason * 2 - 5  // late summer: the next show is the Harvest Show
+        s.day = s.rules.daysPerSeason * 2 - 5
         s.coins = 100
         let id = s.brooder[0].id
-        let bird = s.bird(id)!
-        #expect(showReadinessText(bird, s).contains("moulting"))
-        #expect(showThemeLine(s.nextShowTheme).contains("moult"))
+        #expect(showReadinessText(s.bird(id)!, s).hasPrefix("In fine condition"))
+        s.brooder[0].broodyUntilDay = s.nextShowDay + 2
+        #expect(showReadinessText(s.bird(id)!, s).contains("broody"))
         let words = Engine.apply(.enterShow(id), to: &s, using: &rng).compactMap { eventText($0, s) }
-        #expect(words.contains { $0.contains("moulting") }, "\(words)")
+        #expect(words.contains { $0.contains("broody") }, "\(words)")
     }
 
     @Test func everyKindOfClassSaysWhatItIsJudgedOn() {

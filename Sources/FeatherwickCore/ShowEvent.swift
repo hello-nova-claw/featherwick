@@ -28,7 +28,7 @@ public enum ShowTheme: String, Hashable, Codable, Sendable, CaseIterable {
     case springEggFair
     /// Summer: a relaxed village fete. The pet class is featured.
     case summerFete
-    /// Autumn: the breed classes are featured, though the moult makes condition harder.
+    /// Autumn: the breed classes are featured.
     case harvestShow
     /// Winter: the breed classes are featured, against the hardest field of the year.
     case winterChampionship

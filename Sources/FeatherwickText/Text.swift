@@ -156,9 +156,8 @@ public func showThemeLine(_ theme: ShowTheme) -> String {
 /// What the season does to the show, or nil when nothing. Told before the show, never only after.
 public func showSeasonNote(_ theme: ShowTheme) -> String? {
     switch theme {
-    case .harvestShow: "It falls in the autumn moult: every bird shows in lower condition, the rivals too."
     case .winterChampionship: "The rivals are the strongest of the year."
-    case .springEggFair, .summerFete: nil
+    case .springEggFair, .summerFete, .harvestShow: nil
     }
 }
 
@@ -185,7 +184,6 @@ public func judgingText(_ kind: ShowKind) -> String {
 /// A condition worry for show day (`Judge.forecast`), with what the keeper can do about it.
 public func forecastText(_ n: JudgeNote) -> String {
     switch n {
-    case .moulting: "moulting: the show is in autumn, and every bird moults then"
     case .stressed: "still nervous after a fright"
     case .broody: "broody: a broody hen loses condition"
     case .hungry: "hungry unless you feed the flock today"
@@ -195,7 +193,7 @@ public func forecastText(_ n: JudgeNote) -> String {
 }
 
 /// How a bird should look on the next show day: "In fine condition for day 84." or
-/// "On day 84: moulting: …; broody: …".
+/// "On day 84: broody: …; still nervous after a fright".
 public func showReadinessText(_ bird: Bird, _ s: GameState) -> String {
     let worries = Judge.forecast(for: bird, in: s)
     if worries.isEmpty { return "In fine condition for day \(s.nextShowDay)." }

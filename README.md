@@ -200,7 +200,9 @@ changes shape. `Tests/.../Fixtures/save-v0.json` is a real old save; it must alw
 - Show type and egg shape are quantitative traits (`QuantitativeTrait.swift`): many small genes,
   half from each parent, score capped. Selective breeding works; nothing can exceed the maximum.
   Birds from outside the flock get random quality genes from their own ID.
-- Condition and shell quality come from care: moult (autumn), frights, broodiness, hunger, heat, age.
+- Condition and shell quality come from care: frights, broodiness, hunger, heat, age.
+- No mark for what every bird does in a season. Every bird moults in autumn, so the judge does not
+  mark the moult. (`JudgeNote.moulting` stays only so old show results load.)
 - Grades are absolute (fair → excellent). `judge <name>` / `judge eggs` are practice: judging with no competitors.
 - Judge's notes name only what the game tracks in genes or care: standard colour (with barring and
   lacing), feathering (silkie or normal), type (size, shape and carriage), condition, friendliness,
@@ -208,7 +210,7 @@ changes shape. `Tests/.../Fixtures/save-v0.json` is a real old save; it must alw
   never mention them.
 - The judge's notes are kept with each `ShowResult`. The bird card shows the newest notes.
 - **Before the show, nothing is a surprise.** `Judge.forecast` lists what the judge will see on the
-  next show day: the moult (an autumn show), a fright or broodiness that lasts to that day, a hungry
+  next show day: a fright or broodiness that lasts to that day, a hungry
   flock (on the eve of the show only), close breeding. The same checks as `condition`, so the
   forecast always matches the judge. The app shows it on the bird card, in the show panel and before
   the fee is paid. The CLI says it when you enter a bird, and in `shows`.
@@ -249,7 +251,7 @@ Each show has a theme from the season of its day (`ShowTheme`). The featured kin
 | --- | --- | --- |
 | Spring | Spring Egg Fair | Eggs |
 | Summer | Summer Fete | Pet |
-| Autumn | Harvest Show | Breed (birds moult: condition is harder) |
+| Autumn | Harvest Show | Breed |
 | Winter | Winter Championship | Breed. Every rival picks `winterChampionshipExtraPicks` more candidates. |
 
 `GameState.nextShowTheme` gives the theme of the next show. Each `ShowResult` keeps the bird, coins,
