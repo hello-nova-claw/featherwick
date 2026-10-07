@@ -247,6 +247,8 @@ struct SettingsSheet: View {
             StitchDivider()
             FeedbackToggles()
             StitchDivider()
+            MorningReportToggle()
+            StitchDivider()
             TimeOfDayPicker()
             StitchDivider()
             #if DEBUG || BETA
