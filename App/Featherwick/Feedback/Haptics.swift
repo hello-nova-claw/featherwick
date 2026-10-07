@@ -24,7 +24,7 @@ enum Haptics {
     static func petted() { impact(.soft, intensity: 1) }
     /// Already petted today: the bird only leans in.
     static func leanIn() { impact(.soft, intensity: 0.5) }
-    /// Eggs collected, chicks hatched.
+    /// Eggs collected, chicks hatched, something bought or sold.
     static func success() { notify(.success) }
     /// The engine said no.
     static func warning() { notify(.warning) }

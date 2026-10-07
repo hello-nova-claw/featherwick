@@ -96,6 +96,9 @@ public enum JudgeNote: Hashable, Codable, Sendable {
     case plateNeeds(Int)
     // Breed and colour
     case standardColour(String)
+    /// The feathering the standard asks for: silkie (true for a Silkie) or normal.
+    case feathering(silkie: Bool)
+    /// Show type: body size, shape and carriage (`QuantitativeTrait.showType`).
     case type(Band)
     // Condition
     case moulting
@@ -153,8 +156,7 @@ public enum Judge {
     public static func condition(of bird: Bird, in s: GameState) -> (value: Double, notes: [JudgeNote]) {
         var value = 1.0
         var notes: [JudgeNote] = []
-        // Real hens moult in autumn: shows avoid the moult for good reason.
-        if s.season == .autumn {
+        if moults(in: s.season) {
             value -= 0.3
             notes.append(.moulting)
         }
@@ -174,12 +176,36 @@ public enum Judge {
             value = min(1, value + s.rules.forageConditionBonus)
             notes.append(.foraged)
         }
-        if s.rules.inbreedingMatters, let f = bird.inbreeding, f >= 0.0625 {
+        if lacksVigour(bird, s.rules), let f = bird.inbreeding {
             value -= min(s.rules.maxInbreedingConditionLoss, f)
             notes.append(.lacksVigour)
         }
         if notes.isEmpty { notes.append(.inFineCondition) }
         return (max(0, value), notes)
+    }
+
+    /// Real hens moult in autumn: shows avoid the moult for good reason. Every bird moults, rivals too.
+    static func moults(in season: Season) -> Bool { season == .autumn }
+
+    /// Closely bred birds show less vigour. Only when `Rules.inbreedingMatters` is on.
+    static func lacksVigour(_ bird: Bird, _ rules: Rules) -> Bool {
+        guard rules.inbreedingMatters, let f = bird.inbreeding else { return false }
+        return f >= 0.0625
+    }
+
+    /// What the keeper can know now about a bird's condition on the next show day, so the moult or a
+    /// broody spell is never a surprise at the show. Empty when nothing is in the way.
+    /// The same checks as `condition(of:in:)`, looked at on the show day. Hunger shows only on the eve
+    /// of the show: the judge sees whether the flock was fed the day before.
+    public static func forecast(for bird: Bird, in s: GameState) -> [JudgeNote] {
+        let day = s.nextShowDay
+        var notes: [JudgeNote] = []
+        if moults(in: s.season(onDay: day)) { notes.append(.moulting) }
+        if day < bird.noLayUntilDay { notes.append(.stressed) }
+        if bird.isBroody(onDay: day) { notes.append(.broody) }
+        if day == s.day + 1, !s.fedToday { notes.append(.hungry) }
+        if lacksVigour(bird, s.rules) { notes.append(.lacksVigour) }
+        return notes
     }
 
     public static func judge(_ bird: Bird, in showClass: ShowClass, state s: GameState) -> JudgeCard {
@@ -217,7 +243,10 @@ public enum Judge {
         let points =
             type * Double(ShowPoints.breedType) + Double(ShowPoints.breedColour)
             + condition * Double(ShowPoints.breedCondition)
-        return card(cls, points, [.standardColour(look.colourName), .type(.init(type))] + conditionNotes)
+        let notes: [JudgeNote] = [
+            .standardColour(look.colourName), .feathering(silkie: look.silkieFeathered), .type(.init(type)),
+        ]
+        return card(cls, points, notes + conditionNotes)
     }
 
     /// Any bird, purebred or cross: judged on condition and on how calmly it sits in the judge's hands.

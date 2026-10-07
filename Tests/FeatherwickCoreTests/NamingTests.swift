@@ -140,7 +140,57 @@ struct NamingTests {
             #expect(Self.apply(.rename(bird.id, name: suggestion), &s, &rng) == [.renamed(bird.id)])
             #expect(names.insert(suggestion).inserted)
         }
-        // More hens than names in the list: suggestions go on with numbers, still unique.
         #expect(names.count == 30)
+    }
+
+    @Test func aRehomedBirdsNameIsNotSuggestedAgain() {
+        var (s, rng) = Self.game()
+        s.coins = 1000
+        s.perches = 40
+        _ = Self.apply(.buy(.pullet), &s, &rng)
+        let new = s.coop.last!
+        let name = NameBook.suggestion(for: new, in: s)
+        // Another bird had that name, and went to a new home.
+        _ = Self.apply(.buy(.pullet), &s, &rng)
+        let gone = s.coop.last!
+        #expect(Self.apply(.rename(gone.id, name: name), &s, &rng) == [.renamed(gone.id)])
+        _ = Self.apply(.rehome(gone.id), &s, &rng)
+        #expect(s.rehomed.contains { $0.id == gone.id })
+        #expect(NameBook.suggestion(for: new, in: s) != name)
+        // The player may still choose the old name by hand.
+        #expect(Self.apply(.rename(new.id, name: name), &s, &rng) == [.renamed(new.id)])
+    }
+
+    @Test func tryAnotherStepsThroughFreeNames() {
+        var (s, rng) = Self.game()
+        s.coins = 100
+        _ = Self.apply(.buy(.pullet), &s, &rng)
+        let bird = s.coop.last!
+        let list = bird.sex == .hen ? NameBook.hens : NameBook.roosters
+        let picks = (0..<10).map { NameBook.suggestion(for: bird, in: s, skipping: $0) }
+        #expect(Set(picks).count == 10 && picks.allSatisfy(list.contains))
+        #expect(picks[0] == NameBook.suggestion(for: bird, in: s))
+    }
+
+    @Test func whenEveryNameIsUsedSuggestionsGoOnWithNumbers() {
+        var (s, rng) = Self.game()
+        s.coins = 100
+        _ = Self.apply(.buy(.pullet), &s, &rng)
+        let bird = s.coop.last!
+        let list = bird.sex == .hen ? NameBook.hens : NameBook.roosters
+        s.rehomed = list.map { name in
+            Bird(
+                id: makeID(using: &rng), name: name, breed: bird.breed, genome: bird.genome, hatchDay: 0,
+                origin: "t", revealed: true)
+        }
+        let suggestion = NameBook.suggestion(for: bird, in: s)
+        #expect(suggestion.hasSuffix(" 2") && list.contains(String(suggestion.dropLast(2))))
+    }
+
+    @Test func nameListsAreLongAndDistinct() {
+        let all = NameBook.neutral + NameBook.hens + NameBook.roosters
+        #expect(Set(all.map(NameBook.key)).count == all.count)
+        #expect([NameBook.neutral, NameBook.hens, NameBook.roosters].allSatisfy { $0.count >= 120 })
+        #expect(all.allSatisfy { $0.count <= NameBook.maxLength })
     }
 }

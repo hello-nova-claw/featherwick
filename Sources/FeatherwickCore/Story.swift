@@ -27,7 +27,7 @@ public enum StoryGoal: Hashable, Codable, Sendable {
 public enum StoryReward: Hashable, Codable, Sendable {
     /// A young purebred bird, sex and breed known.
     case giftBird(Breed, Sex)
-    /// Speckle & Down starts selling young birds of this breed.
+    /// The breed joins Speckle & Down's surprise stock (`GameState.surpriseBreeds`).
     case unlockShopBreed(Breed)
 }
 
@@ -89,7 +89,7 @@ public enum Storylines {
 
     /// A travelling keeper is retiring her heritage Australorp line and looking for good homes.
     /// Hatch a proper flock, hand her a few fertile eggs to prove you can raise them, and after she
-    /// settles in she leaves you a hen — and tells Speckle & Down to stock the breed for you.
+    /// settles in she leaves you a hen — and tells Speckle & Down to stock the breed.
     public static let heritageBreed = Storyline(
         id: "heritageBreed",
         trigger: .chicksHatched(atLeast: 8),

@@ -136,7 +136,7 @@ public struct GameState: Hashable, Codable, Sendable {
     public var stories: [String: StoryProgress] = [:]
     /// One-off story notices already shown, so they are not repeated every night.
     public var storyNotices: Set<String> = []
-    /// Extra breeds Speckle & Down sells, unlocked by storylines.
+    /// Breeds a storyline added to Speckle & Down's surprise stock (see `surpriseBreeds`).
     public var shopBreeds: Set<Breed> = []
     /// Goal-ladder milestones already reached (see Milestone.swift). Ids only; the words live in the UI.
     public var milestonesReached: Set<String> = []
@@ -183,6 +183,13 @@ public struct GameState: Hashable, Codable, Sendable {
     }
 
     public var season: Season { season(onDay: day) }
+
+    /// The breeds a surprise pullet or cockerel from Speckle & Down can be: the starter breeds, plus
+    /// any breed a storyline added. In breed-table order, so a seed always draws the same breed.
+    /// No breed has its own named sale: a keeper meets a new breed by surprise, or as the daily special.
+    public var surpriseBreeds: [Breed] {
+        BreedTable.inGame.filter { $0.isStarter || shopBreeds.contains($0.id) }.map(\.id)
+    }
 
     /// The season on any day, past or future (for example, the day of the next show).
     public func season(onDay day: Int) -> Season {

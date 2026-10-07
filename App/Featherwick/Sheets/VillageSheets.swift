@@ -110,12 +110,6 @@ struct FarmGateSheet: View {
             name: "A cockerel", detail: "A young rooster. The breed is a surprise.", price: r.cockerelPrice,
             coins: s.coins
         ) { store.run(.buy(.cockerel)) }
-        ForEach(s.shopBreeds.sorted { $0.rawValue < $1.rawValue }, id: \.self) { breed in
-            ShopRow(
-                name: "A \(breed.definition.displayName) pullet", detail: breed.definition.note,
-                price: r.rareBreedPulletPrice, coins: s.coins
-            ) { store.run(.buyBreed(breed)) }
-        }
     }
 }
 
@@ -175,7 +169,7 @@ struct ShopRow: View {
 }
 
 /// The county show: the next show's theme and day, what is entered, birds and plates to enter, and
-/// past placings. The judge's notes come only with the results, on show day.
+/// past placings. Each bird shows how it should look on the day; the judge's notes come with the results.
 struct ShowPanel: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
@@ -222,6 +216,9 @@ struct ShowPanel: View {
                 Text("Entered").font(Typeface.item)
                 ForEach(Array(s.showEntries.enumerated()), id: \.offset) { _, e in
                     Text(entryLine(e, s)).font(Typeface.body)
+                    if let id = e.birdID, let bird = s.bird(id) {
+                        Text(showReadinessText(bird, s)).font(Typeface.caption).foregroundStyle(palette.inkMuted)
+                    }
                 }
             }
         }
@@ -252,6 +249,9 @@ struct ShowPanel: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(bird.name).font(Typeface.body)
                         Text(classes).font(Typeface.caption).foregroundStyle(palette.inkMuted)
+                        if !Judge.forecast(for: bird, in: s).isEmpty {
+                            Text(showReadinessText(bird, s)).font(Typeface.caption).foregroundStyle(palette.inkSoft)
+                        }
                     }
                     Spacer()
                     Text("→")
@@ -336,6 +336,9 @@ struct ShowHeading: View {
             Text("Day \(day). Entry \(fee) coins.").font(Typeface.body)
             Text("Featured: \(kindName(theme.featured).lowercased()) classes, bonus prizes")
                 .font(Typeface.label).foregroundStyle(palette.inkMuted)
+            if let note = showSeasonNote(theme) {
+                Text(note).font(Typeface.label).foregroundStyle(palette.inkSoft)
+            }
         }
     }
 }
@@ -369,6 +372,7 @@ struct ShowClassRow: View {
             Text(name).font(Typeface.item)
             Text("\(difficultyName(showClass.kind)) · 1st wins \(prize)")
                 .font(Typeface.caption).foregroundStyle(palette.inkMuted)
+            Text(judgingText(showClass.kind)).font(Typeface.caption).foregroundStyle(palette.inkMuted)
             if showClass.kind == theme.featured {
                 Text("Featured: bonus prizes").font(Typeface.caption).foregroundStyle(palette.inkSoft)
             }
@@ -390,6 +394,8 @@ struct EnterShowSheet: View {
                 Text("Enter \(bird.name)").font(Typeface.title2)
                 Text("Pick a class. Harder classes have a bigger field and bigger prizes.")
                     .font(Typeface.label).foregroundStyle(palette.inkMuted)
+                // How the bird should look on the day, before the fee is paid.
+                Text(showReadinessText(bird, s)).font(Typeface.body)
                 classRows(bird, s)
             }
             LastWords()

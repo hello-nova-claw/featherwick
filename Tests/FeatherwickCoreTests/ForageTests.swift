@@ -148,14 +148,21 @@ struct ForageTests {
         }
         #expect(gotAustralorp)
 
-        // The shop now sells Australorp pullets, and one can be bought and judged.
-        #expect(s.shopBreeds.contains(.australorp))
-        let bought = Engine.apply(.buyBreed(.australorp), to: &s, using: &rng)
-        guard case .boughtBreed(let id, .australorp, _)? = bought.first else {
-            Issue.record("could not buy an Australorp: \(bought)")
+        // A surprise pullet may now be an Australorp. Buy until one comes, then judge her.
+        #expect(s.surpriseBreeds.contains(.australorp))
+        var australorp: Bird?
+        for _ in 0..<40 where australorp == nil {
+            s.coins = 1000
+            if s.coop.count >= s.perches { s.perches += 1 }
+            let bought = Engine.apply(.buy(.pullet), to: &s, using: &rng)
+            if case .boughtBird(let id, _, _)? = bought.first, s.bird(id)?.breed == .australorp {
+                australorp = s.bird(id)
+            }
+        }
+        guard let bird = australorp else {
+            Issue.record("no Australorp in 40 surprise pullets")
             return
         }
-        let bird = s.bird(id)!
         #expect(bird.breed == .australorp && bird.isPurebred && bird.phenotype.eggColour == .brown)
         // A purebred adult Australorp enters its own breed class without being disqualified.
         var judgeState = s

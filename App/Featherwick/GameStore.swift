@@ -200,7 +200,7 @@ final class GameStore {
     /// Commands that buy from Speckle & Down. Buying also counts as having seen the new stock.
     private static func isShopping(_ command: Command) -> Bool {
         switch command {
-        case .buy, .buySpecial, .buyBreed, .upgradeCoop, .buyIncubator: true
+        case .buy, .buySpecial, .upgradeCoop, .buyIncubator: true
         default: false
         }
     }

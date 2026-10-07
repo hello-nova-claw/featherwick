@@ -10,21 +10,60 @@ import Foundation
 // birds apart, and the CLI can find a bird by name.
 // Suggestions for a chick whose sex is not yet known come from a neutral list, so a
 // suggestion never gives the sex away.
+// A suggestion is never a name the keeper has used before: not a bird in the flock, and not a
+// bird that went to a new home. The player may still type an old name by hand.
 
 public enum NameBook {
     public static let maxLength = 24
 
+    // Long lists, so a suggestion does not come round again in a long game. Each name is in one
+    // list only. A new name can go anywhere in its list.
     public static let neutral = [
-        "Pepper", "Biscuit", "Nutmeg", "Pip", "Sorrel", "Bramble", "Juniper", "Pebble", "Sage", "Wren",
-        "Quill", "Dumpling", "Tansy", "Fennel", "Sprout", "Button", "Crumble", "Toffee", "Moss", "Ember",
+        "Pepper", "Biscuit", "Nutmeg", "Pip", "Sorrel", "Bramble", "Juniper", "Pebble", "Sage", "Wren", "Quill",
+        "Dumpling", "Tansy", "Fennel", "Sprout", "Button", "Crumble", "Toffee", "Moss", "Ember", "Acorn", "Almond",
+        "Anise", "Apple", "Ash", "Aspen", "Barley", "Bean", "Berry", "Birch", "Bonbon", "Bracken", "Brioche",
+        "Buckwheat", "Bun", "Butterscotch", "Caramel", "Cardamom", "Cashew", "Chai", "Chestnut", "Chickpea", "Chive",
+        "Cinder", "Cinnamon", "Clove", "Cobble", "Cocoa", "Comfrey", "Conker", "Cookie", "Coriander", "Crouton",
+        "Cumin", "Currant", "Custard", "Dandelion", "Dill", "Dune", "Elder", "Fig", "Flax", "Flint", "Fudge",
+        "Garnet", "Ginger", "Gravel", "Hickory", "Honey", "Hops", "Huckleberry", "Indigo", "Jelly", "Kale", "Kestrel",
+        "Kipper", "Lark", "Leek", "Lentil", "Linden", "Loaf", "Lupin", "Mallow", "Mango", "Marble", "Marzipan",
+        "Meadow", "Merry", "Millet", "Mint", "Miso", "Mochi", "Muffin", "Mustard", "Noodle", "Nutkin", "Oak", "Oat",
+        "Onyx", "Paprika", "Parsley", "Parsnip", "Peanut", "Pecan", "Persimmon", "Pickle", "Pine", "Pistachio",
+        "Plum", "Pocket", "Pudding", "Puffin", "Pumpkin", "Quince", "Radish", "Raisin", "Rhubarb", "Rook", "Rowan",
+        "Rue", "Rye", "Saffron", "Scone", "Sesame", "Shortbread", "Sky", "Slate", "Smudge", "Soot", "Spruce",
+        "Squash", "Sugar", "Sumac", "Tapioca", "Teacake", "Teasel", "Thistle", "Thyme", "Treacle", "Truffle",
+        "Tumble", "Turnip", "Waffle", "Walnut", "Wheat", "Whisk", "Yarrow", "Zest", "Cobnut", "Hazelnut",
     ]
     public static let hens = [
-        "Clover", "Maple", "Hazel", "Marigold", "Henrietta", "Daisy", "Primrose", "Mabel", "Rosie", "Florence",
-        "Ivy", "Poppy", "Edith", "Willow", "Matilda", "Winifred", "Bluebell", "Hattie", "Agnes", "Dot",
+        "Clover", "Maple", "Hazel", "Marigold", "Henrietta", "Daisy", "Primrose", "Mabel", "Rosie", "Florence", "Ivy",
+        "Poppy", "Edith", "Willow", "Matilda", "Winifred", "Bluebell", "Hattie", "Agnes", "Dot", "Ada", "Adelaide",
+        "Agatha", "Alma", "Annie", "Beatrice", "Bella", "Bertha", "Betty", "Blanche", "Bonnie", "Cecily", "Clara",
+        "Clementine", "Cora", "Daphne", "Delia", "Dolly", "Dora", "Doris", "Edna", "Effie", "Eleanor", "Elsie",
+        "Esme", "Ethel", "Etta", "Eudora", "Evie", "Fern", "Fay", "Flora", "Freya", "Georgie", "Gertrude", "Gladys",
+        "Greta", "Gwen", "Harriet", "Heather", "Helena", "Hilda", "Imogen", "Iris", "Isla", "Jemima", "Josephine",
+        "June", "Kitty", "Lavinia", "Lettie", "Lilac", "Lily", "Lottie", "Louisa", "Lucy", "Lula", "Mae", "Maggie",
+        "Margot", "Marjorie", "Martha", "Maud", "May", "Meg", "Millie", "Minnie", "Miriam", "Molly", "Myrtle",
+        "Nancy", "Nell", "Nora", "Olive", "Opal", "Pansy", "Pearl", "Peggy", "Penelope", "Petunia", "Philippa",
+        "Phoebe", "Polly", "Prudence", "Queenie", "Ruby", "Ruth", "Sadie", "Sally", "Sophie", "Stella", "Sylvie",
+        "Tabitha", "Tilly", "Una", "Vera", "Violet", "Wilhelmina", "Winnie", "Yvette", "Zelda", "Zinnia", "Beryl",
+        "Mavis", "Irene", "Enid", "Ida", "Lorna", "Peony", "Rosalind", "Hyacinth", "Camellia", "Dahlia", "Magnolia",
+        "Cleo", "Ottilie", "Henny", "Goldie", "Bettina", "Honora",
     ]
     public static let roosters = [
         "Rufus", "Barnaby", "Alfred", "Basil", "Reginald", "Clarence", "Fergus", "Rupert", "Hamish", "Ambrose",
-        "Cedric", "Bertie", "Monty", "Percival", "Ogden", "Gilbert", "Archie", "Horace", "Wilbur", "Duncan",
+        "Cedric", "Bertie", "Monty", "Percival", "Ogden", "Gilbert", "Archie", "Horace", "Wilbur", "Duncan", "Albert",
+        "Algernon", "Angus", "Arthur", "Atticus", "Augustus", "Benedict", "Bernard", "Boris", "Brutus", "Bruno",
+        "Byron", "Caspar", "Cecil", "Chester", "Clement", "Colin", "Cornelius", "Cuthbert", "Cyril", "Dennis",
+        "Desmond", "Douglas", "Edgar", "Edmund", "Edwin", "Elmer", "Ernest", "Eustace", "Felix", "Frank", "Frederick",
+        "George", "Gerald", "Gordon", "Graham", "Gus", "Harold", "Harvey", "Hector", "Henry", "Herbert", "Hubert",
+        "Hugo", "Humphrey", "Ignatius", "Ivor", "Jasper", "Jeremiah", "Jonah", "Kenneth", "Lambert", "Leonard",
+        "Lionel", "Louis", "Magnus", "Malcolm", "Marmaduke", "Maurice", "Mervyn", "Milo", "Mortimer", "Murray",
+        "Nigel", "Norman", "Norris", "Oliver", "Orville", "Oscar", "Otis", "Otto", "Percy", "Peregrine", "Quentin",
+        "Ralph", "Randolph", "Roderick", "Roland", "Roscoe", "Rudy", "Samson", "Seymour", "Sidney", "Stanley",
+        "Sylvester", "Theodore", "Thaddeus", "Tobias", "Ulysses", "Vernon", "Victor", "Walter", "Wallace", "Wendell",
+        "Wilfred", "Winston", "Woody", "Yorick", "Zachary", "Ezra", "Elliot", "Fitz", "Gideon", "Godfrey", "Rocky",
+        "Dudley", "Ferdinand", "Leopold", "Solomon", "Bartholomew", "Rex", "Duke", "Earl", "Baron", "Hamlet",
+        "Napoleon", "Alistair", "Bertram", "Crispin", "Dashiell",
     ]
 
     /// How names are compared: case and spaces don't count.
@@ -40,18 +79,25 @@ public enum NameBook {
         return flock(s).contains { $0.id != exceptID && key($0.name) == k }
     }
 
-    /// A free name for this bird, picked from its own ID (so it moves no game randomness).
-    /// Neutral names while its sex is still a secret.
-    public static func suggestion(for bird: Bird, in s: GameState) -> String {
+    /// Every name the keeper has used, as `key`s: birds they own now and birds that went to a new home.
+    /// This bird's own name does not count.
+    static func usedKeys(exceptID: UUID, in s: GameState) -> Set<String> {
+        Set((flock(s) + s.rehomed).filter { $0.id != exceptID }.map { key($0.name) })
+    }
+
+    /// A name never used before, picked from the bird's own ID (so it moves no game randomness).
+    /// Neutral names while its sex is still a secret. `skipping` steps on to later free names
+    /// ("Try another" in the app).
+    public static func suggestion(for bird: Bird, in s: GameState, skipping: Int = 0) -> String {
         let list = !bird.revealed ? neutral : bird.sex == .hen ? hens : roosters
         var local = bird.localRNG(salt: 0x4E41_4D45)  // "NAME"
         let start = Int.random(in: 0..<list.count, using: &local)
-        for offset in 0..<list.count {
-            let name = list[(start + offset) % list.count]
-            if !isTaken(name, exceptID: bird.id, in: s) { return name }
-        }
-        var n = 2
-        while isTaken("\(list[start]) \(n)", exceptID: bird.id, in: s) { n += 1 }
+        let used = usedKeys(exceptID: bird.id, in: s)
+        let free = (0..<list.count).map { list[(start + $0) % list.count] }.filter { !used.contains(key($0)) }
+        if !free.isEmpty { return free[max(0, skipping) % free.count] }
+        // Every name in the list is used: number them on from 2.
+        var n = 2 + max(0, skipping)
+        while used.contains(key("\(list[start]) \(n)")) { n += 1 }
         return "\(list[start]) \(n)"
     }
 }

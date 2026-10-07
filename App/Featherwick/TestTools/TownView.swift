@@ -17,9 +17,6 @@ struct TownView: View {
                     buy("A fertile egg from a local flock", r.fertileEggPrice, .buy(.fertileEgg))
                     buy("\(r.treatBagSize) mealworm treats", r.treatBagPrice, .buy(.treats))
                     buy("\(r.premiumFeedBagSize) days of premium feed", r.premiumFeedPrice, .buy(.premiumFeed))
-                    ForEach(s.shopBreeds.sorted { $0.rawValue < $1.rawValue }, id: \.self) { breed in
-                        buy("A \(breed.definition.displayName) pullet", r.rareBreedPulletPrice, .buyBreed(breed))
-                    }
                     Text("Basic feed is free.").font(.caption).foregroundStyle(.secondary)
                 }
                 Section("The coop") {

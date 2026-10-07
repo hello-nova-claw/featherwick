@@ -125,10 +125,12 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 
 ## Speckle & Down (the shop)
 
-- Basic stock is always there: a pullet, a cockerel, or a fertile egg. The breed is a random starter
-  breed. You find out the breed when you buy it.
+- Basic stock is always there: a pullet, a cockerel, or a fertile egg. The breed is a surprise.
+  You find out the breed when you buy it.
+- A surprise pullet or cockerel is a starter breed, or a breed a storyline added
+  (`GameState.surpriseBreeds`). A fertile egg comes from starter breeds only.
 - Treats, premium feed and the big incubator are always there too.
-- Breeds that a storyline unlocks are sold as pullets (`buyBreed`, `rareBreedPulletPrice`).
+- No breed has its own sale. A keeper gets a breed by surprise, as the daily special, or as a gift.
 - **The daily special** (`Shop.swift`): one young bird. The seller names its breed, sex and colour.
   It changes each day. Its breed is any in-game breed. Its colour is one of the breed's usual colours.
   With `shopRareChance` (8%) it is a rare colour: splash, lavender, or a colour the breed does not
@@ -167,7 +169,7 @@ Three tables. Most new content is a table entry, not new logic.
   default, so a new gene needs no save migration.
 - Breeds have a status: `inGame` or `planned`. Planned breeds are tested but never appear in play.
   Now: Silkie, Orpington, Wyandotte, Araucana, Australorp (in game); Plymouth Rock (planned).
-  Australorp is not a starter: it is unlocked at the shop by the "heritage breed" storyline.
+  Australorp is not a starter: the "heritage breed" storyline adds it to the shop's surprise stock.
 - The colour a bird shows always comes from its genes (`Phenotype`), never from a variety name.
 
 How to add:
@@ -200,6 +202,17 @@ changes shape. `Tests/.../Fixtures/save-v0.json` is a real old save; it must alw
   Birds from outside the flock get random quality genes from their own ID.
 - Condition and shell quality come from care: moult (autumn), frights, broodiness, hunger, heat, age.
 - Grades are absolute (fair → excellent). `judge <name>` / `judge eggs` are practice: judging with no competitors.
+- Judge's notes name only what the game tracks in genes or care: standard colour (with barring and
+  lacing), feathering (silkie or normal), type (size, shape and carriage), condition, friendliness,
+  egg shape, shells and freshness. Comb and leg feathering are art only (see "Look"), so judges
+  never mention them.
+- The judge's notes are kept with each `ShowResult`. The bird card shows the newest notes.
+- **Before the show, nothing is a surprise.** `Judge.forecast` lists what the judge will see on the
+  next show day: the moult (an autumn show), a fright or broodiness that lasts to that day, a hungry
+  flock (on the eve of the show only), close breeding. The same checks as `condition`, so the
+  forecast always matches the judge. The app shows it on the bird card, in the show panel and before
+  the fee is paid. The CLI says it when you enter a bird, and in `shows`.
+- Each class says what it is judged on, with the points (`judgingText`).
 
 Saves: missing GameState fields and rules load with their starting values (`fillNewSettings`).
 
@@ -333,7 +346,10 @@ with a suggestion (Enter takes it). Birds given by people (gift hen, trade hen, 
 arrive already named by their keeper. Any bird you own can be renamed any time, even while lost.
 
 - Names are unique in the flock, ignoring case and spaces; up to 24 letters.
-- Suggestions come from the bird's own ID (no game randomness used) and skip taken names.
+- Suggestions come from the bird's own ID (no game randomness used). A suggestion is never a name
+  used before: not a bird in the flock, and not a bird that went to a new home (`GameState.rehomed`).
+  You can still type an old name by hand. Each list (neutral, hens, roosters) has 120+ names.
+  When a list is all used, suggestions go on with numbers ("Clover 2").
   A chick whose sex is still hidden gets a neutral suggestion, so the name never gives it away.
 - A bird still unnamed after `autoNameNights` takes its suggestion (see "Birds never wait forever").
 - The app shows "needs a name" under the place where the bird lives now: the potting shed or the coop.
@@ -348,12 +364,12 @@ words live in the UI.
 
 - **The broody Silkie** (first hatch): a neighbour's Silkie is sitting on a golf ball. Bring 3
   eggs you know are fertile (candled). 4 days later she thanks you with a Silkie pullet, and
-  Speckle & Down starts selling Silkie pullets. Always solvable: the shop sells candled fertile eggs.
+  Silkies join Speckle & Down's surprise stock. Always solvable: the shop sells candled fertile eggs.
 - **A laced gift** (after the broody Silkie): a neighbour admires your flock and gifts you a
   Wyandotte hen, so lacing enters your lines.
-- **A heritage breed** (deliver 4 fertile eggs): earns an Australorp hen and unlocks Australorp
-  pullets at Speckle & Down. (Now and then an Australorp is also the shop's daily special.)
-- CLI: `story`, `give eggs`, `buy silkie` / `buy australorp` (once unlocked).
+- **A heritage breed** (deliver 4 fertile eggs): earns an Australorp hen and adds Australorps to
+  Speckle & Down's surprise stock. (Any in-game breed can also be the shop's daily special.)
+- CLI: `story`, `give eggs`.
 
 To add one: one `Storyline` in `Storylines.all`, plus its words in the UI.
 

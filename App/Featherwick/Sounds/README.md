@@ -10,7 +10,7 @@ Put the files in this folder. XcodeGen copies them into the app (run `xcodegen` 
 | `cluck.caf` | Tap a bird on the farm, or a pet lands | under 0.6 s |
 | `egg.caf` | Eggs collected, or eggs laid overnight | under 0.5 s |
 | `hatch.caf` | Chicks hatched | under 1 s |
-| `coins.caf` | Eggs sold, a bird rehomed, show prize money | under 0.6 s |
+| `coins.caf` | Eggs sold, a bird rehomed, show prize money, something bought, a show entry | under 0.6 s |
 
 - Format: CAF or M4A (AAC), 44.1 kHz, mono is fine. The name without the extension must match.
   `cluck.m4a` works too; `.caf` wins if both exist.
