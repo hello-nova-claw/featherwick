@@ -188,6 +188,8 @@ enum Typeface {
     static let title2 = display(30, relativeTo: .title)
     static let speech = serifItalic(24, relativeTo: .title2)
     static let epithet = serifItalic(20)
+    /// A judge's note or the reason under a planner line: a quiet aside in italic.
+    static let note = serifItalic(17)
     static let place = serif(18, relativeTo: .title3)
     static let item = serif(17)
     static let body = sans(16)

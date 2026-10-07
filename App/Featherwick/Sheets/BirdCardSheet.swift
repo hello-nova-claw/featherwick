@@ -2,7 +2,8 @@ import FeatherwickCore
 import FeatherwickText
 import SwiftUI
 
-/// 2a / 2b: one bird. Art, name, breed line, four facts, show notes, then Cuddle and Treat.
+/// 2a / 2b: one bird. Art, name, breed line, four facts, what it is proven to carry, show notes, then
+/// Cuddle and Treat.
 struct BirdCardSheet: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
@@ -33,6 +34,7 @@ struct BirdCardSheet: View {
                 .frame(maxWidth: .infinity)
                 facts(bird, s)
                     .padding(.vertical, Space.l)
+                CarrierLines(birdID: birdID)
                 showNotes(bird, s)
                 ribbons(bird, s)
                 handlingButtons(bird, s)
@@ -107,7 +109,7 @@ struct BirdCardSheet: View {
                     Fact(label: "Judge's notes, day \(last.day)") {
                         ForEach(Array((last.notes ?? []).enumerated()), id: \.offset) { _, note in
                             Text("“\(sentenceCase(noteText(note))).”")
-                                .font(Typeface.serifItalic(17)).foregroundStyle(palette.inkSoft)
+                                .font(Typeface.note).foregroundStyle(palette.inkSoft)
                         }
                     }
                 }

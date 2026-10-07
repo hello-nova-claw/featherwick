@@ -147,27 +147,36 @@ struct EggSwatch: View {
     }
 }
 
+/// A feather filled with its colour and a 1pt ink outline. Always next to a word that names it.
+struct FeatherMark: View {
+    @Environment(\.palette) private var palette
+    let colour: FeatherColour
+
+    var body: some View {
+        ZStack {
+            FeatherShape().fill(Pigment.feather(colour))
+            if colour == .splash {
+                Speckles(colour: Pigment.splashFleck).clipShape(FeatherShape())
+            }
+            FeatherShape().stroke(palette.ink, lineWidth: 1)
+            Path { p in
+                p.move(to: CGPoint(x: 7, y: 6))
+                p.addLine(to: CGPoint(x: 7, y: 24))
+            }
+            .stroke(palette.ink, lineWidth: 1)
+        }
+        .frame(width: 14, height: 24)
+    }
+}
+
 /// "Buff": a feather in the bird's colour, plus words.
 struct FeatherSwatch: View {
-    @Environment(\.palette) private var palette
     let colour: FeatherColour
     let name: String
 
     var body: some View {
         HStack(spacing: Space.s) {
-            ZStack {
-                FeatherShape().fill(Pigment.feather(colour))
-                if colour == .splash {
-                    Speckles(colour: Pigment.splashFleck).clipShape(FeatherShape())
-                }
-                FeatherShape().stroke(palette.ink, lineWidth: 1)
-                Path { p in
-                    p.move(to: CGPoint(x: 7, y: 6))
-                    p.addLine(to: CGPoint(x: 7, y: 24))
-                }
-                .stroke(palette.ink, lineWidth: 1)
-            }
-            .frame(width: 14, height: 24)
+            FeatherMark(colour: colour)
             Text(name.prefix(1).uppercased() + name.dropFirst()).font(Typeface.body)
         }
         .accessibilityElement(children: .combine)
