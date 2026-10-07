@@ -28,9 +28,10 @@ struct GeneticsRealismTests {
             }
         } else if b.sex == .hen, let egg = p.eggColour {
             switch b.crossName {
-            case .oliveEgger: if egg != .olive { out.append("olive egger laying \(egg)") }
+            case .oliveEgger: if egg != .olive && egg != .green { out.append("olive egger laying \(egg)") }
             case .easterEgger: if egg != .blue { out.append("easter egger laying \(egg)") }
-            case .barnyardMix: if egg != .brown && egg != .cream { out.append("barnyard mix laying \(egg)") }
+            case .barnyardMix:
+                if ![.brown, .chocolate, .cream].contains(egg) { out.append("barnyard mix laying \(egg)") }
             case nil: out.append("cross with no name")
             }
         }

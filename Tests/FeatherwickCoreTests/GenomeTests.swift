@@ -109,14 +109,15 @@ struct GenomeTests {
 
     // MARK: - Egg colour
 
-    @Test func araucanaHenTimesOrpingtonRoosterGivesOliveEggers() throws {
+    /// Araucana (low shell depth) × Orpington (average depth): the brown coat is thin, so the eggs are green.
+    @Test func araucanaHenTimesOrpingtonRoosterGivesGreenEggs() throws {
         var rng = SeededRNG(seed: 7)
         let mother = Breed.araucana.purebred(.hen)
         let father = Breed.orpington.purebred(.rooster)
         for _ in 0..<200 {
             let chick = Phenotype(try Breeding.cross(mother: mother, father: father, using: &rng))
             if chick.sex == .hen {
-                #expect(chick.eggColour == .olive)
+                #expect(chick.eggColour == .green)
             } else {
                 #expect(chick.eggColour == nil)
             }

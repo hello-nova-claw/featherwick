@@ -5,6 +5,10 @@ public enum FeatherColour: String, Hashable, Codable, Sendable, CaseIterable {
 
 public enum EggColour: String, Hashable, Codable, Sendable, CaseIterable {
     case cream, brown, blue, olive
+    /// Very dark brown, like a Marans egg: brown coating with high depth.
+    case chocolate
+    /// Brown coating with low depth over a blue shell. Darker coating gives olive.
+    case green
 }
 
 /// How a chick's down looks. Shows the colour genes, not the breed.
@@ -72,11 +76,14 @@ public struct Phenotype: Hashable, Codable, Sendable {
         if sex == .hen {
             let blueShell = genome.blueShell.has(.blue)
             let brownCoat = genome.brownShell.has(.brown)
+            // Depth only shows through the brown coating. An average bird (and every bird from a
+            // save made before depth existed) lays brown or olive, as before.
+            let depth = QuantitativeTrait.brownDepth.fraction(genome)
             eggColour =
                 switch (blueShell, brownCoat) {
-                case (true, true): .olive
+                case (true, true): depth >= Rules.oliveShellDepth ? .olive : .green
                 case (true, false): .blue
-                case (false, true): .brown
+                case (false, true): depth > Rules.chocolateShellDepth ? .chocolate : .brown
                 case (false, false): .cream
                 }
             eggIsSpeckled = genome.speckle.isHomozygous(for: .speckled)

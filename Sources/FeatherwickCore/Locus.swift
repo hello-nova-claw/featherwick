@@ -92,6 +92,7 @@ public enum Loci {
         ] + QuantitativeTrait.showType.loci + QuantitativeTrait.eggShape.loci
         + QuantitativeTrait.calm.loci
         + [LocusDefinition(DominantWhite.self, "Dominant white. Dominant; hides the other colour genes.")]
+        + QuantitativeTrait.brownDepth.loci
 
     public static let all: [LocusDefinition] = zLinked + autosomal
 

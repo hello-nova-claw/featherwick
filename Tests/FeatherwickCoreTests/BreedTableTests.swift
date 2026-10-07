@@ -46,7 +46,11 @@ struct BreedTableTests {
                     let locus = try #require(Loci.definition(gene.locus))
                     #expect(Set(chick.alleles(at: locus)) == [gene.first], "\(def.id) \(variety.id) lost \(gene.locus)")
                 }
-                for locus in Loci.all where !touched.contains(locus.id) {
+                // Shell depth is set for every breed; purebred parents pass on exactly their own.
+                let depth = QuantitativeTrait.brownDepth
+                #expect(depth.score(chick) == depth.score(mother), "\(def.id) \(variety.id) shell depth drifted")
+                let depthLoci = Set(depth.loci.map(\.id))
+                for locus in Loci.all where !touched.contains(locus.id) && !depthLoci.contains(locus.id) {
                     #expect(
                         chick.alleles(at: locus).allSatisfy { $0 == locus.defaultAllele },
                         "\(def.id) \(variety.id) chick has stray \(locus.id)")

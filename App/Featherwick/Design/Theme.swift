@@ -101,6 +101,8 @@ enum Pigment {
         case .brown: Color(hex: 0xA86E45)
         case .blue: Color(hex: 0xB4CFCB)
         case .olive: Color(hex: 0x868755)
+        case .chocolate: Color(hex: 0x5E3A26)
+        case .green: Color(hex: 0x9DB58E)
         }
     }
 
@@ -111,6 +113,8 @@ enum Pigment {
         case .brown: [0xC99A73, 0xA86E45, 0x8A5534, 0x6B3E25].map(Color.init(hex:))
         case .blue: [0xCFE0DD, 0xB4CFCB].map(Color.init(hex:))
         case .olive: [0x868755].map(Color.init(hex:))
+        case .chocolate: [0x6E4630, 0x5E3A26, 0x4A2B1B].map(Color.init(hex:))
+        case .green: [0xB5C9A6, 0x9DB58E].map(Color.init(hex:))
         }
     }
 
