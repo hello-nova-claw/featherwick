@@ -44,6 +44,7 @@ public struct Rules: Codable, Hashable, Sendable {
     public var hatchWhyNotesPerDay = 1
     public var maxClutch = 6  // eggs under one broody hen
     public var giftIncubatorSize = 1  // the neighbour's old incubator, given with the first fertile egg
+    public var incubatorShopAfterGiftDays = 14  // the big incubator comes to the shop at least this long after the gift
     public var bigIncubatorSize = 6  // the one you buy
     public var incubatorPrice = 30
     /// Hens the breeding pen holds, with at most one rooster (see BreedingPen.swift).

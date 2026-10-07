@@ -82,6 +82,25 @@ struct EarlyGameTests {
         }
     }
 
+    /// The big incubator comes to the shop at least `incubatorShopAfterGiftDays` after the neighbour's gift.
+    @Test func theShopIncubatorWaitsAfterTheNeighboursGift() {
+        var (s, rng) = Self.newKeeper()
+        let shopDay = s.rules.introductionDay(of: .incubatorShop)
+        let giftDay = shopDay - 3
+        s.incubatorGiftDay = giftDay
+        let later = giftDay + s.rules.incubatorShopAfterGiftDays
+        #expect(s.introductionDay(of: .incubatorShop) == later)
+        Self.play(until: shopDay, &s, &rng)
+        #expect(!s.isOpen(.incubatorShop))
+        #expect(Engine.apply(.buyIncubator, to: &s, using: &rng) == [.rejected(.notYet(.incubatorShop))])
+        Self.play(until: later, &s, &rng)
+        #expect(s.isOpen(.incubatorShop))
+        // With no gift, the shop day is the rules' day.
+        var (t, _) = Self.newKeeper()
+        t.incubatorGiftDay = nil
+        #expect(t.introductionDay(of: .incubatorShop) == shopDay)
+    }
+
     @Test func theNeighbourGivesTreatsWhenSheShowsYouThem() {
         var (s, rng) = Self.newKeeper()
         Self.play(until: s.rules.introductionDay(of: .treats), &s, &rng)

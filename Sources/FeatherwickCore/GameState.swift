@@ -111,6 +111,8 @@ public struct GameState: Hashable, Codable, Sendable {
     /// Eggs the incubator holds. 0 = no incubator yet.
     public var incubatorSize = 0
     public var incubatorGiftGiven = false
+    /// The day the neighbour gave her old incubator. Nil if she has not (or for a save from before this).
+    public var incubatorGiftDay: Int?
     /// Whether the one-off "too many roosters — rehome one" tip has been shown. New-player nudge, once.
     public var roosterAdviceGiven = false
     public var hasIncubator: Bool { incubatorSize > 0 }

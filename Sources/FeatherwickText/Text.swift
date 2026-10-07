@@ -1229,7 +1229,7 @@ public func introducedText(_ f: Feature, _ s: GameState) -> String? {
 
 /// Why a command is refused before the early game reaches its feature, and when it comes.
 public func notYetText(_ f: Feature, _ s: GameState) -> String {
-    let day = s.rules.introductionDay(of: f)
+    let day = s.introductionDay(of: f)
     let when = day <= s.day + 1 ? "tomorrow" : "on day \(day)"
     switch f {
     case .treats: return "Speckle & Down has no mealworms in yet. They come \(when)."

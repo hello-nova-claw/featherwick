@@ -301,7 +301,7 @@ final class GameStore {
     var hasNewStock: Bool {
         let s = state
         return Self.shopFeatures.contains {
-            s.isOpen($0) && s.rules.introductionDay(of: $0) == s.day && !seenNewStock.contains($0)
+            s.isOpen($0) && s.introductionDay(of: $0) == s.day && !seenNewStock.contains($0)
         }
     }
 
