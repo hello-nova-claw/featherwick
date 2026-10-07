@@ -172,7 +172,7 @@ extension Engine {
                     id: makeID(using: &rng), name: "",
                     breed: breed,
                     genome: breed.purebred(sex, variety: breed.definition.varieties.randomElement(using: &rng)),
-                    hatchDay: s.day - s.rules.growerAge, origin: "A Featherwick neighbour", revealed: true
+                    hatchDay: s.day - s.rules.growerAge, origin: Bird.villageOrigin, revealed: true
                 ).withFounderQuality().namedByKeeper(in: s)
                 bird.tameness = s.rules.boughtBirdTameness
                 s.coop.append(bird)

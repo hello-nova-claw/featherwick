@@ -938,5 +938,15 @@ import Testing
         #expect(!k.birds.isEmpty)
         #expect(k.contradictions == 0)
         #expect(game.state.pedigree.values.allSatisfy { $0.look == nil })
+        // Sound for old saves too: every bird's real genotype is still among its candidates.
+        let birds = game.state.ownedBirds + game.state.rehomed
+        #expect(!birds.isEmpty)
+        for b in birds {
+            for space in GenotypeSpace.all {
+                #expect(
+                    k.candidates(b.id, space.locus.id).contains(Self.truth(b.genome, space)),
+                    "\(b.name) at \(space.locus.id) is \(Self.truth(b.genome, space))")
+            }
+        }
     }
 }

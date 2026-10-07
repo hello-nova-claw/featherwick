@@ -105,7 +105,7 @@ extension Engine {
         let bird = Bird(
             id: makeID(using: &rng), name: special.sex == .hen ? "New pullet" : "New cockerel",
             breed: special.breed, genome: special.breed.purebred(special.sex, variety: variety),
-            hatchDay: s.day - s.rules.growerAge, origin: "Speckle & Down",
+            hatchDay: s.day - s.rules.growerAge, origin: Bird.shopOrigin,
             revealed: true  // the seller names the breed, sex and colour
         ).withFounderQuality().withTameness(s.rules.boughtBirdTameness).waitingForName()
         s.coins -= cost
