@@ -223,6 +223,11 @@ public struct Genome: Hashable, Codable, Sendable {
         set { self[Speckle.self] = newValue }
     }
 
+    public var dominantWhite: AllelePair<DominantWhite> {
+        get { self[DominantWhite.self] }
+        set { self[DominantWhite.self] = newValue }
+    }
+
     /// Sex and barring together. Setting it can change the sex.
     public var sexChromosomes: SexChromosomes {
         get {

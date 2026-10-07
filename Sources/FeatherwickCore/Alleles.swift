@@ -62,6 +62,15 @@ public enum Speckle: String, Hashable, Codable, Sendable, CaseIterable {
     case speckled = "sp"
 }
 
+/// Dominant white (I / i+). Dominant: one copy turns the plumage white.
+/// It stops black pigment in the feathers, so it hides base colour, blue, lavender, lacing and barring.
+/// Those genes are still carried and passed on, so two white birds can hatch a coloured chick.
+/// SIMPLIFIED: in real I/i+ birds a few black flecks can leak through. Here one copy is fully white.
+public enum DominantWhite: String, Hashable, Codable, Sendable, CaseIterable {
+    case white = "I"
+    case wildType = "i+"
+}
+
 // MARK: - Registry conformances
 //
 // Locus names are written to saves. Never rename one.
@@ -111,4 +120,9 @@ extension BrownShell: GeneLocus {
 extension Speckle: GeneLocus {
     public static let locus: LocusID = "speckle"
     public static let defaultAllele = Speckle.plain
+}
+
+extension DominantWhite: GeneLocus {
+    public static let locus: LocusID = "dominantWhite"
+    public static let defaultAllele = DominantWhite.wildType
 }

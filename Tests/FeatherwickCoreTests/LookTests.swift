@@ -84,6 +84,20 @@ struct LookTests {
         #expect(barredChick.tone(.down) == .blackDown && barredChick.overlays.map(\.pattern) == [.headSpot])
     }
 
+    @Test func whiteBirdsAreWhiteWithNoPatternAndYellowDown() {
+        var g = Breed.orpington.purebred(.rooster, variety: .white, barred: true)
+        g.blue = AllelePair(.blue, .notBlue)
+        let b = Bird(id: UUID(), name: "w", breed: .orpington, genome: g, hatchDay: 0, origin: "t", revealed: true)
+        let adult = Self.look(b)
+        #expect(adult.tone(.body) == .whiteFeather && adult.tone(.hackle) == .whiteFeather)
+        #expect(adult.tone(.tail) == .whiteFeather && adult.overlays.isEmpty)
+        let chick = Self.look(b, age: 0)
+        #expect(chick.tone(.down) == .yellowDown && chick.overlays.isEmpty)
+        // The White Leghorn uses parts already in the kit.
+        let leghorn = Self.look(Self.bird(.leghorn, .hen))
+        #expect(leghorn.part(.body)?.part.shape == "light" && leghorn.part(.comb)?.part.shape == "single")
+    }
+
     @Test func silkiesAndSilkieCrosses() {
         let silkie = Self.look(Self.bird(.silkie, .hen))
         #expect(silkie.tone(.comb) == .mulberry)

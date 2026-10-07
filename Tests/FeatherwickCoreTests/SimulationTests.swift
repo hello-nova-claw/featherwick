@@ -36,8 +36,11 @@ struct SimulationTests {
 
     @Test func relaxedLaysMoreThanChallenge() {
         func meanEggs(_ preset: Rules) -> Double {
-            // Job and goal coins change what the keeper buys, which hides the lay chance. Leave them out.
-            var rules = preset
+            // Only the preset's lay chance changes. The other preset settings (fox, prices, coins) change
+            // how big the flock grows, and that hid the lay chance: the gap was within seed noise.
+            // Job and goal coins change what the keeper buys too. Leave them out.
+            var rules = Rules.standard
+            rules.layChance = preset.layChance
             rules.jobsRewardCoins = 0
             rules.seasonGoalRewardCoins = 0
             let xs = Simulation.runMany(seeds: 1...12, days: 150, rules: rules).map { Double($0.eggsLaid) }

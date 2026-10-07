@@ -70,6 +70,7 @@ Implement as asset-catalog colours with an "Any / Dark" pair, driven by the game
 | Splash | pale grey `#D6DBDE` with blue `#7E8F9C` flecks |
 | Lavender | `#B5AEBB` |
 | Buff | `#DDAE6E` |
+| White | `#F4F1E8` (warm off-white, so it shows on paper with its ink outline) |
 
 ### Egg colours
 | Name | Base hex | Shade range used in Egg Book |
