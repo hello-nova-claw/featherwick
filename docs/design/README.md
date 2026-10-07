@@ -239,6 +239,21 @@ Until the bird art exists, each bird is a soft blob (`BirdSwatch`): feather colo
 - **Petting:** press and rub a bird (3 turns back and forth, or 120pt of rubbing with one turn). One pet per press. The bird squishes and leans with the finger, then 3 small buff dabs float up. A bird already petted today only leans in. It is not an error.
 - **VoiceOver:** each bird is a button named for the bird. "Pet" is an action.
 
+### Chicken rig
+A placeholder chicken on a fixed skeleton (`App/Featherwick/Scene/Chicken*.swift`). Each part is a simple shape now. The real art replaces each part's shape and keeps the same joints.
+- **Joints**, back to front. A child part rides on its parent:
+  - `leg_back`: swings at its hip. It is drawn behind the body.
+  - `body`: tilts at the hip to peck. The tail and wing ride on it.
+  - `neck`: swings down at the shoulder. It rides on the body.
+  - `head`: turns to look (-1 back, 0 side, 1 at the viewer). It rides on the neck and holds the comb, beak, eye and wattle.
+  - `eyelid`: a comb-red patch that grows down over the eye to blink. It rides on the head. On a chick it is the down colour.
+  - `leg_front`: swings at its hip, opposite the back leg. It is drawn in front of the body.
+- **Ground point:** the bottom centre of the rig's frame, between the feet. The scene places each chicken by this point.
+- **Numbers:** every joint position is a fraction of the rig height, in `ChickenRigMetrics`. The rig faces right; the scene mirrors it to face left.
+- **Chicks** use their own build: a round ball of down, tiny legs, no comb. Colours come from the bird's look, as for `BirdSwatch`.
+- **Motion** (`AnimatedChicken`): walking swings the legs; pecking runs one peck (0.6 s); idle blinks every 3–6 s and sometimes looks around. A still bird does not redraw. Reduce Motion: no walking cycle, peck or looks. Blinks stay.
+- **Rig lab:** ≡ ▸ Open test tools ▸ Debug ▸ Rig lab has a slider for each joint.
+
 ### Sound and haptics
 Soft and few. Settings (≡) has a switch for each; both start on.
 - **Haptics:** light ticks while rubbing, a soft tap when a pet lands, a light tap when opening a bird, success on egg collection and hatching, a gentle warning when the game says no.
