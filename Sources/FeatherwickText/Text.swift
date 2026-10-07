@@ -617,6 +617,10 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return "\(opener) \(eggs) \(why) \(back)"
     case .hatchSurprise(let id, let reason):
         return "The neighbour peers at \(birdName(id, s)): \"\(hatchReasonText(reason))\""
+    case .plannerIntroduced:
+        // Right after the first why note. Before the pen opens, the neighbour saves the trick for later.
+        let next = s.isOpen(.breedingPen) ? "Come and look at the pen." : "I'll show you once you have a breeding pen."
+        return "She winks. \"You can work this out ahead of time, you know. \(next)\""
     case .learnedCandling:
         return """
             The neighbour comes round with a torch. "Here, let me show you a trick." She holds an egg up \

@@ -69,7 +69,7 @@ public struct MorningReport: Hashable, Sendable {
         switch event {
         case .dayStarted, .seasonChanged, .quietNight:
             return .morning
-        case .chicksHatched, .eggsDidNotHatch, .hatchSurprise:
+        case .chicksHatched, .eggsDidNotHatch, .hatchSurprise, .plannerIntroduced:
             return .hatched
         case .foxVisited, .birdWaitingForPerch:
             return .fox

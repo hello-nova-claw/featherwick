@@ -55,6 +55,9 @@ public enum Command: Hashable, Codable, Sendable {
     case unpenBird(UUID)
     /// Sit a while: spends one slot of daylight and does nothing else (see Daylight.swift).
     case rest
+    /// The keeper opened the "What might hatch" panel (see Planner.swift). Clears the pen's "New" notice.
+    /// Costs no daylight and says nothing. Does nothing before the keeper has met the planner.
+    case openPlanner
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -257,6 +260,9 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case slotSpent(Errand?, left: Int)
     /// The keeper sat a while. The time of day the rest was taken in, for the words.
     case rested(TimeOfDay)
+    /// The first hatch-day "why" note also showed the keeper that hatches can be worked out ahead of
+    /// time: "What might hatch" is open now (see Planner.swift). Right after that `hatchSurprise`. Once a game.
+    case plannerIntroduced
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -505,6 +511,10 @@ public enum Engine {
             return unpenBird(id, &s)
         case .rest:
             return [.rested(s.timeOfDay)]  // the slot itself is spent by `spendDaylight`
+        case .openPlanner:
+            // Before the keeper has met the planner there is nothing to open, and the notice must wait.
+            if s.plannerKnown { s.plannerOpened = true }
+            return []
         }
     }
 
@@ -805,6 +815,11 @@ public enum Engine {
                 }
             }
             if !ids.isEmpty { ev.append(.chicksHatched(ids, hen: clutch.henID)) }
+            // The first why note opens "What might hatch". No random draw: the same seed hatches the same chicks.
+            if !notes.isEmpty, !s.plannerKnown {
+                s.plannerKnown = true
+                notes.insert(.plannerIntroduced, at: 1)
+            }
             ev += notes
             if unhatched > 0 { ev.append(.eggsDidNotHatch(count: unhatched, hen: clutch.henID)) }
             // No chicks to raise: a hen whose eggs were all clear stops being broody and lays again.
