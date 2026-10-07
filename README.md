@@ -482,6 +482,9 @@ To add one: append a `Milestone` to `Milestones.all` (list order is the ladder),
 - **Season goal.** One bigger goal for each season: hatch 3 chicks, a new Breed Book page, a new egg,
   a show ribbon, one more friendly bird, grow the flock by 2, or collect a number of eggs. The game
   picks only goals the keeper can work on now. Progress shows as "2 of 3".
+- The "new egg" goal asks only for colours a breed in play can make. Chocolate needs an in-game breed
+  with shell depth above `Rules.chocolateShellDepth`; none has one yet, so it is left out. A chocolate
+  egg found anyway still counts as a new egg.
 - The goal is checked each night, like the milestones. Reached, it pays `seasonGoalRewardCoins` (25),
   once (`.seasonGoalReached`). New progress is told in the morning (`.seasonGoalProgress`).
 - When the season turns, a new goal comes (`.seasonGoalSet`). An unfinished goal is never failed: the
