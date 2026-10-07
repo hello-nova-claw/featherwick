@@ -26,6 +26,7 @@ public struct Breed: RawRepresentable, Hashable, Codable, Sendable, ExpressibleB
     public static let australorp: Breed = "australorp"
     public static let plymouthRock: Breed = "plymouth rock"
     public static let marans: Breed = "marans"
+    public static let leghorn: Breed = "leghorn"
 
     /// Breeds in the game now, in table order. Planned breeds are not included.
     public static var allCases: [Breed] { BreedTable.inGame.map(\.id) }
@@ -81,8 +82,13 @@ public struct ColourVariety: Hashable, Sendable, Identifiable {
     public static let buff = ColourVariety("buff", [.two(BaseColour.buff)])
     public static let lavender = ColourVariety("lavender", [.two(Lavender.lavender)])
     public static let barred = ColourVariety("barred", [.two(Barring.barred)])
+    /// I/I: two copies of dominant white, so the variety breeds true. The white hides the black
+    /// underneath, which still passes on. Real White Leghorns are made this way.
+    /// SIMPLIFIED: real white Silkies and white Orpingtons are mostly recessive white (c/c).
+    /// The game has no recessive white gene yet, so they use dominant white too.
+    public static let white = ColourVariety("white", [.two(DominantWhite.white)])
 
-    public static let all: [ColourVariety] = [black, blue, buff, lavender, barred]
+    public static let all: [ColourVariety] = [black, blue, buff, lavender, barred, white]
 }
 
 /// Everything the game knows about one breed.
@@ -138,7 +144,7 @@ public enum BreedTable {
         BreedDefinition(
             id: .silkie, displayName: "Silkie", status: .inGame, isStarter: false,
             signature: [.two(Feathering.silkie)],
-            varieties: [.black, .blue, .buff, .lavender], broodiness: 0.6, calmness: 0.75, brownDepth: 0.2,
+            varieties: [.black, .blue, .buff, .lavender, .white], broodiness: 0.6, calmness: 0.75, brownDepth: 0.2,
             look: BreedLook(
                 body: .fluffy, comb: .walnut, combTone: .mulberry, legs: .featheredFiveToe, legTone: .slate,
                 head: .crested, size: 0.7),
@@ -146,7 +152,7 @@ public enum BreedTable {
         BreedDefinition(
             id: .orpington, displayName: "Orpington", status: .inGame, isStarter: true,
             signature: [.two(BrownShell.brown)],
-            varieties: [.black, .blue, .buff, .lavender], broodiness: 0.3, calmness: 0.7,
+            varieties: [.black, .blue, .buff, .lavender, .white], broodiness: 0.3, calmness: 0.7,
             look: BreedLook(body: .heavy, comb: .single, legTone: .slate, legToneOnBuff: .white, size: 1.2),
             note: "Big, soft and calm. Brown eggs."),
         BreedDefinition(
@@ -181,6 +187,15 @@ public enum BreedTable {
             look: BreedLook(body: .heavy, comb: .single, legTone: .slate, size: 1.1),
             note: "French. Famous for very dark chocolate eggs. Crossed with blue-egg breeds, "
                 + "makes the darkest olive eggers."),
+        // Real White Leghorns: dominant white (I/I) over extended black (E, the default), single comb,
+        // clean yellow legs, small and flighty, rarely broody. They lay white eggs; cream is the
+        // closest egg colour the game has (no blue or brown shell genes).
+        BreedDefinition(
+            id: .leghorn, displayName: "Leghorn", status: .planned, isStarter: false,
+            signature: [],
+            varieties: [.white], broodiness: 0.05, calmness: 0.3,
+            look: BreedLook(body: .light, comb: .single, legTone: .yellow, size: 0.8),
+            note: "Italian. White, light and lively. A famous layer of pale eggs."),
     ]
 
     public static var inGame: [BreedDefinition] { all.filter(\.isInGame) }

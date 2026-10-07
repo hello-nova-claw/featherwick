@@ -41,7 +41,7 @@ struct ShowTests {
 
     @Test func standardsListTheBreedsOwnColours() {
         let orp = ShowStandard(.orpington).colours.map(\.colourName)
-        #expect(orp == ["black", "blue", "buff", "lavender"])
+        #expect(orp == ["black", "blue", "buff", "lavender", "white"])
         let wy = ShowStandard(.wyandotte).colours.map(\.colourName)
         #expect(wy.contains("gold laced") && !wy.contains("buff"))
         #expect(ShowStandard(.plymouthRock).colours.map(\.colourName) == ["barred black", "buff"])
@@ -70,6 +70,26 @@ struct ShowTests {
         b = Bird(id: b.id, name: "s", breed: .orpington, genome: g, hatchDay: b.hatchDay, origin: "t", revealed: true)
         let card = Judge.judge(b, in: .breed(.orpington), state: Self.showDay())
         #expect(card.grade == .disqualified && card.notes == [.notAStandardColour("splash")])
+    }
+
+    /// White is standard for Orpingtons only because the table lists a white variety. Shows.swift
+    /// needs no change. A white bird's hidden blue or barring does not change its look, so it still matches.
+    @Test func aWhiteOrpingtonIsAStandardColour() {
+        var rng = SeededRNG(seed: 1)
+        let s = Self.showDay()
+        let white = Self.bird(.orpington, variety: .white, rng: &rng)
+        let card = Judge.judge(white, in: .breed(.orpington), state: s)
+        #expect(card.grade != .disqualified && card.notes.contains(.standardColour("white")))
+
+        var g = white.genome
+        g.blue = AllelePair(.blue, .notBlue)
+        g.sexChromosomes = .hen(z: .barred)
+        let hiding = Bird(id: white.id, name: "w", breed: .orpington, genome: g, hatchDay: white.hatchDay, origin: "t")
+        #expect(Judge.judge(hiding, in: .breed(.orpington), state: s).notes.contains(.standardColour("white")))
+
+        // Wyandottes have no white variety here, so a white Wyandotte is not standard.
+        let wy = Self.bird(.wyandotte, variety: .white, rng: &rng)
+        #expect(Judge.judge(wy, in: .breed(.wyandotte), state: s).notes == [.notAStandardColour("white")])
     }
 
     @Test func entryRules() {

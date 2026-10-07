@@ -34,16 +34,20 @@ struct SimulationTests {
         }
     }
 
-    @Test func relaxedLaysMoreThanChallenge() {
+    /// A higher lay chance lays more eggs. Only the lay chance differs between the two runs: the full
+    /// presets lay about the same, because their other settings change how big the flock grows.
+    @Test func aHigherLayChanceLaysMore() {
         func meanEggs(_ preset: Rules) -> Double {
-            // Job and goal coins change what the keeper buys, which hides the lay chance. Leave them out.
-            var rules = preset
+            // Standard rules with the preset's lay chance. Job and goal coins change what the keeper
+            // buys, which hides the lay chance. Leave them out.
+            var rules = Rules.standard
+            rules.layChance = preset.layChance
             rules.jobsRewardCoins = 0
             rules.seasonGoalRewardCoins = 0
             let xs = Simulation.runMany(seeds: 1...12, days: 150, rules: rules).map { Double($0.eggsLaid) }
             return xs.reduce(0, +) / Double(xs.count)
         }
-        // The gentler preset's higher lay chance should show up as more eggs over the same games.
+        // The relaxed lay chance is higher than the challenge one, so it should lay more over the same games.
         // (Final coins is a poor signal here: the keeper reinvests its coins into stock and upgrades.)
         #expect(meanEggs(.relaxed) > meanEggs(.challenge))
     }

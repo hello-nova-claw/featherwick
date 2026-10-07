@@ -194,6 +194,7 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 | Brown coating | Br / br | Dominant | Simplified (real brown is polygenic). Depth sets the shade |
 | Speckle | sp+ / sp | Recessive | Game-only gene |
 | Brown depth | + / - at 10 genes | Additive | Quantitative trait (`QuantitativeTrait.brownDepth`). Shows only with brown coating |
+| Dominant white | I / i+ | Dominant | One copy makes white plumage. Hides base colour, blue, lavender, lacing and barring. White chicks have yellow down |
 
 ### Egg colours
 
@@ -233,9 +234,14 @@ Three tables. Most new content is a table entry, not new logic.
 - Genomes store only genes that differ from the default allele. A gene missing from a save is the
   default, so a new gene needs no save migration.
 - Breeds have a status: `inGame` or `planned`. Planned breeds are tested but never appear in play.
-  Now: Silkie, Orpington, Wyandotte, Araucana, Australorp (in game); Plymouth Rock, Marans (planned).
+  Now: Silkie, Orpington, Wyandotte, Araucana, Australorp (in game); Plymouth Rock, Marans, Leghorn (planned).
   Marans comes in black only. Black copper needs genes the game does not have yet.
   Australorp is not a starter: the "heritage breed" storyline adds it to the shop's surprise stock.
+- White varieties use dominant white (I/I): White Silkie, White Orpington, White Leghorn.
+  Simplified: real white Silkies and Orpingtons are mostly recessive white (c/c). The game has no
+  recessive white gene yet.
+- The Leghorn is a White Leghorn: light body, single comb, clean yellow legs, rarely broody. Real
+  Leghorns lay white eggs. Cream is the closest egg colour in the game.
 - The colour a bird shows always comes from its genes (`Phenotype`), never from a variety name.
 
 How to add:
@@ -409,11 +415,13 @@ parts, so most new breeds need no new art. `bird.look(onDay:rules:)` returns:
   token per mask and its own scale: combs and tails grow in with age, and a hen's comb is the
   rooster's drawing, smaller. Pullets and cockerels are the adult parts, smaller.
 - `overlays`: pattern textures clipped to masks (lacing, barring, a barred chick's head spot).
+  A white bird has no overlays: dominant white hides its patterns.
+- White plumage uses the `whiteFeather` token. The `white` token is for skin (legs).
 - `scale`: breed size, grows smoothly with age; roosters end 20% bigger.
 
 | Part | Shapes | Who uses them |
 | --- | --- | --- |
-| Body (hen + rooster) | heavy, medium, light, fluffy | Orpington/Australorp/Marans, Wyandotte/Plymouth Rock/crosses, Araucana, Silkie |
+| Body (hen + rooster) | heavy, medium, light, fluffy | Orpington/Australorp/Marans, Wyandotte/Plymouth Rock/crosses, Araucana/Leghorn, Silkie |
 | Comb | single, rose, pea, walnut | most, Wyandotte, Araucana, Silkie |
 | Legs | clean, feathered 5-toe | everyone but Silkie |
 | Head | plain, crested | everyone but Silkie |
@@ -534,6 +542,9 @@ To add one: append a `Milestone` to `Milestones.all` (list order is the ladder),
 
 - Lacing shows only on a gold (buff) ground ("gold laced"); barring shows only on black-based birds.
   Hidden pattern genes are still passed on.
+- White hides pattern genes, which still pass on. Dominant white (I) hides base colour, blue,
+  lavender, lacing and barring. No text names a hidden colour. Two I/i+ white birds can hatch a
+  coloured chick (about 1 in 4).
 - A chick is purebred only if both parents are purebred and the same breed. Crosses are named
   like real keepers name them: olive egger (blue egg x brown egg), easter egger (other blue-egg
   crosses), barnyard mix (everything else).
