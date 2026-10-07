@@ -95,6 +95,61 @@ public struct ShowResult: Hashable, Codable, Sendable {
     public let notes: [JudgeNote]?
     /// The show's theme.
     public let theme: ShowTheme?
+    /// The top three in this entry's class, rivals included, best first. Nil in older saves.
+    public let podium: [PodiumPlace]?
+}
+
+/// One place on a class's podium (1st to 3rd): who stood there, the score and why.
+public struct PodiumPlace: Hashable, Codable, Sendable {
+    /// 1, 2 or 3.
+    public let placing: Int
+    public let entrant: PodiumEntrant
+    public let score: Int
+    /// The judge's notes: the same `JudgeNote`s the keeper's own entries get.
+    public let notes: [JudgeNote]
+
+    public init(placing: Int, entrant: PodiumEntrant, score: Int, notes: [JudgeNote]) {
+        self.placing = placing
+        self.entrant = entrant
+        self.score = score
+        self.notes = notes
+    }
+
+    public var isKeeper: Bool {
+        if case .keeper = entrant { return true }
+        return false
+    }
+}
+
+/// Who stood on the podium. A spectator sees a rival's breed, colour and sex (show birds are adults),
+/// and its owner. The owner is a number; the words (a village name) live in FeatherwickText.
+public enum PodiumEntrant: Hashable, Codable, Sendable {
+    /// One of the keeper's entries. `birdID` is nil for a plate of eggs.
+    case keeper(name: String, birdID: UUID?)
+    /// A rival's bird, as shown. Its colour comes from its genes (`bird.phenotype`), like any bird.
+    case rivalBird(owner: Int, bird: Bird)
+    /// A rival's plate of eggs.
+    case rivalPlate(owner: Int, colour: EggColour, speckled: Bool)
+}
+
+/// A rival entry as the show judges it: a name for tie-breaks, the judge's card, and who it is.
+struct RivalEntry {
+    let name: String
+    let card: JudgeCard
+    let entrant: PodiumEntrant
+}
+
+/// A Breed Book entry for a bird the keeper saw on a show podium but never owned.
+public struct SeenBreedBookEntry: Hashable, Codable, Sendable {
+    public let entry: BreedBookEntry
+    /// The show day it was first seen.
+    public let day: Int
+    public let theme: ShowTheme
+}
+
+extension GameState {
+    /// Birds seen at shows that the keeper does not own (yet). An owned entry always wins over a seen one.
+    public var breedBookSeenOnly: [SeenBreedBookEntry] { seenAtShows.filter { !breedBook.contains($0.entry) } }
 }
 
 extension Engine {
@@ -229,13 +284,17 @@ extension Engine {
         // A harder kind of class has more rivals, and each rival is the best of more candidates.
         var totalCoins = 0
         var totalTreats = 0
+        var seen: [GameEvent] = []
         for cls in byClass.keys.sorted(by: { $0.name < $1.name }) {
-            var field = byClass[cls]!.map { (name: $0.name, birdID: $0.birdID, card: $0.card, isPlayer: true) }
+            var field = byClass[cls]!.map { e in
+                let entrant = PodiumEntrant.keeper(name: e.name, birdID: e.birdID)
+                return (name: e.name, birdID: e.birdID, card: e.card, isPlayer: true, entrant: entrant)
+            }
             let rivals = max(0, s.rules.showCompetitorsByKind[cls.kind] ?? 0)
             let picks = rivalPicks(for: cls.kind, theme: theme, s.rules)
             for _ in 0..<rivals {
                 let entry = rival(for: cls, picks: picks, s, &rng)
-                field.append((name: entry.name, birdID: nil, card: entry.card, isPlayer: false))
+                field.append((name: entry.name, birdID: nil, card: entry.card, isPlayer: false, entrant: entry.entrant))
             }
             // Best score first. Ties go to the player (a deterministic home advantage), then by name.
             field.sort {
@@ -243,6 +302,12 @@ extension Engine {
                 if $0.isPlayer != $1.isPlayer { return $0.isPlayer }
                 return $0.name < $1.name
             }
+            // The top three, whoever they belong to. Places match the keeper's own (place = index + 1).
+            var podium: [PodiumPlace] = []
+            for (i, e) in field.prefix(3).enumerated() where e.card.grade != .disqualified {
+                podium.append(PodiumPlace(placing: i + 1, entrant: e.entrant, score: e.card.score, notes: e.card.notes))
+            }
+            ev.append(.showPodium(cls, podium))
             for (i, e) in field.enumerated() where e.isPlayer {
                 let placing = e.card.grade == .disqualified ? 0 : i + 1
                 let won = prize(for: placing, in: cls, theme: theme, rules: s.rules)
@@ -251,9 +316,12 @@ extension Engine {
                 let result = ShowResult(
                     day: s.day, showClass: cls, entrantName: e.name,
                     placing: placing, fieldSize: field.count, score: e.card.score, prize: won.coins,
-                    birdID: e.birdID, treats: won.treats, notes: e.card.notes, theme: theme)
+                    birdID: e.birdID, treats: won.treats, notes: e.card.notes, theme: theme, podium: podium)
                 s.showResults.append(result)
                 ev.append(.showPlacing(result))
+            }
+            for place in podium {
+                if case .rivalBird(_, let bird) = place.entrant { seen += recordSeen(bird, theme: theme, &s) }
             }
         }
         if totalCoins > 0 {
@@ -264,13 +332,46 @@ extension Engine {
             s.treats += totalTreats
             ev.append(.showTreatsWon(treats: totalTreats))
         }
-        return ev
+        return ev + seen
+    }
+
+    /// A rival bird on the podium goes in the Breed Book as seen, once. A look the keeper owns
+    /// (or has seen before) adds nothing: owned beats seen.
+    static func recordSeen(_ bird: Bird, theme: ShowTheme, _ s: inout GameState) -> [GameEvent] {
+        let entry = BreedBookEntry(bird)
+        guard !s.breedBook.contains(entry), !s.seenAtShows.contains(where: { $0.entry == entry }) else { return [] }
+        s.seenAtShows.append(SeenBreedBookEntry(entry: entry, day: s.day, theme: theme))
+        return [.breedBookEntrySeen(entry, theme)]
+    }
+
+    /// How many owner numbers there are. FeatherwickText maps them onto its list of village names.
+    public static let showOwnerSlots = 1024
+
+    /// Who showed a rival entry: a number drawn from the entry's own ID, so naming owners moves no
+    /// game randomness and existing seeds keep their shows.
+    static func showOwner(of id: UUID) -> Int {
+        var local = SeededRNG(seed: ShopSpecial.seed(from: id) ^ 0x4F57_4E52)  // "OWNR"
+        return Int(local.next() % UInt64(showOwnerSlots))
+    }
+
+    /// A rival comes from its own farm, so its condition is its own luck, not the keeper's day: whether it
+    /// was fed, had a good forage, or had a fright, at the odds in `Rules`. Drawn from the bird's ID (like
+    /// its owner), so it moves no game randomness. Returns the day to judge it in; a fright marks the bird.
+    static func rivalsDay(_ bird: inout Bird, _ s: GameState) -> GameState {
+        var local = SeededRNG(seed: ShopSpecial.seed(from: bird.id) ^ 0x4441_5953)  // "DAYS"
+        var day = s
+        day.fedToday = Double.random(in: 0..<1, using: &local) >= s.rules.rivalHungryChance
+        day.foragedToday = Double.random(in: 0..<1, using: &local) < s.rules.rivalForagedChance
+        if Double.random(in: 0..<1, using: &local) < s.rules.rivalStressedChance {
+            bird.noLayUntilDay = max(bird.noLayUntilDay, s.day + 1)
+        }
+        return day
     }
 
     /// One AI entry: the best of `picks` random candidates. More picks make a stronger field.
     static func rival<R: RandomNumberGenerator>(
         for cls: ShowClass, picks: Int, _ s: GameState, _ rng: inout R
-    ) -> (name: String, card: JudgeCard) {
+    ) -> RivalEntry {
         var best = competitor(for: cls, s, &rng)
         for _ in 1..<max(1, picks) {
             let next = competitor(for: cls, s, &rng)
@@ -281,28 +382,35 @@ extension Engine {
 
     /// One AI candidate for a class, generated from fresh random IDs so its quality varies (like the
     /// player's own founder birds). Judged by the same `Judge` code, so the field is a fair contest.
+    ///
+    /// It keeps what a spectator sees for the podium: the bird itself (or the plate) and an owner.
+    /// Both come from what is already drawn here, so keeping them draws nothing more from `rng`.
     static func competitor<R: RandomNumberGenerator>(
         for cls: ShowClass, _ s: GameState, _ rng: inout R
-    ) -> (name: String, card: JudgeCard) {
+    ) -> RivalEntry {
         switch cls {
         case .breed(let breed):
             let colour = breed.definition.varieties.randomElement(using: &rng)!
-            let bird = Bird(
+            var bird = Bird(
                 id: makeID(using: &rng), name: "a \(breed.definition.displayName)", breed: breed,
                 genome: breed.purebred(.hen, variety: colour), hatchDay: s.day - s.rules.adultAge,
                 origin: "County show", revealed: true
             ).withFounderQuality()
-            return (bird.name, Judge.judge(bird, in: cls, state: s))
+            let day = rivalsDay(&bird, s)
+            let shown = PodiumEntrant.rivalBird(owner: showOwner(of: bird.id), bird: bird)
+            return RivalEntry(name: bird.name, card: Judge.judge(bird, in: cls, state: day), entrant: shown)
         case .pet:
             let breed = Breed.starters.randomElement(using: &rng)!
             let colour = breed.definition.varieties.randomElement(using: &rng)!
-            let bird = Bird(
+            var bird = Bird(
                 id: makeID(using: &rng), name: "a visitor's \(breed.definition.displayName)", breed: breed,
                 genome: breed.purebred(.hen, variety: colour), hatchDay: s.day - s.rules.adultAge,
                 origin: "County show", revealed: true
             )
             .withFounderQuality().withTameness(Double.random(in: 0.2...0.95, using: &rng))
-            return (bird.name, Judge.judge(bird, in: .pet, state: s))
+            let day = rivalsDay(&bird, s)
+            let shown = PodiumEntrant.rivalBird(owner: showOwner(of: bird.id), bird: bird)
+            return RivalEntry(name: bird.name, card: Judge.judge(bird, in: .pet, state: day), entrant: shown)
         case .eggs(let colour):
             // A matched plate from one unseen hen: a single shape and shell across the plate.
             let shape = Int.random(in: 0...QuantitativeTrait.eggShape.maxScore, using: &rng)
@@ -316,7 +424,10 @@ extension Engine {
                 egg.shell = shell
                 return egg
             }
-            return ("a plate of \(colour.rawValue) eggs", Judge.judgeEggs(eggs, state: s))
+            let owner = showOwner(of: eggs[0].motherID)
+            let plate = PodiumEntrant.rivalPlate(owner: owner, colour: colour, speckled: false)
+            let card = Judge.judgeEggs(eggs, state: s)
+            return RivalEntry(name: "a plate of \(colour.rawValue) eggs", card: card, entrant: plate)
         }
     }
 }

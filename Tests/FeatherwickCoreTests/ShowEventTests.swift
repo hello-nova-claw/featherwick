@@ -388,6 +388,225 @@ struct ShowEventTests {
         let result = try JSONDecoder().decode(ShowResult.self, from: Data(json.utf8))
         #expect(result.placing == 2)
         #expect(result.birdID == nil && result.treats == nil && result.notes == nil && result.theme == nil)
+        #expect(result.podium == nil)
+    }
+
+    // MARK: - The podium
+
+    /// A black Orpington hen with no show type, still nervous after a fright: the rivals beat her.
+    static func weakOrpington(in s: GameState, rng: inout SeededRNG) -> Bird {
+        var bird = Bird(
+            id: makeID(using: &rng), name: "Dot", breed: .orpington,
+            genome: Breed.orpington.purebred(.hen, variety: .black),
+            hatchDay: s.day - s.rules.adultAge, origin: "test", revealed: true)
+        bird.noLayUntilDay = s.day + 5
+        return bird
+    }
+
+    /// Enters these birds, runs the show night and returns its events.
+    static func show(_ birds: [Bird], _ s: inout GameState, _ rng: inout SeededRNG) -> [GameEvent] {
+        for bird in birds {
+            s.coop.append(bird)
+            _ = Engine.apply(.enterShow(bird.id), to: &s, using: &rng)
+        }
+        return Engine.apply(.passNight, to: &s, using: &rng)
+    }
+
+    static func rivalBirds(_ podium: [PodiumPlace]) -> [Bird] {
+        podium.compactMap { place in
+            if case .rivalBird(_, let bird) = place.entrant { return bird }
+            return nil
+        }
+    }
+
+    @Test func thePodiumShowsTheTopThreeEvenWhenTheyAreRivals() {
+        var (s, rng) = Self.eveOfShow()
+        let weak = Self.weakOrpington(in: s, rng: &rng)
+        let ev = Self.show([weak], &s, &rng)
+
+        let result = s.showResults.first { $0.birdID == weak.id }
+        let podium = result?.podium ?? []
+        #expect((result?.placing ?? 0) > 3)  // outside the ribbons
+        let placings = podium.map { $0.placing }
+        let scores = podium.map { $0.score }
+        #expect(placings == [1, 2, 3])
+        #expect(podium.allSatisfy { !$0.isKeeper })
+        #expect(podium.allSatisfy { !$0.notes.isEmpty })
+        #expect(scores == scores.sorted(by: >))
+        #expect(ev.contains(.showPodium(.breed(.orpington), podium)))
+        // The best rival scores the most of anyone in the class.
+        #expect((podium.first?.score ?? 0) >= (result?.score ?? 0))
+    }
+
+    @Test func aWinnerStandsOnItsOwnPodium() {
+        var (s, rng) = Self.eveOfShow()
+        let champ = Self.championOrpington(in: s, rng: &rng)
+        _ = Self.show([champ], &s, &rng)
+        let podium = s.showResults.first?.podium ?? []
+        #expect(podium.first?.entrant == .keeper(name: "Champion", birdID: champ.id))
+        #expect(podium.first?.notes == s.showResults.first?.notes)
+        #expect(podium.count == 3)
+    }
+
+    @Test func aSmallFieldHasASmallerPodium() {
+        for rivals in [0, 1] {
+            var (s, rng) = Self.eveOfShow()
+            s.rules.showCompetitorsByKind[.breed] = rivals
+            let champ = Self.championOrpington(in: s, rng: &rng)
+            _ = Self.show([champ], &s, &rng)
+            #expect(s.showResults.first?.podium?.count == rivals + 1)
+        }
+    }
+
+    @Test func rivalsOnThePodiumGetTheirLooksFromTheirGenes() {
+        var (s, rng) = Self.eveOfShow()
+        let weak = Self.weakOrpington(in: s, rng: &rng)
+        let cross = Self.cross(in: s, rng: &rng)
+        _ = Self.show([weak, cross], &s, &rng)
+        let birds = s.showResults.flatMap { Self.rivalBirds($0.podium ?? []) }
+        #expect(!birds.isEmpty)
+        for bird in birds {
+            // Show birds are adults: their sex and colour are plain to see.
+            #expect(bird.stage(onDay: s.day, rules: s.rules) == .adult)
+            #expect(bird.isPurebred)
+            // The colour comes from the genome, and it is one the breed's own varieties make.
+            let look = Appearance(Phenotype(bird.genome))
+            let standard = bird.breed.definition.varieties.map {
+                Appearance(Phenotype(bird.breed.purebred(.hen, variety: $0)))
+            }
+            #expect(standard.contains(look))
+            #expect(BreedBookEntry(bird).colour == Phenotype(bird.genome).colour)
+        }
+    }
+
+    @Test func eggClassPodiumsArePlates() {
+        var (s, rng) = Self.eveOfShow()
+        var eggs = Self.plate([.blue, .blue, .blue], in: s, rng: &rng)
+        for i in eggs.indices { eggs[i].shape = 0 }  // a poor plate: rivals beat it
+        s.carton = eggs
+        _ = Engine.apply(.enterEggs, to: &s, using: &rng)
+        _ = Engine.apply(.passNight, to: &s, using: &rng)
+        let podium = s.showResults.first?.podium ?? []
+        #expect(podium.count == 3)
+        for place in podium {
+            switch place.entrant {
+            case .rivalPlate(let owner, let colour, _):
+                #expect(colour == .blue)
+                #expect((0..<Engine.showOwnerSlots).contains(owner))
+            case .keeper(_, let birdID): #expect(birdID == nil)
+            case .rivalBird: Issue.record("a bird on an egg podium")
+            }
+        }
+        #expect(s.seenAtShows.isEmpty)  // plates add nothing to the Breed Book
+    }
+
+    @Test func podiumRivalsAreAddedToTheBreedBookAsSeenOnce() {
+        var (s, rng) = Self.eveOfShow()
+        let weak = Self.weakOrpington(in: s, rng: &rng)
+        let ev = Self.show([weak], &s, &rng)
+        let rivals = Self.rivalBirds(s.showResults.first?.podium ?? [])
+        let looks = Set(rivals.map { BreedBookEntry($0) })
+        let seenEvents = ev.filter { if case .breedBookEntrySeen = $0 { true } else { false } }
+        #expect(!looks.isEmpty)
+        let seen = Set(s.seenAtShows.map { $0.entry })
+        #expect(seen == looks)
+        #expect(seenEvents.count == looks.count)
+        #expect(s.seenAtShows.allSatisfy { $0.day == s.day && $0.theme == ShowTheme.forSeason(s.season) })
+        #expect(s.breedBook.isEmpty)  // seen is not owned
+
+        // Seeing the same look again adds nothing.
+        for bird in rivals {
+            #expect(Engine.recordSeen(bird, theme: .harvestShow, &s).isEmpty)
+        }
+        #expect(s.seenAtShows.count == looks.count)
+    }
+
+    @Test func anOwnedLookWinsOverASeenOne() {
+        var (s, rng) = Self.eveOfShow()
+        let bird = Self.championOrpington(in: s, rng: &rng)
+        // Owned first: seeing it adds nothing.
+        s.breedBook.insert(BreedBookEntry(bird))
+        #expect(Engine.recordSeen(bird, theme: .summerFete, &s).isEmpty)
+        #expect(s.seenAtShows.isEmpty)
+
+        // Seen first, owned later: the owned entry is the one that counts.
+        s.breedBook = []
+        #expect(Engine.recordSeen(bird, theme: .summerFete, &s).count == 1)
+        #expect(s.breedBookSeenOnly.count == 1)
+        _ = Engine.recordBreed(bird, into: &s.breedBook)
+        #expect(s.breedBookSeenOnly.isEmpty)
+        #expect(s.breedBook.count == 1)
+    }
+
+    @Test func rivalsBringTheirOwnDayNotTheKeepers() {
+        func podium(fed: Bool, foraged: Bool) -> [PodiumPlace] {
+            var (s, rng) = Self.eveOfShow(seed: 42)
+            let weak = Self.weakOrpington(in: s, rng: &rng)
+            s.coop.append(weak)
+            _ = Engine.apply(.enterShow(weak.id), to: &s, using: &rng)
+            // The keeper's own day: whether the flock was fed or foraged.
+            s.fedToday = fed
+            s.foragedToday = foraged
+            _ = Engine.apply(.passNight, to: &s, using: &rng)
+            return s.showResults.first?.podium ?? []
+        }
+        let fedDay = podium(fed: true, foraged: false)
+        #expect(!fedDay.isEmpty)
+        // Rivals are judged the same whatever the keeper did with their own flock.
+        #expect(podium(fed: false, foraged: true).map { $0.score } == fedDay.map { $0.score })
+    }
+
+    @Test func rivalsHaveTheirOwnLuckOfCondition() {
+        var (s, rng) = Self.eveOfShow()
+        var hungry = 0
+        var foraged = 0
+        let count = 400
+        for _ in 0..<count {
+            var bird = Self.weakOrpington(in: s, rng: &rng)
+            let day = Engine.rivalsDay(&bird, s)
+            if !day.fedToday { hungry += 1 }
+            if day.foragedToday { foraged += 1 }
+        }
+        // Near the odds in Rules, and never all one way.
+        #expect(abs(Double(hungry) / Double(count) - s.rules.rivalHungryChance) < 0.06)
+        #expect(abs(Double(foraged) / Double(count) - s.rules.rivalForagedChance) < 0.08)
+        s.rules.rivalHungryChance = 0
+        var bird = Self.weakOrpington(in: s, rng: &rng)
+        #expect(Engine.rivalsDay(&bird, s).fedToday)
+    }
+
+    @Test func podiumsAreDeterministicUnderAFixedSeed() {
+        func playOut() -> ([ShowResult], [SeenBreedBookEntry], SeededRNG) {
+            var (s, rng) = Self.eveOfShow(seed: 42)
+            _ = Self.show([Self.weakOrpington(in: s, rng: &rng)], &s, &rng)
+            return (s.showResults, s.seenAtShows, rng)
+        }
+        let (a, b) = (playOut(), playOut())
+        #expect(a.0 == b.0 && a.1 == b.1 && a.2 == b.2)
+    }
+
+    /// A save from before podiums: results without a podium, and no seen entries.
+    @Test func aSaveWithoutPodiumsLoads() throws {
+        var (s, rng) = Self.eveOfShow()
+        _ = Self.show([Self.championOrpington(in: s, rng: &rng)], &s, &rng)
+        let data = try SaveFormat.encode(SaveGame(state: s, rng: rng))
+        var root = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        var state = try #require(root["state"] as? [String: Any])
+        state["seenAtShows"] = nil
+        state["showResults"] = (state["showResults"] as? [[String: Any]])?.map { result -> [String: Any] in
+            var old = result
+            old["podium"] = nil
+            return old
+        }
+        root["state"] = state
+        let game = try SaveFormat.decode(JSONSerialization.data(withJSONObject: root))
+        #expect(game.state.seenAtShows.isEmpty)
+        #expect(game.state.showResults.count == 1)
+        #expect(game.state.showResults.first?.podium == nil)
+
+        let fixture = try SaveFormat.decode(SaveFormatTests.fixture("save-v0"))
+        #expect(fixture.state.seenAtShows.isEmpty)
+        #expect(fixture.state.breedBookSeenOnly.isEmpty)
     }
 
     /// An entry saved before players could choose a class still loads, with the default class.

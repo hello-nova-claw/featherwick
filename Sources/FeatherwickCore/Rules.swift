@@ -136,6 +136,11 @@ public struct Rules: Codable, Hashable, Sendable {
     // flock survives they free-range: they come back fed (no feeding needed) and a little the better for it.
     public var forageLayBonus = 0.1  // hens lay a little more readily the day after foraging
     public var forageConditionBonus = 0.1  // foraging birds show in slightly better condition
+    // A rival's own day before a show, on its own farm (never the keeper's): odds it was not fed, had
+    // a good forage, or had a fright. Drawn from the rival's ID, so they move no game randomness.
+    public var rivalHungryChance = 0.15
+    public var rivalForagedChance = 0.3
+    public var rivalStressedChance = 0.08
 
     // Rehoming a fine bird (see `rehomeValue`). An average bird gets no quality bonus; a top bird
     // is worth several times a plain one.

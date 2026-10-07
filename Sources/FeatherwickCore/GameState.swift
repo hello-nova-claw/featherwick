@@ -147,6 +147,9 @@ public struct GameState: Hashable, Codable, Sendable {
 
     public var breedBook: Set<BreedBookEntry> = []
     public var eggBook: Set<EggBookEntry> = []
+    /// Looks seen on a show podium, first sighting first (see ShowEvent.swift). Not counted as owned:
+    /// milestones, jobs and goals count `breedBook` only. `breedBookSeenOnly` hides looks owned since.
+    public var seenAtShows: [SeenBreedBookEntry] = []
 
     /// County show (see ShowEvent.swift): entries held for the next show, and every past result.
     public var showEntries: [ShowEntry] = []

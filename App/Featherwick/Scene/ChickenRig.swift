@@ -58,7 +58,11 @@ struct ChickenColours: Equatable, Sendable {
 extension ChickenColours {
     /// Picks colours the way `BirdSwatch` does: from the bird's look today, so they follow its genes and age.
     init(bird: Bird, state: GameState) {
-        let look: Look = bird.look(onDay: state.day, rules: state.rules)
+        self.init(look: bird.look(onDay: state.day, rules: state.rules))
+    }
+
+    /// Colours from a look: for a bird outside the flock too, such as a rival on a show podium.
+    init(look: Look) {
         let isChick: Bool = look.stage == .chick
         let feathers: Tone = look.tone(.body) ?? look.tone(.down) ?? Tone.buff
         let comb: Tone = look.tone(.comb) ?? Tone.red

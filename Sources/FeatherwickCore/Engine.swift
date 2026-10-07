@@ -186,7 +186,11 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case enteredInShow(UUID?, ShowClass)
     case showDay(day: Int)
     case showNoEntries
+    /// The top three in a class the keeper entered, rivals included, best first. Before its placings.
+    case showPodium(ShowClass, [PodiumPlace])
     case showPlacing(ShowResult)
+    /// A rival bird on a podium showed a look the keeper has never owned or seen: a "seen" Breed Book entry.
+    case breedBookEntrySeen(BreedBookEntry, ShowTheme)
     case showPrizesWon(coins: Int)
     case boughtPremiumFeed(count: Int, cost: Int)
     case fedPremium(units: Int)
