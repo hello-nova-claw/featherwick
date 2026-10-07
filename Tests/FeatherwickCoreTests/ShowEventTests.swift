@@ -303,7 +303,7 @@ struct ShowEventTests {
         }
     }
 
-    @Test func fieldSizeGrowsWithDifficulty() {
+    @Test func fieldSizeGrowsByClassKind() {
         var (s, rng) = Self.eveOfShow()
         let champ = Self.championOrpington(in: s, rng: &rng)
         let cross = Self.cross(in: s, rng: &rng)

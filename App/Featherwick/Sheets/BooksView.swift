@@ -234,7 +234,6 @@ struct SettingsSheet: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
-    @State private var difficulty = Difficulty.standard
     @State private var confirmNew = false
     @State private var testTools = false
 
@@ -268,12 +267,11 @@ struct SettingsSheet: View {
                 .font(Typeface.caption).foregroundStyle(palette.inkMuted)
             StitchDivider()
             Text("New game").font(Typeface.item)
-            WordTabs(tabs: Difficulty.allCases.map { ($0, $0.rawValue.capitalized) }, selection: $difficulty)
-            Button("Start a new \(difficulty.rawValue) game") { confirmNew = true }.buttonStyle(.secondary)
+            Button("Start a new game") { confirmNew = true }.buttonStyle(.secondary)
         }
         .presentationDetents([.medium, .large])
         .confirmationDialog("This replaces your current game.", isPresented: $confirmNew, titleVisibility: .visible) {
-            Button("Start again", role: .destructive) { store.newGame(difficulty) }
+            Button("Start again", role: .destructive) { store.newGame() }
         }
         .fullScreenCover(isPresented: $testTools) { TestToolsView() }
     }

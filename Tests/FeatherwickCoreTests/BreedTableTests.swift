@@ -133,7 +133,7 @@ struct BreedTableTests {
         #expect((a[1]["b"] as? [String: Any])?["seen"] as? Bool == true)
         #expect(a[1]["seen"] == nil)
 
-        // A future v1 → v2 step runs after the real v0 → v1 step.
+        // A custom v1 → v2 step runs after the real v0 → v1 step.
         let v0 = try SaveFormatTests.fixture("save-v0")
         let steps: [Int: SaveFormat.Migration] = [
             0: SaveFormat.migrateGenomesToRegistry,

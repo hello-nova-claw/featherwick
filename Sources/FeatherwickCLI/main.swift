@@ -3,10 +3,9 @@ import FeatherwickText
 import Foundation
 
 // Featherwick text front end.
-// Usage: swift run featherwick [seed] [--slot <name>] [--preset relaxed|standard|challenge]
+// Usage: swift run featherwick [seed] [--slot <name>]
 //   seed   : used only when starting a NEW game (replayable hatches)
 //   --slot : which save to play (default "featherwick-save"); switch in-game with `slot <name>`
-//   --preset : difficulty for a NEW game only; an existing save keeps its own rules
 // Saves are atomic with rolling backups (see SaveStore), so a crash can't wipe your flock.
 
 typealias SaveFile = SaveGame
@@ -19,15 +18,13 @@ func launchFlag(_ name: String) -> String? {
     return launchArgs[i + 1]
 }
 let slotArg = launchFlag("--slot") ?? SaveStore.defaultSlot
-let presetArg = launchFlag("--preset")
 let seedArg = launchArgs.first { UInt64($0) != nil }.flatMap { UInt64($0) }
-let startRules = presetArg.flatMap(Difficulty.init(named:))?.rules ?? .standard
 
 var store = SaveStore(directory: URL(fileURLWithPath: FileManager.default.currentDirectoryPath), slot: slotArg)
 
-func newSave(seed: UInt64, rules: Rules = .standard) -> SaveFile {
+func newSave(seed: UInt64) -> SaveFile {
     var rng = SeededRNG(seed: seed)
-    let state = Engine.newGame(rules: rules, using: &rng)
+    let state = Engine.newGame(rules: .standard, using: &rng)
     return SaveFile(state: state, rng: rng)
 }
 
@@ -65,7 +62,7 @@ func load(from store: SaveStore) -> SaveFile? {
     try? store.write(data)
 }
 
-var game = load(from: store) ?? newSave(seed: seedArg ?? UInt64.random(in: .min ... .max), rules: startRules)
+var game = load(from: store) ?? newSave(seed: seedArg ?? UInt64.random(in: .min ... .max))
 
 // MARK: - Screens (the words live in FeatherwickText)
 
@@ -129,7 +126,7 @@ let help = """
       jobs                 today's jobs and this season's goal (do all the jobs for a small reward)
       slot [name]          list your saves, or switch to / create a save slot
       sim [days] [games]   balance report: simulate seeded games and show the numbers
-      new yes [difficulty] delete the save and start again (relaxed | standard | challenge)
+      new yes              delete the save and start again
       quit
     """
 
@@ -378,13 +375,11 @@ while true {
     case "jobs", "today": jobsLines(game.state).forEach { print($0) }
     case "new":
         if words.count > 1, words[1] == "yes" {
-            let difficulty = (words.count > 2 ? Difficulty(named: words[2]) : nil) ?? .standard
-            game = newSave(seed: UInt64.random(in: .min ... .max), rules: difficulty.rules)
-            print("A new game begins (\(difficulty.rawValue)).")
+            game = newSave(seed: UInt64.random(in: .min ... .max))
+            print("A new game begins.")
             look(game.state)
         } else {
-            print(
-                "This deletes your save. Type: new yes [\(Difficulty.allCases.map(\.rawValue).joined(separator: "|"))]")
+            print("This deletes your save. Type: new yes")
         }
     case "slot":
         guard words.count > 1 else {
@@ -408,7 +403,7 @@ while true {
             game = loaded
             print("Switched to slot \(store.slot).")
         } else {
-            game = newSave(seed: UInt64.random(in: .min ... .max), rules: startRules)
+            game = newSave(seed: UInt64.random(in: .min ... .max))
             print("New slot \(store.slot): a new game begins.")
         }
         look(game.state)

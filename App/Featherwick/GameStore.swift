@@ -163,14 +163,14 @@ final class GameStore {
         return ShowReport(day: day, theme: theme, results: results)
     }
 
-    func newGame(_ difficulty: Difficulty) {
-        save = Self.newSave(rules: difficulty.rules)
+    func newGame() {
+        save = Self.newSave(rules: .standard)
         log = []
         showReport = nil
         // A new game brings its stock in again, so it is all new again.
         seenNewStock = []
         UserDefaults.standard.removeObject(forKey: seenStockKey)
-        append("A new game begins (\(difficulty.rawValue)).")
+        append("A new game begins.")
         persist()
     }
 

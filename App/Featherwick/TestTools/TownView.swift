@@ -89,7 +89,6 @@ struct JournalView: View {
 /// Tools for testing: the full yard as text, a new game, and the balance simulator.
 struct DebugView: View {
     @Environment(GameStore.self) private var store
-    @State private var difficulty = Difficulty.standard
     @State private var confirmNew = false
     @State private var report: String?
     @State private var simulating = false
@@ -102,9 +101,6 @@ struct DebugView: View {
                         .font(.system(.caption, design: .monospaced))
                 }
                 Section("New game") {
-                    Picker("Difficulty", selection: $difficulty) {
-                        ForEach(Difficulty.allCases, id: \.self) { Text($0.rawValue.capitalized).tag($0) }
-                    }
                     Button("Start a new game", role: .destructive) { confirmNew = true }
                 }
                 Section("Balance simulator") {
@@ -125,7 +121,7 @@ struct DebugView: View {
             .confirmationDialog(
                 "This replaces your current game.", isPresented: $confirmNew, titleVisibility: .visible
             ) {
-                Button("Start a \(difficulty.rawValue) game", role: .destructive) { store.newGame(difficulty) }
+                Button("Start a new game", role: .destructive) { store.newGame() }
             }
         }
     }

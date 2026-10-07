@@ -77,6 +77,29 @@ struct SaveFormatTests {
         }
     }
 
+    /// The game had Relaxed and Challenge settings once. Such a game now plays by the standard rules.
+    @Test func anOldRelaxedGameSwitchesToTheStandardRules() throws {
+        let game = Self.busyGame()
+        var json = try #require(JSONSerialization.jsonObject(with: SaveFormat.encode(game)) as? [String: Any])
+        var state = try #require(json["state"] as? [String: Any])
+        var rules = try #require(state["rules"] as? [String: Any])
+        rules["foxChance"] = 0.3
+        rules["pulletPrice"] = 20
+        rules["lostDaysCap"] = 10
+        state["rules"] = rules
+        json["state"] = state
+        json["version"] = 1
+        let loaded = try SaveFormat.decode(JSONSerialization.data(withJSONObject: json))
+        #expect(loaded.state.rules.foxChance == Rules.standard.foxChance)
+        #expect(loaded.state.rules.pulletPrice == Rules.standard.pulletPrice)
+        #expect(loaded.state.rules.lostDaysCap == Rules.standard.lostDaysCap)
+        #expect(loaded.state.rules.layChance == Rules.standard.layChance)
+        // Birds, coins and progress stay.
+        #expect(loaded.state.coins == game.state.coins)
+        #expect(loaded.state.day == game.state.day)
+        #expect(loaded.state.ownedBirds == game.state.ownedBirds)
+    }
+
     @Test(arguments: ["", "[]", "{}", "{\"version\": 1}", "not json"])
     func junkIsNotASave(_ text: String) {
         #expect(throws: SaveFormat.LoadError.notASave) { try SaveFormat.decode(Data(text.utf8)) }
