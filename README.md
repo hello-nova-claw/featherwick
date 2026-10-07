@@ -354,7 +354,7 @@ arrive already named by their keeper. Any bird you own can be renamed any time, 
   When a list is all used, suggestions go on with numbers ("Clover 2").
   A chick whose sex is still hidden gets a neutral suggestion, so the name never gives it away.
 - A bird still unnamed after `autoNameNights` takes its suggestion (see "Birds never wait forever").
-- The app shows "needs a name" under the place where the bird lives now: the potting shed or the coop.
+- The app shows "needs a name" under the Coop button.
 
 ## Storylines
 
