@@ -327,8 +327,9 @@ final class GameStore {
             openRequest = .betaPrompt(moment)
         }
 
-        /// The sheet is open: it never asks this slot again, even if the tester swipes it away.
-        func betaPromptShown(_ moment: BetaMoment) {
+        /// Saved, skipped or swiped away: this slot is never asked again. Not on open, so a question that
+        /// another sheet pushed aside is still asked later.
+        func betaPromptAnswered(_ moment: BetaMoment) {
             if BetaNotes.waiting == moment { BetaNotes.waiting = nil }
             BetaNotes.markAsked(moment, slot: slot)
         }

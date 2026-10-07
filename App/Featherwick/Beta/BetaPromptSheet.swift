@@ -46,7 +46,6 @@
                     .disabled(clarity == 0 && trimmedWish.isEmpty)
             }
             .presentationDetents([.large])
-            .onAppear { store.betaPromptShown(moment) }
             .onDisappear { if !done { record(skipped: true) } }
         }
 
@@ -60,6 +59,7 @@
         private func record(skipped: Bool) {
             guard !done else { return }
             done = true
+            store.betaPromptAnswered(moment)
             BetaNotes.record(
                 BetaAnswer(
                     moment: moment, slot: store.slot, day: store.state.day,

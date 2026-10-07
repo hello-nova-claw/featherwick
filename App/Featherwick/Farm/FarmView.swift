@@ -86,6 +86,10 @@ struct FarmView: View {
     @State private var scrolled: FarmPanel? = .yard
     /// The show on screen. Set from `store.showReport` once no sheet is in the way.
     @State private var showDay: ShowReport?
+    /// The sheet `open` is about to show after the current one closes. A beta question must not slip in between.
+    @State private var swapping: FarmSheet?
+    /// A sheet asked for while a beta question was open. It opens when the question closes.
+    @State private var afterBeta: FarmSheet?
 
     var body: some View {
         ZStack {
@@ -117,7 +121,13 @@ struct FarmView: View {
             if let request {
                 #if DEBUG || BETA
                     // A beta question never pushes a sheet aside: it waits until that sheet closes.
-                    if case .betaPrompt = request, sheet != nil {
+                    if case .betaPrompt = request, sheet != nil || swapping != nil {
+                        store.openRequest = nil
+                        return
+                    }
+                    // Nothing pushes a beta question aside either: the request waits until it closes.
+                    if case .betaPrompt? = sheet {
+                        afterBeta = request
                         store.openRequest = nil
                         return
                     }
@@ -224,7 +234,14 @@ struct FarmView: View {
     private func sheetClosed() {
         presentShowIfWaiting()
         #if DEBUG || BETA
-            if showDay == nil { store.offerBetaPrompt() }
+            guard showDay == nil, sheet == nil, swapping == nil else { return }
+            if let next = afterBeta {
+                afterBeta = nil
+                if case .place(let place) = next { scrolled = .containing(place) }
+                sheet = next
+                return
+            }
+            store.offerBetaPrompt()
         #endif
     }
 
@@ -251,10 +268,12 @@ struct FarmView: View {
 
     /// Swap the open sheet for another (a bird card from a list, the naming prompt).
     private func open(_ next: FarmSheet) {
+        swapping = next
         sheet = nil
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(350))
             sheet = next
+            swapping = nil
         }
     }
 

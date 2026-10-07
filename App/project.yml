@@ -7,6 +7,8 @@ options:
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
+  # With three configs XcodeGen would default to the first by name, Beta. Release is the plain default.
+  defaultConfig: Release
 # Beta is Release plus the BETA flag: the build for TestFlight. It compiles in the beta questions
 # (App/Featherwick/Beta). Release, the App Store build, never has them. Archive with the
 # "Featherwick Beta" scheme for TestFlight, and with "Featherwick" for the App Store.
