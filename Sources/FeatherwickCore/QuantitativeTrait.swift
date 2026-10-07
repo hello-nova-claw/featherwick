@@ -33,6 +33,18 @@ public struct QuantitativeTrait: Sendable {
     /// 0...1, for judging.
     public func fraction(_ genome: Genome) -> Double { Double(score(genome)) / Double(maxScore) }
 
+    /// Sets a fixed share of "+" alleles, filled gene by gene from the first. A breed's default
+    /// genes use this, so two purebreds of one breed are alike and breed true for the trait.
+    /// A share of 0.5 gives exactly the default genes.
+    public func setShare(_ share: Double, in genome: inout Genome) {
+        let plusCount = Int((min(max(share, 0), 1) * Double(maxScore)).rounded())
+        for (i, locus) in loci.enumerated() {
+            let a = 2 * i < plusCount ? Self.plus : Self.minus
+            let b = 2 * i + 1 < plusCount ? Self.plus : Self.minus
+            genome.setAlleles([a, b], at: locus)
+        }
+    }
+
     /// Gives a bird from outside the player's flock random genes for this trait.
     /// Each allele is "+" with chance `plusChance`.
     public func randomise<R: RandomNumberGenerator>(
@@ -64,7 +76,15 @@ public struct QuantitativeTrait: Sendable {
         name: "calm", prefix: "calm", genes: 8,
         summary: "Calm temperament. One of many small additive genes.")
 
-    public static let all: [QuantitativeTrait] = [showType, eggShape, calm]
+    /// Brown shell depth: how much brown pigment a hen puts on her shell. It shows only with the
+    /// brown coating gene: low depth gives brown (or green on a blue shell), high depth gives
+    /// chocolate (or olive). Real shell darkness is polygenic, and keepers select for it.
+    public static let brownDepth = QuantitativeTrait(
+        name: "brown depth", prefix: "brownDepth", genes: 10,
+        summary: "Brown shell depth. One of many small additive genes.")
+
+    /// ORDER MATTERS: founder genes are drawn in this order. Add new traits at the END.
+    public static let all: [QuantitativeTrait] = [showType, eggShape, calm, brownDepth]
 }
 
 extension Bird {
@@ -74,8 +94,14 @@ extension Bird {
         var local = localRNG(salt: 0)
         var copy = self
         for trait in QuantitativeTrait.all {
-            // Temperament runs in breeds: calm breeds carry more calm genes.
-            let chance = trait.name == QuantitativeTrait.calm.name ? breed.definition.calmness : 0.5
+            // Temperament and shell depth run in breeds: calm breeds carry more calm genes,
+            // dark-egg breeds more depth genes.
+            let chance =
+                switch trait.name {
+                case QuantitativeTrait.calm.name: breed.definition.calmness
+                case QuantitativeTrait.brownDepth.name: breed.definition.brownDepth
+                default: 0.5
+                }
             trait.randomise(&copy.genome, plusChance: chance, using: &local)
         }
         return copy

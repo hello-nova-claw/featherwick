@@ -1,9 +1,16 @@
 public enum FeatherColour: String, Hashable, Codable, Sendable, CaseIterable {
-    case black, blue, splash, lavender, buff
+    // New colours go at the end, because the shop special draws its colours in this order.
+    // That alone does not keep old seeds: a new variety on an in-game breed also grows the pools that
+    // starters, shop birds, gifts and show rivals draw from, so every seed changes from day 0.
+    case black, blue, splash, lavender, buff, white
 }
 
 public enum EggColour: String, Hashable, Codable, Sendable, CaseIterable {
     case cream, brown, blue, olive
+    /// Very dark brown, like a Marans egg: brown coating with high depth.
+    case chocolate
+    /// Brown coating with low depth over a blue shell. Darker coating gives olive.
+    case green
 }
 
 /// How a chick's down looks. Shows the colour genes, not the breed.
@@ -12,7 +19,7 @@ public enum ChickDown: String, Hashable, Codable, Sendable, CaseIterable {
     case slate  // blue
     case paleGrey  // splash
     case silver  // lavender
-    case yellow  // buff
+    case yellow  // buff, and dominant white
     case darkWithHeadSpot  // barred
 }
 
@@ -24,7 +31,7 @@ extension Phenotype {
         case .blue: return .slate
         case .splash: return .paleGrey
         case .lavender: return .silver
-        case .buff: return .yellow
+        case .buff, .white: return .yellow
         }
     }
 }
@@ -45,8 +52,11 @@ public struct Phenotype: Hashable, Codable, Sendable {
         sex = genome.sex
         isSilkieFeathered = genome.feathering.isHomozygous(for: .silkie)
 
-        // Colour order: buff hides the black-based dilutions; lavender wins over blue.
-        if genome.baseColour.isHomozygous(for: .buff) {
+        // Colour order: dominant white hides everything; buff hides the black-based dilutions;
+        // lavender wins over blue. A white bird still carries its other colour genes.
+        if genome.dominantWhite.has(.white) {
+            colour = .white
+        } else if genome.baseColour.isHomozygous(for: .buff) {
             colour = .buff
         } else if genome.lavender.isHomozygous(for: .lavender) {
             colour = .lavender
@@ -60,18 +70,22 @@ public struct Phenotype: Hashable, Codable, Sendable {
 
         // Patterns only show on the right ground colour, as in real chickens. The genes are still
         // carried and passed on, so hidden patterns can reappear in chicks.
-        // Lacing needs a gold (buff) ground; barring shows only on black-based birds.
+        // Lacing needs a gold (buff) ground; barring shows only on black-based birds. Dominant white
+        // hides both, so a white bird never shows (or names) a pattern it carries.
         isLaced = colour == .buff && genome.lacing.isHomozygous(for: .laced)
-        isBarred = colour != .buff && genome.sexChromosomes.isBarred
+        isBarred = colour != .buff && colour != .white && genome.sexChromosomes.isBarred
 
         if sex == .hen {
             let blueShell = genome.blueShell.has(.blue)
             let brownCoat = genome.brownShell.has(.brown)
+            // Depth only shows through the brown coating. An average bird (and every bird from a
+            // save made before depth existed) lays brown or olive, as before.
+            let depth = QuantitativeTrait.brownDepth.fraction(genome)
             eggColour =
                 switch (blueShell, brownCoat) {
-                case (true, true): .olive
+                case (true, true): depth >= Rules.oliveShellDepth ? .olive : .green
                 case (true, false): .blue
-                case (false, true): .brown
+                case (false, true): depth > Rules.chocolateShellDepth ? .chocolate : .brown
                 case (false, false): .cream
                 }
             eggIsSpeckled = genome.speckle.isHomozygous(for: .speckled)

@@ -59,6 +59,42 @@ struct GenomeTests {
         #expect(abs(share(.splash) - 0.25) < 0.03)
     }
 
+    /// I/i+ x i+/i+: about half the chicks are white.
+    @Test func dominantWhiteTimesColouredIsAboutHalfWhite() throws {
+        var rng = SeededRNG(seed: 17)
+        var mother = Breed.orpington.purebred(.hen)
+        mother.dominantWhite = AllelePair(.white, .wildType)
+        let father = Breed.orpington.purebred(.rooster)
+        #expect(Phenotype(mother).colour == .white && Phenotype(father).colour == .black)
+        let total = 4000
+        var white = 0
+        for _ in 0..<total
+        where Phenotype(try Breeding.cross(mother: mother, father: father, using: &rng)).colour == .white {
+            white += 1
+        }
+        #expect(abs(Double(white) / Double(total) - 0.5) < 0.03)
+    }
+
+    /// Two I/i+ white parents: about 1 in 4 chicks is coloured (i+/i+), and shows the colour the
+    /// parents hid. This is real: white x white can throw colour when both parents carry one I.
+    @Test func whiteTimesWhiteCanThrowAColouredChick() throws {
+        var rng = SeededRNG(seed: 23)
+        var mother = Breed.orpington.purebred(.hen, variety: .blue)
+        var father = Breed.orpington.purebred(.rooster, variety: .blue)
+        mother.dominantWhite = AllelePair(.white, .wildType)
+        father.dominantWhite = AllelePair(.wildType, .white)
+        #expect(Phenotype(mother).colour == .white && Phenotype(father).colour == .white)
+        let total = 4000
+        var counts: [FeatherColour: Int] = [:]
+        for _ in 0..<total {
+            counts[Phenotype(try Breeding.cross(mother: mother, father: father, using: &rng)).colour, default: 0] += 1
+        }
+        let coloured = total - counts[.white, default: 0]
+        #expect(abs(Double(coloured) / Double(total) - 0.25) < 0.03)
+        // The hidden blue comes back: coloured chicks are black, blue or splash.
+        #expect(counts[.blue, default: 0] > 0 && counts[.buff, default: 0] == 0)
+    }
+
     @Test func aboutHalfTheChicksAreHens() throws {
         var rng = SeededRNG(seed: 5)
         let mother = Breed.silkie.purebred(.hen)
@@ -73,14 +109,15 @@ struct GenomeTests {
 
     // MARK: - Egg colour
 
-    @Test func araucanaHenTimesOrpingtonRoosterGivesOliveEggers() throws {
+    /// Araucana (low shell depth) × Orpington (average depth): the brown coat is thin, so the eggs are green.
+    @Test func araucanaHenTimesOrpingtonRoosterGivesGreenEggs() throws {
         var rng = SeededRNG(seed: 7)
         let mother = Breed.araucana.purebred(.hen)
         let father = Breed.orpington.purebred(.rooster)
         for _ in 0..<200 {
             let chick = Phenotype(try Breeding.cross(mother: mother, father: father, using: &rng))
             if chick.sex == .hen {
-                #expect(chick.eggColour == .olive)
+                #expect(chick.eggColour == .green)
             } else {
                 #expect(chick.eggColour == nil)
             }

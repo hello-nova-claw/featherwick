@@ -124,6 +124,9 @@ public struct GameState: Hashable, Codable, Sendable {
     /// Chicks raised by a broody hen. They stay with her (no brooder, no perch) until big enough.
     public var henChicks: [Bird] = []
     public var coop: [Bird] = []
+    /// Ids of coop birds in the breeding pen (see BreedingPen.swift). The birds stay in `coop`:
+    /// the pen is a corner of the coop, not extra room. Empty in saves from before the pen.
+    public var pen: [UUID] = []
     public var lost: [LostBird] = []
     /// Grown birds with no perch and no brooder room. The neighbour keeps them safe,
     /// but no eggs can be set until they have a home.

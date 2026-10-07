@@ -37,6 +37,8 @@ public enum Feature: String, Hashable, Codable, Sendable, CaseOrdered {
     /// The big incubator at Speckle & Down. (The neighbour's small one comes with the first fertile egg,
     /// laid or bought.)
     case incubatorShop
+    /// The breeding pen: the keeper chooses which rooster fathers which hens' eggs.
+    case breedingPen
 }
 
 /// The neighbour's advice for the next show: one of the keeper's birds, and the class it is most
@@ -58,7 +60,8 @@ extension Rules {
     /// The morning a feature is introduced. The county show opens `showNoticeDays` before the first show.
     public func introductionDay(of feature: Feature) -> Int {
         if feature == .shows { return max(1, showIntervalDays - showNoticeDays) }
-        return featureDays[feature] ?? 0
+        // A save from before a feature existed has no day for it in its own rules: use the standard day.
+        return featureDays[feature] ?? Rules.standard.featureDays[feature] ?? 0
     }
 }
 
@@ -84,6 +87,7 @@ extension Engine {
         case .upgradeCoop: .coopUpgrade
         case .buyIncubator: .incubatorShop
         case .enterShow, .enterShowIn, .enterEggs, .enterEggPlate: .shows
+        case .penBird, .unpenBird: .breedingPen
         default: nil
         }
     }

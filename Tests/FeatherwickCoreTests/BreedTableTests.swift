@@ -46,7 +46,11 @@ struct BreedTableTests {
                     let locus = try #require(Loci.definition(gene.locus))
                     #expect(Set(chick.alleles(at: locus)) == [gene.first], "\(def.id) \(variety.id) lost \(gene.locus)")
                 }
-                for locus in Loci.all where !touched.contains(locus.id) {
+                // Shell depth is set for every breed; purebred parents pass on exactly their own.
+                let depth = QuantitativeTrait.brownDepth
+                #expect(depth.score(chick) == depth.score(mother), "\(def.id) \(variety.id) shell depth drifted")
+                let depthLoci = Set(depth.loci.map(\.id))
+                for locus in Loci.all where !touched.contains(locus.id) && !depthLoci.contains(locus.id) {
                     #expect(
                         chick.alleles(at: locus).allSatisfy { $0 == locus.defaultAllele },
                         "\(def.id) \(variety.id) chick has stray \(locus.id)")
@@ -80,6 +84,16 @@ struct BreedTableTests {
         #expect(rock.isBarred && rock.colour == .black && rock.eggColour == .brown)
         let australorp = Phenotype(Breed.australorp.purebred(.rooster))
         #expect(australorp.colour == .black && !australorp.isBarred && australorp.eggColour == nil)
+        // A White Leghorn: dominant white over black, and otherwise every gene at its default
+        // (normal feathers, no shell pigment: the closest the game has to a white egg).
+        let leghorn = Breed.leghorn.purebred(.hen)
+        let p = Phenotype(leghorn)
+        #expect(p.colour == .white && !p.isSilkieFeathered && p.eggColour == .cream && !p.eggIsSpeckled)
+        var expected = Genome(sex: .hen)
+        expected.dominantWhite = .homozygous(.white)
+        #expect(leghorn == expected)
+        let look = Breed.leghorn.definition.look
+        #expect(look.body == .light && look.comb == .single && look.legs == .clean && look.legTone == .yellow)
     }
 
     @Test func tableReplacesTheOldHardcodedRules() {

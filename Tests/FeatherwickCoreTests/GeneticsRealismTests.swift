@@ -8,6 +8,7 @@ import Testing
 struct GeneticsRealismTests {
     static let breedEgg: [Breed: EggColour] = [
         .orpington: .brown, .wyandotte: .brown, .araucana: .blue, .silkie: .cream, .australorp: .brown,
+        .leghorn: .cream,
     ]
 
     /// Problems with one bird, or [] if it looks real.
@@ -17,6 +18,8 @@ struct GeneticsRealismTests {
         if p.isLaced && p.colour != .buff { out.append("lacing on a \(p.colour) bird") }
         if p.isBarred && p.colour == .buff { out.append("barring on buff") }
         if p.isLaced && p.isBarred { out.append("barred and laced") }
+        if p.colour == .white && (p.isLaced || p.isBarred) { out.append("pattern showing on white") }
+        if p.colour == .white && p.chickDown != .yellow { out.append("white bird without yellow down") }
         if b.isPurebred {
             if p.isLaced && b.breed != .wyandotte { out.append("laced purebred \(b.breed)") }
             if p.isSilkieFeathered != (b.breed == .silkie) { out.append("silkie feathering on purebred \(b.breed)") }
@@ -25,17 +28,32 @@ struct GeneticsRealismTests {
             }
         } else if b.sex == .hen, let egg = p.eggColour {
             switch b.crossName {
-            case .oliveEgger: if egg != .olive { out.append("olive egger laying \(egg)") }
+            case .oliveEgger: if egg != .olive && egg != .green { out.append("olive egger laying \(egg)") }
             case .easterEgger: if egg != .blue { out.append("easter egger laying \(egg)") }
-            case .barnyardMix: if egg != .brown && egg != .cream { out.append("barnyard mix laying \(egg)") }
+            case .barnyardMix:
+                if ![.brown, .chocolate, .cream].contains(egg) { out.append("barnyard mix laying \(egg)") }
             case nil: out.append("cross with no name")
             }
         }
         return out
     }
 
-    static func founders(_ rng: inout SeededRNG, breeds: [Breed] = Breed.starters) -> [Bird] {
+    static func founders(_ rng: inout SeededRNG, breeds: [Breed] = Breed.starters, white: Bool = false) -> [Bird] {
         var birds: [Bird] = []
+        // White founders carry every hidden colour gene: one I, plus blue and barring underneath.
+        if white {
+            for breed in breeds {
+                for sex in Sex.allCases {
+                    var g = breed.purebred(sex, variety: .blue, barred: true)
+                    g.dominantWhite = AllelePair(.white, .wildType)
+                    g.baseColour = AllelePair(.black, .buff)
+                    birds.append(
+                        Bird(
+                            id: makeID(using: &rng), name: "w", breed: breed, genome: g, hatchDay: 0,
+                            origin: "Founder", revealed: true))
+                }
+            }
+        }
         for breed in breeds {
             for colour in StarterColour.allCases {
                 for barred in [false, true] {
@@ -54,10 +72,10 @@ struct GeneticsRealismTests {
 
     /// Random mating for several generations, through the same egg and hatch code the game uses.
     static func population(
-        seed: UInt64, generations: Int, perGeneration: Int, breeds: [Breed] = Breed.starters
+        seed: UInt64, generations: Int, perGeneration: Int, breeds: [Breed] = Breed.starters, white: Bool = false
     ) -> [Bird] {
         var rng = SeededRNG(seed: seed)
-        var current = founders(&rng, breeds: breeds)
+        var current = founders(&rng, breeds: breeds, white: white)
         var everyone = current
         for _ in 0..<generations {
             let hens = current.filter { $0.sex == .hen }
@@ -90,6 +108,34 @@ struct GeneticsRealismTests {
         let birds = Self.population(seed: 9, generations: 5, perGeneration: 4000, breeds: Breed.allCases)
         let bad = birds.flatMap(Self.problems)
         #expect(bad.isEmpty, "bizarre birds: \(Set(bad))")
+    }
+
+    /// Dominant white mixed into every colour and pattern: white birds never show a pattern, and the
+    /// hidden genes come back in coloured chicks.
+    @Test func whiteFlocksStayRealAndHiddenColoursComeBack() {
+        let birds = Self.population(seed: 13, generations: 5, perGeneration: 4000, breeds: Breed.allCases, white: true)
+        let bad = birds.flatMap(Self.problems)
+        #expect(bad.isEmpty, "bizarre birds: \(Set(bad))")
+        let looks = birds.map(\.phenotype)
+        #expect(looks.contains { $0.colour == .white } && looks.contains { $0.colour != .white })
+        #expect(looks.contains { $0.isBarred } && looks.contains { $0.colour == .splash })
+    }
+
+    @Test func whiteHidesPatternGenesThatStillPassOn() {
+        // A white hen carrying barring, blue and lacing on buff shows none of them.
+        var hen = Breed.wyandotte.purebred(.hen, variety: .buff, barred: true)
+        hen.blue = AllelePair(.blue, .notBlue)
+        hen.dominantWhite = AllelePair(.white, .wildType)
+        let p = Phenotype(hen)
+        #expect(p.colour == .white && !p.isBarred && !p.isLaced && p.chickDown == .yellow)
+        #expect(featherColourName(p.colour, barred: p.isBarred, laced: p.isLaced) == "white")
+        // Her coloured chicks by a buff Wyandotte rooster show the gold lacing she hid.
+        var rng = SeededRNG(seed: 8)
+        let rooster = Breed.wyandotte.purebred(.rooster, variety: .buff)
+        let chicks = try! (0..<200).map { _ in Phenotype(try Breeding.cross(mother: hen, father: rooster, using: &rng))
+        }
+        #expect(chicks.contains { $0.colour == .white })
+        #expect(chicks.contains { $0.colour == .buff && $0.isLaced })
     }
 
     // MARK: - Purebred or cross

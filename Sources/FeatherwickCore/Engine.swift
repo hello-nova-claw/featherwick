@@ -49,6 +49,10 @@ public enum Command: Hashable, Codable, Sendable {
     case enterEggPlate([UUID])
     /// Buy Speckle & Down's daily special (see Shop.swift). One a day.
     case buySpecial
+    /// Put a coop bird in the breeding pen (see BreedingPen.swift). Its perch stays in the coop.
+    case penBird(UUID)
+    /// Take a bird out of the breeding pen. It stays on its coop perch.
+    case unpenBird(UUID)
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -110,6 +114,18 @@ public enum Rejection: Hashable, Codable, Sendable {
     case specialSoldOut
     /// The early game has not reached this feature yet (see EarlyGame.swift).
     case notYet(Feature)
+    /// The breeding pen already holds this many hens.
+    case penFull(hens: Int)
+    /// The breeding pen already holds a rooster. One at a time.
+    case penHasRooster
+    /// That bird is not in the breeding pen.
+    case notInPen
+    /// That bird is already in the breeding pen.
+    case alreadyInPen
+    /// Only coop birds can go in the pen.
+    case notInCoop
+    /// The bird's sex does not show yet. The words must not say which it is.
+    case tooYoungForPen
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -161,6 +177,9 @@ public enum GameEvent: Hashable, Codable, Sendable {
     /// Clear eggs that were set without being candled first. They sit the full time, never hatch, and go back
     /// to the carton (or the nest boxes if the carton is full), now known to be clear.
     case eggsDidNotHatch(count: Int, hen: UUID?)
+    /// A chick hatched looking like neither parent, and the neighbour says why (see `HatchWhy.swift`).
+    /// Comes after the chick's `chicksHatched`. At most `Rules.hatchWhyNotesPerDay` a day.
+    case hatchSurprise(chick: UUID, reason: HatchReason)
     /// The neighbour shows the keeper how to candle eggs.
     case learnedCandling
     case renamed(UUID)
@@ -222,6 +241,10 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case seasonGoalProgress(GoalKind, progress: Int, target: Int)
     /// The season goal is reached. The keeper is paid a bigger reward, once.
     case seasonGoalReached(GoalKind, coins: Int)
+    /// The bird is in the breeding pen now (see BreedingPen.swift).
+    case birdPenned(UUID)
+    /// The bird left the breeding pen. It stays on its coop perch.
+    case birdUnpenned(UUID)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -254,6 +277,8 @@ public enum Engine {
         _ command: Command, to s: inout GameState, using rng: inout R
     ) -> [GameEvent] {
         let ev = perform(command, to: &s, using: &rng)
+        // A bird that left the coop (rehomed, traded, scared off) leaves the pen too: no stale ids.
+        leavePenIfGone(&s)
         // Today's jobs tick off as the keeper does them. The night sets new ones itself.
         if command == .passNight { return ev }
         return ev + progressJobs(after: ev, &s)
@@ -454,6 +479,10 @@ public enum Engine {
             return enterEggPlate(ids, &s)
         case .buySpecial:
             return buySpecial(&s, &rng)
+        case .penBird(let id):
+            return penBird(id, &s)
+        case .unpenBird(let id):
+            return unpenBird(id, &s)
         }
     }
 
@@ -715,12 +744,15 @@ public enum Engine {
     static func hatchDue<R: RandomNumberGenerator>(_ s: inout GameState, _ rng: inout R) -> [GameEvent] {
         var ev: [GameEvent] = []
         var waiting: [Clutch] = []
+        // Chicks hatch only in this night step, so a local count keeps the daily limit.
+        var whyNotes = 0
         for clutch in s.clutches {
             guard clutch.hatchDay <= s.day else {
                 waiting.append(clutch)
                 continue
             }
             var ids: [UUID] = []
+            var notes: [GameEvent] = []
             var unhatched = 0
             for egg in clutch.eggs {
                 guard
@@ -744,8 +776,13 @@ public enum Engine {
                     s.brooder.append(chick)
                 }
                 ids.append(chick.id)
+                if whyNotes < s.rules.hatchWhyNotesPerDay, let note = hatchSurprise(chick, s) {
+                    notes.append(note)
+                    whyNotes += 1
+                }
             }
             if !ids.isEmpty { ev.append(.chicksHatched(ids, hen: clutch.henID)) }
+            ev += notes
             if unhatched > 0 { ev.append(.eggsDidNotHatch(count: unhatched, hen: clutch.henID)) }
             // No chicks to raise: a hen whose eggs were all clear stops being broody and lays again.
             // A hen already raising chicks (fostered ones) stays broody for them.
@@ -811,6 +848,7 @@ public enum Engine {
                 s.lost.append(LostBird(bird: b, returnsOnDay: s.day + 1 + days))
             }
             ev.append(.foxVisited(scared: scared.map(\.id)))
+            leavePenIfGone(&s)  // a scared bird leaves the pen; the keeper pens it again when it is home
         } else {
             ev.append(.quietNight)
         }
@@ -1097,7 +1135,11 @@ public enum Engine {
         guard !hens.isEmpty else { return [] }
         guard s.fedToday else { return [.noEggsHungry] }
         var ev: [GameEvent] = []
-        let extra = s.rules.extraRoosters(inCoop: s.coop, onDay: s.day)
+        // The breeding pen is its own little flock (see BreedingPen.swift). Its birds do not count
+        // toward coop rooster tension, and its hens are not unsettled by the coop roosters.
+        let penned = Set(s.pennedBirds.map(\.id))
+        let coopFlock = s.coop.filter { !penned.contains($0.id) }
+        let extra = s.rules.extraRoosters(inCoop: coopFlock, onDay: s.day)
         if extra > 0 {
             ev.append(.roostersSquabbling(extra: extra))
             // New-player nudge: the first time it bites, say how to fix it. Shown once.
@@ -1111,21 +1153,30 @@ public enum Engine {
         let premium = s.fedPremiumToday ? (1 + s.rules.premiumFeedLayBonus) : 1
         let forage = s.foragedToday ? (1 + s.rules.forageLayBonus) : 1
         let chance = min(1, (s.rules.layChance[s.season] ?? 0) * calm * premium * forage)
-        // Any adult rooster in the coop fertilises the hens' eggs. (A breeding pen comes later.)
-        let roosters = s.coop.filter { $0.sex == .rooster && $0.stage(onDay: s.day, rules: s.rules) == .adult }
+        let penChance = min(1, (s.rules.layChance[s.season] ?? 0) * premium * forage)
+        // A coop hen's egg is fathered by any adult coop rooster. A penned hen's egg is fathered by the
+        // penned rooster only; with no adult rooster in the pen her eggs are not fertile.
+        let isAdultRooster = { (b: Bird) in b.sex == .rooster && b.stage(onDay: s.day, rules: s.rules) == .adult }
+        let roosters = coopFlock.filter(isAdultRooster)
+        let penRooster = s.pennedBirds.first(where: isAdultRooster)
         for hen in hens where s.day >= hen.noLayUntilDay && !hen.isBroody(onDay: s.day) {
+            let inPen = penned.contains(hen.id)
             // Inbred hens lay a little less (real inbreeding depression), when that rule is on.
             // Older hens slow with age.
             let inbredLoss = s.rules.inbreedingMatters ? min(s.rules.maxInbreedingLayLoss, hen.inbreeding ?? 0) : 0
-            let henChance = chance * (1 - inbredLoss) * s.rules.layAgeFactor(ageDays: hen.age(onDay: s.day))
+            let henChance =
+                (inPen ? penChance : chance) * (1 - inbredLoss) * s.rules.layAgeFactor(ageDays: hen.age(onDay: s.day))
             guard Double.roll(henChance, using: &rng) else { continue }
             // Nest boxes full: the hen lays on the floor, and the egg may break.
             if s.nest.count >= s.nestCapacity, Double.roll(s.rules.floorEggBreakChance, using: &rng) {
                 ev.append(.eggBroken(by: hen.id))
                 continue
             }
+            // Same draws as before the pen for a coop hen, so seeds with an empty pen do not change.
             var father: Bird?
-            if !roosters.isEmpty, Double.roll(s.rules.fertileChance, using: &rng) {
+            if inPen {
+                if let penRooster, Double.roll(s.rules.fertileChance, using: &rng) { father = penRooster }
+            } else if !roosters.isEmpty, Double.roll(s.rules.fertileChance, using: &rng) {
                 father = roosters[Int.random(in: 0..<roosters.count, using: &rng)]
             }
             var egg = Breeding.layEgg(mother: hen, father: father, day: s.day, using: &rng)
