@@ -110,6 +110,8 @@ Most new content is a table entry. See README "Data layer" and the feature secti
 - Breed: a `BreedDefinition` in `BreedTable.all` (status `.planned` until art is ready) + a static id on `Breed`.
 - Colour: a `ColourVariety`, then list it on its breeds.
 - Gene: an allele enum in `Alleles.swift` (conforms to `GeneLocus`), append to `Loci` in `Locus.swift`, add its look in `Phenotype.swift`.
+  `Knowledge` and the planner's feather table (`ChickLookTable`) pick it up from `Loci.mendelian`. An egg gene goes in
+  `ChickLookTable.eggGenes`. A new look also needs a `Trait` and its line in `Trait.showing`.
   Knowledge and the planner pick it up from `Loci`; check `KnowledgeTests`. Its carrier words go in
   `carrierText` (`PlannerTextTests` checks every allele).
 - Storyline: a `Storyline` in `Storylines.all` + its words in `storyText`.

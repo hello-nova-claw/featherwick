@@ -43,12 +43,15 @@ struct ChickLookTable: Sendable {
     /// The traits shown, as bits over `Trait.planned`.
     let entries: [UInt16]
 
-    /// Feather colour and pattern, both sexes. The barring genotype says the sex: one allele is a hen.
+    /// The genes of a daughter's eggs. Every other single gene is a feather gene.
+    static let eggGenes: [LocusID] = [BlueShell.locus, BrownShell.locus, Speckle.locus]
+
+    /// Feather colour and pattern, both sexes: every single gene but the egg genes, so a gene appended
+    /// to `Loci` is in the table at once. The barring genotype says the sex: one allele is a hen.
     static let plumage = ChickLookTable(
-        ["barring", "feathering", "baseColour", "blue", "lavender", "lacing", "dominantWhite"], hen: false,
-        traits: Trait.plumageBits)
+        Loci.mendelian.map(\.id).filter { !eggGenes.contains($0) }, hen: false, traits: Trait.plumageBits)
     /// The eggs a daughter lays.
-    static let eggs = ChickLookTable(["blueShell", "brownShell", "speckle"], hen: true, traits: Trait.eggBits)
+    static let eggs = ChickLookTable(eggGenes, hen: true, traits: Trait.eggBits)
 
     /// The traits (bits over `Trait.planned`) the table answers for.
     let traits: UInt16

@@ -210,7 +210,26 @@ extension Trait {
         if look.isLaced == true { out |= Trait.laced.bit }
         if look.isSilkieFeathered { out |= Trait.silkieFeathered.bit }
         if look.eggIsSpeckled == true { out |= Trait.speckledEggs.bit }
+        if let egg = look.eggColour { out |= Trait.eggColour(egg.coarse).bit }
         return out
+    }
+
+    /// The traits that show a gene's non-plain allele: the look a keeper would have seen if a bird of
+    /// the family carried it in the open. Nothing for a gene this list does not know.
+    static func showing(_ id: LocusID) -> UInt16 {
+        switch id {
+        case Barring.locus: bits([.barred])
+        case Feathering.locus: bits([.silkieFeathered])
+        case BaseColour.locus: bits([.colour(.buff), .laced])
+        case BlueDilution.locus: bits([.colour(.blue), .colour(.splash)])
+        case Lavender.locus: bits([.colour(.lavender)])
+        case Lacing.locus: bits([.laced])
+        case BlueShell.locus: bits([.eggColour(.blue), .eggColour(.green)])
+        case BrownShell.locus: bits([.eggColour(.brown), .eggColour(.green)])
+        case Speckle.locus: bits([.speckledEggs])
+        case DominantWhite.locus: bits([.colour(.white)])
+        default: 0
+        }
     }
 }
 
@@ -382,6 +401,8 @@ private struct PairWork {
     let familyShown: UInt16
     /// Each parent's seen chicks.
     let chicks: [UUID: [Visible]]
+    /// Every bird in the family list, by id.
+    let byID: [UUID: Visible]
     /// The white parent, if either is white (the hen first).
     let white: UUID?
     /// Outcomes with one gene opened up, for working out which gene and parent settle a line.
@@ -413,6 +434,7 @@ private struct PairWork {
             }
         }
         self.chicks = chicks
+        self.byID = byID
         var relatives = [hen, rooster]
         for bird in [hen, rooster] {
             let parents = [bird.motherID, bird.fatherID].compactMap { $0.flatMap { byID[$0] } }
@@ -554,9 +576,12 @@ private struct PairWork {
 
     // MARK: Sex-link and eggs
 
-    /// A barred hen and a rooster pinned not barred: every son gets her barring, no daughter does.
+    /// A barred hen and a rooster pinned not barred: every son gets her barring, no daughter does. Only
+    /// when no chick can be buff or white: those hide barring, so a plain chick could be a son.
     func sexLink() -> Forecast? {
-        guard hen.look?.isBarred == true, plumage.can & Trait.barred.bit != 0 else { return nil }
+        guard hen.look?.isBarred == true, plumage.can & Trait.barred.bit != 0,
+            plumage.can & Trait.bits([.colour(.buff), .colour(.white)]) == 0
+        else { return nil }
         let l = Mendel.position(Barring.locus)
         guard let plain = GenotypeSpace.all[l].index(of: [Barring.plain.rawValue, Barring.plain.rawValue]),
             roosterMasks[l] == 1 << plain
@@ -596,10 +621,10 @@ private struct PairWork {
             if isHen { h[l] = plainHen[l] } else { r[l] = plainRooster[l] }
             guard h != henMasks || r != roosterMasks else { continue }
             if Outcome(.eggs, hen: h, rooster: r).can & Trait.eggColourBits != full {
-                return .eggColours(colours, sure: false, .unknownFamily(locus: locusID(l)))
+                return .eggColours(colours, sure: false, openReason(l))
             }
         }
-        return .eggColours(colours, sure: false, .unknownFamily(locus: locusID(loci[0])))
+        return .eggColours(colours, sure: false, openReason(loci[0]))
     }
 
     /// The genotypes in `mask` with the fewest non-plain alleles: the bird hides nothing it need not.
@@ -722,21 +747,43 @@ private struct PairWork {
                 let masks = white == hen.id ? henMasks : roosterMasks
                 if masks[l].nonzeroBitCount > 1 { return .white(bird: white) }
             }
-            if familyShown & t.bit == 0 { return .unknownFamily(locus: locusID(l)) }
-            return familyReason(l)
+            return openReason(l)
         }
         if let white { return .white(bird: white) }
         return evidence(hen, Mendel.position(t.loci[0]))
     }
 
-    /// The family's evidence at an open gene: a parent's proven hidden allele there first, else the
-    /// look of a parent known at least in part there, else the family tree.
+    /// Why an open gene may still matter: "nobody in the family has shown it" only when nobody in the
+    /// pair's seen family showed what the gene's hidden allele looks like; else the family's evidence.
+    func openReason(_ l: Int) -> Reason {
+        if familyShown & Trait.showing(locusID(l)) == 0 { return .unknownFamily(locus: locusID(l)) }
+        return familyReason(l)
+    }
+
+    /// The family's evidence at an open gene: a parent's proven hidden allele there first, else a
+    /// parent or chick of the pair that showed the gene ("his mother laid blue eggs"), else the look of
+    /// a parent known at least in part there, else the family tree.
     func familyReason(_ l: Int) -> Reason {
-        let known = [hen, rooster].filter { k.state($0.id, locusID(l)) != .open }
+        let id = locusID(l)
+        let known = [hen, rooster].filter { k.state($0.id, id) != .open }
         for bird in known {
             let r = evidence(bird, l)
-            if case .look = r { continue }
-            return r
+            switch r {
+            case .look, .family: continue
+            default: return r
+            }
+        }
+        let shows = Trait.showing(id)
+        func showed(_ v: Visible?) -> Bool { (v?.look.map(Trait.shown) ?? 0) & shows != 0 }
+        for bird in [rooster, hen] {
+            for parent in [bird.motherID, bird.fatherID].compactMap({ $0 }) where showed(byID[parent]) {
+                return .parent(bird: bird.id, parent: parent, locus: id)
+            }
+        }
+        for bird in [hen, rooster] {
+            if let c = (chicks[bird.id] ?? []).first(where: showed) {
+                return .chick(bird: bird.id, chick: c.id, locus: id)
+            }
         }
         if let bird = known.first { return evidence(bird, l) }
         return .family(hen: hen.id, rooster: rooster.id)
@@ -750,10 +797,23 @@ private struct PairWork {
         let space = GenotypeSpace.all[l]
         let known = bird.id == hen.id ? henMasks[l] : bird.id == rooster.id ? roosterMasks[l] : 0
         let fromLook = bird.look.flatMap { LookTable.masks(for: $0, sex: bird.sex)?[l] } ?? space.allMask
-        if known == fromLook & space.mask(for: bird.sex) { return .look(bird: bird.id, locus: id) }
-        guard let proven = k.provenHidden(bird.id, includeDefault: true).first(where: { $0.locus == id }) else {
+        if known == fromLook & space.mask(for: bird.sex) {
+            // A look that allows every genotype says nothing: the family tree does.
+            if known == space.mask(for: bird.sex) { return .family(hen: hen.id, rooster: rooster.id) }
+            return .look(bird: bird.id, locus: id)
+        }
+        // A non-plain allele first: "barring came down from his mother" must be about barring. A plain
+        // allele (b+) proven through a parent or a chick gives the family tree, not that bird.
+        let here = k.provenHidden(bird.id, includeDefault: true).filter { $0.locus == id }
+        guard let proven = here.first(where: { !$0.isDefault }) ?? here.first else {
             if bird.isFromOutside, let breed = bird.breed { return .breed(bird: bird.id, breed) }
             return .family(hen: hen.id, rooster: rooster.id)
+        }
+        if proven.isDefault {
+            switch proven.evidence {
+            case .parent, .parents, .child, .family: return .family(hen: hen.id, rooster: rooster.id)
+            default: break
+            }
         }
         switch proven.evidence {
         case .look: return .look(bird: bird.id, locus: id)

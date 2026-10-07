@@ -382,6 +382,7 @@ import Testing
         var counts = [Int](repeating: 0, count: FeatherwickCore.Trait.planned.count)
         var daughters = 0
         var barredDaughters = 0
+        var plainSons = 0
         var eggs: Set<EggColour> = []
         for _ in 0..<soundCrosses {
             let chick = Phenotype(try! Breeding.cross(mother: p.hen.genome, father: p.rooster.genome, using: &rng))
@@ -390,6 +391,8 @@ import Testing
                 daughters += 1
                 if chick.isBarred { barredDaughters += 1 }
                 if let egg = chick.eggColour { eggs.insert(egg.coarse) }
+            } else if !chick.isBarred {
+                plainSons += 1
             }
         }
         let shown = Dictionary(uniqueKeysWithValues: zip(FeatherwickCore.Trait.planned, counts))
@@ -421,7 +424,9 @@ import Testing
                 if !eggs.isSubset(of: colours) { r.fail("egg colours", "\(name): \(eggs) not in \(colours)") }
             case .sexLink:
                 r.checked("sex-link")
+                // "Every barred chick a cockerel, every plain one a pullet": both halves must hold.
                 if barredDaughters > 0 { r.fail("sex-link", "\(name): \(barredDaughters) barred daughters") }
+                if plainSons > 0 { r.fail("sex-link", "\(name): \(plainSons) plain sons") }
             default:
                 break
             }

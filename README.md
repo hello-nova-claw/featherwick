@@ -230,8 +230,9 @@ and in "likely no" lines ("Likely no blue eggs").
    both parents, or cannot change it (white, buff or lavender hides it). At most
    `plannerMaxRatioDenominator` (16). Feather colours share one denominator and one sentence:
    "About 1 in 4 black, 2 in 4 blue, 1 in 4 splash." A white parent gives no colour or pattern ratio.
-3. **Sex-link.** A barred hen and a rooster pinned not barred: "Every barred chick will be a
-   cockerel, every plain one a pullet."
+3. **Sex-link.** A barred hen, a rooster pinned not barred, and no chick can be buff or white:
+   "Every barred chick will be a cockerel, every plain one a pullet." Buff and white hide barring.
+   If a chick can be buff or white, a plain chick can be a cockerel, so there is no sex-link line.
 4. **Egg colours.** Always one line: "Hens from this pair will lay cream or brown eggs." If an open
    gene could add a colour, the line ends with "unless one of them carries blue" (or brown).
 5. **Likely.** A parent with at least `plannerLikelyAfterChicks` (5) seen chicks, none of which shows
@@ -241,7 +242,8 @@ and in "likely no" lines ("Likely no blue eggs").
    showing them: lavender, buff, barred, laced, silkie feathers, speckled eggs. Never black, blue,
    splash or white: they show whenever their genes are there. When nobody in the pair's seen family
    showed the trait: "If one of them is hiding lavender, you'll find out." When someone did, the
-   reason names that bird: "Her mother, Clover, is lavender."
+   reason gives the family evidence. This is a parent's proven allele, or a parent or chick that
+   showed the gene: "Her mother, Clover, is lavender." Else it is the family tree.
 7. **Not possible.** Proven by elimination: "No lavender chicks from this pair." At most
    `plannerNotPossibleLines` (4). Traits the pair's seen family showed come first, then the common looks.
 8. **Type.** Only when the judge gave both birds a type band: "Both judged good for type. Chicks
@@ -265,7 +267,11 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
 - Its breed, for a bird from outside: "Pip came from Speckle & Down as an Orpington."
 - A parent: "Her mother, Clover, is lavender."
 - A chick: "They had a lavender chick, Clover."
-- Unknown family: "No one in their family has shown lavender yet." Only when that is true.
+- Unknown family: "No one in their family has shown lavender yet." Only when no bird in the pair's
+  seen family (the pair, parents, grandparents, chicks) showed the gene. Egg colours count: a
+  hen that laid blue or green eggs showed blue shell. This holds for the egg-colour line too.
+- A parent or a chick is named only for a non-plain allele ("barring came down from his mother").
+  A plain allele proven through family gives the family tree.
 - Many chicks: "Pip has had 5 chicks and none showed barring."
 - The judge's notes, the family trees, or a white parent.
 - A reason names only a bird the keeper owns or has rehomed. Any other bird is "a bird".
