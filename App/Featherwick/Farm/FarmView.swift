@@ -127,11 +127,14 @@ struct FarmView: View {
         ScrollView(.horizontal) {
             HStack(spacing: 0) {
                 ForEach(FarmPanel.allCases) { p in
-                    FarmPanelView(panel: p) { place in
+                    FarmPanelView(panel: p, openBird: { sheet = .bird($0) }) { place in
                         PlaceLabel(place: place, notices: notices(for: place)) { sheet = .place(place) }
                     }
-                    // The flock, in the ground band under the place labels (see `FarmBirds.swift`).
-                    .overlay { PanelBirds(panel: p) { sheet = .bird($0) } }
+                    // The Barn's birds, in the ground band under the place labels (see `FarmBirds.swift`).
+                    // The yards draw theirs inside the scene, so they sort against the trees.
+                    .overlay {
+                        if !SceneArt.hasScene(p) { PanelBirds(panel: p) { sheet = .bird($0) } }
+                    }
                     .containerRelativeFrame(.horizontal)
                     .id(p)
                 }
@@ -286,19 +289,20 @@ struct FarmView: View {
     }
 }
 
-/// One farm panel and its place labels. The Yard and the Far yard draw the 2.5D scene (`FarmScene`).
-/// The others show a stand-in colour and a dashed box where the painting will go. Night darkens and
-/// cools both.
+/// One farm panel and its place labels. The Yard and the Far yard draw the 2.5D scene with the coop birds
+/// in it (`YardScene`). The others show a stand-in colour and a dashed box where the painting will go.
+/// Night darkens and cools both.
 struct FarmPanelView<PlaceButton: View>: View {
-    @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
     let panel: FarmPanel
+    /// Opens a bird's card when a bird in the scene is tapped.
+    let openBird: (UUID) -> Void
     @ViewBuilder let label: (Place) -> PlaceButton
 
     var body: some View {
         ZStack {
             if SceneArt.hasScene(panel) {
-                FarmScene(panel: panel, season: store.state.season)
+                YardScene(panel: panel, open: openBird)
             } else {
                 standIn
             }
