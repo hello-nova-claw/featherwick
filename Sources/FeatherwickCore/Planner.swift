@@ -211,6 +211,15 @@ extension Trait {
         if look.isSilkieFeathered { out |= Trait.silkieFeathered.bit }
         if look.eggIsSpeckled == true { out |= Trait.speckledEggs.bit }
         if let egg = look.eggColour { out |= Trait.eggColour(egg.coarse).bit }
+        // A chick's down shows its colour genes too. Yellow is buff or white, so it shows neither.
+        switch look.chickDown {
+        case .darkWithHeadSpot: out |= Trait.barred.bit
+        case .slate: out |= Trait.colour(.blue).bit
+        case .paleGrey: out |= Trait.colour(.splash).bit
+        case .silver: out |= Trait.colour(.lavender).bit
+        case .black: out |= Trait.colour(.black).bit
+        case .yellow, nil: break
+        }
         return out
     }
 
@@ -789,6 +798,18 @@ private struct PairWork {
         return .family(hen: hen.id, rooster: rooster.id)
     }
 
+    /// The parent to credit for an allele: the one parent (of `parents`) that surely carries it, since
+    /// every genotype Knowledge leaves it has the allele. The family tree when both or neither do:
+    /// "came down from his mother" must never name a mother who lacks it.
+    func carrier(_ parents: [UUID], _ allele: String, _ bird: Visible, _ id: LocusID) -> Reason {
+        let sure = parents.filter { p in
+            let theirs = k.candidates(p, id)
+            return !theirs.isEmpty && theirs.allSatisfy { $0.has(allele) }
+        }
+        guard sure.count == 1 else { return .family(hen: hen.id, rooster: rooster.id) }
+        return .parent(bird: bird.id, parent: sure[0], locus: id)
+    }
+
     /// A bird's evidence at a gene, as a reason that names only seen birds: the bird's look when the
     /// look alone says as much, else the evidence Knowledge gives for an allele proven but not shown,
     /// else its breed (a bird from outside) or its family tree.
@@ -819,8 +840,8 @@ private struct PairWork {
         case .look: return .look(bird: bird.id, locus: id)
         case .origin(let breed): return .breed(bird: bird.id, breed)
         case .outsideFlock: return bird.breed.map { .breed(bird: bird.id, $0) } ?? .look(bird: bird.id, locus: id)
-        case .parent(let p): return .parent(bird: bird.id, parent: p, locus: id)
-        case .parents(let mother, _): return .parent(bird: bird.id, parent: mother, locus: id)
+        case .parent(let p): return carrier([p], proven.allele, bird, id)
+        case .parents(let mother, let father): return carrier([mother, father], proven.allele, bird, id)
         case .child(let c): return .chick(bird: bird.id, chick: c, locus: id)
         case .family: return .family(hen: hen.id, rooster: rooster.id)
         }
