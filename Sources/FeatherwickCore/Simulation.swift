@@ -60,15 +60,22 @@ public enum Simulation {
         for e in Engine.apply(c, to: &s, using: &rng) { tally(e, &r) }
     }
 
-    /// A sensible day: feed, collect, candle, hatch what fits, sell the rest, make room, shut up, rest until
-    /// evening, sleep.
+    /// A sensible day. Care first (always free): feed and collect. Then the day's errands, most useful
+    /// first, because daylight runs out: candle if an egg is unchecked, shop if coins allow, the show
+    /// desk in show week, the neighbour if a story waits (and spare roosters go with that visit), then
+    /// building. Setting eggs, selling at the gate and shutting the coop are free. Then rest until
+    /// evening, and sleep. An errand with no light left is refused and costs nothing: it waits for
+    /// tomorrow, like a real keeper's.
     private static func playDay(_ s: inout GameState, _ rng: inout SeededRNG, _ r: inout Report) {
         apply(.feed, &s, &rng, &r)
         if !s.nest.isEmpty { apply(.collectEggs, &s, &rng, &r) }
-        if s.canCandle { apply(.candle, &s, &rng, &r) }
+        if s.canCandle, s.carton.contains(where: { !$0.isCandled }) { apply(.candle, &s, &rng, &r) }
 
         ensureBreedingPair(&s, &rng, &r)
         if !s.hasIncubator, s.coins >= s.rules.incubatorPrice { apply(.buyIncubator, &s, &rng, &r) }
+
+        maybeEnterShow(&s, &rng, &r)
+        visitNeighbour(&s, &rng, &r)
 
         // Set fertile eggs if the incubator is free and the brooder has room for every one.
         // Setting never candles, so a keeper who can candle has already checked the carton (above) and sets
@@ -84,12 +91,17 @@ public enum Simulation {
         // Sell before the carton overflows, but keep eggs known to be fertile for hatching.
         if s.carton.count >= s.cartonCapacity - 2 { apply(.sellClearEggs, &s, &rng, &r) }
 
-        manageRoosters(&s, &rng, &r)
-        maybeEnterShow(&s, &rng, &r)
         makeRoom(&s, &rng, &r)
         apply(.closeCoop, &s, &rng, &r)
         for e in Engine.restUntilEvening(&s, using: &rng) { tally(e, &r) }
         apply(.passNight, &s, &rng, &r)
+    }
+
+    /// One trip next door: hand over what a story waits for, if the carton has it, and take any spare
+    /// rooster along. Both are the neighbour errand, so the second costs no more daylight.
+    private static func visitNeighbour(_ s: inout GameState, _ rng: inout SeededRNG, _ r: inout Report) {
+        if let id = Engine.storyAwaitingDelivery(s) { apply(.deliver(story: id), &s, &rng, &r) }
+        manageRoosters(&s, &rng, &r)
     }
 
     /// Keep one adult rooster for breeding and rehome the rest: a real keeper does this to ease rooster

@@ -264,4 +264,50 @@ struct DaylightTests {
         #expect(a == b)
         #expect(rngA == rngB)
     }
+
+    // MARK: - Jobs
+
+    /// Jobs never pick more costed jobs than `slotsToday`. Every job is on offer (all three costed
+    /// ones too: an egg to candle, the show this week, a treat with an empty bag), so only the cap
+    /// holds them back. Swept over many shop seeds and days, on 1 to 5 slot days.
+    @Test func jobsNeverPickMoreErrandsThanTheDayHasLight() throws {
+        var (base, rng) = Self.game()
+        base.rules.jobsPerDay = JobKind.allCases.count
+        base.treats = 0
+        base.carton.append(clearEgg(mother: base.coop[1], day: base.day, rng: &rng))
+        let interval = base.rules.showIntervalDays
+        try #require(interval > 1 && base.rules.showNoticeDays >= 1)
+
+        // (plain day, coop upgraded, lap chicken at home) -> slots today
+        let days: [(plain: Int, upgraded: Bool, lap: Bool, slots: Int)] = [
+            (1, false, false, 1), (2, false, false, 2), (3, false, false, 3), (3, true, false, 4),
+            (3, true, true, 5), (4, true, true, 5),
+        ]
+        var picks = 0
+        for day in days {
+            var s = base
+            s.rules.daySlots = day.plain
+            if day.upgraded { s.perches = s.rules.startPerches + 1 }
+            if day.lap { s.coop[0] = s.coop[0].withTameness(1) }
+            try #require(s.slotsToday(rules: s.rules) == day.slots)
+            for show in 1...4 {
+                for before in 1...min(interval - 1, s.rules.showNoticeDays) {
+                    s.day = show * interval - before
+                    for shopSeed in UInt64(0)..<12 {
+                        s.shopSeed = shopSeed &* 0x9E37_79B9_7F4A_7C15
+                        let offered = Engine.availableJobs(s, &rng).count(where: {
+                            Engine.errand(for: $0.kind, in: s) != nil
+                        })
+                        try #require(offered == 3)
+                        let jobs = Engine.pickJobs(s)
+                        let costed = jobs.count(where: { Engine.errand(for: $0.kind, in: s) != nil })
+                        #expect(costed <= day.slots)
+                        #expect(costed == min(day.slots, offered))  // the cap holds back only what does not fit
+                        picks += 1
+                    }
+                }
+            }
+        }
+        #expect(picks > 1000)
+    }
 }
