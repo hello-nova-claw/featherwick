@@ -16,6 +16,13 @@ struct InvariantTests {
 
         let everyone = s.brooder + s.henChicks + s.coop + s.lost.map(\.bird) + s.boarding + s.rehomed
         if Set(everyone.map(\.id)).count != everyone.count { p.append("a bird is in two places") }
+        // The breeding pen holds coop birds only: one rooster at most, and `penHens` hens.
+        if s.pen.contains(where: { id in !s.coop.contains { $0.id == id } }) {
+            p.append("pen holds a bird not in coop")
+        }
+        if Set(s.pen).count != s.pen.count { p.append("a bird is in the pen twice") }
+        if s.pennedBirds.count(where: { $0.sex == .rooster }) > 1 { p.append("two roosters in the pen") }
+        if s.pennedHens.count > s.rules.penHens { p.append("pen over its hens") }
 
         let eggs = s.nest + s.carton + s.clutches.flatMap(\.eggs)
         if Set(eggs.map(\.id)).count != eggs.count { p.append("an egg is in two places") }

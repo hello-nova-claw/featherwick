@@ -32,6 +32,7 @@ struct SimulationTests {
         }
     }
 
+    /// A higher lay chance lays more eggs. Only the lay chance differs between the two runs.
     @Test func aHigherLayChanceLaysMoreEggs() {
         func meanEggs(_ layChance: [Season: Double]) -> Double {
             // Job and goal coins change what the keeper buys, which hides the lay chance. Leave them out.

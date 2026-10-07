@@ -135,6 +135,10 @@ struct EngineTests {
         #expect(r.price(of: staleOlive, onDay: 5) == (r.oliveEggPrice + r.speckleBonus) / 2)
         let staleCream = Egg(id: id, layDay: 0, motherID: id, colour: .cream, speckled: false, collectedDay: 9)
         #expect(r.price(of: staleCream, onDay: 9) == 1)  // never below 1 coin
+        let green = Egg(id: id, layDay: 0, motherID: id, colour: .green, speckled: false, collectedDay: 1)
+        #expect(r.price(of: green, onDay: 1) == r.greenEggPrice)
+        let chocolate = Egg(id: id, layDay: 0, motherID: id, colour: .chocolate, speckled: false, collectedDay: 1)
+        #expect(r.price(of: chocolate, onDay: 1) == r.chocolateEggPrice)
     }
 
     @Test func fullNestBoxesMeanFloorEggs() {

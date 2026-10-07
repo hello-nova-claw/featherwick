@@ -56,6 +56,8 @@ public enum Mask: String, Hashable, Codable, Sendable, CaseIterable {
 public enum Tone: String, Hashable, Codable, Sendable, CaseIterable {
     // Feathers and down
     case black, blue, darkBlue, splash, lavender, buff, slateDown, paleGreyDown, silverDown, yellowDown, blackDown
+    /// White plumage (dominant white). Its own token, apart from white skin, so the art can tint them apart.
+    case whiteFeather
     // Skin
     case red, mulberry, slate, yellow, willow, white, horn
 }
@@ -211,6 +213,7 @@ extension Bird {
         case .splash: .splash
         case .lavender: .lavender
         case .buff: .buff
+        case .white: .whiteFeather
         }
     }
 }

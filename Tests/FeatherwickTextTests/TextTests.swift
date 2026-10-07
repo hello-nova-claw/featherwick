@@ -196,6 +196,38 @@ struct TextTests {
         }
     }
 
+    /// The hatch-day "why" note: one sentence in the neighbour's voice for every reason, never the chick's sex.
+    @Test func hatchSurpriseNotesAreOneSentenceAndSexless() {
+        var rng = SeededRNG(seed: 5)
+        var s = Engine.newGame(using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Juniper"), to: &s, using: &rng)
+        guard let id = s.ownedBirds.first?.id else {
+            Issue.record("no bird")
+            return
+        }
+        let reasons: [HatchReason] = [
+            .recessiveFromBothParents(Lavender.locus), .recessiveFromBothParents(BaseColour.locus),
+            .blueSplitsThreeWays, .whiteHidIt,
+        ]
+        for reason in reasons {
+            let words = eventText(.hatchSurprise(chick: id, reason: reason), s) ?? ""
+            #expect(words.hasPrefix("The neighbour peers at Juniper: \""))
+            #expect(words.count(where: { $0 == "." || $0 == "!" || $0 == "?" }) == 1)
+            let lower = words.lowercased().split(whereSeparator: { !$0.isLetter }).map(String.init)
+            for sexWord in [
+                "she", "he", "her", "him", "his", "pullet", "cockerel", "hen", "rooster", "daughter", "son",
+            ] {
+                #expect(!lower.contains(sexWord), "\(reason) says \(sexWord)")
+            }
+        }
+        #expect(
+            eventText(.hatchSurprise(chick: id, reason: .recessiveFromBothParents(Lavender.locus)), s)?.contains(
+                "lavender") == true)
+        #expect(
+            eventText(.hatchSurprise(chick: id, reason: .recessiveFromBothParents(BaseColour.locus)), s)?.contains(
+                "buff") == true)
+    }
+
     /// The daily special names breed, sex and colour; basic stock never names its breed before purchase.
     @Test func theKeeperIsToldOfABroodySpellBeforeTheShow() {
         var rng = SeededRNG(seed: 3)
@@ -312,5 +344,53 @@ struct TextTests {
         #expect(podiumWhoText(podium[2], owner: nil, in: .eggs(.brown)) == "your plate of brown eggs")
         #expect(podiumWhoText(podium[2], owner: nil, in: .pet) == "your Pip")
         #expect(podiumLines(.breed(.orpington), podium)[0].hasSuffix("— in fine condition"))
+    }
+}
+
+/// The breeding pen's words: every refusal and event has words, and none names a hidden sex.
+struct BreedingPenTextTests {
+    @Test func everyPenEventHasWords() {
+        var rng = SeededRNG(seed: 3)
+        let s = Engine.newGame(earlyGame: false, using: &rng)
+        let rejections: [Rejection] = [
+            .penFull(hens: 3), .penHasRooster, .notInPen, .alreadyInPen, .notInCoop, .tooYoungForPen,
+            .notYet(.breedingPen),
+        ]
+        for r in rejections { #expect(!(eventText(.rejected(r), s) ?? "").isEmpty, "\(r)") }
+        #expect(!(eventText(.birdPenned(UUID()), s) ?? "").isEmpty)
+        #expect(!(eventText(.birdUnpenned(UUID()), s) ?? "").isEmpty)
+        #expect(!(introducedText(.breedingPen, s) ?? "").isEmpty)
+        #expect(!penLines(s).isEmpty)
+    }
+
+    @Test func aYoungPenRoosterIsNotCalledTheWorkingSire() {
+        var rng = SeededRNG(seed: 3)
+        var s = Engine.newGame(earlyGame: false, using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        s.day = 60
+        let born = s.day - s.rules.growerAge  // a cockerel: sex shows, not grown
+        let cockerel = Bird(
+            id: UUID(), name: "Rufus", breed: .orpington, genome: Breed.orpington.purebred(.rooster),
+            hatchDay: born, origin: "Test", revealed: true)
+        let hen = Bird(
+            id: UUID(), name: "Hazel", breed: .orpington, genome: Breed.orpington.purebred(.hen),
+            hatchDay: 0, origin: "Test", revealed: true)
+        s.coop += [cockerel, hen]
+        _ = Engine.apply(.penBird(cockerel.id), to: &s, using: &rng)
+        let ev = Engine.apply(.penBird(hen.id), to: &s, using: &rng)
+        let day = born + s.rules.adultAge
+        let words = ev.compactMap { eventText($0, s) }.joined()
+        #expect(words.contains("stay clear until day \(day)"))
+        #expect(!words.hasSuffix("Her chicks will have Rufus for a father."))
+        #expect(penLines(s).contains { $0.contains("stay clear until day \(day)") })
+    }
+
+    @Test func theTooYoungWordsDoNotNameASex() {
+        var rng = SeededRNG(seed: 3)
+        let s = Engine.newGame(earlyGame: false, using: &rng)
+        let words = (eventText(.rejected(.tooYoungForPen), s) ?? "").lowercased()
+        for sexWord in ["hen", "rooster", "cockerel", "pullet", " she ", " he ", "her ", "him"] {
+            #expect(!words.contains(sexWord), "\(sexWord)")
+        }
     }
 }

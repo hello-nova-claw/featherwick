@@ -224,7 +224,9 @@ struct EggBook: View {
         case .cream: "Silkies lay these."
         case .brown: "Orpingtons and Australorps lay these."
         case .blue: "Araucanas carry the blue-egg gene."
-        case .olive: "Cross a blue-egg bird with a brown-egg bird."
+        case .olive: "Cross an Araucana with a brown-egg breed. Some of the hens lay olive eggs."
+        case .chocolate: "Very dark brown eggs. Rare in Featherwick."
+        case .green: "Cross an Araucana with a brown-egg breed. Some of the hens lay green eggs."
         }
     }
 }
@@ -246,8 +248,16 @@ struct SettingsSheet: View {
             StitchDivider()
             FeedbackToggles()
             StitchDivider()
+            MorningReportToggle()
+            StitchDivider()
             TimeOfDayPicker()
             StitchDivider()
+            #if DEBUG || BETA
+                if BetaNotes.showsInSettings {
+                    BetaNotesSettings()
+                    StitchDivider()
+                }
+            #endif
             Text("Fast forward").font(Typeface.item)
             HStack(spacing: Space.m) {
                 Button("1 day") { store.fullDays(1) }.buttonStyle(.secondary)

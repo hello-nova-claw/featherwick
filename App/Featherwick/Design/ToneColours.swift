@@ -20,6 +20,7 @@ extension Tone {
         case .mulberry: Color(red: 0.45, green: 0.15, blue: 0.3)
         case .willow: Color(red: 0.55, green: 0.6, blue: 0.4)
         case .white: Color(white: 0.97)
+        case .whiteFeather: Color(red: 0.96, green: 0.95, blue: 0.91)
         case .horn: Color(red: 0.75, green: 0.68, blue: 0.55)
         }
     }
