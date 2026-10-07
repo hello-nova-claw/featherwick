@@ -296,6 +296,63 @@ import Testing
                 .eggColours([.cream], sure: false, .unknownFamily(locus: BlueShell.locus))))
     }
 
+    /// His mother laid blue eggs: the egg line's "unless" names her, never "nobody has shown blue eggs".
+    @Test func anUnsureEggLineNamesTheFamilyThatShowedIt() {
+        var (s, rng) = startedGame(sex: .hen)
+        let brownHen = Self.add(KnowledgeTests.genome(.hen), .orpington, &s, &rng)
+        let blueMother = Self.add(
+            KnowledgeTests.genome(.hen) {
+                $0.blueShell = AllelePair(.blue, .white)
+                $0.brownShell = .homozygous(.noCoating)
+            }, .orpington, &s, &rng)
+        let rooster = Self.add(KnowledgeTests.genome(.rooster), .orpington, &s, &rng, mother: blueMother)
+        let lines = Self.lines(s, hen: brownHen, rooster: rooster)
+        let egg = lines.first { if case .eggColours = $0 { true } else { false } }
+        #expect(
+            egg
+                == .eggColours(
+                    [.cream, .brown], sure: false,
+                    .parent(bird: rooster.id, parent: blueMother.id, locus: BlueShell.locus)))
+        // A stranger with no seen family: then it is true that nobody showed blue eggs.
+        let stranger = Self.add(KnowledgeTests.genome(.rooster), .orpington, &s, &rng)
+        #expect(
+            Self.lines(s, hen: brownHen, rooster: stranger).contains(
+                .eggColours([.cream, .brown], sure: false, .unknownFamily(locus: BlueShell.locus))))
+    }
+
+    /// A barred hen (buff mother) with a buff rooster pinned not barred by his plain parents. Buff
+    /// chicks hide barring, so a plain chick can be a son: no sex-link line. And his plain barring
+    /// allele came from both parents: no reason may say barring came from a plain bird.
+    @Test func buffChicksHideBarringSoNoSexLink() {
+        var (s, rng) = startedGame(sex: .hen)
+        let buffMother = Self.add(
+            KnowledgeTests.genome(.hen) { $0.baseColour = .homozygous(.buff) }, .orpington, &s, &rng)
+        let hen = Self.add(
+            KnowledgeTests.genome(.hen) {
+                $0.baseColour = AllelePair(.black, .buff)
+                $0.sexChromosomes = .hen(z: .barred)
+            }, .orpington, &s, &rng, mother: buffMother)
+        let plainMother = Self.add(
+            KnowledgeTests.genome(.hen) { $0.baseColour = AllelePair(.black, .buff) }, .orpington, &s, &rng)
+        let plainFather = Self.add(
+            KnowledgeTests.genome(.rooster) { $0.baseColour = AllelePair(.black, .buff) }, .orpington, &s, &rng)
+        let rooster = Self.add(
+            KnowledgeTests.genome(.rooster) { $0.baseColour = .homozygous(.buff) }, .orpington, &s, &rng,
+            mother: plainMother, father: plainFather)
+        let k = Knowledge.of(s)
+        #expect(k.state(rooster.id, Barring.locus) == .pinned)
+        let lines = Self.lines(s, hen: hen, rooster: rooster)
+        #expect(!Self.has(lines) { if case .sexLink = $0 { true } else { false } })
+        #expect(Self.ratio(lines, .barred) ?? (0, 0) == (1, 4))
+        for line in lines {
+            switch line.reason {
+            case .parent(let b, let p, Barring.locus), .chick(let b, let p, Barring.locus):
+                Issue.record("barring credited to \(b == rooster.id ? "the rooster" : "a bird") via \(p): \(line)")
+            default: break
+            }
+        }
+    }
+
     // MARK: - Likely
 
     /// A buff rooster can hide barring. Five plain black chicks, none barred: "likely no barred chicks".
@@ -525,8 +582,9 @@ import Testing
     }
 
     /// Lines the words expect: egg colours only in the egg-colours and "likely no" lines; "possible"
-    /// and "likely no" only for traits a bird can hide; "nobody in the family has shown it" only when
-    /// nobody in the pair's seen family (the pair, parents, grandparents, chicks) has.
+    /// and "likely no" only for traits a bird can hide; and, on any line (the egg-colours line too),
+    /// "nobody in the family has shown it" only when nobody in the pair's seen family (the pair,
+    /// parents, grandparents, chicks) showed the gene.
     static func checkShape(_ line: Forecast, family: [Visible], hen: UUID, rooster: UUID) {
         let hidable: [FeatherwickCore.Trait] = [
             .colour(.lavender), .colour(.buff), .barred, .laced, .silkieFeathered, .speckledEggs,
@@ -535,9 +593,17 @@ import Testing
         case .certain(.eggColour, _), .ratio(.eggColour, _, _, _), .possible(.eggColour, _),
             .notPossible(.eggColour, _):
             Issue.record("egg colour outside its own line: \(line)")
-        case .possible(let t, let r):
+        case .possible(let t, _):
             #expect(hidable.contains(t), "\(line)")
-            guard case .unknownFamily = r else { break }
+        case .likely(let t, _):
+            if case .eggColour = t { break }
+            #expect(hidable.contains(t), "\(line)")
+        default:
+            break
+        }
+        // "No one in their family has shown it yet" must be true: no seen relative shows the gene.
+        guard case .unknownFamily(let locus) = line.reason else { return }
+        do {
             let byID = Dictionary(family.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
             func parents(_ v: Visible) -> [Visible] { [v.motherID, v.fatherID].compactMap { $0.flatMap { byID[$0] } } }
             let pair = [hen, rooster].compactMap { byID[$0] }
@@ -546,12 +612,8 @@ import Testing
                 $0.motherID == hen || $0.fatherID == hen || $0.motherID == rooster || $0.fatherID == rooster
             }
             let relatives = pair + up + up.flatMap(parents) + chicks
-            #expect(!relatives.contains { ($0.look.map(FeatherwickCore.Trait.shown) ?? 0) & t.bit != 0 }, "\(line)")
-        case .likely(let t, _):
-            if case .eggColour = t { break }
-            #expect(hidable.contains(t), "\(line)")
-        default:
-            break
+            let shows = FeatherwickCore.Trait.showing(locus)
+            #expect(!relatives.contains { ($0.look.map(FeatherwickCore.Trait.shown) ?? 0) & shows != 0 }, "\(line)")
         }
     }
 
