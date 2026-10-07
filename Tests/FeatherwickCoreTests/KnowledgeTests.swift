@@ -71,7 +71,6 @@ import Testing
 
     /// Everything the keeper can be told that comes from Knowledge, encoded. The blind test checks each
     /// one is byte-identical after every bird's genes are swapped for others with the same look.
-    /// Phase 2: add the planner's forecasts here, as one more entry.
     static let blindOutputs: [(name: String, make: @Sendable (GameState) throws -> Data)] = [
         ("knowledge", { try KnowledgeTests.encode(Knowledge.of($0)) }),
         (
@@ -84,7 +83,36 @@ import Testing
                 return try KnowledgeTests.encode(notes)
             }
         ),
+        ("planner", { try KnowledgeTests.encode(KnowledgeTests.blindForecasts($0)) }),
     ]
+
+    /// The planner's forecast for pairs a keeper could pen: the penned pair, and grown coop pairs (the
+    /// sim keeper never pens), at most `blindPlannerPairs`, so the blind test stays quick.
+    static let blindPlannerPairs = 6
+
+    static func blindForecasts(_ s: GameState) -> [[String: [Forecast]]] {
+        var s = s
+        s.plannerKnown = true
+        var out: [[String: [Forecast]]] = []
+        if case .forecast(let rooster, let pairs) = Planner.panel(in: s) {
+            out += pairs.map { ["\($0.hen.uuidString) × \(rooster.uuidString)": $0.lines] }
+        }
+        let family = Visible.all(in: s)
+        let k = Knowledge.of(family)
+        let key = { (b: Bird) in b.id.uuidString }
+        let grown = s.coop.filter { $0.revealed && $0.stage(onDay: s.day, rules: s.rules) >= .grower }
+            .sorted { key($0) < key($1) }
+        let pairs = grown.filter { $0.sex == .rooster }.flatMap { r in
+            grown.filter { $0.sex == .hen }.map { (hen: $0, rooster: r) }
+        }
+        for (hen, rooster) in pairs.prefix(blindPlannerPairs) {
+            let lines = Planner.forecast(
+                hen: Visible(bird: hen, in: s), rooster: Visible(bird: rooster, in: s), knowledge: k, family: family,
+                kinship: Pedigree.relatedness(hen.id, rooster.id, in: s), rules: s.rules)
+            out.append(["\(key(hen)) × \(key(rooster))": lines])
+        }
+        return out
+    }
 
     /// Replaces the genes of `g` with others that give the identical `Phenotype`: at each single gene in
     /// turn, a different genotype when one keeps the look, picked by `rng`. The quantitative genes stay
@@ -214,7 +242,194 @@ import Testing
         #expect(total.unsound.isEmpty, "\(total.unsound)")
     }
 
-    // MARK: - Planner soundness (Phase 2)
+    // MARK: - Planner soundness
+
+    /// Real crosses per checked pair.
+    static let soundCrosses = 10_000
+    /// Grown pairs taken from the sim games (`PlannerTests.simGames`), one per game in turn.
+    static let soundGamePairs = 100
+    /// Families bred here from shop birds, three pairs each: shop × shop (pinned, so ratios), and
+    /// chicks of known parents (carriers proven by their parents).
+    static let soundBredFamilies = 20
+
+    struct SoundPair: Sendable {
+        let state: GameState
+        let hen: Bird
+        let rooster: Bird
+    }
+
+    /// A family from shop birds: four grandparents, a daughter of the first two and a son of the last two.
+    static func bredFamily(_ n: Int) -> [SoundPair] {
+        var (s, rng) = startedGame(sex: .hen, seed: UInt64(1_000 + n))
+        let breeds = Breed.allCases
+        func shopBird(_ sex: Sex) -> Bird {
+            let breed = breeds.randomElement(using: &rng)!
+            let varieties =
+                breed.definition.varieties + FeatherColour.allCases.map { ShopSpecial.variety(for: $0, on: breed) }
+            let g = breed.purebred(
+                sex, variety: varieties.randomElement(using: &rng)!, barred: Bool.random(using: &rng))
+            let b = bird(g, breed, origin: "Speckle & Down", s, &rng, age: s.rules.adultAge * 3)
+            s.coop.append(b)
+            return b
+        }
+        func chick(_ sex: Sex, _ mother: Bird, _ father: Bird) -> Bird {
+            var g = try! Breeding.cross(mother: mother.genome, father: father.genome, using: &rng)
+            while g.sex != sex { g = try! Breeding.cross(mother: mother.genome, father: father.genome, using: &rng) }
+            let b = bird(g, mother.breed, origin: Bird.homeOrigin, s, &rng, mother: mother.id, father: father.id)
+            s.coop.append(b)
+            return b
+        }
+        let grandparents = [shopBird(.hen), shopBird(.rooster), shopBird(.hen), shopBird(.rooster)]
+        let daughter = chick(.hen, grandparents[0], grandparents[1])
+        let son = chick(.rooster, grandparents[2], grandparents[3])
+        return [
+            SoundPair(state: s, hen: grandparents[0], rooster: grandparents[3]),
+            SoundPair(state: s, hen: daughter, rooster: son),
+            SoundPair(state: s, hen: grandparents[2], rooster: son),
+        ]
+    }
+
+    static let soundPairs: [SoundPair] = {
+        var out: [SoundPair] = []
+        let games = PlannerTests.simGames.map { s in (s, PlannerTests.coopPairs(s)) }.filter { !$0.1.isEmpty }
+        var round = 0
+        while out.count < soundGamePairs, round < 50 {
+            for (s, pairs) in games where out.count < soundGamePairs && round < pairs.count {
+                out.append(SoundPair(state: s, hen: pairs[round].hen, rooster: pairs[round].rooster))
+            }
+            round += 1
+        }
+        return out + (0..<soundBredFamilies).flatMap(bredFamily)
+    }()
+
+    struct SoundResult: Sendable {
+        var pairs = 0
+        var lines: [String: Int] = [:]
+        var failures: [String: [String]] = [:]
+
+        mutating func checked(_ kind: String) { lines[kind, default: 0] += 1 }
+        mutating func fail(_ kind: String, _ text: String) { failures[kind, default: []].append(text) }
+
+        mutating func add(_ o: SoundResult) {
+            pairs += o.pairs
+            lines.merge(o.lines, uniquingKeysWith: +)
+            for (kind, list) in o.failures { failures[kind, default: []] += list.prefix(5) }
+        }
+    }
+
+    /// The same bird with only its single genes; the quantitative genes at their defaults.
+    static func singleGenes(_ g: Genome) -> Genome {
+        var out = Genome(sex: g.sex)
+        for space in GenotypeSpace.all { out.setAlleles(g.alleles(at: space.locus), at: space.locus) }
+        return out
+    }
+
+    /// Breeds the real genes of one pair `soundCrosses` times and checks each forecast line against them.
+    static func checkSoundness(_ p: SoundPair, seed: UInt64) -> SoundResult {
+        var r = SoundResult(pairs: 1)
+        let s = p.state
+        let family = Visible.all(in: s)
+        let lines = Planner.forecast(
+            hen: Visible(bird: p.hen, in: s), rooster: Visible(bird: p.rooster, in: s),
+            knowledge: Knowledge.of(family), family: family, rules: s.rules)
+        var rng = SeededRNG(seed: seed)
+        var counts = [Int](repeating: 0, count: FeatherwickCore.Trait.planned.count)
+        var daughters = 0
+        var barredDaughters = 0
+        var eggs: Set<EggColour> = []
+        // The real single genes. The many small genes are left out: no forecast trait reads them (egg
+        // colours are coarse), and they make each cross several times slower.
+        let mother = singleGenes(p.hen.genome)
+        let father = singleGenes(p.rooster.genome)
+        for _ in 0..<soundCrosses {
+            let chick = Phenotype(try! Breeding.cross(mother: mother, father: father, using: &rng))
+            for (i, t) in FeatherwickCore.Trait.planned.enumerated() where t.isShown(by: chick) { counts[i] += 1 }
+            if chick.sex == .hen {
+                daughters += 1
+                if chick.isBarred { barredDaughters += 1 }
+                if let egg = chick.eggColour { eggs.insert(egg.coarse) }
+            }
+        }
+        let shown = Dictionary(uniqueKeysWithValues: zip(FeatherwickCore.Trait.planned, counts))
+        func total(_ t: FeatherwickCore.Trait) -> Int {
+            switch t {
+            case .eggColour, .speckledEggs: daughters
+            default: soundCrosses
+            }
+        }
+        let name = "\(p.hen.name) × \(p.rooster.name), day \(s.day)"
+        for line in lines {
+            switch line {
+            case .notPossible(let t, _):
+                r.checked("not possible")
+                if shown[t, default: 0] > 0 { r.fail("not possible", "\(name): \(t) hatched \(shown[t]!) times") }
+            case .certain(let t, _):
+                r.checked("certain")
+                if shown[t, default: 0] != total(t) {
+                    r.fail("certain", "\(name): \(t) in \(shown[t, default: 0]) of \(total(t))")
+                }
+            case .ratio(let t, let n, let d, _):
+                r.checked("ratio")
+                let share = Double(shown[t, default: 0]) / Double(max(1, total(t)))
+                if abs(share - Double(n) / Double(d)) > 0.03 {
+                    r.fail("ratio", "\(name): \(t) \(n) in \(d), real \(share)")
+                }
+            case .eggColours(let colours, true, _):
+                r.checked("egg colours")
+                if !eggs.isSubset(of: colours) { r.fail("egg colours", "\(name): \(eggs) not in \(colours)") }
+            case .sexLink:
+                r.checked("sex-link")
+                if barredDaughters > 0 { r.fail("sex-link", "\(name): \(barredDaughters) barred daughters") }
+            default:
+                break
+            }
+        }
+        return r
+    }
+
+    /// Every pair checked once, in parallel. The three tests below read the result.
+    static let soundness: SoundResult = {
+        let pairs = soundPairs
+        let clock = ContinuousClock()
+        let start = clock.now
+        let out = Collected<SoundResult>(count: pairs.count)
+        DispatchQueue.concurrentPerform(iterations: pairs.count) { i in
+            out.set(i, checkSoundness(pairs[i], seed: UInt64(i + 1)))
+        }
+        var total = SoundResult()
+        for r in out.values { total.add(r) }
+        print(
+            "Planner soundness: \(total.pairs) pairs × \(soundCrosses) crosses, lines checked "
+                + "\(total.lines.sorted { $0.key < $1.key }), \(clock.now - start)")
+        return total
+    }()
+
+    /// "Not possible" is a proof: real crosses never hatch it.
+    @Test(.timeLimit(.minutes(20))) func plannerNotPossibleNeverHatches() {
+        let r = Self.soundness
+        #expect(r.pairs == Self.soundPairs.count)
+        #expect(r.pairs >= Self.soundGamePairs)
+        #expect(r.lines["not possible", default: 0] > 100)
+        #expect(r.failures["not possible", default: []].isEmpty, "\(r.failures["not possible", default: []])")
+        // A sure egg-colour list and a sex-link are proofs too.
+        #expect(r.lines["egg colours", default: 0] > 0)
+        #expect(r.failures["egg colours", default: []].isEmpty, "\(r.failures["egg colours", default: []])")
+        #expect(r.failures["sex-link", default: []].isEmpty, "\(r.failures["sex-link", default: []])")
+    }
+
+    /// "Certain" is a proof: every real chick (every daughter, for eggs) shows it.
+    @Test(.timeLimit(.minutes(20))) func plannerCertainAlwaysHatches() {
+        let r = Self.soundness
+        #expect(r.lines["certain", default: 0] > 50)
+        #expect(r.failures["certain", default: []].isEmpty, "\(r.failures["certain", default: []])")
+    }
+
+    /// A ratio is Mendel's share: real crosses land within 3 percentage points of it.
+    @Test(.timeLimit(.minutes(20))) func plannerRatiosMatchRealCrosses() {
+        let r = Self.soundness
+        #expect(r.lines["ratio", default: 0] > 20)
+        #expect(r.failures["ratio", default: []].isEmpty, "\(r.failures["ratio", default: []])")
+    }
 
     // MARK: - Elimination: look
 
@@ -529,8 +744,7 @@ import Testing
     }
 
     /// The files that reason about hidden genes, and what they may never contain.
-    /// Phase 2: add "Planner.swift".
-    static let blindFiles = ["Knowledge.swift"]
+    static let blindFiles = ["Knowledge.swift", "Planner.swift"]
     static let forbidden = ["genome", "Genome", "alleles(at:"]
 
     @Test func knowledgeSourceNeverReadsGenes() throws {
