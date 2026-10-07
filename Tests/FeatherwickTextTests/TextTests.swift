@@ -5,6 +5,27 @@ import Testing
 
 /// Every front end shows these words, so no event or screen may crash or come out empty.
 struct TextTests {
+    /// Day 1: Hazel's welcome, the chick offer and the tour. The tour names the chick, and no line
+    /// says the chick's sex (it does not show yet).
+    @Test func theFirstDayIntroducesHazelWrenAndTheFarm() {
+        var rng = SeededRNG(seed: 2)
+        var s = Engine.newGame(using: &rng)
+        _ = Engine.apply(.nameKeeper("Anna"), to: &s, using: &rng)
+        #expect(People.chickOffer("Anna").contains("Anna"))
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Basil"), to: &s, using: &rng)
+        let tour = People.tour(s)
+        #expect(tour.map(\.place) == TourPlace.allCases)
+        #expect(tour[0].words.contains("Basil"))
+        #expect(tour.contains { $0.words.contains(People.shopkeeper) })
+        let words = (People.welcome + tour.map(\.words)).joined(separator: " ").lowercased()
+        // "She" is Hazel or Wren, never the chick.
+        for sexed in [" he ", " his ", " him ", " pullet", " cockerel", " rooster"] {
+            #expect(!words.contains(sexed), "\(sexed)")
+        }
+        #expect(eventText(.keeperNamed("Anna"), s)?.contains("Anna") == true)
+        #expect(eventText(.rejected(.blankName), s) != nil)
+    }
+
     /// Plays a simple keeper's day for `days` nights and returns each event with the state after it.
     static func play(seed: UInt64, days: Int) -> [(GameEvent, GameState)] {
         var rng = SeededRNG(seed: seed)
@@ -212,7 +233,7 @@ struct TextTests {
         ]
         for reason in reasons {
             let words = eventText(.hatchSurprise(chick: id, reason: reason), s) ?? ""
-            #expect(words.hasPrefix("The neighbour peers at Juniper: \""))
+            #expect(words.hasPrefix("Hazel peers at Juniper: \""))
             #expect(words.count(where: { $0 == "." || $0 == "!" || $0 == "?" }) == 1)
             let lower = words.lowercased().split(whereSeparator: { !$0.isLetter }).map(String.init)
             for sexWord in [
@@ -420,7 +441,7 @@ struct BreedingPenTextTests {
             .village: "Speckle & Down will be shut by the time you get there. Tomorrow.",
             .candling: "Too dark to candle now. First thing in the morning.",
             .showDesk: "The show desk has packed up for the day.",
-            .neighbour: "The neighbour's lights are off. Pop round tomorrow.",
+            .neighbour: "Hazel's lights are off. Pop round tomorrow.",
             .building: "Not enough light left to build. Tomorrow.",
         ]
         for errand in Errand.allCases {

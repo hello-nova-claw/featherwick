@@ -163,7 +163,7 @@ struct InvariantTests {
     /// Guards against a fuzz test that passes because nothing interesting ever happens.
     @Test func randomGamesReachEverySystem() {
         var all: [GameEvent] = []
-        for seed in UInt64(1)...40 { all += Self.play(seed: seed) }
+        for seed in UInt64(1)...60 { all += Self.play(seed: seed) }
         func seen(_ match: (GameEvent) -> Bool) -> Bool { all.contains(where: match) }
         #expect(seen { if case .foxVisited = $0 { true } else { false } })
         #expect(seen { if case .birdReturned = $0 { true } else { false } })

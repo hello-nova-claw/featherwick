@@ -8,19 +8,20 @@ func startedGame(sex: Sex, rules: Rules = .standard, seed: UInt64 = 1) -> (GameS
     var rng = SeededRNG(seed: seed)
     // Every feature open: `EarlyGameTests` covers a new keeper's timeline.
     var s = Engine.newGame(rules: rules, earlyGame: false, using: &rng)
+    // Hatched on day 0, so a bird's age is the day number.
     let chick = Bird(
         id: makeID(using: &rng), name: "", breed: .orpington,
         genome: Breed.orpington.purebred(sex), hatchDay: 0, origin: "Neighbour")
     s.phase = .choosingStarter([chick])
+    // No daily jobs or season goals, so their events and coin rewards stay out of other systems' tests.
+    // `JobsTests` covers them. Set before the starter: the first morning sets day 1's jobs.
+    s.rules.jobsPerDay = 0
+    s.rules.seasonGoals = false
     _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
     // Most tests want a keeper who can candle, with an overnight incubator, so hatching is quick to test.
     // `LearningToCandleTests` covers a real new keeper.
     s.canCandle = true
     s.rules.incubatorHatchDays = 1
-    // No daily jobs or season goals, so their events and coin rewards stay out of other systems' tests.
-    // `JobsTests` covers them.
-    s.rules.jobsPerDay = 0
-    s.rules.seasonGoals = false
     return (s, rng)
 }
 
@@ -77,7 +78,8 @@ struct EngineTests {
 
     @Test func starterMovesToCoopAndIsRevealedAtGrowerAge() {
         var (s, rng) = startedGame(sex: .hen, rules: calmRules())
-        for _ in 0..<(s.rules.growerAge - 1) { night(&s, &rng) }
+        // The game starts on day 1 with a chick hatched on day 0: its age is the day number.
+        while s.day < s.rules.growerAge - 1 { night(&s, &rng) }
         #expect(s.brooder.count == 1 && !s.brooder[0].revealed)
         let ev = night(&s, &rng)
         #expect(s.coop.count == 1 && s.coop[0].revealed)
@@ -88,7 +90,7 @@ struct EngineTests {
     @Test func roosterStarterGetsOneYoungerGiftHen() {
         var (s, rng) = startedGame(sex: .rooster, rules: calmRules())
         var all: [GameEvent] = []
-        for _ in 0..<s.rules.growerAge { all += night(&s, &rng) }
+        while s.day < s.rules.growerAge { all += night(&s, &rng) }
         let gifts = all.compactMap { if case .neighbourGaveHen(let id) = $0 { id } else { nil } }
         #expect(gifts.count == 1)
         let hen = s.bird(gifts[0])!

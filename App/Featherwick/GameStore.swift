@@ -89,7 +89,11 @@ final class GameStore {
         seenStockKey = "seenNewStock.\(slot)"
         let seen = UserDefaults.standard.stringArray(forKey: seenStockKey) ?? []
         seenNewStock = Set(seen.compactMap(Feature.init(rawValue:)))
-        append(state.day == 0 ? "Welcome to Featherwick." : "Welcome back. It is day \(state.day).")
+        if case .choosingStarter = state.phase {
+            append("Welcome to Featherwick.")
+        } else {
+            append("Welcome back. It is day \(state.day).")
+        }
         noteEvening()
     }
 
@@ -149,6 +153,8 @@ final class GameStore {
             morningReport = morning
             openRequest = .morningReport
         }
+        // Day 1: once the chick is home, Hazel shows the keeper round. Her note waits until the tour ends.
+        if events.contains(where: { if case .starterChosen = $0 { true } else { false } }) { openRequest = .tour }
         if !neighbourNotes.isEmpty, openRequest == nil { openRequest = .neighbourNote }
         // Several nights can pass in one go (`fullDays`): the newest show wins.
         if let report = Self.report(from: events, in: state) { showReport = report }

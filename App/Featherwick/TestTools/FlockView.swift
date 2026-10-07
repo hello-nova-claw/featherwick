@@ -14,7 +14,7 @@ struct FlockView: View {
                 group("Chicks with their mother", s.henChicks)
                 group("Coop (\(s.coop.count)/\(s.perches) perches)", s.coop)
                 group("Lost (they always come home)", s.lost.map(\.bird))
-                group("Staying with the neighbour", s.boarding)
+                group("Staying with Hazel", s.boarding)
                 if let offer = s.tradeOffer {
                     Section("Trade offer") {
                         Text("A young hen (\(birdLabel(offer.hen, s))) for \(birdName(offer.roosterID, s)).")

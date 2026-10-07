@@ -42,14 +42,28 @@ Night order: fox (only if the coop is open) → foraging (if the door was left o
 ## The early game (tutorial timeline)
 
 `EarlyGame.swift`. A new keeper starts with one chick and learns one thing at a time. The game is
-a tutorial told as a fixed timeline. Each morning on the timeline, the neighbour introduces one
+a tutorial told as a fixed timeline. Each morning on the timeline, the neighbour (Hazel) introduces one
 `Feature`. A lesson locks nothing. Other features stay locked until their day: the command is
 refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 
+### Day 1 and the people
+
+- A new game starts on day 1. The starter chicks hatched on day 0, so a bird's age is still the day
+  number, and the timeline days below are the same as before. Only the empty first night is gone.
+- `nameKeeper(name)` stores the keeper's name (`GameState.keeperName`). It works before the starter
+  and any time later (Settings, or `iam <name>` in the CLI). A blank name is refused with `.blankName`.
+  It costs no daylight. Old saves have no name until one is given in Settings.
+- Choosing the starter runs the first morning: the day-1 lesson, today's jobs and the season goal.
+  Nothing grows, lays or hatches, and it draws no random numbers.
+- The people (`People` in FeatherwickText): Hazel, the neighbour over the back fence, and Wren, who
+  runs Speckle & Down. Their names are never suggested for a bird.
+- The app: a welcome page (Hazel asks your name), the chick choice, then a tour of the four places
+  (`People.tour`, `TourSheet`). The farm moves to each place. The tour can be skipped. Hazel's first
+  note opens after it.
+
 | Day | Feature | What happens |
 | --- | --- | --- |
-| 0 | — | Choose one chick. Feed, cuddle, name. Nothing to buy. |
-| 1 | `handling` (lesson) | "Pick her up every day. Chicks learn trust fastest." |
+| 1 | `handling` (lesson) | The game starts here. Hazel asks your name and offers a chick, then walks you round the farm. The lesson, day 1's jobs and the season goal come with the chick (`Engine.firstMorning`). |
 | 2 | `treats` | The neighbour gives `welcomeTreats` (3). Speckle & Down sells treats. |
 | 4 | `premiumFeed` | Speckle & Down sells premium feed. |
 | 6 | `coopDoor` (lesson) | The chick moves to the coop tomorrow: the door, the fox, foraging. |

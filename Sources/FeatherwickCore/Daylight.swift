@@ -66,7 +66,7 @@ extension Engine {
         case .upgradeCoop: .building
         case .chooseStarter, .feed, .feedPremium, .collectEggs, .sellEggs, .sellChosenEggs, .sellClearEggs,
             .closeCoop, .pet, .giveTreat, .rename, .incubate, .incubateEggs, .sit, .sitEggs, .penBird, .unpenBird,
-            .rest, .passNight:
+            .rest, .passNight, .nameKeeper:
             nil
         }
     }
