@@ -197,6 +197,17 @@ public struct Rules: Codable, Hashable, Sendable {
     public var slotBonusLapChicken = 1  // a lap chicken at home: the keeper's day goes further
     public var maxDaySlots = 5  // never more than this, whatever the bonuses
 
+    // "What might hatch" (see Planner.swift). The planner says only what the keeper could work out.
+    /// Seen chicks a parent needs, none showing an allele it may hide, before the planner calls it
+    /// "likely" that the parent lacks it. A carrier passes the allele to half its chicks, so 5 chicks
+    /// without it happen to a carrier only 1 time in 32: likely, never proven.
+    public var plannerLikelyAfterChicks = 5
+    /// "Not possible" lines in one pair's forecast, at most. The traits the family showed come first,
+    /// so the list stays short and says what the keeper hoped for.
+    public var plannerNotPossibleLines = 4
+    /// The largest "in N" a ratio line uses (2, 4, 8 or 16). Finer shares are "possible" instead.
+    public var plannerMaxRatioDenominator = 16
+
     public init() {}
 
     /// How an adult hen's laying falls with age: full until `layDeclineStartDays`, then down to
