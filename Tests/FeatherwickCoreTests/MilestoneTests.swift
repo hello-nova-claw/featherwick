@@ -41,4 +41,13 @@ struct MilestoneTests {
         #expect(reached.contains("firstEgg"))  // a laying hen gets there in time
         #expect(reached.allSatisfy { id in Milestones.all.contains { $0.id == id } })
     }
+
+    @Test func chocolateAndGreenEggsAreMilestones() {
+        var (s, _) = startedGame(sex: .hen)
+        s.eggBook.insert(EggBookEntry(colour: .green, speckled: false))
+        s.eggBook.insert(EggBookEntry(colour: .chocolate, speckled: false))
+        let events = Engine.advanceMilestones(&s)
+        #expect(events.contains(.milestoneReached("greenEgg")))
+        #expect(events.contains(.milestoneReached("chocolateEgg")))
+    }
 }

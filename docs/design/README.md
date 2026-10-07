@@ -78,6 +78,8 @@ Implement as asset-catalog colours with an "Any / Dark" pair, driven by the game
 | Brown | `#A86E45` | `#C99A73`, `#A86E45`, `#8A5534`, `#6B3E25` |
 | Blue | `#B4CFCB` | `#CFE0DD`, `#B4CFCB` |
 | Olive | `#868755` | with darker speckles `#5C5D37` so it never reads as brown |
+| Chocolate | `#5E3A26` | `#6E4630`, `#5E3A26`, `#4A2B1B` |
+| Green | `#9DB58E` | `#B5C9A6`, `#9DB58E` |
 
 ### Typography
 Fonts (Google Fonts, OFL): **Libre Caslon Display**, **Libre Caslon Text** (regular and italic), **Figtree** (300, 400, 500).
@@ -206,7 +208,7 @@ Chick art, "Just hatched in the brooder", the question "What shall we call her?"
 Tabs "Breeds | Eggs", close. Title "Breed Book", progress "7 of 24 breeds, 12 of 120 colours". A 3-column grid of collection tiles in a fixed order, so gaps show where unfound breeds belong. Colour dots on a tile: filled for a colour you have owned, pale with a dashed rim for a colour only seen on a show podium, dashed and empty for a colour still to find. A breed only seen at a show gets its tile, with "seen at a show" in italic under the name. Under the grid, "Seen at shows" lists each seen look with its show ("Seen at the Summer Fete, day 28"). A look you own later moves out of that list.
 
 ### 4b — Egg Book (full screen)
-Same header with the Eggs tab selected. "9 of 20 shades found". One row per egg colour (Cream, Brown, Blue, Olive): name and "n of 5", then 5 egg shapes, filled if found and dashed if not. An italic hint appears on rows that are still empty.
+Same header with the Eggs tab selected. "9 of 20 shades found". One row per egg colour, in `EggColour` order (Cream, Brown, Blue, Olive, Chocolate, Green): name and "n of 5", then 5 egg shapes, filled if found and dashed if not. An italic hint appears on rows that are still empty.
 
 ### 5a — Egg carton (sheet, top at 140pt)
 Title "Today's eggs", filters (All 7 / Fertile / Clear / Not candled). The carton is a 6×2 grid of 1pt cups inside a dashed tray. Candling mark on each cup: **filled ink dot = fertile, hollow ring = clear, no mark = not candled**, with a legend underneath. Tap cups to choose eggs (1.5pt ink ring); tap again to put one back. One egg chosen: the detail row shows a large egg, "Blue egg" and "From Juniper. Fertile, candled this morning." More than one: "3 eggs chosen". Actions act on exactly the chosen eggs: **Set 3 to hatch** (primary) and **Sell 3** (secondary with price). With none chosen, the secondary is **Sell all**. Before the keeper learns to candle, an unknown egg shows "?" in its cup, the legend says "?: can't tell yet" and the filters are hidden. After the lesson, choose one egg that is not candled and tap "Candle this egg". Setting eggs never candles them: an egg that is not candled goes in, and a clear one comes back on hatch day. When the chosen eggs cannot hatch, replace the Set to hatch button with the reason (clear egg, room for 2 more). With no incubator, there is no Set to hatch button. The coop shows no incubator and no hint about one until the keeper has one. The incubator takes more eggs on the same day until it is full.
@@ -221,6 +223,14 @@ Opens over the farm on the morning of a show. A place sheet closes first. Contex
 Context "In the village", coin balance and close. A painted shop front (130pt), the title, an italic greeting from the shopkeeper, and tabs Feed / Treats / Hatching / Show. Item rows are 72pt: a 48pt item art, name (Caslon Text 17) with a one-line description, and a price button (coin dot + number, secondary style). If the player can't afford an item, its price button is disabled and says "Not enough coins".
 
 The Show tab: the next show's theme name and day, the entry fee, and the featured kind. Then what is entered, a row per bird that can go (tap → a sheet with one row per class the bird may enter), and a row per matched plate of eggs in the carton. A class row gives the class name, its difficulty (pet: Easy, eggs: Medium, breed: Hard), what 1st place wins (coins, plus treats in the pet class), "Featured: bonus prizes" when the theme features it, and the entry fee as the price button. Past placings are listed last.
+
+### 9a — Morning report (sheet, large)
+Opens once each morning after Sleep in the Coop sheet, before the farm. Context "Overnight" and close. Title "Day 12" (Caslon Display 38) and "Autumn morning" (Figtree 13 `inkMuted`). The quiet night and the turn of the season sit under the title. Then one section per group, split by dashed rules: Hatched, The fox, Came home, From the neighbour, New at Speckle & Down, The county show, Today's jobs, Goals, In the nest boxes, Around the flock. A section has a heading (Caslon Text 18) and, where one number says it best, a count (Figtree 15): chicks hatched, birds scared, birds home, eggs laid. The lines are the game's own words (Figtree 16 `inkSoft`). Empty groups are hidden. Primary button "Back to the farm".
+- The groups come from `MorningReport` in Core. Every night event lands in exactly one group, so nothing is dropped.
+- While the report tells the night, that night gives no toasts and no separate neighbour note. The log still has every line.
+- On a show night, Show day (7a) opens after the keeper goes back to the farm.
+- Settings (≡) has a "Morning report" switch. It starts on. Off: the night gives toasts as before.
+- Fast forward and the test tools make no report.
 
 ---
 

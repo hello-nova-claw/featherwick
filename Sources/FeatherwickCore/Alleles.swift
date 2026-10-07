@@ -50,7 +50,8 @@ public enum BlueShell: String, Hashable, Codable, Sendable, CaseIterable {
 }
 
 /// Brown shell coating. SIMPLIFIED: real brown is polygenic (many genes, many shades).
-/// Here it is one dominant gene. Brown coating on a blue shell gives olive.
+/// Here it is one dominant gene, and `QuantitativeTrait.brownDepth` sets how dark the coat is.
+/// Brown coating on a blue shell gives green (thin coat) or olive (dark coat).
 public enum BrownShell: String, Hashable, Codable, Sendable, CaseIterable {
     case brown = "Br"
     case noCoating = "br"

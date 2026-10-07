@@ -62,7 +62,7 @@ public struct Rules: Codable, Hashable, Sendable {
     public var maxPerches = 15
     public var rehomeBase: [LifeStage: Int] = [.chick: 2, .grower: 4, .adult: 6]
     public var rareLavenderOrSilkie = 6  // lavender, or silkie feathering on a non-Silkie
-    public var rareOliveEggs = 5
+    public var rareOliveEggs = 5  // olive, green or chocolate eggs
     public var rareSplash = 4
     public var rareSpeckledEggs = 3
     public var rareSmall = 2  // each of: blue, barred, blue eggs
@@ -105,6 +105,8 @@ public struct Rules: Codable, Hashable, Sendable {
     public var brownEggPrice = 2
     public var blueEggPrice = 3
     public var oliveEggPrice = 4
+    public var chocolateEggPrice = 4
+    public var greenEggPrice = 4
     public var speckleBonus = 1
 
     // County show (see ShowEvent.swift). A recurring event that rewards selective breeding, taming
@@ -201,6 +203,14 @@ public struct Rules: Codable, Hashable, Sendable {
 
     public static let standard = Rules()
 
+    // Shell depth (`QuantitativeTrait.brownDepth`, as a share 0...1). These are fixed for every game,
+    // not saved per game, because an egg's colour is part of the bird's look (`Phenotype`), which
+    // needs no rules. Average depth (0.5) gives brown and olive, so older birds keep their colours.
+    /// Brown coating above this depth gives chocolate eggs.
+    public static let chocolateShellDepth = 0.8
+    /// Brown coating over blue at this depth or more gives olive; below it, green.
+    public static let oliveShellDepth = 0.4
+
     /// Coins a neighbour pays to adopt a bird. Rarer and finer birds are worth more.
     ///
     /// Anti-gaming rule: only traits the player can already see count. An unrevealed chick is worth
@@ -223,7 +233,11 @@ public struct Rules: Codable, Hashable, Sendable {
         if p.isBarred { value += rareSmall }
         if bird.friendliness == .lapChicken { value += lapChickenRehomeBonus }
         if bird.sex == .hen, stage == .adult, let egg = p.eggColour {
-            if egg == .olive { value += rareOliveEggs } else if egg == .blue { value += rareSmall }
+            switch egg {
+            case .olive, .green, .chocolate: value += rareOliveEggs
+            case .blue: value += rareSmall
+            case .cream, .brown: break
+            }
             if p.eggIsSpeckled { value += rareSpeckledEggs }
         }
         return value
@@ -267,6 +281,8 @@ public struct Rules: Codable, Hashable, Sendable {
             case .brown: brownEggPrice
             case .blue: blueEggPrice
             case .olive: oliveEggPrice
+            case .chocolate: chocolateEggPrice
+            case .green: greenEggPrice
             }
         base += egg.speckled ? speckleBonus : 0
         guard isStale(egg, onDay: day) else { return base }
