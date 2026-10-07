@@ -38,7 +38,7 @@ Key Core files:
 - `BreedTable.swift`, `Breed.swift`: breeds and colour varieties (data tables).
 - `SaveFormat.swift` (versions, migrations), `SaveStore.swift` (slots, atomic writes, backups).
 - One file per feature: `EarlyGame`, `BreedingPen`, `Shows`, `ShowEvent`, `Friendliness`, `Pedigree`, `Names`, `Story`,
-  `Milestone`, `Jobs` (daily jobs, season goals), `Look`, `Simulation`, `HatchWhy` (hatch-day "why" note).
+  `Milestone`, `Jobs` (daily jobs, season goals), `Daylight` (day slots, errands, the sleep gate), `Look`, `Simulation`, `HatchWhy` (hatch-day "why" note).
 
 ## iOS app
 
@@ -49,7 +49,7 @@ components, screens 1a–8a). The painted farm and bird art come later; dashed b
   `Stitch`), marks (eggs, feathers, dabs) and components (buttons, tabs, sheet page, notices).
   Use these; do not hard-code colours, fonts or sizes in screens.
 - `Farm/FarmView.swift`: HUD, 4 swipe panels, a panel rail (dots, right side), and a bottom row: Books, Today,
-  the panel's place, ≡. Panels left to right: Barn (Coop, which holds the brooder too), Yard (Yard), Far yard
+  the panel's place, Rest a while / Sleep (after the daylight lesson), ≡. Panels left to right: Barn (Coop, which holds the brooder too), Yard (Yard), Far yard
   (Back fence), Shop (Farm gate). Barn and Shop are a flat colour until their painting exists. Each place opens
   a sheet (`Sheets/`). Notices under a place come from game state.
 - `Scene/`: the 2.5D scene on the Yard and Far yard (`FarmScene`): depth from ground Y (`SceneDepth`), walk
@@ -63,7 +63,7 @@ components, screens 1a–8a). The painted farm and bird art come later; dashed b
 - Morning report (`Sheets/MorningReportSheet.swift`): after Sleep, one page of the night, before the farm.
   Core's `MorningReport.from(events:state:)` sorts the night's events into groups; every event lands in one.
   A new `GameEvent` needs a group in `MorningReport.group(of:)`. Settings has a switch (on by default).
-- Day or night follows game time, not the device clock, via `\.palette`. Morning and afternoon are day. Evening starts a 30-minute crossfade to night. Night lasts from Sleep until the morning report (or the farm) shows. Settings ▸ Time of day (`TimeOfDayPin`) pins day or night for testing.
+- Day or night follows game time, not the device clock, via `\.palette`. Morning and afternoon are day. Evening starts a 30-minute crossfade to night. Night lasts from Sleep until the morning report (or the farm) shows. Settings ▸ Time of day (`TimeOfDayPin`: Game, Day, Night) pins day or night for testing.
 - Fonts (Libre Caslon Display/Text, Figtree; OFL) are bundled in `Fonts/` and registered at launch.
 - ≡ → "Open test tools" shows the old plain screens (`TestTools/`), with every action and the full log.
 - `Beta/`: TestFlight questions after the first hatch and the first show (once per save slot). Compiled only with the `BETA` flag (Beta config, "Featherwick Beta" scheme) or `DEBUG`, and shown only on a sandbox receipt. Answers go to `beta-notes.json` (not the save); Settings ▸ Share beta notes.
