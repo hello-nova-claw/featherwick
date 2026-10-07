@@ -10,6 +10,7 @@ This repo is the game logic first. The iOS front end (SpriteKit + SwiftUI) comes
 - `Sources/FeatherwickText`: the words players read, shared by the CLI and the app.
 - `Sources/FeatherwickCLI`: text front end (`featherwick`).
 - `App`: iOS test app (SwiftUI, no art yet). Make the Xcode project with `cd App && xcodegen`.
+  TestFlight builds (the "Featherwick Beta" scheme, `BETA` flag) ask two short beta questions, after the first hatch and after the first show. They are not in App Store builds: the flag leaves the code out, and a receipt check keeps it off outside TestFlight. Answers stay on the device until the tester shares them from Settings.
 - `Tests/FeatherwickCoreTests`: Swift Testing tests for the genetics rules.
 
 ## Commands

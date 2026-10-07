@@ -68,6 +68,10 @@ enum FarmSheet: Identifiable, Hashable {
     case settings
     case neighbourNote
     case jobs
+    #if DEBUG || BETA
+        /// A TestFlight question (`Beta/`). Never in an App Store build.
+        case betaPrompt(BetaMoment)
+    #endif
     var id: Self { self }
 }
 
@@ -101,7 +105,7 @@ struct FarmView: View {
             .foregroundStyle(palette.ink)
             ToastStack()
         }
-        .sheet(item: $sheet, onDismiss: presentShowIfWaiting) { which in
+        .sheet(item: $sheet, onDismiss: sheetClosed) { which in
             content(for: which)
                 .environment(\.palette, palette)
         }
@@ -111,6 +115,13 @@ struct FarmView: View {
         }
         .onChange(of: store.openRequest) { _, request in
             if let request {
+                #if DEBUG || BETA
+                    // A beta question never pushes a sheet aside: it waits until that sheet closes.
+                    if case .betaPrompt = request, sheet != nil {
+                        store.openRequest = nil
+                        return
+                    }
+                #endif
                 // A sheet for a place also moves the farm to that place's panel.
                 if case .place(let place) = request { scrolled = .containing(place) }
                 sheet = request
@@ -209,6 +220,14 @@ struct FarmView: View {
         if showDay == nil, let report = store.showReport { showDay = report }
     }
 
+    /// A sheet closed: the show goes first, then any beta question that waited for a quiet farm.
+    private func sheetClosed() {
+        presentShowIfWaiting()
+        #if DEBUG || BETA
+            if showDay == nil { store.offerBetaPrompt() }
+        #endif
+    }
+
     @ViewBuilder
     private func content(for which: FarmSheet) -> some View {
         switch which {
@@ -224,6 +243,9 @@ struct FarmView: View {
         case .settings: SettingsSheet()
         case .neighbourNote: NeighbourNoteSheet()
         case .jobs: JobsSheet()
+        #if DEBUG || BETA
+            case .betaPrompt(let moment): BetaPromptSheet(moment: moment)
+        #endif
         }
     }
 

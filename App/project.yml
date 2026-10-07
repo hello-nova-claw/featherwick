@@ -7,6 +7,13 @@ options:
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
+# Beta is Release plus the BETA flag: the build for TestFlight. It compiles in the beta questions
+# (App/Featherwick/Beta). Release, the App Store build, never has them. Archive with the
+# "Featherwick Beta" scheme for TestFlight, and with "Featherwick" for the App Store.
+configs:
+  Debug: debug
+  Release: release
+  Beta: release
 packages:
   Featherwick:
     path: ..
@@ -25,9 +32,7 @@ targets:
     configFiles:
       Debug: Config/Signing.xcconfig
       Release: Config/Signing.xcconfig
-    # A shared scheme for the app. Without it, Xcode lists only the package's schemes (the
-    # `featherwick` CLI among them), and running that on an iPhone fails with "not codesigned".
-    scheme: {}
+      Beta: Config/Signing.xcconfig
     dependencies:
       - package: Featherwick
         product: FeatherwickCore
@@ -48,3 +53,38 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: >-
           UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown
           UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+      configs:
+        Beta:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BETA"
+# Shared schemes for the app. Without them, Xcode lists only the package's schemes (the
+# `featherwick` CLI among them), and running that on an iPhone fails with "not codesigned".
+# Each config is named here, because with two release-type configs XcodeGen could pick Beta for an archive.
+schemes:
+  # The everyday and App Store scheme: Debug to run, Release to archive. No beta questions in Release.
+  Featherwick:
+    build:
+      targets:
+        Featherwick: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+  # The TestFlight scheme: runs and archives the Beta configuration (see `configs` above).
+  Featherwick Beta:
+    build:
+      targets:
+        Featherwick: all
+    run:
+      config: Beta
+    profile:
+      config: Beta
+    analyze:
+      config: Beta
+    archive:
+      config: Beta
