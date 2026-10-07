@@ -68,6 +68,7 @@ enum FarmSheet: Identifiable, Hashable {
     case settings
     case neighbourNote
     case jobs
+    case morningReport
     var id: Self { self }
 }
 
@@ -118,6 +119,10 @@ struct FarmView: View {
             }
         }
         .onChange(of: store.showReport) { _, report in showReportChanged(report) }
+        // A show night: the show opens once the keeper is back from the morning report.
+        .onChange(of: store.morningReport) { _, report in
+            if report == nil, sheet == nil { presentShowIfWaiting() }
+        }
     }
 
     /// One panel per page; the pages fill the whole screen, under the HUD. A paging scroll view, not a
@@ -193,11 +198,13 @@ struct FarmView: View {
 
     /// Show day takes the whole screen. A place sheet closes first (one presentation at a time);
     /// settings stay open, so the test tools are not cut off, and the show waits until they close.
+    /// The morning report comes first: the show waits until the keeper is back from it.
     private func showReportChanged(_ report: ShowReport?) {
         guard let report else {
             showDay = nil
             return
         }
+        if store.morningReport != nil { return }
         switch sheet {
         case nil: showDay = report
         case .settings?: break
@@ -206,7 +213,8 @@ struct FarmView: View {
     }
 
     private func presentShowIfWaiting() {
-        if showDay == nil, let report = store.showReport { showDay = report }
+        guard showDay == nil, store.morningReport == nil, let report = store.showReport else { return }
+        showDay = report
     }
 
     @ViewBuilder
@@ -224,6 +232,7 @@ struct FarmView: View {
         case .settings: SettingsSheet()
         case .neighbourNote: NeighbourNoteSheet()
         case .jobs: JobsSheet()
+        case .morningReport: MorningReportSheet()
         }
     }
 
