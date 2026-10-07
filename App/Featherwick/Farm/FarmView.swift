@@ -154,10 +154,10 @@ struct FarmView: View {
         Binding(get: { scrolled ?? .yard }, set: { scrolled = $0 })
     }
 
-    /// Books, Today and settings. Books waits until the neighbour shows the keeper the Breed Book
-    /// (the early game's `breedBook` lesson). Settings is always there.
+    /// Books, Today, the place on a scene panel, and settings. Books waits until the neighbour shows the
+    /// keeper the Breed Book (the early game's `breedBook` lesson). Settings is always there.
     private var bottomBar: some View {
-        HStack {
+        HStack(alignment: .bottom) {
             if store.state.isOpen(.breedBook) {
                 FloatingBox {
                     Button("Books") { sheet = .books }
@@ -172,6 +172,7 @@ struct FarmView: View {
                     TodayButtonLabel()
                 }
             }
+            scenePlaces
             Spacer()
             FloatingBox {
                 Button {
@@ -180,6 +181,18 @@ struct FarmView: View {
                     Text("≡").font(Typeface.sans(24)).frame(width: 56, height: 56)
                 }
                 .accessibilityLabel("Settings")
+            }
+        }
+    }
+
+    /// On a scene panel (the Yard, the Far yard) the place button sits in the bottom row, so it does not
+    /// cover the scene. It follows the panel on screen.
+    @ViewBuilder
+    private var scenePlaces: some View {
+        let current: FarmPanel = panel.wrappedValue
+        if SceneArt.hasScene(current) {
+            ForEach(current.places) { place in
+                PlaceLabel(place: place, notices: notices(for: place)) { sheet = .place(place) }
             }
         }
     }
@@ -306,8 +319,11 @@ struct FarmPanelView<PlaceButton: View>: View {
             } else {
                 standIn
             }
-            VStack(spacing: Space.xl) {
-                ForEach(panel.places) { label($0) }
+            // A scene panel's place button is in the bottom row instead (`FarmView.scenePlaces`).
+            if !SceneArt.hasScene(panel) {
+                VStack(spacing: Space.xl) {
+                    ForEach(panel.places) { label($0) }
+                }
             }
         }
     }

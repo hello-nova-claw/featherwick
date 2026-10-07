@@ -180,9 +180,9 @@ All screens are 393×852 (iPhone 15/16). Sheets sit over the dimmed farm.
 - Full-bleed painted scene (SpriteKit).
 - HUD top-left and top-right (see Components), 58–62pt from top.
 - 4 panels to swipe between: Barn, Yard, Far yard, Shop. The Yard and the Far yard draw a placeholder 2.5D scene (see Farm scene). Until their paintings exist, the Barn and the Shop are a flat colour with a dashed "scene" box.
-- Place labels on each panel, each anchored to the bottom-centre of its tap area. Barn: Coop and Potting shed. Yard: Yard. Far yard: Back fence. Shop: Farm gate.
+- Place labels on each panel, each anchored to the bottom-centre of its tap area. Barn: Coop and Potting shed. Shop: Farm gate. On the scene panels (Yard: Yard; Far yard: Back fence) the place button sits in the bottom row after Today instead, so it does not cover the scene; it changes as you swipe.
 - Panel rail: a white box down the right side, under the HUD, with one dot per panel in swipe order. Tap a dot to go there. The current panel is an ink dot. A panel off screen with a notice gets a bigger dot in its notice colour (decision, then collect, then story) with a ring. Others are small `unknown` dots. VoiceOver reads the panel name and its notices.
-- Bottom: "Books" (Caslon Display 23) bottom-left, then "Today", and a settings button "≡" bottom-right, all white boxes with radius 10, 56pt tall, 24pt above the home indicator.
+- Bottom: "Books" (Caslon Display 23) bottom-left, then "Today", then the place of a scene panel (Yard or Back fence), and a settings button "≡" bottom-right, all white boxes with radius 10, 56pt tall, 24pt above the home indicator.
 - Books appears when the early game introduces the Breed Book (the `breedBook` lesson, the morning the first chick's sex shows). Until then, an "added to the Breed Book" toast has no "View". "≡" is always there.
 - Today shows how many of today's jobs are left in a buff badge. When all are done, the badge goes: "Today" turns `inkMuted`, with an ink tick and "Done" (Figtree 13). VoiceOver reads "Today, all jobs done".
 - Farm gate notice "new in today": stock the early game brought in this morning. It goes when the keeper opens the Farm gate or buys something there. The app keeps what was seen (per save slot); the game does not.
