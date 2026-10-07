@@ -249,8 +249,16 @@ struct SettingsSheet: View {
             StitchDivider()
             FeedbackToggles()
             StitchDivider()
+            MorningReportToggle()
+            StitchDivider()
             TimeOfDayPicker()
             StitchDivider()
+            #if DEBUG || BETA
+                if BetaNotes.showsInSettings {
+                    BetaNotesSettings()
+                    StitchDivider()
+                }
+            #endif
             Text("Fast forward").font(Typeface.item)
             HStack(spacing: Space.m) {
                 Button("1 day") { store.fullDays(1) }.buttonStyle(.secondary)

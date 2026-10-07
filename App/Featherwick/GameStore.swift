@@ -47,11 +47,18 @@ final class GameStore {
     private(set) var neighbourNotes: [String] = []
     /// The show that was just held. The farm shows it full screen until the player goes back.
     private(set) var showReport: ShowReport?
+    /// What happened overnight, after the keeper chose Sleep. The farm shows it once, before the farm,
+    /// until the keeper goes back. Nil when the "Morning report" switch is off.
+    private(set) var morningReport: MorningReport?
+    /// True only while `sleep()` runs the night, so test tools and fast forward make no report.
+    private var reportingNight = false
     /// Shop stock the keeper has looked at since the early game brought it in. The game has no idea of
     /// "seen", so the app keeps it (per save slot), and the farm gate stops saying "new in today".
     private(set) var seenNewStock: Set<Feature>
     private var store: SaveStore
     private let seenStockKey: String
+    /// The save slot, so per-slot notes kept outside the save (new stock seen, beta prompts) find theirs.
+    let slot: String
     private var nextLogID = 0
 
     var state: GameState { save.state }
@@ -61,6 +68,7 @@ final class GameStore {
         // A local first: @Observable can't read `self.store` until every property is set.
         let store = SaveStore(directory: directory, slot: slot)
         self.store = store
+        self.slot = slot
         save = Self.load(from: store) ?? Self.newSave(rules: .standard)
         seenStockKey = "seenNewStock.\(slot)"
         let seen = UserDefaults.standard.stringArray(forKey: seenStockKey) ?? []
@@ -101,21 +109,33 @@ final class GameStore {
         let events = Engine.apply(command, to: &state, using: &rng)
         save = SaveGame(state: state, rng: rng)
         if Self.isShopping(command) { sawNewStock() }
+        // The morning report shows the whole night, so its events get no toasts and no separate neighbour note.
+        let morning =
+            reportingNight && command == .passNight ? MorningReport.from(events: events, state: state) : nil
         for event in events {
-            if let toast = toast(for: event, in: state) ?? handlingToast(for: event, in: events, before, state) {
+            if morning == nil,
+                let toast = toast(for: event, in: state) ?? handlingToast(for: event, in: events, before, state)
+            {
                 showToast(toast)
             }
             guard let words = eventText(event, state) else { continue }
-            if Self.isNeighbourNote(event) { neighbourNotes.append(words) }
+            if morning == nil, Self.isNeighbourNote(event) { neighbourNotes.append(words) }
             var rejected = false
             if case .rejected = event { rejected = true }
             append(words, rejected: rejected)
         }
         // Sound and haptics for what just happened (eggs, hatching, coins, a "no").
         GameFeedback.play(for: events)
+        if let morning {
+            morningReport = morning
+            openRequest = .morningReport
+        }
         if !neighbourNotes.isEmpty, openRequest == nil { openRequest = .neighbourNote }
         // Several nights can pass in one go (`fullDays`): the newest show wins.
         if let report = Self.report(from: events, in: state) { showReport = report }
+        #if DEBUG || BETA
+            noticeBetaMoments(in: events)
+        #endif
         persist()
         return events
     }
@@ -128,6 +148,16 @@ final class GameStore {
         default: false
         }
     }
+
+    /// The keeper goes to bed: the night passes, and the morning report opens if the switch is on.
+    func sleep() {
+        reportingNight = MorningReportSetting.isOn
+        defer { reportingNight = false }
+        run(.passNight)
+    }
+
+    /// The keeper is back from the morning report.
+    func finishMorningReport() { morningReport = nil }
 
     /// The keeper has read the neighbour's notes.
     func readNeighbourNotes() { neighbourNotes.removeAll() }
@@ -144,7 +174,16 @@ final class GameStore {
     }
 
     /// The player is back from the show.
-    func finishShow() { showReport = nil }
+    func finishShow() {
+        #if DEBUG || BETA
+            // The first show the keeper entered: ask once they are back on the farm, not over the results.
+            if showReport?.results.isEmpty == false { queueBetaPrompt(.firstShow) }
+        #endif
+        showReport = nil
+        #if DEBUG || BETA
+            offerBetaPrompt()
+        #endif
+    }
 
     /// The show held this night, if any. With no entries there is no result to carry the theme, so the
     /// show day's season names it.
@@ -167,6 +206,7 @@ final class GameStore {
         save = Self.newSave(rules: difficulty.rules)
         log = []
         showReport = nil
+        morningReport = nil
         // A new game brings its stock in again, so it is all new again.
         seenNewStock = []
         UserDefaults.standard.removeObject(forKey: seenStockKey)
@@ -179,7 +219,7 @@ final class GameStore {
     // MARK: - New stock at the farm gate
 
     /// The early-game steps that bring new stock to Speckle & Down.
-    static let shopFeatures: [Feature] = [.treats, .premiumFeed, .birdShop, .coopUpgrade, .incubatorShop]
+    static let shopFeatures: [Feature] = MorningReport.newStockFeatures
 
     /// Stock the early game brought in this morning that the keeper has not looked at yet.
     var hasNewStock: Bool {
@@ -287,6 +327,45 @@ final class GameStore {
     }
 
     func dismissToast(_ id: Int) { toasts.removeAll { $0.id == id } }
+
+    // MARK: - Beta prompts (TestFlight only, see `Beta/BetaNotes.swift`)
+
+    // No stored property here: the Observable macro and `#if` do not mix well, and the waiting question
+    // is not something a view draws. `BetaNotes.waiting` holds it.
+    #if DEBUG || BETA
+        /// The first hatch asks straight away. The first show waits until the results close (`finishShow`).
+        private func noticeBetaMoments(in events: [GameEvent]) {
+            let hatched = events.contains { e in
+                if case .chicksHatched = e { return true }
+                return false
+            }
+            if hatched { queueBetaPrompt(.firstHatch) }
+            offerBetaPrompt()
+        }
+
+        private func queueBetaPrompt(_ moment: BetaMoment) {
+            guard !BetaNotes.waiting.contains(moment), BetaNotes.isOn, !BetaNotes.wasAsked(moment, slot: slot)
+            else { return }
+            BetaNotes.waiting.append(moment)
+        }
+
+        /// Asks the farm to open the waiting question, unless a show or another sheet comes first.
+        /// The farm calls this again when its sheet closes.
+        func offerBetaPrompt() {
+            guard let moment = BetaNotes.waiting.first, showReport == nil, openRequest == nil else { return }
+            openRequest = .betaPrompt(moment)
+        }
+
+        /// Saved, skipped or swiped away: this slot is never asked again. Not on open, so a question that
+        /// another sheet pushed aside is still asked later.
+        func betaPromptAnswered(_ moment: BetaMoment) {
+            BetaNotes.waiting.removeAll { $0 == moment }
+            BetaNotes.markAsked(moment, slot: slot)
+        }
+
+        /// Settings (Debug): ask this question when Settings closes, asked before or not.
+        func tryBetaPrompt(_ moment: BetaMoment) { BetaNotes.waiting = [moment] }
+    #endif
 
     // MARK: - Log and saving
 

@@ -180,11 +180,17 @@ struct CoopSheet: View {
         ForEach(s.birdsWaitingForPerch) { bird in
             Text(perchWaitText(bird, s)).font(Typeface.body).foregroundStyle(palette.inkSoft)
         }
+        // Only once the neighbour has helped build it (early game).
+        if s.isOpen(.breedingPen) {
+            let penned = s.pennedBirds.count
+            Button(penned == 0 ? "Breeding pen" : "Breeding pen · \(penned) in") { open(.breedingPen) }
+                .buttonStyle(.textAction)
+        }
         HStack(spacing: Space.m) {
             Button(s.coopDoorOpen ? "Shut the door" : "Door is shut") { store.run(.closeCoop) }
                 .buttonStyle(.secondary)
                 .disabled(!s.coopDoorOpen)
-            Button("Sleep") { store.run(.passNight) }.buttonStyle(.secondary)
+            Button("Sleep") { store.sleep() }.buttonStyle(.secondary)
         }
         Text("An open door lets the flock forage overnight, but the fox may visit.")
             .font(Typeface.caption).foregroundStyle(palette.inkMuted)

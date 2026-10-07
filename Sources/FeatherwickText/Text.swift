@@ -448,6 +448,13 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         case .alreadyFedPremium: "You already gave them premium feed today."
         case .specialSoldOut: "Today's special is sold. Speckle & Down has a new one tomorrow."
         case .notYet(let f): notYetText(f, s)
+        case .penFull(let hens): "The breeding pen holds \(hens) hens. Take one out first: unpen <name>"
+        case .penHasRooster: "The breeding pen already has a rooster. Take him out first: unpen <name>"
+        case .notInPen: "That bird is not in the breeding pen."
+        case .alreadyInPen: "That bird is already in the breeding pen."
+        case .notInCoop: "Only birds with a perch in the coop can go in the breeding pen."
+        // Rule 8: says nothing about which sex the bird will be.
+        case .tooYoungForPen: "That bird is too young for the breeding pen. Wait until its feathers come in."
         }
     case .starterChosen(let id): return "You take \(birdName(id, s)) home and settle them under the heat lamp."
     case .fed: return "You fill the feeder and top up the water."
@@ -683,7 +690,41 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return "Season goal, \(goalWords(kind, s)): \(progress) of \(target)."
     case .seasonGoalReached(let kind, let coins):
         return "★ Season goal reached: \(goalWords(kind, s))! You earn \(coins) coins."
+    case .birdPenned(let id): return pennedText(id, s)
+    case .birdUnpenned(let id): return "\(birdName(id, s)) goes back to the coop flock."
     }
+}
+
+/// What penning a bird means for the eggs. A bird is penned only once its sex shows.
+func pennedText(_ id: UUID, _ s: GameState) -> String {
+    let name = birdName(id, s)
+    guard let bird = s.bird(id), bird.revealed else { return "\(name) goes into the breeding pen." }
+    if bird.sex == .rooster {
+        let grown = s.penRoosterGrownDay.map { " He is still young: the pen hens' eggs stay clear until day \($0)." }
+        return "\(name) goes into the breeding pen. He fathers the eggs of the hens in the pen, and only theirs."
+            + (grown ?? "")
+    }
+    guard let rooster = s.penRooster else {
+        return "\(name) goes into the breeding pen. Her eggs won't be fertile until a rooster joins her: pen <name>"
+    }
+    if let day = s.penRoosterGrownDay {
+        return "\(name) goes into the breeding pen. \(rooster.name) is still young, so her eggs stay clear "
+            + "until day \(day). After that, her chicks will have \(rooster.name) for a father."
+    }
+    return "\(name) goes into the breeding pen. Her chicks will have \(rooster.name) for a father."
+}
+
+/// The breeding pen: its rooster, its hens, and room for more.
+public func penLines(_ s: GameState) -> [String] {
+    guard s.isOpen(.breedingPen) else { return [notYetText(.breedingPen, s)] }
+    var out = ["Breeding pen (1 rooster, \(s.rules.penHens) hens). Pen birds keep their coop perch."]
+    out.append("  Rooster: " + (s.penRooster.map { birdLabel($0, s) } ?? "none (the pen hens' eggs are not fertile)"))
+    if let day = s.penRoosterGrownDay { out.append("    still young: the pen hens' eggs stay clear until day \(day)") }
+    let hens = s.pennedHens
+    if hens.isEmpty { out.append("  Hens: none") }
+    for hen in hens { out.append("  Hen: " + birdLabel(hen, s)) }
+    out.append("Put a bird in: pen <name> · take one out: unpen <name>")
+    return out
 }
 
 /// The current goal in a sentence ("hatch 3 chicks"), or its short name if it has gone.
@@ -840,6 +881,7 @@ public func yardLines(_ s: GameState) -> [String] {
     out.append("Coop (\(s.coop.count)/\(s.perches) perches, \(s.nestBoxes) nesting boxes):")
     for b in s.coop {
         var line = "  " + birdLabel(b, s)
+        if s.isPenned(b.id) { line += " · in the breeding pen" }
         if let c = s.clutch(under: b.id) { line += " · sitting on \(c.eggs.count) eggs, hatch day \(c.hatchDay)" }
         let kids = s.henChicks.filter { $0.raisedBy == b.id }
         if !kids.isEmpty { line += " · with \(kids.count) chick\(kids.count == 1 ? "" : "s")" }
@@ -1091,6 +1133,12 @@ public func introducedText(_ f: Feature, _ s: GameState) -> String? {
     case .incubatorShop:
         return "Speckle & Down now sells a big incubator. It holds \(r.bigIncubatorSize) eggs, for "
             + "\(r.incubatorPrice) coins. (buy incubator)"
+    case .breedingPen:
+        return """
+            The neighbour helps you fence off a corner of the coop. "A breeding pen! Put one rooster in with up to \
+            \(r.penHens) hens. Then you know who fathered every egg they lay. They keep their perches, so it costs \
+            you no room." (pen <name>, unpen <name>, pen)
+            """
     }
 }
 
@@ -1105,6 +1153,7 @@ public func notYetText(_ f: Feature, _ s: GameState) -> String {
     case .coopUpgrade: return "The carpenter is busy. Ask about more perches \(when)."
     case .shows: return "There is no show to enter yet."
     case .incubatorShop: return "Speckle & Down has no incubators in yet. They come \(when)."
+    case .breedingPen: return "There is no breeding pen yet. The neighbour comes to help build one \(when)."
     case .handling, .coopDoor, .breedBook, .laying: return "Not yet."
     }
 }

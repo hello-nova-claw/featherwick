@@ -42,7 +42,8 @@ struct EarlyGameTests {
         (Command.buy(.pullet), Feature.birdShop), (.buy(.cockerel), .birdShop), (.buy(.fertileEgg), .birdShop),
         (.buySpecial, .birdShop), (.upgradeCoop, .coopUpgrade),
         (.buyIncubator, .incubatorShop), (.buy(.treats), .treats), (.buy(.premiumFeed), .premiumFeed),
-        (.enterEggs, .shows), (.enterEggPlate([]), .shows),
+        (.enterEggs, .shows), (.enterEggPlate([]), .shows), (.penBird(UUID()), .breedingPen),
+        (.unpenBird(UUID()), .breedingPen),
     ])
     func lockedCommandsWaitForTheirDay(_ command: Command, _ feature: Feature) {
         var (s, rng) = Self.newKeeper()
@@ -75,7 +76,7 @@ struct EarlyGameTests {
 
     @Test func theSexIsKnownBeforeTheShopSellsBirds() {
         let r = Rules.standard
-        for f in [Feature.birdShop, .coopUpgrade, .shows, .incubatorShop] {
+        for f in [Feature.birdShop, .coopUpgrade, .shows, .incubatorShop, .breedingPen] {
             #expect(r.introductionDay(of: f) > r.growerAge, "\(f)")
         }
     }

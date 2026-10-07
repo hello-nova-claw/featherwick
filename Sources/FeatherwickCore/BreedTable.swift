@@ -25,8 +25,8 @@ public struct Breed: RawRepresentable, Hashable, Codable, Sendable, ExpressibleB
     // Planned
     public static let australorp: Breed = "australorp"
     public static let plymouthRock: Breed = "plymouth rock"
-    public static let leghorn: Breed = "leghorn"
     public static let marans: Breed = "marans"
+    public static let leghorn: Breed = "leghorn"
 
     /// Breeds in the game now, in table order. Planned breeds are not included.
     public static var allCases: [Breed] { BreedTable.inGame.map(\.id) }
@@ -180,6 +180,13 @@ public enum BreedTable {
             varieties: [.barred, .buff], broodiness: 0.2, calmness: 0.6,
             look: BreedLook(body: .medium, comb: .single, legTone: .yellow, size: 1.1),
             note: "The Barred Rock. Black-and-white barring. Brown eggs."),
+        BreedDefinition(
+            id: .marans, displayName: "Marans", status: .planned, isStarter: false,
+            signature: [.two(BrownShell.brown)],
+            varieties: [.black], broodiness: 0.2, calmness: 0.6, brownDepth: 0.9,
+            look: BreedLook(body: .heavy, comb: .single, legTone: .slate, size: 1.1),
+            note: "French. Famous for very dark chocolate eggs. Crossed with blue-egg breeds, "
+                + "makes the darkest olive eggers."),
         // Real White Leghorns: dominant white (I/I) over extended black (E, the default), single comb,
         // clean yellow legs, small and flighty, rarely broody. They lay white eggs; cream is the
         // closest egg colour the game has (no blue or brown shell genes).
@@ -189,13 +196,6 @@ public enum BreedTable {
             varieties: [.white], broodiness: 0.05, calmness: 0.3,
             look: BreedLook(body: .light, comb: .single, legTone: .yellow, size: 0.8),
             note: "Italian. White, light and lively. A famous layer of pale eggs."),
-        BreedDefinition(
-            id: .marans, displayName: "Marans", status: .planned, isStarter: false,
-            signature: [.two(BrownShell.brown)],
-            varieties: [.black], broodiness: 0.2, calmness: 0.6, brownDepth: 0.9,
-            look: BreedLook(body: .heavy, comb: .single, legTone: .slate, size: 1.1),
-            note: "French. Famous for very dark chocolate eggs. Crossed with blue-egg breeds, "
-                + "makes the darkest olive eggers."),
     ]
 
     public static var inGame: [BreedDefinition] { all.filter(\.isInGame) }

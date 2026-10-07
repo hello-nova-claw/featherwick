@@ -10,6 +10,7 @@ This repo is the game logic first. The iOS front end (SpriteKit + SwiftUI) comes
 - `Sources/FeatherwickText`: the words players read, shared by the CLI and the app.
 - `Sources/FeatherwickCLI`: text front end (`featherwick`).
 - `App`: iOS test app (SwiftUI, no art yet). Make the Xcode project with `cd App && xcodegen`.
+  TestFlight builds (the "Featherwick Beta" scheme, `BETA` flag) ask two short beta questions, after the first hatch and after the first show. They are not in App Store builds: the flag leaves the code out, and a receipt check keeps it off outside TestFlight. Answers stay on the device until the tester shares them from Settings.
 - `Tests/FeatherwickCoreTests`: Swift Testing tests for the genetics rules.
 
 ## Commands
@@ -28,6 +29,10 @@ sets the difficulty of a new game. Type `help` in the game for commands. `day 10
 ## Engine
 
 `Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. Command in, events out. All tunable numbers live in `Rules`.
+
+`MorningReport.from(events:state:)` sorts one night's events into groups (hatched, the fox, came home,
+the neighbour, new stock, the show, jobs, the season goal, eggs, other) for the app's morning report.
+Every event lands in exactly one group. IDs and events only; the words come from `eventText`.
 
 Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
 
@@ -53,6 +58,7 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 | 21 | `shows` | The show opens, a week before the first show. The neighbour's show tip. |
 | 28 | — | The first county show. |
 | 29 | `incubatorShop` | The big incubator. (The neighbour's small one still comes with the first fertile egg, laid or bought.) |
+| 35 | `breedingPen` | The neighbour helps build the breeding pen. The keeper chooses the sire. |
 
 - The days are in `Rules.featureDays`. The show opens `showNoticeDays` (7) before the first show.
 - No birds, perches, incubators or shows before the sex shows (`EarlyGameTests` checks this).
@@ -120,6 +126,39 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 - The app shows the note in the log, and as a toast. The app keeps only the newest two toasts, so a busy
   night can push it out.
 
+## Breeding pen
+
+`BreedingPen.swift`. The keeper chooses which rooster fathers which hens' eggs.
+
+- The pen is a corner of the coop. It holds at most one rooster and `Rules.penHens` (3) hens.
+- `GameState.pen` holds the ids of the penned birds. The birds stay in `coop`. They keep their perch,
+  so the pen adds no room and takes none away. The "birds never wait forever" rules do not change.
+- Commands: `penBird(id)` and `unpenBird(id)`. Events: `.birdPenned`, `.birdUnpenned`.
+- Refusals: `.penFull(hens:)`, `.penHasRooster`, `.notInPen`, `.alreadyInPen`, `.notInCoop` (a brooder
+  bird, or a chick with its mother), `.tooYoungForPen`, `.birdNotHome` (lost or boarding).
+- Laying (night step 8):
+  - A penned hen's egg is fathered by the penned rooster only, if he is an adult.
+  - A penned hen with no adult rooster in the pen lays eggs that are not fertile, like a coop with no rooster.
+  - A cockerel may go in the pen before he is grown, so the keeper can plan. The words, the CLI and the
+    app say that the pen hens' eggs stay clear until his grown day (`GameState.penRoosterGrownDay`).
+  - A coop hen's egg is fathered by a random adult coop rooster. The penned rooster never fathers it.
+  - The pen's birds do not count toward coop rooster tension (`Rules.extraRoosters`). The coop
+    roosters do not unsettle the penned hens.
+  - With an empty pen, laying makes the same random draws as before the pen. Old seeds do not change.
+- The fox, foraging, feeding, handling and broodiness treat a penned bird like any coop bird.
+- A bird that leaves the coop leaves the pen too: rehomed, traded, or scared off by the fox. `Engine.apply`
+  removes such ids after every command, and the fox step removes them at once. A bird that comes
+  home is not penned again. The keeper pens it again.
+- No hidden sex leaks. A bird whose sex does not show yet is refused with `.tooYoungForPen`, before any
+  check that depends on its sex. The words do not say which sex it is. `Engine.canOfferPen` is false
+  for such a bird, so the app never shows "Pen" for it.
+- Early game: `Feature.breedingPen` opens on day 35 (`Rules.featureDays`). Before that, both commands are
+  refused with `.notYet(.breedingPen)`. A save made before the pen has no day for it in its rules: it
+  uses the standard day. Saves from before the early game have it open.
+- Old saves load with an empty pen (`SaveFormat.fillNewSettings`).
+- CLI: `pen` lists the pen, `pen <name>` and `unpen <name>` move a bird. App: "Breeding pen" in the
+  Coop sheet (a rooster place and hen places), and "Pen" or "Take out of the pen" on the bird card.
+
 ## Birds never wait forever
 
 - A grown bird needs a perch. With no free perch, it waits in the brooder. If the brooder is full, it
@@ -177,8 +216,8 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 | Blue shell | O / o+ | Dominant | |
 | Brown coating | Br / br | Dominant | Simplified (real brown is polygenic). Depth sets the shade |
 | Speckle | sp+ / sp | Recessive | Game-only gene |
-| Dominant white | I / i+ | Dominant | One copy makes white plumage. Hides base colour, blue, lavender, lacing and barring. White chicks have yellow down |
 | Brown depth | + / - at 10 genes | Additive | Quantitative trait (`QuantitativeTrait.brownDepth`). Shows only with brown coating |
+| Dominant white | I / i+ | Dominant | One copy makes white plumage. Hides base colour, blue, lavender, lacing and barring. White chicks have yellow down |
 
 ### Egg colours
 
@@ -218,7 +257,7 @@ Three tables. Most new content is a table entry, not new logic.
 - Genomes store only genes that differ from the default allele. A gene missing from a save is the
   default, so a new gene needs no save migration.
 - Breeds have a status: `inGame` or `planned`. Planned breeds are tested but never appear in play.
-  Now: Silkie, Orpington, Wyandotte, Araucana, Australorp (in game); Plymouth Rock, Leghorn, Marans (planned).
+  Now: Silkie, Orpington, Wyandotte, Araucana, Australorp (in game); Plymouth Rock, Marans, Leghorn (planned).
   Marans comes in black only. Black copper needs genes the game does not have yet.
   Australorp is not a starter: the "heritage breed" storyline adds it to the shop's surprise stock.
 - White varieties use dominant white (I/I): White Silkie, White Orpington, White Leghorn.

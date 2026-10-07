@@ -120,6 +120,9 @@ let help = """
       pet <name>           pick a bird up and hold it (once a day; chicks learn trust fastest)
       treat <name>         give a bird a treat from your hand (once a day)
       accept trade         accept a neighbour's offer of a hen for a rooster
+      pen                  the breeding pen: one rooster fathers the eggs of the hens with him
+      pen <name>           put a coop bird in the breeding pen (it keeps its perch)
+      unpen <name>         take a bird out of the breeding pen
       upgrade coop         add \(game.state.rules.perchesPerUpgrade) perches (\(game.state.rules.coopUpgradePrice) coins)
       close                shut the coop door (safe from the fox, but you must feed)
       sleep                pass the night (door left open? birds forage: fed free + a small bonus, but fox risk)
@@ -268,6 +271,16 @@ while true {
             break
         }
         run(verb == "treat" ? .giveTreat(bird.id) : .pet(bird.id))
+    case "pen", "unpen":
+        guard words.count > 1 else {
+            if verb == "pen" { penLines(game.state).forEach { print($0) } } else { print("Use: unpen <name>") }
+            break
+        }
+        guard let bird = findBird(words.dropFirst().joined(separator: ""), game.state, includeLost: true) else {
+            print("There is no bird called \(words[1]).")
+            break
+        }
+        run(verb == "pen" ? .penBird(bird.id) : .unpenBird(bird.id))
     case "tree":
         guard words.count > 1,
             let bird = findBird(words.dropFirst().joined(separator: ""), game.state, includeLost: true)
