@@ -2,16 +2,17 @@ import FeatherwickCore
 import FeatherwickText
 import SwiftUI
 
-/// Picks day or night from the device clock (checked each minute) and shows the starter choice or the farm.
-/// A tester can pin day or night in Settings.
+/// Picks day or night from game time and shows the starter choice or the farm. Morning and afternoon
+/// are day; evening crossfades to night over 30 minutes (checked each minute); Sleep is night until the
+/// morning. A tester can pin day or night in Settings.
 struct RootView: View {
     @Environment(GameStore.self) private var store
     @AppStorage(TimeOfDayPin.key) private var pinned: TimeOfDayPin = .clock
 
     var body: some View {
         TimelineView(.everyMinute) { context in
-            let hour = Calendar.current.component(.hour, from: context.date)
-            let palette = Palette.forHour(hour, pinned: pinned)
+            let evening = store.eveningSince.map { max(0, context.date.timeIntervalSince($0)) }
+            let palette = Palette.forGame(evening: evening, asleep: store.asleep, pinned: pinned)
             Group {
                 if case .choosingStarter(let chicks) = store.state.phase {
                     StarterView(chicks: chicks)
@@ -21,7 +22,8 @@ struct RootView: View {
             }
             .environment(\.palette, palette)
             .preferredColorScheme(palette.isNight ? .dark : .light)
-            .animation(.easeInOut(duration: 1.5), value: palette)
+            // A rest eases the light over the whole rest scene.
+            .animation(.easeInOut(duration: store.restSeconds ?? 1.5), value: palette)
         }
     }
 }

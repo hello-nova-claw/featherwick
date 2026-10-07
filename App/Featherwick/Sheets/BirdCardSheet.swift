@@ -193,7 +193,7 @@ struct BirdCardSheet: View {
                 if s.isOpen(.shows), !Engine.eligibleClasses(for: bird, in: s).isEmpty {
                     if s.showEntries.contains(where: { $0.birdID == birdID }) {
                         Button("Entered in the show") {}.disabled(true)
-                    } else {
+                    } else if daylightRefusalText(.enterShow(birdID), in: s) == nil {
                         Button("Enter the show") { enteringShow = true }
                     }
                 }
@@ -201,6 +201,14 @@ struct BirdCardSheet: View {
                 if Engine.rehomeBlocker(birdID, in: s) == nil {
                     Button("Rehome") { confirmRehome = true }
                 }
+            }
+            // No daylight left for the show desk: its words in place of "Enter the show".
+            if s.isOpen(.shows), !Engine.eligibleClasses(for: bird, in: s).isEmpty,
+                !s.showEntries.contains(where: { $0.birdID == birdID }),
+                let closed = daylightRefusalText(.enterShow(birdID), in: s)
+            {
+                Text(closed).font(Typeface.label).foregroundStyle(palette.inkSoft)
+                    .multilineTextAlignment(.center)
             }
             // The breeding pen: hidden until it is open, and for a bird whose sex does not show yet.
             if s.isPenned(birdID) {

@@ -52,7 +52,8 @@ struct FarmGateSheet: View {
             if s.isOpen(.premiumFeed) {
                 ShopRow(
                     name: "Premium feed", detail: "\(r.premiumFeedBagSize) days. Feeds the flock and lifts laying.",
-                    price: r.premiumFeedPrice, coins: s.coins
+                    price: r.premiumFeedPrice, coins: s.coins,
+                    closed: daylightRefusalText(.buy(.premiumFeed), in: s)
                 ) { store.run(.buy(.premiumFeed)) }
             }
             Text("Basic feed is free, always.").font(Typeface.caption).foregroundStyle(palette.inkMuted)
@@ -65,7 +66,8 @@ struct FarmGateSheet: View {
         if s.isOpen(.treats) {
             ShopRow(
                 name: "Mealworms", detail: "A bag of \(s.rules.treatBagSize). One a day wins a bird's trust.",
-                price: s.rules.treatBagPrice, coins: s.coins
+                price: s.rules.treatBagPrice, coins: s.coins,
+                closed: daylightRefusalText(.buy(.treats), in: s)
             ) { store.run(.buy(.treats)) }
         } else {
             NotYetLine(feature: .treats)
@@ -80,13 +82,15 @@ struct FarmGateSheet: View {
                 ShopRow(
                     name: "Incubator",
                     detail: "Holds \(r.bigIncubatorSize) eggs. They hatch in \(r.incubatorHatchDays) nights.",
-                    price: r.incubatorPrice, coins: s.coins
+                    price: r.incubatorPrice, coins: s.coins,
+                    closed: daylightRefusalText(.buyIncubator, in: s)
                 ) { store.run(.buyIncubator) }
             }
             if s.isOpen(.coopUpgrade), s.perches < r.maxPerches {
                 ShopRow(
                     name: "More perches", detail: "Adds \(r.perchesPerUpgrade) perches (now \(s.perches)).",
-                    price: r.coopUpgradePrice, coins: s.coins
+                    price: r.coopUpgradePrice, coins: s.coins,
+                    closed: daylightRefusalText(.upgradeCoop, in: s)
                 ) { store.run(.upgradeCoop) }
             }
         }
@@ -99,16 +103,19 @@ struct FarmGateSheet: View {
         specialRow(s)
         ShopRow(
             name: "A fertile egg", detail: "From a local flock, already candled.", price: r.fertileEggPrice,
-            coins: s.coins
+            coins: s.coins,
+            closed: daylightRefusalText(.buy(.fertileEgg), in: s)
         ) { store.run(.buy(.fertileEgg)) }
         ShopRow(
-            name: "A pullet", detail: "A young hen. The breed is a surprise.", price: r.pulletPrice, coins: s.coins
+            name: "A pullet", detail: "A young hen. The breed is a surprise.", price: r.pulletPrice, coins: s.coins,
+            closed: daylightRefusalText(.buy(.pullet), in: s)
         ) {
             store.run(.buy(.pullet))
         }
         ShopRow(
             name: "A cockerel", detail: "A young rooster. The breed is a surprise.", price: r.cockerelPrice,
-            coins: s.coins
+            coins: s.coins,
+            closed: daylightRefusalText(.buy(.cockerel), in: s)
         ) { store.run(.buy(.cockerel)) }
     }
 }
@@ -132,7 +139,8 @@ extension FarmGateSheet {
     fileprivate func specialRow(_ s: GameState) -> some View {
         if let special = s.todaysSpecial {
             ShopRow(
-                name: "Today's special", detail: shopSpecialText(special), price: special.price, coins: s.coins
+                name: "Today's special", detail: shopSpecialText(special), price: special.price, coins: s.coins,
+                closed: daylightRefusalText(.buySpecial, in: s)
             ) { store.run(.buySpecial) }
         } else {
             Text("Today's special is sold. A new one comes tomorrow.")
@@ -149,6 +157,8 @@ struct ShopRow: View {
     let detail: String
     let price: Int
     let coins: Int
+    /// Why the shop can't sell today (no daylight left for the trip), or nil. The price button disables.
+    var closed: String? = nil
     let buy: () -> Void
 
     var body: some View {
@@ -158,9 +168,14 @@ struct ShopRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(name).font(Typeface.item)
                     Text(detail).font(Typeface.caption).foregroundStyle(palette.inkMuted).lineLimit(2)
+                    if let closed {
+                        Text(closed).font(Typeface.caption).foregroundStyle(palette.inkSoft)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 Spacer(minLength: Space.s)
                 PriceButton(price: price, canAfford: coins >= price, action: buy)
+                    .disabled(closed != nil)
             }
             .frame(minHeight: 72)
             StitchDivider()
@@ -199,10 +214,15 @@ struct ShowPanel: View {
             VStack(alignment: .leading, spacing: Space.s) {
                 Text("The neighbour thinks \(bird.name) could do well in the \(tip.showClass.name) class.")
                     .font(Typeface.serifItalic(17)).foregroundStyle(palette.inkSoft)
-                Button("Enter \(bird.name) · \(s.rules.showEntryFee) coins") {
-                    store.run(.enterShowIn(bird.id, tip.showClass))
+                // No daylight left for the show desk: the words in place of the button.
+                if let closed = daylightRefusalText(.enterShowIn(bird.id, tip.showClass), in: s) {
+                    Text(closed).font(Typeface.label).foregroundStyle(palette.inkSoft)
+                } else {
+                    Button("Enter \(bird.name) · \(s.rules.showEntryFee) coins") {
+                        store.run(.enterShowIn(bird.id, tip.showClass))
+                    }
+                    .buttonStyle(.secondary)
                 }
-                .buttonStyle(.secondary)
             }
         }
     }
@@ -284,8 +304,11 @@ struct ShowPanel: View {
     private func plateRow(_ eggs: [Egg], _ cls: ShowClass, _ s: GameState) -> some View {
         let speckled = eggs.first?.speckled == true
         let name = "A plate of \(speckled ? "speckled " : "")\(cls.name.lowercased())"
-        return ShowClassRow(name: name, showClass: cls, state: s) {
-            store.run(.enterEggPlate(eggs.map(\.id)))
+        let command = Command.enterEggPlate(eggs.map(\.id))
+        return ShowClassRow(
+            name: name, showClass: cls, state: s, closed: daylightRefusalText(command, in: s)
+        ) {
+            store.run(command)
         }
     }
 
@@ -349,6 +372,8 @@ struct ShowClassRow: View {
     let name: String
     let showClass: ShowClass
     let state: GameState
+    /// Why the show desk can't take an entry today (no daylight left), or nil. The price button disables.
+    var closed: String? = nil
     let enter: () -> Void
 
     var body: some View {
@@ -358,6 +383,7 @@ struct ShowClassRow: View {
                 details
                 Spacer(minLength: Space.s)
                 PriceButton(price: fee, canAfford: state.coins >= fee, action: enter)
+                    .disabled(closed != nil)
             }
             .frame(minHeight: 72)
             StitchDivider()
@@ -375,6 +401,10 @@ struct ShowClassRow: View {
             Text(judgingText(showClass.kind)).font(Typeface.caption).foregroundStyle(palette.inkMuted)
             if showClass.kind == theme.featured {
                 Text("Featured: bonus prizes").font(Typeface.caption).foregroundStyle(palette.inkSoft)
+            }
+            if let closed {
+                Text(closed).font(Typeface.caption).foregroundStyle(palette.inkSoft)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -413,7 +443,10 @@ struct EnterShowSheet: View {
         } else {
             VStack(spacing: 0) {
                 ForEach(classes, id: \.self) { cls in
-                    ShowClassRow(name: "\(cls.name) class", showClass: cls, state: s) { enter(cls) }
+                    ShowClassRow(
+                        name: "\(cls.name) class", showClass: cls, state: s,
+                        closed: daylightRefusalText(.enterShowIn(birdID, cls), in: s)
+                    ) { enter(cls) }
                 }
             }
         }

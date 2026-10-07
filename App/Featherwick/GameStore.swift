@@ -32,6 +32,12 @@ struct ShowReport: Identifiable, Hashable {
     var treatsWon: Int { results.reduce(0) { $0 + ($1.treats ?? 0) } }
 }
 
+/// The words for a command the time of day refuses now, or nil. Shown under or in place of its button,
+/// so the keeper knows before tapping that it waits for the morning.
+func daylightRefusalText(_ command: Command, in s: GameState) -> String? {
+    Engine.daylightRefusal(for: command, in: s).flatMap { eventText(.rejected($0), s) }
+}
+
 /// The app's one game. Every button sends a `Command` here; the engine answers with events, which
 /// become log lines through FeatherwickText. The game saves after every command.
 @MainActor @Observable
@@ -52,6 +58,16 @@ final class GameStore {
     private(set) var morningReport: MorningReport?
     /// True only while `sleep()` runs the night, so test tools and fast forward make no report.
     private var reportingNight = false
+    /// When this evening began on the device clock, for the 30-minute crossfade to night. Nil before evening.
+    /// App state, not game state: the game only knows the time of day.
+    private(set) var eveningSince: Date?
+    /// True from Sleep until the morning report (or the farm) shows: the farm is night meanwhile.
+    private(set) var asleep = false
+    /// While a rest plays, how long it lasts in seconds. The farm takes no taps meanwhile, and the sun
+    /// mark and the light move over this time. Nil when no rest plays.
+    private(set) var restSeconds: Double?
+    /// What the keeper did with the rest, shown over the farm while it plays.
+    private(set) var restLine: String?
     /// Shop stock the keeper has looked at since the early game brought it in. The game has no idea of
     /// "seen", so the app keeps it (per save slot), and the farm gate stops saying "new in today".
     private(set) var seenNewStock: Set<Feature>
@@ -74,6 +90,7 @@ final class GameStore {
         let seen = UserDefaults.standard.stringArray(forKey: seenStockKey) ?? []
         seenNewStock = Set(seen.compactMap(Feature.init(rawValue:)))
         append(state.day == 0 ? "Welcome to Featherwick." : "Welcome back. It is day \(state.day).")
+        noteEvening()
     }
 
     /// Saves live in Application Support, which the system backs up but the user never sees.
@@ -108,6 +125,7 @@ final class GameStore {
         var rng = save.rng
         let events = Engine.apply(command, to: &state, using: &rng)
         save = SaveGame(state: state, rng: rng)
+        noteEvening()
         if Self.isShopping(command) { sawNewStock() }
         // The morning report shows the whole night, so its events get no toasts and no separate neighbour note.
         let morning =
@@ -142,18 +160,73 @@ final class GameStore {
 
     /// Lessons, show news and the gift incubator from the neighbour: the words the keeper must not miss.
     /// The incubator note says what to do with a fertile egg, so it must not sit only in the log.
+    /// The light is gone, or not gone yet: also a note, not an error toast.
     private static func isNeighbourNote(_ event: GameEvent) -> Bool {
         switch event {
         case .introduced, .showAnnounced, .neighbourGaveIncubator: true
+        default: isDaylightRefusal(event)
+        }
+    }
+
+    /// No time left for an errand, the sun still up at bedtime, or no light left to rest in.
+    static func isDaylightRefusal(_ event: GameEvent) -> Bool {
+        switch event {
+        case .rejected(.noTimeLeft), .rejected(.notEveningYet), .rejected(.timeForBed): true
         default: false
         }
     }
 
     /// The keeper goes to bed: the night passes, and the morning report opens if the switch is on.
+    /// While the sun is still up the engine says no, and that "no" is a note, not a morning report.
     func sleep() {
-        reportingNight = MorningReportSetting.isOn
+        reportingNight = MorningReportSetting.isOn && Engine.daylightRefusal(for: .passNight, in: state) == nil
         defer { reportingNight = false }
         run(.passNight)
+    }
+
+    /// Sleep from the farm: night falls first (a short pause, shorter with Reduce Motion), then the night
+    /// passes and the morning report opens.
+    func goToBed(reduceMotion: Bool) async {
+        guard !asleep, restSeconds == nil else { return }
+        asleep = true
+        try? await Task.sleep(for: .seconds(reduceMotion ? 0.5 : 2))
+        sleep()
+        asleep = false
+    }
+
+    /// The keeper rests a while: one slot of daylight passes. The scene lasts about 4 seconds (1 with
+    /// Reduce Motion) and cannot be skipped: the sun mark slides one place and the light moves on.
+    func restAWhile(reduceMotion: Bool) async {
+        guard !asleep, restSeconds == nil else { return }
+        let seconds: Double = reduceMotion ? 1 : 4
+        restSeconds = seconds
+        let events = run(.rest)
+        let rested = events.first { if case .rested = $0 { true } else { false } }
+        restLine = rested.flatMap { eventText($0, state) }
+        try? await Task.sleep(for: .seconds(seconds))
+        restSeconds = nil
+        restLine = nil
+    }
+
+    /// Rests until no daylight is left, so the night can pass. Fast forward and the test tools use it;
+    /// the farm rests one slot at a time. Does nothing before the daylight lesson.
+    func restUntilEvening() {
+        while state.phase == .playing, state.isOpen(.daylight), state.slotsLeft > 0 {
+            let used = state.slotsUsed
+            run(.rest)
+            if state.slotsUsed == used { break }
+        }
+    }
+
+    /// When the evening began, for the crossfade to night. Set once evening comes, cleared by a new day.
+    private func noteEvening() {
+        let s = state
+        let evening = s.phase == .playing && s.isOpen(.daylight) && s.timeOfDay == .evening
+        if !evening {
+            eveningSince = nil
+        } else if eveningSince == nil {
+            eveningSince = .now
+        }
     }
 
     /// The keeper is back from the morning report.
@@ -162,13 +235,15 @@ final class GameStore {
     /// The keeper has read the neighbour's notes.
     func readNeighbourNotes() { neighbourNotes.removeAll() }
 
-    /// A whole day, as a keeper in a hurry: feed, collect, sell if the carton is full, close, sleep.
+    /// A whole day, as a keeper in a hurry: feed, collect, sell if the carton is full, close, rest until
+    /// evening, sleep.
     func fullDays(_ count: Int) {
         for _ in 0..<max(1, count) {
             run(.feed)
             if !state.nest.isEmpty { run(.collectEggs) }
             if state.carton.count >= state.cartonCapacity { run(.sellEggs) }
             if state.coopDoorOpen { run(.closeCoop) }
+            restUntilEvening()
             run(.passNight)
         }
     }
@@ -207,6 +282,7 @@ final class GameStore {
         log = []
         showReport = nil
         morningReport = nil
+        noteEvening()
         // A new game brings its stock in again, so it is all new again.
         seenNewStock = []
         UserDefaults.standard.removeObject(forKey: seenStockKey)
@@ -250,6 +326,9 @@ final class GameStore {
     /// The few events worth a toast: new birds, reveals, collection entries, milestones, the fox.
     private func toast(for event: GameEvent, in s: GameState) -> (String, String?, FarmSheet?)? {
         switch event {
+        case .rejected where Self.isDaylightRefusal(event):
+            // Out of daylight is not an error: the neighbour says so in a note (`isNeighbourNote`).
+            return nil
         case .rejected:
             // The engine said no: say why, so a tap is never silently ignored.
             return eventText(event, s).map { ($0, nil, nil) }

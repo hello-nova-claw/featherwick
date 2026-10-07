@@ -26,8 +26,21 @@ struct YardView: View {
                     Button("Collect eggs (\(s.nest.count) in the nest)") { store.run(.collectEggs) }
                     Button(s.coopDoorOpen ? "Close the coop door" : "Coop door is closed") { store.run(.closeCoop) }
                         .disabled(!s.coopDoorOpen)
-                    Button("Sleep (pass the night)") { store.run(.passNight) }
-                        .bold()
+                    // After the daylight lesson the night waits for evening. Test tools may rest until then.
+                    if s.isOpen(.daylight) {
+                        Button("Rest a while (\(s.slotsLeft) of \(s.slotsToday(rules: s.rules)) slots left)") {
+                            store.run(.rest)
+                        }
+                        .disabled(s.slotsLeft == 0)
+                    }
+                    Button(
+                        s.slotsLeft > 0 && s.isOpen(.daylight)
+                            ? "Rest until evening, then sleep" : "Sleep (pass the night)"
+                    ) {
+                        store.restUntilEvening()
+                        store.run(.passNight)
+                    }
+                    .bold()
                 }
                 Section("Fast forward") {
                     HStack {
@@ -38,7 +51,7 @@ struct YardView: View {
                         Button("28 days") { store.fullDays(28) }
                     }
                     .buttonStyle(.bordered)
-                    Text("Feed, collect, sell if the carton is full, close, sleep.")
+                    Text("Feed, collect, sell if the carton is full, close, rest until evening, sleep.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

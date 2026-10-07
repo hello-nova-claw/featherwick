@@ -232,6 +232,46 @@ struct CoinDisc: View {
     var body: some View { Circle().fill(palette.coin).frame(width: size, height: size) }
 }
 
+/// The sun on the HUD's day track: a coin-gold disc with a thin ink rim.
+struct SunMark: View {
+    @Environment(\.palette) private var palette
+    var size: CGFloat = Space.m
+    var body: some View {
+        Circle().fill(palette.coin)
+            .overlay(Circle().stroke(palette.ink, lineWidth: 1))
+            .frame(width: size, height: size)
+    }
+}
+
+/// The day's light on the HUD: a dashed track with one place per slot of daylight, and the sun on the
+/// slot spent next. Once every slot is spent, the sun has set at the end of the track.
+struct SunTrack: View {
+    @Environment(\.palette) private var palette
+    let slots: Int
+    let used: Int
+    /// How long the sun takes to slide one place: the length of the rest scene, else a short ease.
+    var slide: Double = 0.3
+
+    var body: some View {
+        let step = Space.xl
+        let places = max(1, slots)
+        let at = min(used, places)
+        ZStack(alignment: .leading) {
+            HLine().stroke(palette.inkMuted, style: Stitch.unknown)
+            ForEach(Array(0...places), id: \.self) { i in
+                Circle().fill(i < at ? palette.inkMuted : palette.unknown)
+                    .frame(width: Space.xs, height: Space.xs)
+                    .offset(x: step * CGFloat(i) - Space.xs / 2)
+            }
+            SunMark()
+                .opacity(at == places ? 0.5 : 1)
+                .offset(x: step * CGFloat(at) - Space.m / 2)
+                .animation(.easeInOut(duration: slide), value: at)
+        }
+        .frame(width: step * CGFloat(places), height: Space.m, alignment: .leading)
+    }
+}
+
 /// Treats: an ink diamond.
 struct TreatDiamond: View {
     @Environment(\.palette) private var palette

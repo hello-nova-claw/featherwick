@@ -8,6 +8,7 @@ import SwiftUI
 struct CoopSheet: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let open: (FarmSheet) -> Void
     @State private var filter = EggFilter.all
     /// The eggs the player has tapped. Hatch and sell act on exactly these.
@@ -186,11 +187,18 @@ struct CoopSheet: View {
             Button(penned == 0 ? "Breeding pen" : "Breeding pen · \(penned) in") { open(.breedingPen) }
                 .buttonStyle(.textAction)
         }
+        // While the sun is up, Sleep waits: its place says why (the farm's "Rest a while" spends the light).
+        let notYet = daylightRefusalText(.passNight, in: s)
         HStack(spacing: Space.m) {
             Button(s.coopDoorOpen ? "Shut the door" : "Door is shut") { store.run(.closeCoop) }
                 .buttonStyle(.secondary)
                 .disabled(!s.coopDoorOpen)
-            Button("Sleep") { store.sleep() }.buttonStyle(.secondary)
+            if notYet == nil {
+                Button("Sleep") { Task { await store.goToBed(reduceMotion: reduceMotion) } }.buttonStyle(.secondary)
+            }
+        }
+        if let notYet {
+            Text(notYet).font(Typeface.label).foregroundStyle(palette.inkSoft)
         }
         Text("An open door lets the flock forage overnight, but the fox may visit.")
             .font(Typeface.caption).foregroundStyle(palette.inkMuted)
