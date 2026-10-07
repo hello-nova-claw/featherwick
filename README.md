@@ -119,7 +119,7 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 
 - Base by stage: chick 2, grower 4, adult 6.
 - Rare looks add a fixed bonus: lavender, splash, blue, barring, silkie feathers on a non-Silkie,
-  olive, blue or speckled eggs (laying hens only). A lap chicken adds `lapChickenRehomeBonus`.
+  olive, green, chocolate, blue or speckled eggs (laying hens only). A lap chicken adds `lapChickenRehomeBonus`.
 - Quality adds more. Show type above average adds up to `rehomeTypeBonus` (16). Egg shape above average
   adds up to `rehomeEggShapeBonus` (6), for a laying hen only. Each 1st to 3rd place at a show adds
   `rehomeRibbonBonus` (6), for up to `rehomeMaxRibbons` (5) ribbons. Egg-class ribbons do not count.
@@ -157,8 +157,34 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 | Lacing | lc+ / lc | Recessive | Simplified stand-in for Pg + Co + Ml |
 | Barring | B / b+ | Sex-linked (Z), dominant | Hens ZW, roosters ZZ |
 | Blue shell | O / o+ | Dominant | |
-| Brown coating | Br / br | Dominant | Simplified (real brown is polygenic). Blue + brown = olive |
+| Brown coating | Br / br | Dominant | Simplified (real brown is polygenic). Depth sets the shade |
 | Speckle | sp+ / sp | Recessive | Game-only gene |
+| Brown depth | + / - at 10 genes | Additive | Quantitative trait (`QuantitativeTrait.brownDepth`). Shows only with brown coating |
+
+### Egg colours
+
+`Phenotype` works out a hen's egg colour from three things: blue shell, brown coating and brown depth.
+Depth is a share from 0 to 1 (the "+" alleles out of 20).
+
+| Blue shell | Brown coating | Depth | Egg |
+| --- | --- | --- | --- |
+| no | no | any | cream |
+| no | yes | up to `Rules.chocolateShellDepth` (0.8) | brown |
+| no | yes | above 0.8 | chocolate |
+| yes | no | any | blue |
+| yes | yes | below `Rules.oliveShellDepth` (0.4) | green |
+| yes | yes | 0.4 or more | olive |
+
+- The thresholds are static numbers on `Rules`. They are the same in every game, because the
+  egg colour is part of the bird's look and `Phenotype` reads no rules.
+- Depth is half from each parent, like show type. Keepers can select for darker eggs.
+- Each breed has a depth (`BreedDefinition.brownDepth`). A purebred gets exactly that share. A bird
+  from outside the flock draws each depth gene with that chance, from its own ID.
+  Marans 0.9 (chocolate), Orpington, Wyandotte and Australorp 0.5, Araucana and Silkie 0.2.
+- So Araucana x Orpington gives mostly green eggs, and Araucana x Marans gives olive eggs.
+- Average depth (0.5) is the default allele set. A bird from an older save has no depth genes, so it
+  lays the colour it laid before. Eggs keep the colour they were laid with.
+- New colours need no migration: `EggColour` and `EggBookEntry` only gain cases.
 
 ## Data layer: genes, breeds, colours, saves
 
@@ -173,7 +199,8 @@ Three tables. Most new content is a table entry, not new logic.
 - Genomes store only genes that differ from the default allele. A gene missing from a save is the
   default, so a new gene needs no save migration.
 - Breeds have a status: `inGame` or `planned`. Planned breeds are tested but never appear in play.
-  Now: Silkie, Orpington, Wyandotte, Araucana, Australorp (in game); Plymouth Rock (planned).
+  Now: Silkie, Orpington, Wyandotte, Araucana, Australorp (in game); Plymouth Rock, Marans (planned).
+  Marans comes in black only. Black copper needs genes the game does not have yet.
   Australorp is not a starter: the "heritage breed" storyline adds it to the shop's surprise stock.
 - The colour a bird shows always comes from its genes (`Phenotype`), never from a variety name.
 
@@ -199,6 +226,9 @@ changes shape. `Tests/.../Fixtures/save-v0.json` is a real old save; it must alw
 | Breed | Purebred adults | type 50 · colour 30 · condition 20 |
 | Pet chicken | Any grower or adult, crosses too | condition 50 · friendliness 50 |
 | Eggs | A matched plate of 3 | match 30 · shape 30 · shell 20 · freshness 20 |
+
+- An egg class is one `EggColour`: cream, brown, chocolate, blue, green or olive. A plate matches
+  when all eggs have the same colour and speckle. So a plate of green eggs is a valid plate.
 
 - Standard colours come from the breed table: a colour is standard if one of the breed's varieties
   makes it. A splash Orpington is not standard; a buff Wyandotte is shown as gold laced.
@@ -349,14 +379,14 @@ parts, so most new breeds need no new art. `bird.look(onDay:rules:)` returns:
 
 | Part | Shapes | Who uses them |
 | --- | --- | --- |
-| Body (hen + rooster) | heavy, medium, light, fluffy | Orpington/Australorp, Wyandotte/Plymouth Rock/crosses, Araucana, Silkie |
+| Body (hen + rooster) | heavy, medium, light, fluffy | Orpington/Australorp/Marans, Wyandotte/Plymouth Rock/crosses, Araucana, Silkie |
 | Comb | single, rose, pea, walnut | most, Wyandotte, Araucana, Silkie |
 | Legs | clean, feathered 5-toe | everyone but Silkie |
 | Head | plain, crested | everyone but Silkie |
 | Tail | hen, rooster, fluffy | |
 | Chick | plain, fluffy | |
 
-The kit is 21 parts and covers all 6 breeds in the table. Silkie feathering (a real gene) picks
+The kit is 21 parts and covers all 7 breeds in the table. Silkie feathering (a real gene) picks
 the fluffy body, tail and chick, for crosses too. Tokens are not RGB: the art direction maps them.
 Watercolour tip: paint each body whole, then cut it into parts with soft, overlapping edges.
 CLI: `draw <name>`, `art`.
@@ -416,7 +446,7 @@ To add one: one `Storyline` in `Storylines.all`, plus its words in the UI.
 ## Goal ladder
 
 `Milestone.swift`. Small, always-visible goals that give the no-loss sandbox a direction: first
-egg, first hatch, a blue/olive/speckled egg, a growing flock, a show ribbon, a lap chicken, a
+egg, first hatch, a blue/olive/speckled/chocolate/green egg, a growing flock, a show ribbon, a lap chicken, a
 finished storyline, a hen into retirement. Cozy rule: a milestone is only ever *reached*, never
 failed — no deadlines, nothing lost by missing one.
 
@@ -449,6 +479,9 @@ To add one: append a `Milestone` to `Milestones.all` (list order is the ladder),
 - **Season goal.** One bigger goal for each season: hatch 3 chicks, a new Breed Book page, a new egg,
   a show ribbon, one more friendly bird, grow the flock by 2, or collect a number of eggs. The game
   picks only goals the keeper can work on now. Progress shows as "2 of 3".
+- The "new egg" goal asks only for colours a breed in play can make. Chocolate needs an in-game breed
+  with shell depth above `Rules.chocolateShellDepth`; none has one yet, so it is left out. A chocolate
+  egg found anyway still counts as a new egg.
 - The goal is checked each night, like the milestones. Reached, it pays `seasonGoalRewardCoins` (25),
   once (`.seasonGoalReached`). New progress is told in the morning (`.seasonGoalProgress`).
 - When the season turns, a new goal comes (`.seasonGoalSet`). An unfinished goal is never failed: the
@@ -470,6 +503,8 @@ To add one: append a `Milestone` to `Milestones.all` (list order is the ladder),
 - A chick is purebred only if both parents are purebred and the same breed. Crosses are named
   like real keepers name them: olive egger (blue egg x brown egg), easter egger (other blue-egg
   crosses), barnyard mix (everything else).
+- An olive egger lays olive or green eggs, by brown depth. A barnyard mix lays cream, brown or chocolate.
+  A purebred hen lays her breed's colour; purebred parents pass on their exact shell depth.
 - `GeneticsRealismTests` breeds tens of thousands of birds over 6 generations and fails on any
   bird a real keeper couldn't breed.
 

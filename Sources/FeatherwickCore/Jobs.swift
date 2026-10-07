@@ -363,8 +363,10 @@ extension Engine {
             case .breedBookPage:
                 if s.isOpen(.breedBook), s.isOpen(.birdShop) || pair { goals.append((kind, 1)) }
             case .newEgg:
-                let all = EggColour.allCases.count * 2  // each colour, plain and speckled
-                if s.isOpen(.laying), layingHens(s) > 0, s.eggBook.count < all { goals.append((kind, 1)) }
+                let pool = newEggColours()
+                let all = pool.count * 2  // each colour, plain and speckled
+                let found = s.eggBook.count(where: { pool.contains($0.colour) })
+                if s.isOpen(.laying), layingHens(s) > 0, found < all { goals.append((kind, 1)) }
             case .showRibbon:
                 if s.isOpen(.shows), s.nextShowDay <= endDay { goals.append((kind, 1)) }
             case .newFriend:
@@ -382,6 +384,17 @@ extension Engine {
             }
         }
         return goals
+    }
+
+    /// Egg colours the "new egg" goal can ask for: those a breed in play can make. Chocolate needs a
+    /// breed whose shell depth is above `Rules.chocolateShellDepth`; without one in the game it is
+    /// left out, so the goal never waits on an egg the keeper has almost no way to get.
+    /// A chocolate egg found anyway still counts as a new egg.
+    static func newEggColours() -> [EggColour] {
+        let chocolateBreed = BreedTable.inGame.contains {
+            $0.fixes(BrownShell.brown) && $0.brownDepth > Rules.chocolateShellDepth
+        }
+        return EggColour.allCases.filter { $0 != .chocolate || chocolateBreed }
     }
 
     /// The first morning of the next season. A goal set late in a season runs on through the next
