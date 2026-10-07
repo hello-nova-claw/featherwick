@@ -12,9 +12,16 @@ extension Bird {
 
     /// The bird as it goes out of the keeper's sight: its look on `day`, the last day the keeper saw
     /// it, is frozen in `lastSeenLook`. A bird already out of sight keeps the look it had.
-    func leavingSight(in s: GameState, onDay day: Int) -> Bird {
+    ///
+    /// `wasAway`: the bird was already away (boarding or lost), as a rehomed boarder is. One from a save
+    /// made before looks were frozen has none, and the day it left is not known, so it freezes only its
+    /// down, as `SeenLook(of:in:)` shows it while away. Today's look could hold eggs the keeper never saw.
+    func leavingSight(in s: GameState, onDay day: Int, wasAway: Bool = false) -> Bird {
         var b = self
-        if b.lastSeenLook == nil { b.lastSeenLook = SeenLook(seenToday: self, onDay: day, rules: s.rules) }
+        guard b.lastSeenLook == nil else { return b }
+        let away = wasAway || s.boarding.contains { $0.id == id } || s.lost.contains { $0.bird.id == id }
+        b.lastSeenLook =
+            away ? SeenLook(phenotype, level: .down) : SeenLook(seenToday: self, onDay: day, rules: s.rules)
         return b
     }
 }

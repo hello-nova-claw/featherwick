@@ -35,7 +35,10 @@ struct WhatMightHatchSection: View {
                         .font(Typeface.label).foregroundStyle(palette.inkMuted)
                     ForEach(Array(pair.lines.enumerated()), id: \.offset) { i, line in
                         if i > 0 { StitchDivider() }
-                        WhyLine(text: plannerText(line, s), why: plannerReasonText(line.reason, s)) {
+                        WhyLine(
+                            text: plannerText(line, s),
+                            why: plannerReasonText(line.reason, s, pair: (pair.hen, rooster))
+                        ) {
                             marks(line)
                         }
                     }

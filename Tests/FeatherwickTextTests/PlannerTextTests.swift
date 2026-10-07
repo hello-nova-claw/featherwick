@@ -224,6 +224,24 @@ import Testing
         #expect(!treeLines(chick, s).contains { $0.contains("carries") })
     }
 
+    /// "They" is only the pair the line is about. Any other pair is named.
+    @Test func theyMeansThePairShown() {
+        var (s, hen, rooster, _) = Self.flock()
+        var lavender = Breed.orpington.purebred(.hen)
+        lavender.lavender = .homozygous(.lavender)
+        let fern = Bird(
+            id: UUID(), name: "Fern", breed: .orpington, genome: lavender, hatchDay: s.day, motherID: hen,
+            fatherID: rooster, origin: Bird.homeOrigin)
+        s.brooder.append(fern)
+        let other = UUID()
+        let why = Reason.chick(bird: hen, chick: fern.id, locus: Lavender.locus)
+        #expect(plannerReasonText(why, s, pair: (hen, rooster)) == "They had a lavender chick, Fern.")
+        #expect(plannerReasonText(why, s, pair: (hen, other)) == "Clover and Bramble had a lavender chick, Fern.")
+        #expect(plannerReasonText(why, s) == "Clover and Bramble had a lavender chick, Fern.")
+        let lines = pairLines([.possible(.colour(.lavender), why)], s, pair: (hen, rooster))
+        #expect(lines.first?.hasSuffix("(They had a lavender chick, Fern.)") == true, "\(lines)")
+    }
+
     /// An unrevealed chick with a proven hidden allele: a note and a reason, and no sexed word.
     @Test func anUnrevealedChickGetsASexlessCarrierNote() {
         let (s, _, _, chick) = Self.flock()

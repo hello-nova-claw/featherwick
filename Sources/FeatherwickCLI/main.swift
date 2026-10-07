@@ -327,7 +327,7 @@ while true {
             hen: Visible(bird: hen, in: s), rooster: Visible(bird: rooster, in: s), knowledge: Knowledge.of(family),
             family: family, kinship: Pedigree.relatedness(hen.id, rooster.id, in: s), rules: s.rules)
         print("\(hen.name) with \(rooster.name):")
-        pairLines(forecast, s).forEach { print("  " + $0) }
+        pairLines(forecast, s, pair: (hen.id, rooster.id)).forEach { print("  " + $0) }
     case "carries":
         guard game.state.plannerKnown else {
             print(plannerNotYetText(game.state))

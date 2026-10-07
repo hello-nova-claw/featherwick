@@ -40,15 +40,15 @@ public func plannerLines(_ s: GameState) -> [String] {
     var out = ["\(heading) (rooster: \(birdName(rooster, s)))"]
     for pair in pairs {
         out.append("With \(birdName(pair.hen, s)):")
-        out += pairLines(pair.lines, s).map { "  " + $0 }
+        out += pairLines(pair.lines, s, pair: (pair.hen, rooster)).map { "  " + $0 }
     }
     return out
 }
 
 /// One pair's forecast as text lines, each with its reasons in brackets. Used by `plannerLines` and
-/// by the CLI's `plan <hen> <rooster>`.
-public func pairLines(_ lines: [Forecast], _ s: GameState) -> [String] {
-    let sentences = plannerSentences(lines, s)
+/// by the CLI's `plan <hen> <rooster>`. `pair` is the hen and rooster the lines are about.
+public func pairLines(_ lines: [Forecast], _ s: GameState, pair: (hen: UUID, rooster: UUID)? = nil) -> [String] {
+    let sentences = plannerSentences(lines, s, pair: pair)
     if sentences.isEmpty { return ["Nothing to say about this pair yet."] }
     return sentences.map { $0.reasons.isEmpty ? $0.text : "\($0.text) (\($0.reasons.joined(separator: " ")))" }
 }
@@ -64,14 +64,17 @@ public struct PlannerSentence: Hashable, Sendable {
 
 /// A pair's forecast as sentences. Ratio lines one after another about the same thing (feather colour,
 /// or egg colour) out of the same number join into one sentence: "About 1 in 4 black, 2 in 4 blue, 1 in 4 splash."
-public func plannerSentences(_ lines: [Forecast], _ s: GameState) -> [PlannerSentence] {
+public func plannerSentences(
+    _ lines: [Forecast], _ s: GameState, pair: (hen: UUID, rooster: UUID)? = nil
+) -> [PlannerSentence] {
     var out: [PlannerSentence] = []
     var i = 0
     while i < lines.count {
         guard case .ratio(let first, _, let d, _) = lines[i], let group = ratioGroup(first) else {
             let line = lines[i]
             out.append(
-                PlannerSentence(text: plannerText(line, s), reasons: [plannerReasonText(line.reason, s)], lines: [line])
+                PlannerSentence(
+                    text: plannerText(line, s), reasons: [plannerReasonText(line.reason, s, pair: pair)], lines: [line])
             )
             i += 1
             continue
@@ -84,7 +87,7 @@ public func plannerSentences(_ lines: [Forecast], _ s: GameState) -> [PlannerSen
         }
         var reasons: [String] = []
         for line in run {
-            let r = plannerReasonText(line.reason, s)
+            let r = plannerReasonText(line.reason, s, pair: pair)
             if !reasons.contains(r) { reasons.append(r) }
         }
         let text = run.count == 1 ? plannerText(run[0], s) : joinedRatios(run, group: group)
@@ -256,7 +259,8 @@ private func typeOutlookText(_ hen: JudgeNote.Band, _ rooster: JudgeNote.Band, _
 // MARK: - Reasons
 
 /// Why a forecast line is true, in one or two short sentences. Names only birds the keeper has.
-public func plannerReasonText(_ r: Reason, _ s: GameState) -> String {
+/// `pair` is the hen and rooster the line is about: "They" means that pair and no other.
+public func plannerReasonText(_ r: Reason, _ s: GameState, pair: (hen: UUID, rooster: UUID)? = nil) -> String {
     switch r {
     case .look(let bird, let locus):
         return lookReason(bird, locus, s)
@@ -265,7 +269,7 @@ public func plannerReasonText(_ r: Reason, _ s: GameState) -> String {
     case .parent(let bird, let parent, let locus):
         return parentReason(bird, parent, locus, s)
     case .chick(let bird, let chick, let locus):
-        return chickReason(bird, chick, locus, s)
+        return chickReason(bird, chick, locus, s, pair: pair)
     case .unknownFamily(let locus):
         return "No one in their family has shown \(locusNoun(locus)) yet."
     case .manyChicks(let bird, let count, let locus):
@@ -453,13 +457,21 @@ private func parentReason(_ id: UUID, _ parent: UUID, _ l: LocusID, _ s: GameSta
     return "\(locusNoun(l).capitalizedFirst) came down from \(who)."
 }
 
-/// "They had a lavender chick, Clover."
-private func chickReason(_ id: UUID, _ chick: UUID, _ l: LocusID, _ s: GameState) -> String {
+/// "They had a lavender chick, Clover." "They" only for the pair the line is about; another pair is named.
+private func chickReason(
+    _ id: UUID, _ chick: UUID, _ l: LocusID, _ s: GameState, pair: (hen: UUID, rooster: UUID)?
+) -> String {
     let n = known(id, s)
     let c = s.bird(chick)
-    let pen = Set(s.pennedBirds.map(\.id))
-    let pairsChick = c.map { [$0.motherID, $0.fatherID].allSatisfy { $0.map(pen.contains) ?? false } } ?? false
-    let who = pairsChick && pen.contains(id) ? "They" : n.name.capitalizedFirst
+    let parents = c.flatMap { b in b.motherID.flatMap { m in b.fatherID.map { (mother: m, father: $0) } } }
+    let who: String =
+        if let parents, let pair, parents.mother == pair.hen, parents.father == pair.rooster {
+            "They"
+        } else if let parents, let mother = s.bird(parents.mother), let father = s.bird(parents.father) {
+            "\(mother.name) and \(father.name)"
+        } else {
+            n.name.capitalizedFirst
+        }
     guard let look = seenLook(chick, s), let shows = showsPhrase(look, l) else {
         let named = c.map { "chick, \($0.name)," } ?? "chicks"
         let lead = c == nil ? "One of \(n.name)'s chicks" : "\(n.name)'s \(named)"

@@ -394,7 +394,7 @@ extension Engine {
             var bird = Bird(
                 id: makeID(using: &rng), name: "a \(breed.definition.displayName)", breed: breed,
                 genome: breed.purebred(.hen, variety: colour), hatchDay: s.day - s.rules.adultAge,
-                origin: "County show", revealed: true
+                origin: Bird.showOrigin, revealed: true
             ).withFounderQuality()
             let day = rivalsDay(&bird, s)
             let shown = PodiumEntrant.rivalBird(owner: showOwner(of: bird.id), bird: bird)
@@ -405,7 +405,7 @@ extension Engine {
             var bird = Bird(
                 id: makeID(using: &rng), name: "a visitor's \(breed.definition.displayName)", breed: breed,
                 genome: breed.purebred(.hen, variety: colour), hatchDay: s.day - s.rules.adultAge,
-                origin: "County show", revealed: true
+                origin: Bird.showOrigin, revealed: true
             )
             .withFounderQuality().withTameness(Double.random(in: 0.2...0.95, using: &rng))
             let day = rivalsDay(&bird, s)
