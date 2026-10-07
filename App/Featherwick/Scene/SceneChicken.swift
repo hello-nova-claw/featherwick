@@ -235,14 +235,16 @@ struct SceneChicken: View {
         // position animates in step with the scale.
         .frame(width: box.width, height: box.height, alignment: .bottom)
         .position(x: spot.x * size.width, y: groundY - box.height / 2)
-        .task(id: Cue(reduceMotion: reduceMotion, size: size)) { await wander() }
+        .task(id: Cue(reduceMotion: reduceMotion, size: size, follow: follow)) { await wander() }
         .zIndex(depth.zIndex(forGroundY: sortY * size.height))
     }
 
-    /// The wander loop restarts when either changes (a first layout pass can be zero size).
+    /// The wander loop restarts when any of these changes (a first layout pass can be zero size).
     private struct Cue: Equatable {
         let reduceMotion: Bool
         let size: CGSize
+        /// A weaned chick keeps its view but stops following: the loop restarts with its own stroll.
+        let follow: ChickFollow?
     }
 
     /// Big enough for the bird at full size and for a 44 pt touch.
@@ -335,7 +337,10 @@ struct SceneChicken: View {
             let dx: CGFloat = (target.x - spot.x) * size.width
             let dy: CGFloat = (target.y - spot.y) * size.height
             if (dx * dx + dy * dy).squareRoot() > FarmFlock.chickSlack {
-                await walk(to: target, seconds: walkSeconds(to: target))
+                let seconds: Double = walkSeconds(to: target)
+                // Never still walking when it is time to set off for the other yard.
+                if let left = secondsUntilSettingOff(), left < seconds { continue }
+                await walk(to: target, seconds: seconds)
             } else if Double.random(in: 0..<1, using: &dice) < 0.3 {
                 await peck()
             }
