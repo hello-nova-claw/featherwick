@@ -61,7 +61,7 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 | 18 | `laying` (lesson) | Your hen starts to lay soon: feed, collect, sell. |
 | 21 | `shows` | The show opens, a week before the first show. The neighbour's show tip. |
 | 28 | — | The first county show. |
-| 29 | `incubatorShop` | The big incubator. (The neighbour's small one still comes with the first fertile egg, laid or bought.) |
+| 29 | `incubatorShop` | The big incubator. (The neighbour's small one still comes with the first fertile egg, laid or bought.) If the neighbour gave hers, the big one comes at least `incubatorShopAfterGiftDays` (14) after the gift (`GameState.introductionDay(of:)`). |
 | 35 | `breedingPen` | The neighbour helps build the breeding pen. The keeper chooses the sire. |
 
 - The days are in `Rules.featureDays`. The show opens `showNoticeDays` (7) before the first show.

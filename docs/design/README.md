@@ -228,7 +228,8 @@ The Show tab: the next show's theme name and day, the entry fee, and the feature
 ### 9a — Morning report (sheet, large)
 Opens once each morning after Sleep in the Coop sheet, before the farm. Context "Overnight" and close. Title "Day 12" (Caslon Display 38) and "Autumn morning" (Figtree 13 `inkMuted`). The quiet night and the turn of the season sit under the title. Then one section per group, split by dashed rules: Hatched, The fox, Came home, From the neighbour, New at Speckle & Down, The county show, Today's jobs, Goals, In the nest boxes, Around the flock. A section has a heading (Caslon Text 18) and, where one number says it best, a count (Figtree 15): chicks hatched, birds scared, birds home, eggs laid. The lines are the game's own words (Figtree 16 `inkSoft`). Empty groups are hidden. Primary button "Back to the farm".
 - The groups come from `MorningReport` in Core. Every night event lands in exactly one group, so nothing is dropped.
-- While the report tells the night, that night gives no toasts and no separate neighbour note. The log still has every line.
+- While the report tells the night, that night gives no toasts. The log still has every line.
+- The neighbour's words from the night (the report's "neighbour" group, lessons and show news) also come as her own note. It opens when the keeper closes the report (after the show, on a show night). With the report off, the note opens at once.
 - On a show night, Show day (7a) opens after the keeper goes back to the farm.
 - Settings (≡) has a "Morning report" switch. It starts on. Off: the night gives toasts as before.
 - Fast forward and the test tools make no report.

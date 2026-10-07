@@ -72,10 +72,19 @@ extension GameState {
     /// True when the keeper has been introduced to this part of the game.
     public func isOpen(_ feature: Feature) -> Bool { introduced.contains(feature) }
 
+    /// The morning a feature is introduced in this game. As in the rules, except that the big incubator
+    /// comes to the shop at least `incubatorShopAfterGiftDays` after the neighbour gives her old one,
+    /// so the gift has time to feel like a gift.
+    public func introductionDay(of feature: Feature) -> Int {
+        let day = rules.introductionDay(of: feature)
+        guard feature == .incubatorShop, let gift = incubatorGiftDay else { return day }
+        return max(day, gift + rules.incubatorShopAfterGiftDays)
+    }
+
     /// The next feature still to come, and its day. Nil once the early game is over.
     public var nextFeature: (feature: Feature, day: Int)? {
         Feature.allCases.filter { !isOpen($0) }
-            .map { (feature: $0, day: rules.introductionDay(of: $0)) }
+            .map { (feature: $0, day: introductionDay(of: $0)) }
             .min { ($0.day, $0.feature) < ($1.day, $1.feature) }
     }
 }
@@ -100,7 +109,7 @@ extension Engine {
     /// A gift that comes with a feature is given here. Deterministic: no randomness.
     static func introduceFeatures(_ s: inout GameState) -> [GameEvent] {
         var ev: [GameEvent] = []
-        let due = Feature.allCases.filter { !s.isOpen($0) && s.rules.introductionDay(of: $0) <= s.day }
+        let due = Feature.allCases.filter { !s.isOpen($0) && s.introductionDay(of: $0) <= s.day }
         for feature in due {
             s.introduced.insert(feature)
             if feature == .treats { s.treats += s.rules.welcomeTreats }

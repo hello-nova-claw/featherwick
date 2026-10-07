@@ -1213,6 +1213,7 @@ public enum Engine {
                 // Only offered if the player has no incubator yet (they may have bought the big one).
                 if !s.hasIncubator {
                     s.incubatorSize = s.rules.giftIncubatorSize
+                    s.incubatorGiftDay = s.day
                     ev.append(.neighbourGaveIncubator(size: s.rules.giftIncubatorSize, ownRooster: true))
                 }
             }
@@ -1230,6 +1231,7 @@ public enum Engine {
         guard fertileEgg, !s.incubatorGiftGiven, !s.hasIncubator else { return [] }
         s.incubatorGiftGiven = true
         s.incubatorSize = s.rules.giftIncubatorSize
+        s.incubatorGiftDay = s.day
         return [.neighbourGaveIncubator(size: s.rules.giftIncubatorSize, ownRooster: false)]
     }
 
