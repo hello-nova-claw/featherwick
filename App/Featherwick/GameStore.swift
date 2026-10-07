@@ -316,26 +316,27 @@ final class GameStore {
         }
 
         private func queueBetaPrompt(_ moment: BetaMoment) {
-            guard BetaNotes.waiting == nil, BetaNotes.isOn, !BetaNotes.wasAsked(moment, slot: slot) else { return }
-            BetaNotes.waiting = moment
+            guard !BetaNotes.waiting.contains(moment), BetaNotes.isOn, !BetaNotes.wasAsked(moment, slot: slot)
+            else { return }
+            BetaNotes.waiting.append(moment)
         }
 
         /// Asks the farm to open the waiting question, unless a show or another sheet comes first.
         /// The farm calls this again when its sheet closes.
         func offerBetaPrompt() {
-            guard let moment = BetaNotes.waiting, showReport == nil, openRequest == nil else { return }
+            guard let moment = BetaNotes.waiting.first, showReport == nil, openRequest == nil else { return }
             openRequest = .betaPrompt(moment)
         }
 
         /// Saved, skipped or swiped away: this slot is never asked again. Not on open, so a question that
         /// another sheet pushed aside is still asked later.
         func betaPromptAnswered(_ moment: BetaMoment) {
-            if BetaNotes.waiting == moment { BetaNotes.waiting = nil }
+            BetaNotes.waiting.removeAll { $0 == moment }
             BetaNotes.markAsked(moment, slot: slot)
         }
 
         /// Settings (Debug): ask this question when Settings closes, asked before or not.
-        func tryBetaPrompt(_ moment: BetaMoment) { BetaNotes.waiting = moment }
+        func tryBetaPrompt(_ moment: BetaMoment) { BetaNotes.waiting = [moment] }
     #endif
 
     // MARK: - Log and saving

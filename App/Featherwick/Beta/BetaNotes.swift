@@ -52,9 +52,10 @@
         /// Debug only: a switch in Settings, so the prompts can be tried without TestFlight.
         static let debugKey = "tester.betaPrompts"
 
-        /// A question waiting for a quiet moment on the farm (no show, no other sheet). Not saved:
+        /// Questions waiting for a quiet moment on the farm (no show, no other sheet), oldest first. A hatch
+        /// and a show on the same night ask one after the other. Not saved:
         /// if the app closes first, the next hatch or show asks instead.
-        static var waiting: BetaMoment?
+        static var waiting: [BetaMoment] = []
 
         /// Should the prompts fire in this build, on this install?
         static var isOn: Bool {
@@ -91,7 +92,8 @@
             read().asked[slot]?.contains(moment) ?? false
         }
 
-        /// Marked as soon as the sheet opens, so a tester who swipes it away is not asked again.
+        /// Marked on Save, Skip or close (not when the sheet opens), so a tester who swipes it away is not
+        /// asked again, but a question another sheet pushed aside is.
         static func markAsked(_ moment: BetaMoment, slot: String) {
             var file = read()
             guard !(file.asked[slot]?.contains(moment) ?? false) else { return }
