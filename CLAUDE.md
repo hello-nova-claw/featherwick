@@ -39,6 +39,8 @@ Key Core files:
 - `SaveFormat.swift` (versions, migrations), `SaveStore.swift` (slots, atomic writes, backups).
 - One file per feature: `EarlyGame`, `BreedingPen`, `Shows`, `ShowEvent`, `Friendliness`, `Pedigree`, `Names`, `Story`,
   `Milestone`, `Jobs` (daily jobs, season goals), `Daylight` (day slots, errands, the sleep gate), `Look`, `Simulation`, `HatchWhy` (hatch-day "why" note).
+- What might hatch: `Visible` (what the keeper sees, no genes), `Knowledge` + `KnowledgeTables` (genes worked
+  out by elimination), `Planner` + `PlannerTables` (the pen forecast, carrier notes). Never read genes there.
 
 ## iOS app
 
@@ -60,6 +62,7 @@ components, screens 1a–8a). The painted farm and bird art come later; dashed b
   (tap opens the bird card; press and rub sends `.pet`). In the yards the coop birds are rigged chickens
   inside the scene (`Scene/SceneChicken.swift`: `YardScene`, `SceneChicken`).
   `Feedback/`: `Haptics` and `Sound` (bundled `Sounds/*.caf`, silent if missing), with on/off switches in Settings. `GameStore.run` plays event feedback through `GameFeedback`.
+- What might hatch (`Sheets/WhatMightHatchSection.swift`): the forecast in the breeding pen sheet, and carrier lines on the bird card.
 - Morning report (`Sheets/MorningReportSheet.swift`): after Sleep, one page of the night, before the farm.
   Core's `MorningReport.from(events:state:)` sorts the night's events into groups; every event lands in one.
   A new `GameEvent` needs a group in `MorningReport.group(of:)`. Settings has a switch (on by default).
@@ -107,6 +110,8 @@ Most new content is a table entry. See README "Data layer" and the feature secti
 - Breed: a `BreedDefinition` in `BreedTable.all` (status `.planned` until art is ready) + a static id on `Breed`.
 - Colour: a `ColourVariety`, then list it on its breeds.
 - Gene: an allele enum in `Alleles.swift` (conforms to `GeneLocus`), append to `Loci` in `Locus.swift`, add its look in `Phenotype.swift`.
+  Knowledge and the planner pick it up from `Loci`; check `KnowledgeTests`. Its carrier words go in
+  `carrierText` (`PlannerTextTests` checks every allele).
 - Storyline: a `Storyline` in `Storylines.all` + its words in `storyText`.
 - Milestone: a `Milestone` in `Milestones.all` (order = ladder) + its words in `milestoneText`.
 - Night step: add it to `passNight` in order and update the "Night order" line in README.
