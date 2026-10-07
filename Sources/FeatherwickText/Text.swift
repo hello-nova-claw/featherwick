@@ -871,6 +871,8 @@ public func milestoneText(_ id: String) -> (title: String, hint: String) {
     case "lapChicken": ("Lap chicken", "Tame a bird all the way to a lap chicken.")
     case "storyteller": ("Neighbourly", "Finish a Featherwick storyline.")
     case "elderHen": ("Grand old lady", "Keep a hen into her beloved retirement.")
+    case "chocolateEgg": ("Chocolate egg", "Breed from your darkest brown-egg hens until one lays chocolate eggs.")
+    case "greenEgg": ("Green egg", "Cross a blue-egg bird with a light brown-egg bird for green eggs.")
     default: (id, "")
     }
 }
