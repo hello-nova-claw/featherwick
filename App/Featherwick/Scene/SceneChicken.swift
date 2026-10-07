@@ -255,7 +255,9 @@ struct SceneChicken: View {
     /// The rig at full size, scaled down about its feet, in a frame the size it is drawn.
     private func chicken(scale: CGFloat, drawn: CGSize) -> some View {
         let colours = ChickenColours(bird: bird, state: store.state)
-        let acting: ChickenActivity = reduceMotion ? .idle : activity
+        // While the keeper rests, a bird standing about stops to peck: the yard moves on with the day.
+        let resting: Bool = store.restSeconds != nil && activity == .idle
+        let acting: ChickenActivity = reduceMotion ? .idle : (resting ? .pecking : activity)
         return AnimatedChicken(colours: colours, height: height, facingRight: facingRight, activity: acting)
             .scaleEffect(scale, anchor: .bottom)
             .frame(width: drawn.width, height: drawn.height, alignment: .bottom)

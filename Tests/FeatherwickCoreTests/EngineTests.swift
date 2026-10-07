@@ -29,6 +29,14 @@ func startedGame(sex: Sex, rules: Rules = .standard, seed: UInt64 = 1) -> (GameS
 func night(_ s: inout GameState, _ rng: inout SeededRNG, feed: Bool = true, close: Bool = true) -> [GameEvent] {
     if feed { _ = Engine.apply(.feed, to: &s, using: &rng) }
     if close { _ = Engine.apply(.closeCoop, to: &s, using: &rng) }
+    return sleepTonight(&s, &rng)
+}
+
+/// Rest until the daylight is spent, then pass the night. Returns the night's events only.
+/// Sleep waits for evening once the daylight lesson is in (`DaylightTests`).
+@discardableResult
+func sleepTonight(_ s: inout GameState, _ rng: inout SeededRNG) -> [GameEvent] {
+    Engine.restUntilEvening(&s, using: &rng)
     return Engine.apply(.passNight, to: &s, using: &rng)
 }
 

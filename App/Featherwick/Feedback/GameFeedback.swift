@@ -29,6 +29,10 @@ enum GameFeedback {
                 success = true
             case .rejected(.alreadyPettedToday):
                 break  // Not an error: the bird just leans in (see `BirdBlob`).
+            case .rejected(.noTimeLeft), .rejected(.notEveningYet), .rejected(.timeForBed):
+                break  // Not an error: the light is gone, and the neighbour says so in a note.
+            case .slotSpent, .rested:
+                break  // The rest scene and the sun mark show the time passing: no sound, no buzz.
             case .rejected:
                 warning = true
             default:

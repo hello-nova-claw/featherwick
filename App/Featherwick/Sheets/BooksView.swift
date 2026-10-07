@@ -296,7 +296,7 @@ struct TimeOfDayPicker: View {
         VStack(alignment: .leading, spacing: Space.s) {
             Text("Time of day").font(Typeface.item)
             WordTabs(tabs: TimeOfDayPin.allCases.map { ($0, $0.label) }, selection: $pinned)
-            Text("For testing. Clock: night is 6 pm to 6 am. Day or Night stays until you set Clock again.")
+            Text("For testing. Game: day until evening, night from Sleep. Day or Night stays until you set Game again.")
                 .font(Typeface.caption).foregroundStyle(palette.inkMuted)
         }
     }

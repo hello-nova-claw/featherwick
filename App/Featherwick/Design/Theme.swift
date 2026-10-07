@@ -7,7 +7,7 @@ import SwiftUI
 
 // MARK: - Colour
 
-/// The menu colours. Day and night are two palettes; the game clock picks one.
+/// The menu colours. Day and night are two palettes; game time picks one, or a mix in the evening.
 struct Palette: Equatable, Sendable {
     var paper: Color
     var ink: Color
@@ -42,20 +42,53 @@ struct Palette: Equatable, Sendable {
         floating: Color(hex: 0x1B1817).opacity(0.88), toast: Color(hex: 0xF3EEE6), toastText: Color(hex: 0x1B1817),
         isNight: true)
 
-    /// Night is 18:00 to 05:59 on the device clock.
-    static func forHour(_ hour: Int) -> Palette { hour >= 18 || hour < 6 ? .night : .day }
+    /// Evening starts the crossfade a little way in, so the light changes as soon as evening comes.
+    static let dusk = 0.1
+    /// From the start of evening to full night, in seconds on the device clock.
+    static let crossfade: TimeInterval = 30 * 60
 
-    /// The palette for this moment: the device clock, unless a tester has pinned day or night.
-    static func forHour(_ hour: Int, pinned: TimeOfDayPin) -> Palette {
+    /// The palette for game time, not the device clock. Morning and afternoon are day. Evening starts a
+    /// 30-minute crossfade to night. From Sleep until the morning it is night. A tester can pin day or night.
+    /// - Parameter evening: seconds since this evening began, or nil before evening.
+    @MainActor
+    static func forGame(evening: TimeInterval?, asleep: Bool, pinned: TimeOfDayPin) -> Palette {
         switch pinned {
-        case .clock: forHour(hour)
-        case .day: .day
-        case .night: .night
+        case .day: return .day
+        case .night: return .night
+        case .clock: break
         }
+        if asleep { return .night }
+        guard let evening else { return .day }
+        return between(.day, .night, dusk + (1 - dusk) * evening / crossfade)
+    }
+
+    /// Partway from one palette to another: `t` 0 is `a`, 1 is `b`. Night once past halfway.
+    @MainActor
+    static func between(_ a: Palette, _ b: Palette, _ t: Double) -> Palette {
+        let t = Float(min(1, max(0, t)))
+        if t == 0 { return a }
+        if t == 1 { return b }
+        let env = EnvironmentValues()
+        func mix(_ x: Color, _ y: Color) -> Color {
+            let p = x.resolve(in: env)
+            let q = y.resolve(in: env)
+            return Color(
+                Color.Resolved(
+                    red: p.red + (q.red - p.red) * t, green: p.green + (q.green - p.green) * t,
+                    blue: p.blue + (q.blue - p.blue) * t, opacity: p.opacity + (q.opacity - p.opacity) * t))
+        }
+        return Palette(
+            paper: mix(a.paper, b.paper), ink: mix(a.ink, b.ink), inkSoft: mix(a.inkSoft, b.inkSoft),
+            inkMuted: mix(a.inkMuted, b.inkMuted), hairline: mix(a.hairline, b.hairline),
+            hairlineSoft: mix(a.hairlineSoft, b.hairlineSoft), unknown: mix(a.unknown, b.unknown),
+            unknownBox: mix(a.unknownBox, b.unknownBox), artPlaceholder: mix(a.artPlaceholder, b.artPlaceholder),
+            coin: mix(a.coin, b.coin), floating: mix(a.floating, b.floating), toast: mix(a.toast, b.toast),
+            toastText: mix(a.toastText, b.toastText), isNight: t >= 0.5)
     }
 }
 
-/// A tester setting (Settings ▸ For testing): follow the clock, or pin the farm to day or night.
+/// A tester setting (Settings ▸ For testing): follow game time, or pin the farm to day or night.
+/// `clock` keeps its stored name from when the farm followed the device clock.
 enum TimeOfDayPin: String, CaseIterable {
     case clock, day, night
 
@@ -63,7 +96,7 @@ enum TimeOfDayPin: String, CaseIterable {
 
     var label: String {
         switch self {
-        case .clock: "Clock"
+        case .clock: "Game"
         case .day: "Day"
         case .night: "Night"
         }

@@ -53,6 +53,8 @@ public enum Command: Hashable, Codable, Sendable {
     case penBird(UUID)
     /// Take a bird out of the breeding pen. It stays on its coop perch.
     case unpenBird(UUID)
+    /// Sit a while: spends one slot of daylight and does nothing else (see Daylight.swift).
+    case rest
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -126,6 +128,12 @@ public enum Rejection: Hashable, Codable, Sendable {
     case notInCoop
     /// The bird's sex does not show yet. The words must not say which it is.
     case tooYoungForPen
+    /// No daylight left for an errand of this kind today (see Daylight.swift). It waits for the morning.
+    case noTimeLeft(Errand)
+    /// Sleep waits until the day's daylight is spent.
+    case notEveningYet(slotsLeft: Int)
+    /// A rest with no daylight left: it is time for bed.
+    case timeForBed
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -245,6 +253,10 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case birdPenned(UUID)
     /// The bird left the breeding pen. It stays on its coop perch.
     case birdUnpenned(UUID)
+    /// A slot of daylight is spent: on an errand, or on a rest (nil). `left` is what remains today.
+    case slotSpent(Errand?, left: Int)
+    /// The keeper sat a while. The time of day the rest was taken in, for the words.
+    case rested(TimeOfDay)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -293,10 +305,18 @@ public enum Engine {
         }
         guard s.phase == .playing else { return [.rejected(.chooseStarterFirst)] }
         if let feature = feature(for: command), !s.isOpen(feature) { return [.rejected(.notYet(feature))] }
+        if let refusal = daylightRefusal(for: command, in: s) { return [.rejected(refusal)] }
+        let ev = carryOut(command, &s, &rng)
+        return ev + spendDaylight(on: command, after: ev, &s)
+    }
 
+    /// The command itself, once the starter, early-game and daylight gates have let it through.
+    static func carryOut<R: RandomNumberGenerator>(
+        _ command: Command, _ s: inout GameState, _ rng: inout R
+    ) -> [GameEvent] {
         switch command {
         case .chooseStarter:
-            return []  // handled above
+            return []  // handled in `perform`
         case .feed:
             let needed = s.birdsAtHome.count
             if needed == 0 { return [.rejected(.nothingToFeed)] }
@@ -483,6 +503,8 @@ public enum Engine {
             return penBird(id, &s)
         case .unpenBird(let id):
             return unpenBird(id, &s)
+        case .rest:
+            return [.rested(s.timeOfDay)]  // the slot itself is spent by `spendDaylight`
         }
     }
 
@@ -871,6 +893,9 @@ public enum Engine {
         s.day += 1
         ev.append(.dayStarted(day: s.day, season: s.season))
         if s.season != oldSeason { ev.append(.seasonChanged(s.season)) }
+
+        // 2b. Daylight resets: a fresh day of errands (see Daylight.swift).
+        resetDaylight(&s)
 
         // 3. Lost birds come home if their day has come and a perch is free. A lost bird has no perch.
         var stillLost: [LostBird] = []

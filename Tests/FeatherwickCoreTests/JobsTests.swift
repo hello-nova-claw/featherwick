@@ -17,7 +17,7 @@ struct JobsTests {
     }
 
     static func sleep(_ s: inout GameState, _ rng: inout SeededRNG) -> [GameEvent] {
-        Engine.apply(.passNight, to: &s, using: &rng)
+        sleepTonight(&s, &rng)
     }
 
     /// The part of the early game a job needs, if any.
@@ -242,6 +242,38 @@ struct JobsTests {
         #expect(!ev.contains { if case .jobsSet = $0 { true } else { false } })
     }
 
+    // MARK: - Jobs and daylight
+
+    /// A job costs daylight only when the command that does it is an errand (`Engine.errand(for:)`).
+    @Test func onlyErrandJobsTakeDaylight() {
+        var (s, _) = Self.game()
+        s.treats = 0
+        var costed: [JobKind: Errand] = [:]
+        for kind in JobKind.allCases { costed[kind] = Engine.errand(for: kind, in: s) }
+        // An empty treat bag means a trip to Speckle & Down first.
+        #expect(costed == [.candleEgg: .candling, .enterShow: .showDesk, .giveTreat: .village])
+        // With treats in the bag, a treat is care. Setting eggs is free on purpose.
+        s.treats = 1
+        #expect(Engine.errand(for: .giveTreat, in: s) == nil)
+        #expect(Engine.errand(for: .setEggs, in: s) == nil)
+    }
+
+    /// The cap keeps pick order: a costed job that does not fit makes way for the next free one.
+    /// Before the daylight lesson nothing takes a slot, so nothing is held back.
+    @Test func costedJobsBeyondTheDaysLightMakeWay() {
+        var (s, _) = Self.game()
+        s.rules.daySlots = 1
+        s.treats = 0
+        let ordered = [
+            Job(kind: .candleEgg), Job(kind: .enterShow), Job(kind: .feed), Job(kind: .giveTreat),
+            Job(kind: .shutCoop), Job(kind: .collectEggs),
+        ]
+        #expect(s.isOpen(.daylight) && s.slotsToday(rules: s.rules) == 1)
+        #expect(Engine.withinDaylight(ordered, s).map(\.kind) == [.candleEgg, .feed, .shutCoop])
+        s.introduced.remove(.daylight)
+        #expect(Engine.withinDaylight(ordered, s).map(\.kind) == [.candleEgg, .enterShow, .feed])
+    }
+
     // MARK: - The season goal
 
     @Test func aGoalIsSetOnTheFirstMorning() throws {
@@ -370,7 +402,7 @@ struct JobsTests {
         #expect(game.state.rules.jobsPerDay == Rules.standard.jobsPerDay)
         #expect(game.state.rules.seasonGoals)
         let day = game.state.day
-        _ = Engine.apply(.passNight, to: &game.state, using: &game.rng)
+        _ = sleepTonight(&game.state, &game.rng)
         #expect(game.state.jobBoard?.day == day + 1)
         #expect(!game.state.todaysJobs.isEmpty)
         #expect(game.state.seasonGoal != nil)

@@ -177,6 +177,10 @@ public struct GameState: Hashable, Codable, Sendable {
     public var jobBoard: JobBoard?
     /// The season's bigger goal (see Jobs.swift). Nil until a morning with something to aim for.
     public var seasonGoal: SeasonGoal?
+    /// Daylight slots spent today (see Daylight.swift). Reset each morning.
+    public var slotsUsed = 0
+    /// The errand kinds already run today. More of the same kind cost no more daylight.
+    public var errandsToday: Set<Errand> = []
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

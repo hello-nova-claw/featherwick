@@ -26,7 +26,7 @@ struct StartingEdgeCases {
         .buyIncubator, .incubate(count: 1), .sit(hen: UUID(), count: 1),
         .rename(UUID(), name: "x"), .rehome(UUID()), .upgradeCoop,
         .incubateEggs([UUID()]), .sitEggs(hen: UUID(), eggs: [UUID()]), .sellChosenEggs([UUID()]),
-        .buySpecial,
+        .buySpecial, .rest,
     ]
 
     @Test(arguments: allCommandsButChoose)
@@ -573,7 +573,10 @@ struct RoomEdgeCases {
         var (s, rng) = startedGame(sex: .hen)
         let boarder = plainBird(hatchDay: -s.rules.adultAge, rng: &rng)  // an adult
         s.boarding = [boarder]
-        #expect(Engine.apply(.rehome(boarder.id), to: &s, using: &rng) == [.rehomed(boarder.id, coins: 6)])
+        #expect(
+            Engine.apply(.rehome(boarder.id), to: &s, using: &rng) == [
+                .rehomed(boarder.id, coins: 6), .slotSpent(.neighbour, left: 2),
+            ])
         s.coop.append(plainBird(rng: &rng))  // so the chick is not the last bird
         let chick = s.brooder[0].id
         #expect(Engine.apply(.rehome(chick), to: &s, using: &rng) == [.rehomed(chick, coins: 2)])
@@ -586,7 +589,10 @@ struct RoomEdgeCases {
         #expect(Engine.apply(.rehome(only), to: &s, using: &rng) == [.rejected(.lastBird)])
         // A lost bird still counts as yours, so the bird at home can go.
         s.lost = [LostBird(bird: plainBird(rng: &rng), returnsOnDay: 50)]
-        #expect(Engine.apply(.rehome(only), to: &s, using: &rng) == [.rehomed(only, coins: 2)])
+        #expect(
+            Engine.apply(.rehome(only), to: &s, using: &rng) == [
+                .rehomed(only, coins: 2), .slotSpent(.neighbour, left: 2),
+            ])
     }
 
     @Test func lostOrUnknownBirdsCannotBeRehomed() {
@@ -623,7 +629,9 @@ struct RoomEdgeCases {
         s.coins = 1000
         s.perches = s.rules.maxPerches - 1
         #expect(
-            Engine.apply(.upgradeCoop, to: &s, using: &rng) == [.coopUpgraded(perches: s.rules.maxPerches, cost: 30)])
+            Engine.apply(.upgradeCoop, to: &s, using: &rng) == [
+                .coopUpgraded(perches: s.rules.maxPerches, cost: 30), .slotSpent(.building, left: 3),
+            ])
     }
 
     @Test func renameRules() {

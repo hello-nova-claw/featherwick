@@ -77,7 +77,7 @@ struct FriendlinessTests {
         var (s, id) = Self.game(age: 30, tameness: 0)
         #expect(Self.apply(.giveTreat(id), &s) == [.rejected(.noTreats)])
         s.coins = 100
-        #expect(Self.apply(.buy(.treats), &s) == [.boughtTreats(count: 10, cost: 5)])
+        #expect(Self.apply(.buy(.treats), &s) == [.boughtTreats(count: 10, cost: 5), .slotSpent(.village, left: 2)])
         #expect(s.treats == 10 && s.coins == 95)
         #expect(Self.apply(.giveTreat(id), &s) == [.handled(id, .treat)])
         #expect(s.treats == 9)
@@ -143,7 +143,7 @@ struct FriendlinessTests {
             hatchDay: 0, origin: "t", revealed: true
         ).withTameness(0.6)
         s.coop.append(bird)
-        for _ in 0..<60 { _ = Engine.apply(.passNight, to: &s, using: &rng) }
+        for _ in 0..<60 { _ = sleepTonight(&s, &rng) }
         #expect(s.bird(bird.id)?.tameness == 0.6)
     }
 
@@ -158,7 +158,7 @@ struct FriendlinessTests {
             hatchDay: 0, origin: "t", revealed: true
         ).withTameness(0.9)
         s.coop.append(bird)
-        _ = Engine.apply(.passNight, to: &s, using: &rng)  // door open: the fox comes
+        _ = sleepTonight(&s, &rng)  // door open: the fox comes
         let lost = try! #require(s.lost.first?.bird)
         let loss = 0.9 - lost.currentTameness
         #expect(loss >= r.foxFrightTamenessLoss + r.lostDayTamenessLoss - 1e-9)

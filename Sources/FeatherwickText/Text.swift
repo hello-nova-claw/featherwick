@@ -455,6 +455,10 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         case .notInCoop: "Only birds with a perch in the coop can go in the breeding pen."
         // Rule 8: says nothing about which sex the bird will be.
         case .tooYoungForPen: "That bird is too young for the breeding pen. Wait until its feathers come in."
+        case .noTimeLeft(let errand): noTimeLeftText(errand)
+        case .notEveningYet(let left):
+            "The sun's still up. There's time for \(left) more thing\(left == 1 ? "" : "s")."
+        case .timeForBed: "The light's gone. Time for bed: sleep"
         }
     case .starterChosen(let id): return "You take \(birdName(id, s)) home and settle them under the heat lamp."
     case .fed: return "You fill the feeder and top up the water."
@@ -692,7 +696,84 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return "★ Season goal reached: \(goalWords(kind, s))! You earn \(coins) coins."
     case .birdPenned(let id): return pennedText(id, s)
     case .birdUnpenned(let id): return "\(birdName(id, s)) goes back to the coop flock."
+    case .slotSpent(_, let left):
+        return left == 0
+            ? "The light's going. Time for bed: sleep"
+            : "The sun moves on. Time for \(left) more thing\(left == 1 ? "" : "s") today."
+    case .rested(let time): return restedText(time, s)
     }
+}
+
+/// Why an errand must wait for the morning.
+func noTimeLeftText(_ errand: Errand) -> String {
+    switch errand {
+    case .village: "Speckle & Down will be shut by the time you get there. Tomorrow."
+    case .candling: "Too dark to candle now. First thing in the morning."
+    case .showDesk: "The show desk has packed up for the day."
+    case .neighbour: "The neighbour's lights are off. Pop round tomorrow."
+    case .building: "Not enough light left to build. Tomorrow."
+    }
+}
+
+/// The time of day and the errands left, for the CLI `time` command and the app's sun mark.
+public func timeOfDayText(_ s: GameState) -> String {
+    guard s.isOpen(.daylight) else { return notYetText(.daylight, s) }
+    let time =
+        switch s.timeOfDay {
+        case .morning: "Morning."
+        case .afternoon: "Afternoon."
+        case .evening: "Evening."
+        }
+    let left = s.slotsLeft
+    guard left > 0 else { return "\(time) No time left for errands: sleep" }
+    return "\(time) Time for \(left) more errand\(left == 1 ? "" : "s")."
+}
+
+/// A line for a rest, by time of day. Chosen from the shop seed, the day and the slot, never the game
+/// RNG, so reading it changes nothing and the same rest always reads the same.
+func restedText(_ time: TimeOfDay, _ s: GameState) -> String {
+    let lines = restedLines(time, s)
+    let mix =
+        s.shopSeed ^ (UInt64(truncatingIfNeeded: s.day) &* 0x9E37_79B9_7F4A_7C15)
+        ^ UInt64(truncatingIfNeeded: s.slotsUsed)
+    return lines[Int(mix % UInt64(lines.count))]
+}
+
+/// Every line a rest can read at this time of day. Rule 8: no line names a sex, so "it" and "the flock",
+/// never "she" or "a hen".
+public func restedLines(_ time: TimeOfDay, _ s: GameState) -> [String] {
+    switch time {
+    case .morning:
+        return [
+            "You sit on the step with a cup of tea and watch them scratch about.",
+            "You lean on the fence while the dew burns off the grass.",
+            "You stand a while and listen to the morning chatter.",
+            "You sit on an upturned bucket and watch the sun come over the hedge.",
+        ]
+    case .afternoon:
+        return [
+            bootNap(s),
+            "You doze in the warm grass while the flock dust-bathes nearby.",
+            "You watch a chicken chase a moth, lose it, and pretend it meant to.",
+            "You sit in the shade and count feathers drifting past.",
+        ]
+    case .evening:
+        return [
+            "The flock drifts toward the coop on its own.",
+            "The light goes gold over the yard. Someone clucks a sleepy complaint.",
+            "You watch the last bird hop up to bed.",
+            "The swallows come out, and the yard goes quiet and soft.",
+        ]
+    }
+}
+
+/// The nap on the keeper's boot: the starter if still at home, else one of the flock.
+func bootNap(_ s: GameState) -> String {
+    if let id = s.starterID, let starter = s.birdsAtHome.first(where: { $0.id == id }) {
+        return "\(starter.name) falls asleep on your boot."
+    }
+    return s.birdsAtHome.isEmpty
+        ? "You nearly fall asleep on the step in the sun." : "One of the flock falls asleep on your boot."
 }
 
 /// What penning a bird means for the eggs. A bird is penned only once its sex shows.
@@ -1122,6 +1203,10 @@ public func introducedText(_ f: Feature, _ s: GameState) -> String? {
             The neighbour nods at \(n). "\(n) will start to lay soon. Hens lay when they were fed the day before. \
             Collect the eggs every day: full nest boxes mean broken eggs, and old eggs sell for less." (collect, sell)
             """
+    case .daylight:
+        return "There's only so much daylight. Feed and cuddle whenever you like, but you'll fit about three "
+            + "errands in a day. The shop, candling, the show desk, a visit to mine. When the light's gone, "
+            + "it's bedtime."
     case .birdShop:
         return "Speckle & Down has birds in! Pullets, cockerels, fertile eggs, and a special bird each day. "
             + "Your flock can grow now. (shop)"
@@ -1154,6 +1239,7 @@ public func notYetText(_ f: Feature, _ s: GameState) -> String {
     case .shows: return "There is no show to enter yet."
     case .incubatorShop: return "Speckle & Down has no incubators in yet. They come \(when)."
     case .breedingPen: return "There is no breeding pen yet. The neighbour comes to help build one \(when)."
+    case .daylight: return "No need to rest yet. There's plenty of daylight."
     case .handling, .coopDoor, .breedBook, .laying: return "Not yet."
     }
 }

@@ -16,7 +16,7 @@ struct ForageTests {
     }
 
     static func night(_ s: inout GameState, _ rng: inout SeededRNG) -> [GameEvent] {
-        Engine.apply(.passNight, to: &s, using: &rng)
+        sleepTonight(&s, &rng)
     }
 
     /// Puts a single adult laying hen in the coop (no chicks, no brooder), so laying can be observed.
@@ -111,7 +111,7 @@ struct ForageTests {
         }
         func nights(_ k: Int) -> [GameEvent] {
             var ev: [GameEvent] = []
-            for _ in 0..<k { ev += Engine.apply(.passNight, to: &s, using: &rng) }
+            for _ in 0..<k { ev += sleepTonight(&s, &rng) }
             return ev
         }
 

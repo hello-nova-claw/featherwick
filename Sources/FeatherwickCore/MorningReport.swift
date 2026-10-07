@@ -98,7 +98,8 @@ public struct MorningReport: Hashable, Sendable {
             // Player actions: never at night.
             .rejected, .starterChosen, .fed, .eggsCollected, .eggsSold, .coopClosed, .incubatorBought,
             .candled, .eggsSet, .renamed, .rehomed, .coopUpgraded, .boughtBird, .boughtEgg, .tradeAccepted,
-            .boughtTreats, .boughtPremiumFeed, .fedPremium, .boughtSpecial, .birdPenned, .birdUnpenned:
+            .boughtTreats, .boughtPremiumFeed, .fedPremium, .boughtSpecial, .birdPenned, .birdUnpenned, .slotSpent,
+            .rested:
             return .other
         }
     }

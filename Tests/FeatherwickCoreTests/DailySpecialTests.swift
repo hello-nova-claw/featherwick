@@ -91,7 +91,7 @@ struct DailySpecialTests {
         let before = s
         #expect(Engine.apply(.buySpecial, to: &s, using: &rng) == [.rejected(.specialSoldOut)])
         #expect(s == before)
-        _ = Engine.apply(.passNight, to: &s, using: &rng)
+        _ = sleepTonight(&s, &rng)
         #expect(s.todaysSpecial != nil)
     }
 

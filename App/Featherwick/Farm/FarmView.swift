@@ -83,6 +83,7 @@ enum FarmSheet: Identifiable, Hashable {
 struct FarmView: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var sheet: FarmSheet?
     /// The panel on screen. The game opens on the yard, with the barn to the left and the shop to the right.
     /// Optional because the scroll view can briefly report no page; `panel` reads that as the yard.
@@ -110,6 +111,10 @@ struct FarmView: View {
             .padding(.bottom, Space.xl)
             .buttonStyle(.plain)
             .foregroundStyle(palette.ink)
+            // A rest and nightfall cannot be skipped: the farm takes no taps until they are over.
+            if store.restSeconds != nil || store.asleep {
+                RestScene(line: store.restLine)
+            }
             ToastStack()
         }
         .sheet(item: $sheet, onDismiss: sheetClosed) { which in
@@ -180,8 +185,9 @@ struct FarmView: View {
         Binding(get: { scrolled ?? .yard }, set: { scrolled = $0 })
     }
 
-    /// Books, Today, the place of the panel on screen, and settings. Books waits until the neighbour shows the
-    /// keeper the Breed Book (the early game's `breedBook` lesson). Settings is always there.
+    /// Books, Today, the place of the panel on screen, Rest or Sleep, and settings. Books waits until the
+    /// neighbour shows the keeper the Breed Book (the early game's `breedBook` lesson). Rest and Sleep wait
+    /// for the daylight lesson; before it, Sleep is in the Coop sheet. Settings is always there.
     private var bottomBar: some View {
         HStack(alignment: .bottom) {
             if store.state.isOpen(.breedBook) {
@@ -200,6 +206,7 @@ struct FarmView: View {
             }
             panelPlaces
             Spacer()
+            if store.state.isOpen(.daylight) { restOrSleep }
             FloatingBox {
                 Button {
                     sheet = .settings
@@ -208,6 +215,25 @@ struct FarmView: View {
                 }
                 .accessibilityLabel("Settings")
             }
+        }
+    }
+
+    /// "Rest a while" until the last slot of daylight is spent, then "Sleep", in the same place.
+    private var restOrSleep: some View {
+        let bedtime = store.state.slotsLeft == 0
+        return FloatingBox {
+            Button(bedtime ? "Sleep" : "Rest a while") {
+                Task {
+                    if bedtime {
+                        await store.goToBed(reduceMotion: reduceMotion)
+                    } else {
+                        await store.restAWhile(reduceMotion: reduceMotion)
+                    }
+                }
+            }
+            .font(Typeface.action)
+            .padding(.horizontal, Space.l)
+            .frame(minHeight: 56)
         }
     }
 
@@ -320,8 +346,10 @@ struct FarmView: View {
             if let c = s.incubatorClutch, c.hatchDay <= s.day + 1 {
                 n.append(Notice(kind: .collect, text: "hatching tonight"))
             }
-            if palette.isNight && s.coopDoorOpen { n.append(Notice(kind: .decision, text: "door still open")) }
-            if palette.isNight && !s.coopDoorOpen { n.append(Notice(kind: .story, text: "\(s.coop.count) asleep")) }
+            // Bedtime counts as night here too, so the open door is noticed before Sleep.
+            let night = palette.isNight || (s.isOpen(.daylight) && s.slotsLeft == 0)
+            if night && s.coopDoorOpen { n.append(Notice(kind: .decision, text: "door still open")) }
+            if night && !s.coopDoorOpen { n.append(Notice(kind: .story, text: "\(s.coop.count) asleep")) }
             return n
         case .pottingShed:
             // Not on the farm any more: its notices show under the coop.
@@ -467,6 +495,8 @@ struct PlaceLabel: View {
 struct HUD: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
+    /// The sun was tapped: the time of day shows in words under it.
+    @State private var showsTime = false
 
     var body: some View {
         let s = store.state
@@ -474,8 +504,10 @@ struct HUD: View {
             FloatingBox {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Day \(s.day)").font(Typeface.display(28, relativeTo: .title))
-                    Text("\(s.season.rawValue.capitalized) · \(timeOfDay)").font(Typeface.label)
+                    Text(timeOfDay.map { "\(s.season.rawValue.capitalized) · \($0)" } ?? s.season.rawValue.capitalized)
+                        .font(Typeface.label)
                         .foregroundStyle(palette.inkSoft)
+                    if s.isOpen(.daylight) { sun(s) }
                 }
                 .padding(.horizontal, Space.m)
                 .padding(.vertical, Space.s)
@@ -503,13 +535,55 @@ struct HUD: View {
         .foregroundStyle(palette.ink)
     }
 
-    private var timeOfDay: String {
-        let hour = Calendar.current.component(.hour, from: .now)
-        switch hour {
-        case 5..<12: return "morning"
-        case 12..<17: return "afternoon"
-        case 17..<21: return "evening"
-        default: return "night"
+    /// Game time, not the device clock. Before the daylight lesson the day has no time of day.
+    private var timeOfDay: String? {
+        if store.asleep { return "night" }
+        let s = store.state
+        return s.isOpen(.daylight) ? s.timeOfDay.rawValue : nil
+    }
+
+    /// The sun on its track. Tap for the time of day and how many errands still fit.
+    private func sun(_ s: GameState) -> some View {
+        VStack(alignment: .leading, spacing: Space.xs) {
+            Button {
+                showsTime.toggle()
+            } label: {
+                SunTrack(slots: s.slotsToday(rules: s.rules), used: s.slotsUsed, slide: store.restSeconds ?? 0.3)
+                    .padding(.vertical, Space.s)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(timeOfDayText(s))
+            if showsTime {
+                Text(timeOfDayText(s)).font(Typeface.label).foregroundStyle(palette.inkSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
+    }
+}
+
+/// Over the farm while a rest plays (or night falls): what the keeper did with the time, and a cover
+/// that takes every tap, so the scene cannot be skipped.
+struct RestScene: View {
+    @Environment(\.palette) private var palette
+    let line: String?
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            Color.clear.contentShape(Rectangle()).ignoresSafeArea()
+            if let line {
+                FloatingBox {
+                    Text(line).font(Typeface.speech).foregroundStyle(palette.ink)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, Space.l)
+                        .padding(.vertical, Space.m)
+                }
+                .padding(.horizontal, Space.xl)
+                .padding(.bottom, 140)  // over the bottom row, clear of the buttons
+                .transition(.opacity)
+            }
+        }
+        .accessibilityElement(children: .contain)
     }
 }

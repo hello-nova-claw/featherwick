@@ -16,7 +16,7 @@ struct StoryTests {
     }
 
     static func night(_ s: inout GameState, _ rng: inout SeededRNG) -> [GameEvent] {
-        Engine.apply(.passNight, to: &s, using: &rng)
+        sleepTonight(&s, &rng)
     }
 
     static func fertileEggs(_ n: Int, _ s: inout GameState, _ rng: inout SeededRNG) {
@@ -36,7 +36,10 @@ struct StoryTests {
         Self.fertileEggs(3, &s, &rng)
         #expect(
             Engine.apply(.deliver(story: "broodySilkie"), to: &s, using: &rng)
-                == [.delivered("broodySilkie"), .storyStep("broodySilkie", step: "sitting")])
+                == [
+                    .delivered("broodySilkie"), .storyStep("broodySilkie", step: "sitting"),
+                    .slotSpent(.neighbour, left: 1),
+                ])
         #expect(s.carton.isEmpty)
         #expect(Engine.storyAwaitingDelivery(s) == nil)
 

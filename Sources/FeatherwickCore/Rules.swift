@@ -165,7 +165,7 @@ public struct Rules: Codable, Hashable, Sendable {
     // Early game (see EarlyGame.swift): the morning each feature is introduced. A new keeper starts with
     // one chick (sex shows on day `growerAge`) and learns one thing at a time.
     public var featureDays: [Feature: Int] = [
-        .handling: 1, .treats: 2, .premiumFeed: 4, .coopDoor: 6, .breedBook: 8, .birdShop: 10,
+        .handling: 1, .treats: 2, .premiumFeed: 4, .coopDoor: 6, .breedBook: 8, .daylight: 9, .birdShop: 10,
         .coopUpgrade: 14, .laying: 18, .incubatorShop: 29, .breedingPen: 35,
     ]
     /// The county show opens this many days before the first show (`.shows` has no entry above).
@@ -189,6 +189,12 @@ public struct Rules: Codable, Hashable, Sendable {
     public var seasonGoalFlockGrowth = 2  // "grow the flock by 2 birds"
     public var seasonGoalEggsPerHen = 8  // "collect N eggs": this many per hen in the coop...
     public var seasonGoalMaxEggs = 40  // ...but never more than this
+
+    // Daylight (see Daylight.swift): a day has a few slots for errands. Care is always free.
+    public var daySlots = 3  // errands in a plain day
+    public var slotBonusCoopUpgraded = 1  // once the coop has been upgraded at least once
+    public var slotBonusLapChicken = 1  // a lap chicken at home: the keeper's day goes further
+    public var maxDaySlots = 5  // never more than this, whatever the bonuses
 
     public init() {}
 

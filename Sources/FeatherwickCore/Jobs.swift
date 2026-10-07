@@ -239,7 +239,46 @@ extension Engine {
         let first = rest.filter { timely.contains($0.kind) }.sorted { $0.kind == .enterShow && $1.kind != .enterShow }
         rest.removeAll { timely.contains($0.kind) }
         rest.shuffle(using: &rng)
-        return Array((first + rest).prefix(max(0, s.rules.jobsPerDay)))
+        return withinDaylight(first + rest, s)
+    }
+
+    /// The first `jobsPerDay` jobs in pick order, skipping a job that takes daylight once today's
+    /// slots are all booked. So every job picked can be done today: a list never asks for more
+    /// errands than the day has light for. A skipped job makes way for the next free one.
+    /// Before the daylight lesson nothing takes a slot, so nothing is skipped (the picks stay as they were).
+    static func withinDaylight(_ ordered: [Job], _ s: GameState) -> [Job] {
+        let want = max(0, s.rules.jobsPerDay)
+        var slots = s.isOpen(.daylight) ? s.slotsToday(rules: s.rules) : Int.max
+        var picked: [Job] = []
+        for job in ordered where picked.count < want {
+            if errand(for: job.kind, in: s) != nil {
+                guard slots > 0 else { continue }
+                slots -= 1
+            }
+            picked.append(job)
+        }
+        return picked
+    }
+
+    /// The errand a job sends the keeper on, or nil when it is care (always free). Read from the
+    /// command that does the job, so the jobs follow `errand(for:)` and never need a list of their own.
+    /// A treat job with no treats in the bag needs a trip to Speckle & Down first.
+    static func errand(for kind: JobKind, in s: GameState) -> Errand? {
+        let anyBird = UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))  // the bird does not change the cost
+        let command: Command =
+            switch kind {
+            case .feed: .feed
+            case .collectEggs: .collectEggs
+            case .petBirds, .petBird: .pet(anyBird)
+            case .giveTreat: s.treats > 0 ? .giveTreat(anyBird) : .buy(.treats)
+            case .shutCoop: .closeCoop
+            case .sellEggs: .sellEggs
+            case .candleEgg: .candle
+            case .setEggs: .incubate(count: 1)
+            case .nameBird: .rename(anyBird, name: "")
+            case .enterShow: .enterEggs
+            }
+        return errand(for: command)
     }
 
     /// Each morning: set today's jobs. Yesterday's jobs go, done or not. Deterministic: no game RNG.

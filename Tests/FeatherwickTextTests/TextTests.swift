@@ -28,6 +28,7 @@ struct TextTests {
                 run(.enterShow(b.id))
             }
             if day % 3 != 0 { run(.closeCoop) }  // some nights open: fox and foraging
+            while s.isOpen(.daylight), s.slotsLeft > 0 { run(.rest) }  // sleep waits for evening
             run(.passNight)
         }
         return seen
@@ -287,6 +288,7 @@ struct TextTests {
         s.coop.append(hen)
         _ = Engine.apply(.enterShow(hen.id), to: &s, using: &rng)
         _ = Engine.apply(.feed, to: &s, using: &rng)
+        Engine.restUntilEvening(&s, using: &rng)
         let events = Engine.apply(.passNight, to: &s, using: &rng)
 
         let podiums = events.compactMap { e -> (ShowClass, [PodiumPlace])? in
@@ -392,5 +394,114 @@ struct BreedingPenTextTests {
         for sexWord in ["hen", "rooster", "cockerel", "pullet", " she ", " he ", "her ", "him"] {
             #expect(!words.contains(sexWord), "\(sexWord)")
         }
+    }
+
+    // MARK: Daylight
+
+    @Test func everyDaylightRefusalAndEventHasWords() {
+        var rng = SeededRNG(seed: 4)
+        let s = Engine.newGame(earlyGame: false, using: &rng)
+        var events: [GameEvent] = Errand.allCases.map { .rejected(.noTimeLeft($0)) }
+        events += [.rejected(.notEveningYet(slotsLeft: 2)), .rejected(.timeForBed), .slotSpent(nil, left: 0)]
+        events += Errand.allCases.map { .slotSpent($0, left: 1) }
+        events += TimeOfDay.allCases.map { .rested($0) }
+        for e in events {
+            let words = eventText(e, s) ?? ""
+            #expect(!words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "\(e)")
+        }
+        #expect(!notYetText(.daylight, s).isEmpty)
+        #expect(introducedText(.daylight, s)?.hasPrefix("There's only so much daylight.") == true)
+    }
+
+    @Test func theErrandRefusalsReadAsWritten() {
+        var rng = SeededRNG(seed: 4)
+        let s = Engine.newGame(earlyGame: false, using: &rng)
+        let expected: [Errand: String] = [
+            .village: "Speckle & Down will be shut by the time you get there. Tomorrow.",
+            .candling: "Too dark to candle now. First thing in the morning.",
+            .showDesk: "The show desk has packed up for the day.",
+            .neighbour: "The neighbour's lights are off. Pop round tomorrow.",
+            .building: "Not enough light left to build. Tomorrow.",
+        ]
+        for errand in Errand.allCases {
+            #expect(eventText(.rejected(.noTimeLeft(errand)), s) == expected[errand])
+        }
+        #expect(
+            introducedText(.daylight, s)
+                == "There's only so much daylight. Feed and cuddle whenever you like, but you'll fit about three "
+                + "errands in a day. The shop, candling, the show desk, a visit to mine. When the light's gone, "
+                + "it's bedtime.")
+    }
+
+    @Test func notEveningYetCountsThingsLeft() {
+        var rng = SeededRNG(seed: 4)
+        let s = Engine.newGame(earlyGame: false, using: &rng)
+        #expect(
+            eventText(.rejected(.notEveningYet(slotsLeft: 2)), s)
+                == "The sun's still up. There's time for 2 more things.")
+        #expect(
+            eventText(.rejected(.notEveningYet(slotsLeft: 1)), s)
+                == "The sun's still up. There's time for 1 more thing.")
+    }
+
+    @Test func aRestReadsTheSameForTheSameDayAndComesFromItsTimeOfDay() {
+        var rng = SeededRNG(seed: 6)
+        var s = Engine.newGame(earlyGame: false, using: &rng)
+        for time in TimeOfDay.allCases {
+            let lines = restedLines(time, s)
+            #expect((3...5).contains(lines.count), "\(time)")
+            for day in 1...20 {
+                s.day = day
+                let words = eventText(.rested(time), s)
+                #expect(words == eventText(.rested(time), s))  // no RNG: the same every read
+                #expect(lines.contains(words ?? ""), "\(time) day \(day)")
+            }
+        }
+        var other = s
+        other.shopSeed &+= 1
+        #expect(restedLines(.morning, other) == restedLines(.morning, s))
+        // The spec lines are in their sets.
+        #expect(
+            restedLines(.morning, s).contains("You sit on the step with a cup of tea and watch them scratch about."))
+        #expect(restedLines(.evening, s).contains("The flock drifts toward the coop on its own."))
+    }
+
+    @Test func theAfternoonNapNamesTheStarter() {
+        var rng = SeededRNG(seed: 6)
+        var s = Engine.newGame(using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        #expect(restedLines(.afternoon, s).contains("Pip falls asleep on your boot."))
+    }
+
+    @Test func restLinesDoNotNameASex() {
+        var rng = SeededRNG(seed: 6)
+        var s = Engine.newGame(using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        let sexWords: Set<String> = ["hen", "hens", "rooster", "cockerel", "pullet", "she", "he", "her", "him", "his"]
+        for time in TimeOfDay.allCases {
+            for line in restedLines(time, s) {
+                let words = line.lowercased().split(whereSeparator: { !$0.isLetter }).map(String.init)
+                #expect(sexWords.isDisjoint(with: words), "\(line)")
+            }
+        }
+    }
+
+    @Test func timeOfDaySaysWhatIsLeft() {
+        var rng = SeededRNG(seed: 4)
+        var s = Engine.newGame(earlyGame: false, using: &rng)
+        #expect(s.slotsToday(rules: s.rules) == 3)
+        let expected = [
+            "Morning. Time for 3 more errands.",
+            "Afternoon. Time for 2 more errands.",
+            "Evening. Time for 1 more errand.",
+            "Evening. No time left for errands: sleep",
+        ]
+        for (used, words) in expected.enumerated() {
+            s.slotsUsed = used
+            #expect(timeOfDayText(s) == words)
+        }
+        var early = Engine.newGame(using: &rng)
+        early.day = 0
+        #expect(timeOfDayText(early) == notYetText(.daylight, early))
     }
 }

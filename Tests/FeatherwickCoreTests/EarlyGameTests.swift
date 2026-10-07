@@ -19,7 +19,8 @@ struct EarlyGameTests {
     static func play(until day: Int, _ s: inout GameState, _ rng: inout SeededRNG) -> [GameEvent] {
         var ev: [GameEvent] = []
         while s.day < day {
-            for c in [Command.feed, .closeCoop, .passNight] { ev += Engine.apply(c, to: &s, using: &rng) }
+            for c in [Command.feed, .closeCoop] { ev += Engine.apply(c, to: &s, using: &rng) }
+            ev += sleepTonight(&s, &rng)
         }
         return ev
     }

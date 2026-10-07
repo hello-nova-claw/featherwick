@@ -23,7 +23,11 @@ swift run featherwick 2026   # play; seed 2026 is used only for a new save
 
 The CLI autosaves to a named slot (default `featherwick-save.json`) in the current folder, writing
 atomically with rolling backups. Launch flag: `--slot <name>` picks a save. Type `help` in the game for commands. `day 10` runs ten full days
-(feed, collect, close, sleep) for fast tuning; `sim [days] [games]` prints a balance report.
+(feed, collect, sell if the carton is full, close, rest until evening, sleep) for fast tuning; `sim [days] [games]` prints a balance report.
+
+After the daylight lesson (day 9), the prompt shows the day's slots: `Day 31 · ☀︎☀︎○ >`. A filled sun is a
+slot spent. A hollow sun is a slot left. `rest` spends one slot. `time` gives the time of day and the
+errands left. See "Daylight and errands".
 
 ## Engine
 
@@ -33,7 +37,7 @@ atomically with rolling backups. Launch flag: `--slot <name>` picks a save. Type
 the neighbour, new stock, the show, jobs, the season goal, eggs, other) for the app's morning report.
 Every event lands in exactly one group. IDs and events only; the words come from `eventText`.
 
-Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
+Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
 
 ## The early game (tutorial timeline)
 
@@ -51,6 +55,7 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 | 6 | `coopDoor` (lesson) | The chick moves to the coop tomorrow: the door, the fox, foraging. |
 | 7 | — | The sex shows (`growerAge`). A rooster starter gets the gift hen. |
 | 8 | `breedBook` (lesson) | The neighbour names the starter's breed and colour: the Breed Book. |
+| 9 | `daylight` (lesson) | "There's only so much daylight." From now on, errands take a slot of the day. |
 | 10 | `birdShop` | Pullets, cockerels, fertile eggs, the daily special, story breeds. |
 | 14 | `coopUpgrade` | More perches. |
 | 18 | `laying` (lesson) | Your hen starts to lay soon: feed, collect, sell. |
@@ -428,6 +433,11 @@ So each night you choose: close up safe but feed tomorrow, or leave open to fora
 - **Balance sim** (`Simulation.swift`): plays many seeded games with a simple keeper policy and reports
   coins, flock size, Breed Book growth and eggs/day, so the first-guess `Rules` numbers can be tuned
   from data. CLI: `sim [days] [games]`; `SimulationTests` guards against balance regressions.
+- **The sim keeper's day.** Care first: feed and collect. Then the errands, most useful first: candle
+  (only if an egg is not candled), shop (a breeding pair, the big incubator), the show desk in show week,
+  and the neighbour (a story delivery, and spare roosters go on the same visit). Then set eggs, sell clear
+  eggs, make room (coop upgrade, rehoming), and shut the coop. Then rest until evening, and sleep.
+  An errand with no slot left is refused and costs nothing. It waits for the next day.
 
 ## Look (render spec from a shared parts kit)
 
@@ -531,6 +541,11 @@ To add one: append a `Milestone` to `Milestones.all` (list order is the ladder),
   what the keeper can do now, and it follows the early-game timeline. Examples: feed the flock, collect
   the eggs, cuddle Juniper, Pip and Hazel, cuddle Pip, give a treat, shut the coop door, sell eggs,
   candle an egg, set eggs to hatch, name a new bird, enter the show (only in the week before a show).
+- **Jobs fit the day's light.** The jobs never ask for more errands than the day's slots
+  (`Engine.withinDaylight`). Three jobs are errands: candle an egg, enter the show, and give a treat
+  when the bag is empty (the treat needs a trip to Speckle & Down). All other jobs are care, and free.
+  A costed job that does not fit makes way for the next free job. Before the daylight lesson, no job
+  takes a slot.
 - A job ticks itself off when the keeper does it. `Engine.apply` checks each command's events
   (`progressJobs`). Events: `.jobsSet`, `.jobDone(kind)`.
 - **Cuddle jobs name their birds.** "Cuddle Juniper and Pip" picks up to `jobPetBirds` (3) birds at
@@ -560,6 +575,65 @@ To add one: append a `Milestone` to `Milestones.all` (list order is the ladder),
 - `jobsPerDay = 0` turns daily jobs off. `seasonGoals = false` turns season goals off. Most tests
   turn both off (`startedGame`); `JobsTests` covers them.
 - CLI: `jobs`. App: the "Today" button on the farm opens the jobs sheet.
+
+## Daylight and errands
+
+`Daylight.swift`. A day has a few slots of daylight. Care is always free, and an errand takes a slot.
+Sleep waits until every slot is spent, and nothing is ever lost: a refused errand waits for the morning.
+
+- **Slots today** (`GameState.slotsToday(rules:)`): `daySlots` (3), plus `slotBonusCoopUpgraded` (1)
+  once the coop has more perches than it started with, plus `slotBonusLapChicken` (1) while a lap chicken
+  is at home (in the coop, in the brooder, or a chick with its mother). Never more than `maxDaySlots` (5).
+- **Slots left** (`slotsLeft`): today's slots minus `slotsUsed`, never below 0. Today's slots can drop
+  in the day, for example when a lap chicken goes to a new home.
+- **What each command costs** (`Engine.errand(for:)`):
+
+| Cost | Commands | Errand |
+| --- | --- | --- |
+| Free, never refused for time | `chooseStarter`, `feed`, `feedPremium`, `collectEggs`, `sellEggs`, `sellChosenEggs`, `sellClearEggs`, `closeCoop`, `pet`, `giveTreat`, `rename`, `incubate`, `incubateEggs`, `sit`, `sitEggs`, `penBird`, `unpenBird` | none |
+| One slot | `buy`, `buySpecial`, `buyIncubator` | `.village` (Speckle & Down) |
+| One slot | `candle`, `candleEgg` | `.candling` |
+| One slot | `enterShow`, `enterShowIn`, `enterEggs`, `enterEggPlate` | `.showDesk` |
+| One slot | `deliver`, `acceptTrade`, `rehome` | `.neighbour` |
+| One slot | `upgradeCoop` | `.building` |
+| One slot, no effect | `rest` | none |
+| Waits for evening | `passNight` | none |
+
+- **The first of a kind pays.** The first errand of a kind each day spends a slot. The engine adds the
+  kind to `errandsToday`. More errands of the same kind that day are free, also when no slot is left:
+  the keeper is already there. Event: `.slotSpent(errand, left:)`.
+- **Setting eggs is free.** Candling is the errand. Show day itself runs at night and costs nothing:
+  entering is the errand.
+- **A refused command spends nothing.** Only a command that goes through spends a slot. A command
+  refused for another reason (no coins, no egg, `.notYet`) costs no daylight.
+- **No time left.** A new kind of errand with no slot left is refused with `.noTimeLeft(errand)`. The
+  words say when to come back ("Too dark to candle now. First thing in the morning."). The time check
+  runs after the early-game check. Front ends call `Engine.daylightRefusal(for:in:)` to show the
+  words in place of a button.
+- **Rest.** `rest` spends one slot and changes nothing else. Event: `.rested(timeOfDay)` and
+  `.slotSpent(nil, left:)`. The words pick a line for the time of day from `shopSeed`, the day and
+  the slot, not the game RNG. With no slot left, `rest` is refused with `.timeForBed`.
+- **The sleep gate.** `passNight` is refused with `.notEveningYet(slotsLeft:)` while a slot is left
+  ("The sun's still up. There's time for 2 more things."). `Engine.restUntilEvening` rests until no
+  slot is left. The CLI `day N` and the sim use it.
+- **Time of day** (`TimeOfDay`: morning, afternoon, evening). The game works it out from the slots. It
+  is never stored. Evening: one slot left, or none. Morning: no slot spent yet. Afternoon: any other
+  time. The rest line and the app's light follow it.
+- **A new day.** The night resets `slotsUsed` to 0 and empties `errandsToday`. This is the first step
+  after the new day starts (see "Night order").
+- **The day-9 lesson** (`Feature.daylight`). The neighbour says: "There's only so much daylight. Feed
+  and cuddle whenever you like, but you'll fit about three errands in a day." Before the lesson,
+  nothing is refused for time, no slot is spent, and `passNight` is free. `rest` is refused with
+  `.notYet(.daylight)`.
+- `Engine.newGame(earlyGame: false)` starts with the lesson known. A save from before daylight existed
+  gets the lesson on its next morning, because its day has come.
+- Saves: `slotsUsed` and `errandsToday` are saved. An old save loads with a fresh day (0 slots used,
+  no errands) and the standard daylight rules (`SaveFormat.fillNewSettings`).
+- CLI: the sun prompt, `rest`, `time`. App: the sun mark in the HUD and the "Rest a while" / "Sleep"
+  button (see `docs/design/README.md`, "Daylight (HUD)").
+- **Day and night in the app** follow game time, not the device clock. Morning and afternoon are day.
+  Evening starts a 30-minute crossfade to night. Night lasts from Sleep until the morning report (or the
+  farm) shows. Before the lesson there is no evening, so the farm is day until Sleep.
 
 ## Realism rules (tested)
 

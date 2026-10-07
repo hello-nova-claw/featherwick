@@ -50,7 +50,7 @@ Exceptions:
 
 Underline and selected-tab stroke: `ink` at 50–75% opacity (`rgba(42,35,32,.5)` for headline underlines, `.75` for tab underlines).
 
-### Colour — night (18:00–05:59, ~30 min crossfade)
+### Colour — night (from evening in game time, ~30 min crossfade; night from Sleep until morning)
 | Token | Hex |
 |---|---|
 | `paper` | `#1B1817` |
@@ -185,7 +185,7 @@ All screens are 393×852 (iPhone 15/16). Sheets sit over the dimmed farm.
 - 4 panels to swipe between: Barn, Yard, Far yard, Shop. The Yard and the Far yard draw a placeholder 2.5D scene (see Farm scene). Until their paintings exist, the Barn and the Shop are a flat colour with a dashed "scene" box.
 - One place per panel: Barn: Coop. Yard: Yard. Far yard: Back fence. Shop: Farm gate. Its button sits in the bottom row after Today, so it never covers the scene, and it changes as you swipe. The Coop sheet holds the brooder, chicks with their mothers, broody hens and the incubator too (there is no separate potting shed).
 - Panel rail: a white box down the right side, under the HUD, with one dot per panel in swipe order. Tap a dot to go there. The current panel is an ink dot. A panel off screen with a notice gets a bigger dot in its notice colour (decision, then collect, then story) with a ring. Others are small `unknown` dots. VoiceOver reads the panel name and its notices.
-- Bottom: "Books" (Caslon Display 23) bottom-left, then "Today", then the place of the panel on screen (Coop, Yard, Back fence or Farm gate), and a settings button "≡" bottom-right, all white boxes with radius 10, 56pt tall, 24pt above the home indicator.
+- Bottom: "Books" (Caslon Display 23) bottom-left, then "Today", then the place of the panel on screen (Coop, Yard, Back fence or Farm gate), then "Rest a while" ("Sleep" when the last slot is spent; only after the daylight lesson), and a settings button "≡" bottom-right, all white boxes with radius 10, 56pt tall, 24pt above the home indicator.
 - Books appears when the early game introduces the Breed Book (the `breedBook` lesson, the morning the first chick's sex shows). Until then, an "added to the Breed Book" toast has no "View". "≡" is always there.
 - Today shows how many of today's jobs are left in a buff badge. When all are done, the badge goes: "Today" turns `inkMuted`, with an ink tick and "Done" (Figtree 13). VoiceOver reads "Today, all jobs done".
 - Farm gate notice "new in today": stock the early game brought in this morning. It goes when the keeper opens the Farm gate or buys something there. The app keeps what was seen (per save slot); the game does not.
@@ -237,7 +237,8 @@ Opens once each morning after Sleep in the Coop sheet, before the farm. Context 
 
 ## Interactions & behaviour
 - **Tap place → sheet.** SpriteKit hit-tests the tap area and presents the matching SwiftUI sheet. Sheets dismiss by swipe or ×.
-- **Day/night:** follows the device clock. Tokens crossfade over 30 minutes at 18:00 and 06:00. For testing, Settings ▸ Time of day pins Day or Night (Clock goes back to the device clock).
+- **Day/night:** follows game time, not the device clock. Morning and afternoon use the day tokens. Evening starts a 30-minute crossfade to the night tokens. Night starts when the keeper taps Sleep and lasts until the morning report (or the farm) shows. Before the daylight lesson (day 9) there is no evening, so the farm is day until Sleep. For testing, Settings ▸ Time of day pins Day or Night (Game goes back to game time).
+- **Daylight (HUD):** after the daylight lesson, the HUD shows a sun mark on a dashed track, one place per slot. Tap it for the time in words ("Afternoon. Time for 2 more errands."). The button left of "≡" says "Rest a while" until the last slot is spent, then "Sleep". A rest plays for about 4 seconds (1 second with Reduce Motion) and cannot be skipped: the sun slides one place, the light moves on, and the yard birds stop to peck. Price buttons at Speckle & Down and show entry rows disable when no slot is left, and show why. The show tip and "Enter the show" on the bird card show the reason in place of the button. "No time left" and "not evening yet" come as a note from the neighbour, not a toast.
 - **Toasts:** slide down under the HUD over 250ms ease-out, fade out after 4 seconds.
 - **Friendliness toasts:** a cuddle or treat that makes a bird tamer gives a small toast ("Juniper liked that", "Juniper enjoyed the mealworm"). A move up a friendliness band gives its own toast instead ("Juniper seems friendly now."). No action on either.
 - **Buttons:** pressed scale 0.97 over 120ms. Light haptic on Cuddle, Treat and Set to hatch.

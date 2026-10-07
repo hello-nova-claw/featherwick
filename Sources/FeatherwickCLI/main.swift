@@ -122,8 +122,10 @@ let help = """
       unpen <name>         take a bird out of the breeding pen
       upgrade coop         add \(game.state.rules.perchesPerUpgrade) perches (\(game.state.rules.coopUpgradePrice) coins)
       close                shut the coop door (safe from the fox, but you must feed)
+      rest                 sit a while: spends one slot of daylight
+      time                 the time of day, and how many errands fit before dark
       sleep                pass the night (door left open? birds forage: fed free + a small bonus, but fox risk)
-      day [n]              do a full day n times: feed, collect, close, sleep
+      day [n]              do a full day n times: feed, collect, close, rest until evening, sleep
       book                 Breed Book and egg colours
       journal              your milestones and what to aim for next
       jobs                 today's jobs and this season's goal (do all the jobs for a small reward)
@@ -134,11 +136,25 @@ let help = """
     """
 
 @MainActor func run(_ command: Command) {
+    run { Engine.apply(command, to: &$0, using: &$1) }
+}
+
+/// Runs one engine step on the game and prints its events.
+@MainActor func run(_ step: (inout GameState, inout SeededRNG) -> [GameEvent]) {
     var state = game.state
     var rng = game.rng
-    let events = Engine.apply(command, to: &state, using: &rng)
+    let events = step(&state, &rng)
     game = SaveFile(state: state, rng: rng)
     for e in events { if let t = eventText(e, state) { print(t) } }
+}
+
+/// The prompt. Once the daylight lesson is in, it shows the day's slots: a filled sun for each
+/// slot spent and a hollow one for each slot left, e.g. `Day 31 · ☀︎☀︎○ > `.
+func prompt(_ s: GameState) -> String {
+    guard s.isOpen(.daylight) else { return "> " }
+    let left = s.slotsLeft
+    let used = max(0, s.slotsToday(rules: s.rules) - left)
+    return "Day \(s.day) · " + String(repeating: "☀︎", count: used) + String(repeating: "○", count: left) + " > "
 }
 
 print("Featherwick · slot: \(store.slot) · save: \(store.url.path)")
@@ -163,7 +179,7 @@ look(game.state)
 
 while true {
     askForNames()
-    print("\n> ", terminator: "")
+    print("\n" + prompt(game.state), terminator: "")
     guard let line = readLine() else { break }
     let words = line.lowercased().split(separator: " ").map(String.init)
     guard let verb = words.first else { continue }
@@ -373,6 +389,8 @@ while true {
         }
         run(.upgradeCoop)
     case "close": run(.closeCoop)
+    case "rest": run(.rest)
+    case "time": print(timeOfDayText(game.state))
     case "sleep", "s": run(.passNight)
     case "day":
         let n = max(1, words.count > 1 ? Int(words[1]) ?? 1 : 1)
@@ -381,6 +399,7 @@ while true {
             if !game.state.nest.isEmpty { run(.collectEggs) }
             if game.state.carton.count >= game.state.cartonCapacity { run(.sellEggs) }
             run(.closeCoop)
+            run { Engine.restUntilEvening(&$0, using: &$1) }
             run(.passNight)
         }
     case "book", "b": book(game.state)

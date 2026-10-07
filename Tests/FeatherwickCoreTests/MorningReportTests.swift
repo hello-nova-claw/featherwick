@@ -24,7 +24,7 @@ struct MorningReportTests {
             if s.carton.count >= s.cartonCapacity { _ = Engine.apply(.sellEggs, to: &s, using: &rng) }
             _ = Engine.apply(.incubate(count: 1), to: &s, using: &rng)  // a "no" is fine
             if d % 5 != 4 { _ = Engine.apply(.closeCoop, to: &s, using: &rng) }
-            let ev = Engine.apply(.passNight, to: &s, using: &rng)
+            let ev = sleepTonight(&s, &rng)
             nights.append((ev, s))
         }
         return nights
