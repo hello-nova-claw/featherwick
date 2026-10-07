@@ -56,6 +56,8 @@ struct CoopSheet: View {
             eggActions(s, chosen: chosen)
             Group {
                 StitchDivider()
+                BrooderSection(open: open)
+                StitchDivider()
                 nightActions(s)
                 LastWords()
             }
@@ -343,17 +345,18 @@ struct BirdList: View {
     }
 }
 
-// MARK: - Potting shed
+// MARK: - Brooder (in the coop)
 
-/// The potting shed: the brooder, chicks with their mothers, the incubator, and naming.
-struct PottingShedSheet: View {
+/// The brooder, chicks with their mothers, broody hens sitting, and the incubator. Part of the coop
+/// sheet: the barn has one button (Coop), so the old potting shed lives here.
+struct BrooderSection: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
     let open: (FarmSheet) -> Void
 
     var body: some View {
         let s = store.state
-        SheetPage(context: "The potting shed") {
+        VStack(alignment: .leading, spacing: Space.m) {
             Text("Brooder").font(Typeface.title)
             if !s.unnamedBirds.isEmpty {
                 Button("Name the new \(s.unnamedBirds.count == 1 ? "bird" : "birds")") { open(.naming) }
@@ -366,23 +369,26 @@ struct PottingShedSheet: View {
                 Text("With their mother").font(Typeface.item)
                 BirdList(birds: s.henChicks, open: open)
             }
-            // No incubator, no mention of one: the shed shows only what the keeper has.
+            // No incubator, no mention of one: the coop shows only what the keeper has.
             if s.hasIncubator {
                 Text("Incubator").font(Typeface.item)
                 Text(incubatorText(s)).font(Typeface.body).foregroundStyle(palette.inkSoft)
             }
             ForEach(s.clutches.filter { $0.henID != nil }, id: \.henID) { c in
-                Text("\(birdName(c.henID!, s)) is sitting on \(c.eggs.count) egg(s). They hatch on day \(c.hatchDay).")
-                    .font(Typeface.body).foregroundStyle(palette.inkSoft)
+                Text(sittingText(c, s)).font(Typeface.body).foregroundStyle(palette.inkSoft)
             }
-            LastWords()
         }
-        .presentationDetents([.medium, .large])
+    }
+
+    private func sittingText(_ c: Clutch, _ s: GameState) -> String {
+        let hen: String = c.henID.map { birdName($0, s) } ?? "A hen"
+        return "\(hen) is sitting on \(c.eggs.count) egg(s). They hatch on day \(c.hatchDay)."
     }
 
     private func incubatorText(_ s: GameState) -> String {
         guard let c = s.incubatorClutch else {
-            return "Empty. Holds \(s.incubatorSize) egg\(s.incubatorSize == 1 ? "" : "s"). Set eggs from the coop."
+            let holds: String = "\(s.incubatorSize) egg\(s.incubatorSize == 1 ? "" : "s")"
+            return "Empty. Holds \(holds). Set eggs from the carton above."
         }
         let warming = "\(c.eggs.count) of \(s.incubatorSize) eggs warming. They hatch on day \(c.hatchDay)."
         let space = s.incubatorSize - c.eggs.count

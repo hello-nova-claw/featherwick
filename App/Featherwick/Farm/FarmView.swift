@@ -37,7 +37,7 @@ enum FarmPanel: Int, CaseIterable, Identifiable {
     /// The places on this panel. The barn holds the coop and nests, the incubator and the brooder.
     var places: [Place] {
         switch self {
-        case .barn: [.coop, .pottingShed]
+        case .barn: [.coop]
         case .yard: [.yard]
         case .farYard: [.backFence]
         case .shop: [.farmGate]
@@ -127,16 +127,14 @@ struct FarmView: View {
         ScrollView(.horizontal) {
             HStack(spacing: 0) {
                 ForEach(FarmPanel.allCases) { p in
-                    FarmPanelView(panel: p, openBird: { sheet = .bird($0) }) { place in
-                        PlaceLabel(place: place, notices: notices(for: place)) { sheet = .place(place) }
-                    }
-                    // The Barn's birds, in the ground band under the place labels (see `FarmBirds.swift`).
-                    // The yards draw theirs inside the scene, so they sort against the trees.
-                    .overlay {
-                        if !SceneArt.hasScene(p) { PanelBirds(panel: p) { sheet = .bird($0) } }
-                    }
-                    .containerRelativeFrame(.horizontal)
-                    .id(p)
+                    FarmPanelView(panel: p, openBird: { sheet = .bird($0) })
+                        // The Barn's birds, in the ground band (see `FarmBirds.swift`).
+                        // The yards draw theirs inside the scene, so they sort against the trees.
+                        .overlay {
+                            if !SceneArt.hasScene(p) { PanelBirds(panel: p) { sheet = .bird($0) } }
+                        }
+                        .containerRelativeFrame(.horizontal)
+                        .id(p)
                 }
             }
             .scrollTargetLayout()
@@ -154,10 +152,10 @@ struct FarmView: View {
         Binding(get: { scrolled ?? .yard }, set: { scrolled = $0 })
     }
 
-    /// Books, Today and settings. Books waits until the neighbour shows the keeper the Breed Book
-    /// (the early game's `breedBook` lesson). Settings is always there.
+    /// Books, Today, the place of the panel on screen, and settings. Books waits until the neighbour shows the
+    /// keeper the Breed Book (the early game's `breedBook` lesson). Settings is always there.
     private var bottomBar: some View {
-        HStack {
+        HStack(alignment: .bottom) {
             if store.state.isOpen(.breedBook) {
                 FloatingBox {
                     Button("Books") { sheet = .books }
@@ -172,6 +170,7 @@ struct FarmView: View {
                     TodayButtonLabel()
                 }
             }
+            panelPlaces
             Spacer()
             FloatingBox {
                 Button {
@@ -181,6 +180,14 @@ struct FarmView: View {
                 }
                 .accessibilityLabel("Settings")
             }
+        }
+    }
+
+    /// The place button of the panel on screen (Coop, Yard, Back fence, Farm gate) sits in the bottom
+    /// row, so it never covers the scene. It changes as the keeper swipes.
+    private var panelPlaces: some View {
+        ForEach(panel.wrappedValue.places) { place in
+            PlaceLabel(place: place, notices: notices(for: place)) { sheet = .place(place) }
         }
     }
 
@@ -207,7 +214,8 @@ struct FarmView: View {
         switch which {
         case .place(.coop): CoopSheet(open: open)
         case .place(.yard): YardSheet(open: open)
-        case .place(.pottingShed): PottingShedSheet(open: open)
+        // The old potting shed is part of the coop sheet now (`BrooderSection`).
+        case .place(.pottingShed): CoopSheet(open: open)
         case .place(.farmGate): FarmGateSheet()
         case .place(.backFence): BackFenceSheet()
         case .bird(let id): BirdCardSheet(birdID: id, context: "In the flock")
@@ -233,39 +241,38 @@ struct FarmView: View {
         Dictionary(uniqueKeysWithValues: FarmPanel.allCases.map { p in (p, p.places.flatMap { notices(for: $0) }) })
     }
 
+    /// Birds in the brooder waiting for a free perch, and how soon one is rehomed.
+    private func perchNotice(_ s: GameState) -> Notice? {
+        let waiting = s.birdsWaitingForPerch
+        guard !waiting.isEmpty else { return nil }
+        let soonest = waiting.compactMap { s.nightsUntilRehomed($0.id) }.min()
+        let note = soonest.map { $0 <= 1 ? ", rehomed tomorrow" : ", \($0) nights left" } ?? ""
+        return Notice(kind: .decision, text: "\(waiting.count) need\(waiting.count == 1 ? "s" : "") a perch\(note)")
+    }
+
     /// What each place has waiting. The words carry the meaning; the dot only draws the eye.
     private func notices(for place: Place) -> [Notice] {
         let s = store.state
         switch place {
         case .coop:
+            // The coop holds the brooder and the incubator too (the old potting shed).
             var n: [Notice] = []
-            // The naming notice sits where the bird lives, so a bird that moved to the coop is named there.
-            if let bird = s.unnamedBirds.first(where: { b in s.coop.contains { $0.id == b.id } }) {
+            if let bird = s.unnamedBirds.first {
                 n.append(Notice(kind: .decision, text: "\(bird.revealed ? "a bird" : "a chick") needs a name"))
             }
             if !s.nest.isEmpty {
                 n.append(Notice(kind: .collect, text: "\(s.nest.count) egg\(s.nest.count == 1 ? "" : "s") waiting"))
             }
+            if let perch = perchNotice(s) { n.append(perch) }
+            if let c = s.incubatorClutch, c.hatchDay <= s.day + 1 {
+                n.append(Notice(kind: .collect, text: "hatching tonight"))
+            }
             if palette.isNight && s.coopDoorOpen { n.append(Notice(kind: .decision, text: "door still open")) }
             if palette.isNight && !s.coopDoorOpen { n.append(Notice(kind: .story, text: "\(s.coop.count) asleep")) }
             return n
         case .pottingShed:
-            var n: [Notice] = []
-            if let bird = s.unnamedBirds.first(where: { b in !s.coop.contains { $0.id == b.id } }) {
-                n.append(Notice(kind: .decision, text: "\(bird.revealed ? "a bird" : "a chick") needs a name"))
-            }
-            let waiting = s.birdsWaitingForPerch
-            if !waiting.isEmpty {
-                let soonest = waiting.compactMap { s.nightsUntilRehomed($0.id) }.min()
-                let note = soonest.map { $0 <= 1 ? ", rehomed tomorrow" : ", \($0) nights left" } ?? ""
-                n.append(
-                    Notice(
-                        kind: .decision, text: "\(waiting.count) need\(waiting.count == 1 ? "s" : "") a perch\(note)"))
-            }
-            if let c = s.incubatorClutch, c.hatchDay <= s.day + 1 {
-                n.append(Notice(kind: .collect, text: "hatching tonight"))
-            }
-            return n
+            // Not on the farm any more: its notices show under the coop.
+            return []
         case .backFence:
             let news = Engine.storyAwaitingDelivery(s) != nil || s.tradeOffer != nil
             return news ? [Notice(kind: .story, text: "has news")] : []
@@ -289,15 +296,14 @@ struct FarmView: View {
     }
 }
 
-/// One farm panel and its place labels. The Yard and the Far yard draw the 2.5D scene with the coop birds
+/// One farm panel (its place button is in the bottom row, `FarmView.panelPlaces`). The Yard and the Far yard draw the 2.5D scene with the coop birds
 /// in it (`YardScene`). The others show a stand-in colour and a dashed box where the painting will go.
 /// Night darkens and cools both.
-struct FarmPanelView<PlaceButton: View>: View {
+struct FarmPanelView: View {
     @Environment(\.palette) private var palette
     let panel: FarmPanel
     /// Opens a bird's card when a bird in the scene is tapped.
     let openBird: (UUID) -> Void
-    @ViewBuilder let label: (Place) -> PlaceButton
 
     var body: some View {
         ZStack {
@@ -305,9 +311,6 @@ struct FarmPanelView<PlaceButton: View>: View {
                 YardScene(panel: panel, open: openBird)
             } else {
                 standIn
-            }
-            VStack(spacing: Space.xl) {
-                ForEach(panel.places) { label($0) }
             }
         }
     }

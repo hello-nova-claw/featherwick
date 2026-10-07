@@ -48,9 +48,10 @@ components, screens 1a–8a). The painted farm and bird art come later; dashed b
 - `App/Featherwick/Design/`: tokens (`Theme.swift`: `Palette` day/night, `Typeface`, `Space`, `Radius`,
   `Stitch`), marks (eggs, feathers, dabs) and components (buttons, tabs, sheet page, notices).
   Use these; do not hard-code colours, fonts or sizes in screens.
-- `Farm/FarmView.swift`: HUD, 4 swipe panels, a panel rail (dots, right side), Books, ≡. Panels left to right: Barn (Coop,
-  Potting shed), Yard (Yard), Far yard (Back fence), Shop (Farm gate). Barn and Shop are a flat colour until
-  their painting exists. Each place opens a sheet (`Sheets/`). Notices under a place come from game state.
+- `Farm/FarmView.swift`: HUD, 4 swipe panels, a panel rail (dots, right side), and a bottom row: Books, Today,
+  the panel's place, ≡. Panels left to right: Barn (Coop, which holds the brooder too), Yard (Yard), Far yard
+  (Back fence), Shop (Farm gate). Barn and Shop are a flat colour until their painting exists. Each place opens
+  a sheet (`Sheets/`). Notices under a place come from game state.
 - `Scene/`: the 2.5D scene on the Yard and Far yard (`FarmScene`): depth from ground Y (`SceneDepth`), walk
   mask (`WalkMask`), seeded trees (`SceneTrees`), tufts, and the season-ramp shader (`SeasonRamp.swift/.metal`).
   Art in `Art/Scene/` and `Scene/SceneArtLayout.swift` come from `python3 scripts/make_scene_art.py`;
