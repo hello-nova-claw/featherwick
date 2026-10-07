@@ -319,8 +319,11 @@ while true {
             break
         }
         let s = game.state
+        // The same inputs as the pen panel: the seen family (for "likely" lines) and how related they are.
+        let family = Visible.all(in: s)
         let forecast = Planner.forecast(
-            hen: Visible(bird: hen, in: s), rooster: Visible(bird: rooster, in: s), knowledge: Knowledge.of(s))
+            hen: Visible(bird: hen, in: s), rooster: Visible(bird: rooster, in: s), knowledge: Knowledge.of(family),
+            family: family, kinship: Pedigree.relatedness(hen.id, rooster.id, in: s), rules: s.rules)
         print("\(hen.name) with \(rooster.name):")
         pairLines(forecast, s).forEach { print("  " + $0) }
     case "carries":

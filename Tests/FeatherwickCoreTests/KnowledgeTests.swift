@@ -317,14 +317,8 @@ import Testing
         }
     }
 
-    /// The same bird with only its single genes; the quantitative genes at their defaults.
-    static func singleGenes(_ g: Genome) -> Genome {
-        var out = Genome(sex: g.sex)
-        for space in GenotypeSpace.all { out.setAlleles(g.alleles(at: space.locus), at: space.locus) }
-        return out
-    }
-
-    /// Breeds the real genes of one pair `soundCrosses` times and checks each forecast line against them.
+    /// Breeds the real genomes of one pair `soundCrosses` times with `Breeding.cross` and checks each
+    /// forecast line against the chicks. Egg colours are matched in their coarse form.
     static func checkSoundness(_ p: SoundPair, seed: UInt64) -> SoundResult {
         var r = SoundResult(pairs: 1)
         let s = p.state
@@ -337,12 +331,8 @@ import Testing
         var daughters = 0
         var barredDaughters = 0
         var eggs: Set<EggColour> = []
-        // The real single genes. The many small genes are left out: no forecast trait reads them (egg
-        // colours are coarse), and they make each cross several times slower.
-        let mother = singleGenes(p.hen.genome)
-        let father = singleGenes(p.rooster.genome)
         for _ in 0..<soundCrosses {
-            let chick = Phenotype(try! Breeding.cross(mother: mother, father: father, using: &rng))
+            let chick = Phenotype(try! Breeding.cross(mother: p.hen.genome, father: p.rooster.genome, using: &rng))
             for (i, t) in FeatherwickCore.Trait.planned.enumerated() where t.isShown(by: chick) { counts[i] += 1 }
             if chick.sex == .hen {
                 daughters += 1

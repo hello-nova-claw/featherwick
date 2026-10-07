@@ -33,7 +33,7 @@ public enum Reason: Hashable, Codable, Sendable {
     case unknownFamily(locus: LocusID)
     /// This bird had this many chicks and none showed it. A likelihood, not a proof.
     case manyChicks(bird: UUID, count: Int, locus: LocusID)
-    /// The practice judge's grades for each bird.
+    /// The type bands a show judge gave each bird, at its newest show.
     case grades(hen: UUID, rooster: UUID)
     /// The family tree.
     case family(hen: UUID, rooster: UUID)
@@ -59,8 +59,8 @@ public enum Forecast: Hashable, Codable, Sendable {
     case sexLink(barredAre: Sex, Reason)
     /// The egg colours this pair's daughters can lay. `sure` is false when it turns on an open gene.
     case eggColours([EggColour], sure: Bool, Reason)
-    /// The practice judge's type grades for the hen and the rooster.
-    case typeOutlook(Grade, Grade, Reason)
+    /// The type bands a show judge gave the hen and the rooster (`Visible.typeBand`).
+    case typeOutlook(JudgeNote.Band, JudgeNote.Band, Reason)
     /// How closely related the pair are, in the keeper's words.
     case kinship(Relatedness, Reason)
     /// One or both are white, so anything either carries could show.
@@ -496,7 +496,7 @@ private struct PairWork {
         out += likely.sorted { rank($0) < rank($1) }
         out += possible
         out += notPossibleLines(impossible)
-        if let a = hen.typeGrade, let b = rooster.typeGrade {
+        if let a = hen.typeBand, let b = rooster.typeBand {
             out.append(.typeOutlook(a, b, .grades(hen: hen.id, rooster: rooster.id)))
         }
         if let kinship, kinship != .unrelated {

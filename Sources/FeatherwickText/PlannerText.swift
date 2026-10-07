@@ -229,34 +229,28 @@ private func unlessClause(_ r: Reason) -> String {
     }
 }
 
-private func gradeWord(_ g: Grade) -> String {
-    switch g {
-    case .disqualified: "unplaced"
-    case .fair: "fair"
-    case .good: "good"
-    case .veryGood: "very good"
-    case .excellent: "excellent"
-    }
-}
+/// A type band's rank, worst first: poor, fair, good, excellent.
+private func bandRank(_ b: JudgeNote.Band) -> Int { JudgeNote.Band.allCases.firstIndex(of: b) ?? 0 }
 
-private func typeOutlookText(_ hen: Grade, _ rooster: Grade, _ r: Reason, _ s: GameState) -> String {
-    let grades =
+private func typeOutlookText(_ hen: JudgeNote.Band, _ rooster: JudgeNote.Band, _ r: Reason, _ s: GameState) -> String {
+    let bands =
         if hen == rooster {
-            "Both graded \(gradeWord(hen)) for type."
+            "Both judged \(hen.rawValue) for type."
         } else if case .grades(let h, let ro) = r {
-            "\(birdName(h, s).capitalizedFirst) graded \(gradeWord(hen)) for type, \(birdName(ro, s)) \(gradeWord(rooster))."
+            "\(birdName(h, s).capitalizedFirst) judged \(hen.rawValue) for type, \(birdName(ro, s)) \(rooster.rawValue)."
         } else {
-            "The hen graded \(gradeWord(hen)) for type, the rooster \(gradeWord(rooster))."
+            "The hen judged \(hen.rawValue) for type, the rooster \(rooster.rawValue)."
         }
+    let good = bandRank(.good)
     let outlook =
-        if min(hen, rooster) >= .good {
+        if min(bandRank(hen), bandRank(rooster)) >= good {
             "Chicks should carry it."
-        } else if max(hen, rooster) >= .good {
+        } else if max(bandRank(hen), bandRank(rooster)) >= good {
             "Some chicks should take after the better one."
         } else {
-            "A better-graded partner would help."
+            "A partner judged better for type would help."
         }
-    return "\(grades) \(outlook)"
+    return "\(bands) \(outlook)"
 }
 
 // MARK: - Reasons
@@ -286,7 +280,7 @@ public func plannerReasonText(_ r: Reason, _ s: GameState) -> String {
             ? "\(name) has had 1 chick, and it did not show \(locusNoun(locus))."
             : "\(name) has had \(count) chicks and none showed \(locusNoun(locus))."
     case .grades(let hen, let rooster):
-        return "From the practice judge's grades for \(birdName(hen, s)) and \(birdName(rooster, s))."
+        return "From the judge's notes on \(birdName(hen, s)) and \(birdName(rooster, s)) at their last shows."
     case .family(let hen, let rooster):
         return "From the family trees of \(birdName(hen, s)) and \(birdName(rooster, s))."
     case .white(let bird):

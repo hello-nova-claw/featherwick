@@ -116,13 +116,14 @@ public struct Visible: Hashable, Codable, Sendable, Identifiable {
     public let look: SeenLook?
     /// The friendliness band the keeper sees. Nil for a bird the keeper never handled.
     public let friendliness: Friendliness?
-    /// A show-type grade, once the planner has one. Not filled yet.
-    public let typeGrade: Grade?
+    /// The type band a show judge gave the bird at its newest show with a type note. Nil until a judge
+    /// has said: never worked out from genes, so it tells the keeper only what they were shown.
+    public let typeBand: JudgeNote.Band?
 
     public init(
         id: UUID, name: String, sex: Sex?, stage: LifeStage, breed: Breed?, isPurebred: Bool?, origin: String,
         motherID: UUID?, fatherID: UUID?, look: SeenLook?, friendliness: Friendliness? = nil,
-        typeGrade: Grade? = nil
+        typeBand: JudgeNote.Band? = nil
     ) {
         self.id = id
         self.name = name
@@ -135,7 +136,7 @@ public struct Visible: Hashable, Codable, Sendable, Identifiable {
         self.fatherID = fatherID
         self.look = look
         self.friendliness = friendliness
-        self.typeGrade = typeGrade
+        self.typeBand = typeBand
     }
 
     /// A bird the keeper has (or had, if rehomed). Sex and breed only once they show.
@@ -145,7 +146,8 @@ public struct Visible: Hashable, Codable, Sendable, Identifiable {
             stage: bird.stage(onDay: s.day, rules: s.rules),
             breed: bird.revealed ? bird.breed : nil, isPurebred: bird.revealed ? bird.isPurebred : nil,
             origin: bird.origin, motherID: bird.motherID, fatherID: bird.fatherID,
-            look: SeenLook(of: bird, in: s), friendliness: bird.friendliness)
+            look: SeenLook(of: bird, in: s), friendliness: bird.friendliness,
+            typeBand: Self.typeBand(of: bird.id, in: s))
     }
 
     /// A family-tree record. Its sex is known from its place in the tree (mothers are hens), unless
@@ -163,6 +165,14 @@ public struct Visible: Hashable, Codable, Sendable, Identifiable {
     /// True for a bird bred outside the flock: no parents on record, and not hatched at home.
     /// Its genes are then one of its breed's public recipes (`RecipeTable`).
     public var isFromOutside: Bool { motherID == nil && fatherID == nil && origin != Bird.homeOrigin }
+
+    /// The type band in the judge's notes at the bird's newest show that judged its type. Nil if no judge has.
+    public static func typeBand(of bird: UUID, in s: GameState) -> JudgeNote.Band? {
+        for r in s.showResults.reversed() where r.birdID == bird {
+            for note in r.notes ?? [] { if case .type(let band) = note { return band } }
+        }
+        return nil
+    }
 
     /// True if the keeper has seen the bird (owned or rehomed birds, and records that keep a look).
     public var isSeen: Bool { look != nil }

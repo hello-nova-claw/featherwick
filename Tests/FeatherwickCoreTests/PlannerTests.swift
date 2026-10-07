@@ -363,15 +363,40 @@ import Testing
 
     // MARK: - Type and kinship
 
-    @Test func typeOutlookNeedsBothGrades() {
+    /// A type band comes only from a judge's notes the keeper was shown: the newest show that judged type.
+    @Test func typeBandComesFromTheNewestShowNotes() {
+        var (s, rng) = startedGame(sex: .hen)
+        let hen = Self.add(Breed.orpington.purebred(.hen), .orpington, origin: Self.shop, &s, &rng)
+        let rooster = Self.add(Breed.orpington.purebred(.rooster), .orpington, origin: Self.shop, &s, &rng)
+        func result(_ bird: Bird, day: Int, _ notes: [JudgeNote]) -> ShowResult {
+            ShowResult(
+                day: day, showClass: .breed(.orpington), entrantName: bird.name, placing: 1, fieldSize: 8, score: 80,
+                prize: 30, birdID: bird.id, treats: 0, notes: notes, theme: nil, podium: nil)
+        }
+        #expect(Visible(bird: hen, in: s).typeBand == nil)
+        #expect(
+            !Self.has(Self.lines(s, hen: hen, rooster: rooster)) { if case .typeOutlook = $0 { true } else { false } })
+        s.showResults = [
+            result(hen, day: 28, [.type(.fair)]), result(rooster, day: 28, [.type(.excellent)]),
+            result(hen, day: 56, [.type(.good), .inFineCondition]),
+            // A pet-class card has no type note: the band stays the last one judged.
+            result(hen, day: 84, [.friendliness(.friendly)]),
+        ]
+        #expect(Visible(bird: hen, in: s).typeBand == .good)
+        #expect(
+            Self.lines(s, hen: hen, rooster: rooster).contains(
+                .typeOutlook(.good, .excellent, .grades(hen: hen.id, rooster: rooster.id))))
+    }
+
+    @Test func typeOutlookNeedsBothBands() {
         let hen = Visible(
             id: KnowledgeTests.id(1), name: "Hen", sex: .hen, stage: .adult, breed: .orpington, isPurebred: true,
             origin: Bird.homeOrigin, motherID: nil, fatherID: nil,
-            look: KnowledgeTests.look(KnowledgeTests.genome(.hen), .laying), typeGrade: .good)
+            look: KnowledgeTests.look(KnowledgeTests.genome(.hen), .laying), typeBand: .good)
         var rooster = Visible(
             id: KnowledgeTests.id(2), name: "Rooster", sex: .rooster, stage: .adult, breed: .orpington,
             isPurebred: true, origin: Bird.homeOrigin, motherID: nil, fatherID: nil,
-            look: KnowledgeTests.look(KnowledgeTests.genome(.rooster)), typeGrade: .excellent)
+            look: KnowledgeTests.look(KnowledgeTests.genome(.rooster)), typeBand: .excellent)
         let both = Planner.forecast(hen: hen, rooster: rooster, knowledge: Knowledge.of([hen, rooster]))
         #expect(both.contains(.typeOutlook(.good, .excellent, .grades(hen: hen.id, rooster: rooster.id))))
         rooster = Visible(

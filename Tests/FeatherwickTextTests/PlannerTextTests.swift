@@ -71,7 +71,7 @@ import Testing
             ),
             (
                 .typeOutlook(.good, .good, .grades(hen: hen, rooster: rooster)),
-                "Both graded good for type. Chicks should carry it."
+                "Both judged good for type. Chicks should carry it."
             ),
             (.kinship(.halfSiblings, .family(hen: hen, rooster: rooster)), "They are related like half-siblings."),
             (.kinship(.unrelated, .family(hen: hen, rooster: rooster)), "They are not related."),

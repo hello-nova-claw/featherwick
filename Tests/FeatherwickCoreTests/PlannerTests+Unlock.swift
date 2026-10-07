@@ -3,8 +3,10 @@ import Testing
 
 @testable import FeatherwickCore
 
+// MARK: - Unlock
+
 /// "What might hatch" opens with the first hatch-day why note, and the pen's notice waits for the first look.
-@Suite struct PlannerUnlockTests {
+extension PlannerTests {
     /// Two black parents in the coop, set to hatch `chicks` tonight. Carriers of lavender unless `plain`.
     static func pairReadyToHatch(_ chicks: [Genome], plannerKnown: Bool = false) -> (GameState, SeededRNG) {
         var (s, rng) = startedGame(sex: .hen, rules: calmRules())
