@@ -17,6 +17,8 @@ struct YardScene: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let panel: FarmPanel
     let open: (UUID) -> Void
+    /// Where each chicken in this scene is heading, so a hen's chicks can follow her.
+    @State private var leads = SceneLeads()
 
     var body: some View {
         if reduceMotion {
@@ -37,14 +39,29 @@ struct YardScene: View {
         let s: GameState = store.state
         let inside: Bool = palette.isNight || !s.coopDoorOpen
         let birds: [Bird] = FarmFlock.birds(at: spot, in: s, inside: inside, now: now)
+        let follows: [UUID: ChickFollow] = FarmFlock.following(in: s)
         return FarmScene(panel: panel, season: s.season) { (depth: SceneDepth, size: CGSize) in
             ForEach(birds) { (bird: Bird) in
                 SceneChicken(
                     bird: bird, height: FarmFlock.sceneHeight(of: bird, in: s), panel: panel, depth: depth,
-                    size: size, now: now, open: open)
+                    size: size, now: now, follow: follows[bird.id], leads: leads, open: open)
             }
         }
     }
+}
+
+/// Where each chicken in one yard scene is heading, and which way it faces there. A hen writes hers each
+/// time she sets off; her chicks read it and trail her. A plain class, not observed: the chicks look on
+/// their own slow loop, so a hen's walk never redraws the scene.
+@MainActor
+final class SceneLeads {
+    var heading: [UUID: SceneLead] = [:]
+}
+
+/// Where one chicken is heading in the scene, in unit coordinates, and which way it faces there.
+struct SceneLead: Sendable {
+    let spot: CGPoint
+    let facingRight: Bool
 }
 
 /// Where scene chickens stand and how they move, in unit coordinates over the panel ((0, 0) top left).
@@ -108,6 +125,27 @@ enum SceneFlock {
         return nil
     }
 
+    /// Which way a bird faces at its start, from its id.
+    static func startsFacingRight(_ id: UUID) -> Bool { id.uuid.5 % 2 == 0 }
+
+    /// A chick's spot behind its mother: back from the way she faces, one gap per place in her line,
+    /// stepping up and down in turn. Gaps shrink with depth, like the birds. On walkable ground if possible.
+    static func trail(
+        behind lead: SceneLead, place: Int, depth: SceneDepth, size: CGSize, mask: WalkMask?
+    ) -> CGPoint {
+        // A first layout pass can be zero size: never divide by less than a point.
+        let width: CGFloat = max(1, size.width)
+        let height: CGFloat = max(1, size.height)
+        let scale: CGFloat = depth.scale(atGroundY: lead.spot.y * height)
+        let back: CGFloat = lead.facingRight ? -1 : 1
+        let side: CGFloat = place % 2 == 0 ? 1 : -1
+        let wish = CGPoint(
+            x: lead.spot.x + back * FarmFlock.chickGap * CGFloat(place + 1) * scale / width,
+            y: lead.spot.y + side * FarmFlock.chickSideStep * scale / height)
+        guard let mask else { return wish }
+        return nearestWalkable(to: wish, in: mask) ?? lead.spot
+    }
+
     /// Just past the panel's left or right edge, so the whole bird is off it.
     static func offEdge(right: Bool, height: CGFloat, width: CGFloat) -> CGFloat {
         // A first layout pass can be tiny: never measure the edge against less than a narrow phone.
@@ -121,6 +159,9 @@ enum SceneFlock {
 /// and draw order (`SceneDepth`). When its stay is over it walks off the shared edge, and it walks in on
 /// the next panel. With Reduce Motion on, it stands at its start.
 ///
+/// A hen chick follows its mother instead (`follow`): it keeps her stroll, so it changes yards with her, and
+/// every moment or so it walks to its spot behind where she is heading (`SceneFlock.trail`).
+///
 /// Touch is as for every bird (`PettableBird`): tap for the card, press and rub to pet.
 struct SceneChicken: View {
     @Environment(GameStore.self) private var store
@@ -133,6 +174,10 @@ struct SceneChicken: View {
     let size: CGSize
     /// Its stay on this panel. Nil with Reduce Motion: the bird stays.
     let stroll: Stroll?
+    /// Set for a hen chick drawn with its mother: it trails her.
+    let follow: ChickFollow?
+    /// Where each chicken in this scene is heading. A hen writes; her chicks read.
+    let leads: SceneLeads
     let open: (UUID) -> Void
     /// Where its feet are (or are walking to), in unit coordinates. x below 0 or above 1 is off the panel.
     @State private var spot: CGPoint
@@ -145,26 +190,33 @@ struct SceneChicken: View {
 
     init(
         bird: Bird, height: CGFloat, panel: FarmPanel, depth: SceneDepth, size: CGSize, now: Date?,
-        open: @escaping (UUID) -> Void
+        follow: ChickFollow?, leads: SceneLeads, open: @escaping (UUID) -> Void
     ) {
         self.bird = bird
         self.height = height
         self.panel = panel
         self.depth = depth
         self.size = size
+        self.follow = follow
+        self.leads = leads
         self.open = open
-        let stroll: Stroll? = now.map { FarmFlock.stroll(for: bird.id, at: $0) }
+        // A hen chick keeps its mother's stroll and starts from her start, so they move as one.
+        let leader: UUID = follow?.mother ?? bird.id
+        let stroll: Stroll? = now.map { FarmFlock.stroll(for: leader, at: $0) }
         self.stroll = stroll
         let mask: WalkMask? = SceneArt.walkMask(for: panel)
-        var start: CGPoint = SceneFlock.start(for: bird.id, on: panel, mask: mask)
-        var facing: Bool = bird.id.uuid.5 % 2 == 0
+        var start: CGPoint = SceneFlock.start(for: leader, on: panel, mask: mask)
+        var facing: Bool = SceneFlock.startsFacingRight(leader)
         // Just in from the other yard: start off the edge it came in by, at a walkable height, then walk in.
         // The Far yard is right of the Yard, so a bird comes into the Yard from the right.
         if let stroll, Date.now.timeIntervalSince(stroll.since) < SceneFlock.arrivalWindow {
             let fromRight: Bool = stroll.spot == .yard
-            start = SceneFlock.entry(fromRight: fromRight, for: bird.id, on: panel, mask: mask)
+            start = SceneFlock.entry(fromRight: fromRight, for: leader, on: panel, mask: mask)
             start.x = SceneFlock.offEdge(right: fromRight, height: height, width: size.width)
             facing = !fromRight
+        } else if let follow {
+            let lead = SceneLead(spot: start, facingRight: facing)
+            start = SceneFlock.trail(behind: lead, place: follow.place, depth: depth, size: size, mask: mask)
         }
         _spot = State(initialValue: start)
         _sortY = State(initialValue: start.y)
@@ -220,12 +272,17 @@ struct SceneChicken: View {
     /// at the middle and end of a walk, or when it is time to set off for the next panel.
     private func wander() async {
         guard !reduceMotion else {
-            spot = SceneFlock.start(for: bird.id, on: panel, mask: mask)
+            spot = standingSpot()
             sortY = spot.y
             activity = .idle
             return
         }
         guard size.width > 0, size.height > 0 else { return }
+        if let follow {
+            await trail(follow)
+            return
+        }
+        announce(spot)
         if spot.x < 0 || spot.x > 1 { await walkIn() }
         while !Task.isCancelled {
             let pause: Double = Double.random(in: 2...4)
@@ -245,6 +302,59 @@ struct SceneChicken: View {
         }
     }
 
+    /// Where it stands with Reduce Motion on: its start, or a chick's spot behind its mother's start.
+    private func standingSpot() -> CGPoint {
+        guard let follow else { return SceneFlock.start(for: bird.id, on: panel, mask: mask) }
+        let home: CGPoint = SceneFlock.start(for: follow.mother, on: panel, mask: mask)
+        let lead = SceneLead(spot: home, facingRight: SceneFlock.startsFacingRight(follow.mother))
+        return SceneFlock.trail(behind: lead, place: follow.place, depth: depth, size: size, mask: mask)
+    }
+
+    /// Tells the scene where this bird is heading, so its chicks (if any) can follow.
+    private func announce(_ target: CGPoint) {
+        guard follow == nil else { return }
+        let right: Bool = abs(target.x - spot.x) * size.width > 2 ? target.x > spot.x : facingRight
+        leads.heading[bird.id] = SceneLead(spot: target, facingRight: right)
+    }
+
+    // MARK: - Following mother
+
+    /// A hen chick's loop: every moment or so it looks where its mother is heading and walks to its spot
+    /// behind her, so it trails her with a short lag. Close enough, it pecks now and then. It leaves for the
+    /// other yard on her stroll, as she does.
+    private func trail(_ follow: ChickFollow) async {
+        var dice = SystemRandomNumberGenerator()
+        while !Task.isCancelled {
+            guard await nap(Double.random(in: FarmFlock.chickLag, using: &dice)) else { return }
+            if held { continue }
+            if let left = secondsUntilSettingOff(), left <= 0 {
+                walkOff()
+                return
+            }
+            let target: CGPoint = trailTarget(follow)
+            let dx: CGFloat = (target.x - spot.x) * size.width
+            let dy: CGFloat = (target.y - spot.y) * size.height
+            if (dx * dx + dy * dy).squareRoot() > FarmFlock.chickSlack {
+                await walk(to: target, seconds: walkSeconds(to: target))
+            } else if Double.random(in: 0..<1, using: &dice) < 0.3 {
+                await peck()
+            }
+        }
+    }
+
+    /// Its spot behind where its mother is heading. Until she has set off on this panel, behind her start
+    /// (or where she comes in). Kept on the panel, so a chick never wanders off after a stale exit.
+    private func trailTarget(_ follow: ChickFollow) -> CGPoint {
+        let lead: SceneLead =
+            leads.heading[follow.mother]
+            ?? SceneLead(
+                spot: SceneFlock.start(for: follow.mother, on: panel, mask: mask),
+                facingRight: SceneFlock.startsFacingRight(follow.mother))
+        let target: CGPoint = SceneFlock.trail(
+            behind: lead, place: follow.place, depth: depth, size: size, mask: mask)
+        return CGPoint(x: min(0.97, max(0.03, target.x)), y: target.y)
+    }
+
     /// A short walk to a walkable point near the bird. No ground found nearby: it pecks instead.
     private func walkSomewhere() async {
         var dice = SystemRandomNumberGenerator()
@@ -255,6 +365,7 @@ struct SceneChicken: View {
         let seconds: Double = walkSeconds(to: target)
         // Never still walking when it is time to set off for the other yard.
         if let left = secondsUntilSettingOff(), left < seconds { return }
+        announce(target)
         await walk(to: target, seconds: seconds)
     }
 
@@ -326,6 +437,7 @@ struct SceneChicken: View {
     private func walkOff() {
         let seconds: Double = max(0.8, min(walkOffSeconds(), stroll?.until.timeIntervalSinceNow ?? 0))
         let exit = CGPoint(x: exitX, y: spot.y)
+        announce(exit)
         turn(toward: exit.x)
         activity = .walking
         withAnimation(.linear(duration: seconds)) { spot = exit }
@@ -342,6 +454,7 @@ struct SceneChicken: View {
         if let mask, !mask.isWalkable(target) {
             target = SceneFlock.nearestWalkable(to: target, in: mask) ?? target
         }
+        announce(target)
         await walk(to: target, seconds: max(1.5, walkSeconds(to: target)))
     }
 
