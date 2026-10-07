@@ -82,8 +82,19 @@ public enum PlannerPanel: Hashable, Sendable {
     case needsHen
     /// The pen has a hen but no rooster: "Pen a rooster to see what might hatch."
     case needsRooster
-    /// The forecast for the penned pair.
-    case forecast(hen: UUID, rooster: UUID, [Forecast])
+    /// The forecast for each penned hen with the penned rooster, hens in pen order.
+    case forecast(rooster: UUID, [PairForecast])
+}
+
+/// The forecast for one hen with the penned rooster.
+public struct PairForecast: Hashable, Sendable {
+    public let hen: UUID
+    public let lines: [Forecast]
+
+    public init(hen: UUID, lines: [Forecast]) {
+        self.hen = hen
+        self.lines = lines
+    }
 }
 
 public enum Planner {
