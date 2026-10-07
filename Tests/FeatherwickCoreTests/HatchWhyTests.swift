@@ -98,14 +98,15 @@ struct HatchWhyTests {
         #expect(Self.reasons(lavender) == [.whiteHidIt])
     }
 
-    @Test func twoBarredParentsHatchAPlainChick() {
-        // A barred hen (Z^B W) and a barred rooster carrying plain (B/b+): a plain chick can only be a
-        // pullet, so the words must not say so (see TextTests).
+    /// Rule 8: a barred hen (Z^B W) and a barred rooster carrying plain (B/b+) hatch plain chicks only
+    /// as pullets. Any note would tell the chick's sex before the grower stage, so there is none.
+    @Test func twoBarredParentsAndAPlainChickGiveNoNote() {
         let ev = Self.hatch(
             mother: Self.genome(.hen) { $0.sexChromosomes = .hen(z: .barred) },
             father: Self.genome(.rooster) { $0.sexChromosomes = .rooster(z: AllelePair(.barred, .plain)) },
             chicks: [Self.genome(.hen)])
-        #expect(Self.reasons(ev) == [.sexLinkedBarring])
+        #expect(Self.reasons(ev).isEmpty)
+        #expect(ev.contains { if case .chicksHatched = $0 { true } else { false } })
     }
 
     @Test func aChickThatLooksLikeAParentGetsNoNote() {

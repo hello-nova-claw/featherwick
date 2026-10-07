@@ -207,7 +207,7 @@ struct TextTests {
         }
         let reasons: [HatchReason] = [
             .recessiveFromBothParents(Lavender.locus), .recessiveFromBothParents(BaseColour.locus),
-            .blueSplitsThreeWays, .sexLinkedBarring, .whiteHidIt,
+            .blueSplitsThreeWays, .whiteHidIt,
         ]
         for reason in reasons {
             let words = eventText(.hatchSurprise(chick: id, reason: reason), s) ?? ""

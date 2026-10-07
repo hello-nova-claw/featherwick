@@ -318,8 +318,6 @@ public func hatchReasonText(_ r: HatchReason) -> String {
         return "Both parents must carry \(look) out of sight, and this one got a copy from each!"
     case .blueSplitsThreeWays:
         return "Blue never breeds true: two blues hatch black, blue and splash, and black with splash hatches all blue!"
-    case .sexLinkedBarring:
-        return "Barring rides on the sex genes, so two barred birds can still hatch a plain chick like this one!"
     case .whiteHidIt:
         return "White hides every other colour, so a white bird can pass on a colour it never shows!"
     }

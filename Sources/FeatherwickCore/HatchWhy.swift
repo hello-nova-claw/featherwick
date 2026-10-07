@@ -9,7 +9,7 @@ import Foundation
 // chick's down and the parents' grown looks, each as the down it maps to (`Phenotype.chickDown`).
 // Buff and white both give yellow down, and barred down hides the colour under it. So a buff chick
 // from white parents, or a barred chick's colour, never gets a note before the keeper can see it.
-// The note never names the chick's sex.
+// The note never names or hints at the chick's sex.
 
 /// Why a chick looks like neither parent. The engine picks the single most specific one.
 public enum HatchReason: Hashable, Codable, Sendable {
@@ -17,8 +17,6 @@ public enum HatchReason: Hashable, Codable, Sendable {
     case recessiveFromBothParents(LocusID)
     /// Blue is one copy of the blue gene. Blue x blue throws black, blue and splash; black x splash gives blue.
     case blueSplitsThreeWays
-    /// Barring sits on the Z chromosome, so two barred parents can hatch a plain chick.
-    case sexLinkedBarring
     /// A white parent: dominant white hides every other colour gene, and it passed one on.
     case whiteHidIt
 }
@@ -33,8 +31,9 @@ extension HatchReason {
     /// 2. `recessiveFromBothParents(lavender)`, then `(baseColour)` for buff: the chick shows a
     ///    recessive colour that neither parent shows.
     /// 3. `blueSplitsThreeWays`: chick and both parents are black, blue or splash.
-    /// 4. `sexLinkedBarring`: both parents are barred and the chick is not.
     /// Reasons 2 and 3 need an unbarred chick, because barred down hides the colour.
+    /// No reason for a plain chick from two barred parents: a barred hen gives every son her barring,
+    /// so such a chick is always a pullet, and a note would tell its sex before the grower stage.
     public static func forChick(_ chick: Phenotype, mother: Phenotype, father: Phenotype) -> HatchReason? {
         let parents = [mother, father]
         guard parents.allSatisfy({ $0.chickDown != chick.chickDown }) else { return nil }
@@ -52,7 +51,6 @@ extension HatchReason {
             {
                 return .blueSplitsThreeWays
             }
-            if parents.allSatisfy(\.isBarred) { return .sexLinkedBarring }
         }
         return nil
     }

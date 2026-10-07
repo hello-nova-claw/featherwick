@@ -101,7 +101,8 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 
 - A chick can hatch looking like neither parent. Then the neighbour says why, in one sentence.
   Event: `.hatchSurprise(chick:reason:)`. It comes after the chick's `chicksHatched` event.
-- Both parents must be birds you own now (not rehomed), and grown, so you have seen their looks.
+- Both parents must be birds you own now (not rehomed), and revealed (grower stage or older), so you have
+  seen their looks.
 - The check uses only what you can see: the chick's down and each parent's look, as the down it gives
   (`Phenotype.chickDown`). Buff and white both give yellow down. Barred down hides the colour under it.
   So a buff chick from white parents gets no note, and a barred chick's colour is never named.
@@ -111,11 +112,13 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
   2. `recessiveFromBothParents(locus)`: the chick is lavender (then buff) and no parent is. Each parent carried one hidden copy.
   3. `blueSplitsThreeWays`: chick and parents are all black, blue or splash. Blue x blue gives black, blue and
      splash. Black x splash gives blue.
-  4. `sexLinkedBarring`: both parents are barred and the chick is not.
   - Reasons 2 and 3 need an unbarred chick. If no reason fits, there is no note.
+  - A plain chick from two barred parents gets no note. A barred hen gives her barring to every son,
+    so that chick is always a pullet. A note would tell its sex before the grower stage.
 - At most `Rules.hatchWhyNotesPerDay` (1) notes a night. The first chick that qualifies gets it.
 - The note uses no random draws, so the same seed hatches the same chicks as before.
-- The app shows the note as a toast next to the hatch toast, and in the log.
+- The app shows the note in the log, and as a toast. The app keeps only the newest two toasts, so a busy
+  night can push it out.
 
 ## Birds never wait forever
 
