@@ -179,7 +179,7 @@ All screens are 393×852 (iPhone 15/16). Sheets sit over the dimmed farm.
 ### 1a / 1b — Farm (day / night)
 - Full-bleed painted scene (SpriteKit).
 - HUD top-left and top-right (see Components), 58–62pt from top.
-- 4 panels to swipe between: Barn, Yard, Far yard, Shop. Until the paintings exist, each panel is a flat colour with a dashed "scene" box.
+- 4 panels to swipe between: Barn, Yard, Far yard, Shop. The Yard and the Far yard draw a placeholder 2.5D scene (see Farm scene). Until their paintings exist, the Barn and the Shop are a flat colour with a dashed "scene" box.
 - Place labels on each panel, each anchored to the bottom-centre of its tap area. Barn: Coop and Potting shed. Yard: Yard. Far yard: Back fence. Shop: Farm gate.
 - Panel rail: a white box down the right side, under the HUD, with one dot per panel in swipe order. Tap a dot to go there. The current panel is an ink dot. A panel off screen with a notice gets a bigger dot in its notice colour (decision, then collect, then story) with a ring. Others are small `unknown` dots. VoiceOver reads the panel name and its notices.
 - Bottom: "Books" (Caslon Display 23) bottom-left, then "Today", and a settings button "≡" bottom-right, all white boxes with radius 10, 56pt tall, 24pt above the home indicator.
@@ -261,6 +261,41 @@ Soft and few. Settings (≡) has a switch for each; both start on.
 - **Unknown → known reveals** (breed, sex): animate the dashed outline to a filled state (~400ms), then show a toast ("Lavender added to the Breed Book").
 - **Reduce Motion:** replace slides and scales with fades.
 - **VoiceOver:** every dab or dot group reads as text ("Friendliness: friendly, 3 of 4"). Carton cups read "Blue egg, fertile".
+
+## Farm scene (2.5D)
+The Yard and the Far yard draw a 2.5D scene (`App/Featherwick/Scene/`). The art is a placeholder: a basic hill and sky, simple tree shapes and grass tufts. But it uses the same tools as the real paintings will. The Barn and the Shop stay flat colours for now.
+
+**Three rules.** Each thing in the scene has a ground point: a bird's feet, a trunk's base. Its Y on screen sets everything (`SceneDepth`).
+- **Draw order = ground Y.** Lower on screen is nearer, so it draws on top. A bird walks behind a tree while its feet are above the tree's base, and in front when they are below.
+- **Size = ground Y.** Things are smallest at the hill line (scale 0.45) and full size at the bottom edge (1.0). A bird that walks up the yard gets smaller. The two numbers are `SceneDepth.farScale` and `nearScale`.
+- **Walk area = a mask.** White ground is walkable; black is not (sky, hills, the pond, the ground kept for the coop run and the back fence, the strip under the buttons). Birds pick targets only inside white (`WalkMask.randomTarget`).
+
+**Three layer groups.**
+1. **Back:** sky, far hills and the yard ground, from one landscape PNG. Never sorted.
+2. **Middle:** trees, fences, the coop and the birds, in one stack, each sorted by its ground Y (`.zIndex(depth.zIndex(forGroundY:))`).
+3. **Front:** grass tufts along the bottom edge. Always on top.
+
+**Trees.** Five designs (`TreeKind`: oak, poplar, pine, apple, birch), each a trunk and a canopy in separate materials. Code places them along the hill line with random spacing, size and left/right flip, plus one or two lower in the yard near the edges (`TreeLine`). The dice are seeded per panel, never the game's, so a panel always has the same trees. A new panel gets its own tree line with no new painting. Each tree sways slowly on its own about its trunk base. Reduce Motion: no sway.
+
+**Colour: ramps and masks.** The art holds value (light and dark) and material, not colour. One shader (`SeasonRamp.metal`) maps each value along the ramp of its material for the season (`SeasonRamp.swift`). So one painting serves every season:
+- Spring: fresh green. Summer: deep green. Autumn: gold grass under red and orange trees. Winter: pale.
+- Each tree turns its leaf hue a little, so autumn trees differ. Pines are evergreen.
+- Night: the same shader takes colour out and multiplies a blue-grey, as on the flat panels.
+
+**Art files.** Per panel, two PNGs in `App/Featherwick/Art/Scene/`:
+- `scene-<panel>-land.png` (660 × 1434, half of a 1320 × 2868 screen). R = value. G and B = two material bits: 00 sky, 10 far hill, 11 grass, 01 pond. Neighbouring materials differ in one bit, so a soft edge never mixes in a third. Drawn trees and tufts use the same channels (trees: 00 leaves, 10 trunk, 11 evergreen).
+- `scene-<panel>-walk.png` (220 × 478, greyscale): the walk mask.
+- The scene stretches both to the panel, so the hill line and the mask are fractions of the screen.
+
+The masks are made once, before the build, by a script. The app only loads the PNGs. To change the art, edit and run:
+
+```sh
+python3 scripts/make_scene_art.py   # needs Pillow and numpy; same output every run
+```
+
+It also writes `Scene/SceneArtLayout.swift` (hill line and building ground per panel), so code and art agree. Commit the PNGs and that file together.
+
+**Performance.** Nothing in the scene runs on a timer. Only the tree sway animates (one repeating animation per tree). A redraw every second made swiping between panels stutter.
 
 ## State (sketch)
 - `GameClock`: day number, season, time of day, `isNight`.
