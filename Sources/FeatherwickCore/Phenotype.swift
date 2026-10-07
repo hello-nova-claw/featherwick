@@ -1,5 +1,6 @@
 public enum FeatherColour: String, Hashable, Codable, Sendable, CaseIterable {
-    case black, blue, splash, lavender, buff
+    // New colours go at the end: the shop draws its colours in this order.
+    case black, blue, splash, lavender, buff, white
 }
 
 public enum EggColour: String, Hashable, Codable, Sendable, CaseIterable {
@@ -12,7 +13,7 @@ public enum ChickDown: String, Hashable, Codable, Sendable, CaseIterable {
     case slate  // blue
     case paleGrey  // splash
     case silver  // lavender
-    case yellow  // buff
+    case yellow  // buff, and dominant white
     case darkWithHeadSpot  // barred
 }
 
@@ -24,7 +25,7 @@ extension Phenotype {
         case .blue: return .slate
         case .splash: return .paleGrey
         case .lavender: return .silver
-        case .buff: return .yellow
+        case .buff, .white: return .yellow
         }
     }
 }
@@ -45,8 +46,11 @@ public struct Phenotype: Hashable, Codable, Sendable {
         sex = genome.sex
         isSilkieFeathered = genome.feathering.isHomozygous(for: .silkie)
 
-        // Colour order: buff hides the black-based dilutions; lavender wins over blue.
-        if genome.baseColour.isHomozygous(for: .buff) {
+        // Colour order: dominant white hides everything; buff hides the black-based dilutions;
+        // lavender wins over blue. A white bird still carries its other colour genes.
+        if genome.dominantWhite.has(.white) {
+            colour = .white
+        } else if genome.baseColour.isHomozygous(for: .buff) {
             colour = .buff
         } else if genome.lavender.isHomozygous(for: .lavender) {
             colour = .lavender
@@ -60,9 +64,10 @@ public struct Phenotype: Hashable, Codable, Sendable {
 
         // Patterns only show on the right ground colour, as in real chickens. The genes are still
         // carried and passed on, so hidden patterns can reappear in chicks.
-        // Lacing needs a gold (buff) ground; barring shows only on black-based birds.
+        // Lacing needs a gold (buff) ground; barring shows only on black-based birds. Dominant white
+        // hides both, so a white bird never shows (or names) a pattern it carries.
         isLaced = colour == .buff && genome.lacing.isHomozygous(for: .laced)
-        isBarred = colour != .buff && genome.sexChromosomes.isBarred
+        isBarred = colour != .buff && colour != .white && genome.sexChromosomes.isBarred
 
         if sex == .hen {
             let blueShell = genome.blueShell.has(.blue)

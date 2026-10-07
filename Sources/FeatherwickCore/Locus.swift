@@ -91,6 +91,7 @@ public enum Loci {
             LocusDefinition(Speckle.self, "Speckled eggs. Game-only, recessive."),
         ] + QuantitativeTrait.showType.loci + QuantitativeTrait.eggShape.loci
         + QuantitativeTrait.calm.loci
+        + [LocusDefinition(DominantWhite.self, "Dominant white. Dominant; hides the other colour genes.")]
 
     public static let all: [LocusDefinition] = zLinked + autosomal
 

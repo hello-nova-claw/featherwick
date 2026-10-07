@@ -56,6 +56,7 @@ public struct ShopSpecial: Hashable, Codable, Sendable {
         case .buff: return .buff
         case .lavender: return .lavender
         case .splash: return splash
+        case .white: return .white
         }
     }
 

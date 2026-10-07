@@ -91,6 +91,7 @@ enum Pigment {
         case .splash: Color(hex: 0xD6DBDE)
         case .lavender: Color(hex: 0xB5AEBB)
         case .buff: Color(hex: 0xDDAE6E)
+        case .white: Color(hex: 0xF4F1E8)
         }
     }
 
