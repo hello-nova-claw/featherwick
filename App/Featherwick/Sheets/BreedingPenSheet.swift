@@ -23,6 +23,10 @@ struct BreedingPenSheet: View {
             .font(Typeface.body).foregroundStyle(palette.inkSoft)
             Text("Rooster").font(Typeface.item)
             place(s.penRooster, empty: "No rooster. The pen hens' eggs won't be fertile.")
+            if let day = s.penRoosterGrownDay {
+                Text("Still young. The pen hens' eggs stay clear until day \(day).")
+                    .font(Typeface.caption).foregroundStyle(palette.inkMuted)
+            }
             Text("Hens · \(hens.count) of \(s.rules.penHens)").font(Typeface.item)
             ForEach(0..<max(s.rules.penHens, hens.count), id: \.self) { i in
                 place(i < hens.count ? hens[i] : nil, empty: "An empty place")

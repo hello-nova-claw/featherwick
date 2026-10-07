@@ -24,6 +24,14 @@ extension GameState {
     /// The rooster in the breeding pen, if any.
     public var penRooster: Bird? { pennedBirds.first { $0.sex == .rooster } }
 
+    /// The day the penned rooster is grown and can father eggs. Nil when there is no penned rooster,
+    /// or he is grown already. A cockerel may go in the pen early, so the keeper can plan; his hens'
+    /// eggs stay clear until this day (the lay step uses an adult rooster only).
+    public var penRoosterGrownDay: Int? {
+        guard let rooster = penRooster, rooster.stage(onDay: day, rules: rules) != .adult else { return nil }
+        return rooster.hatchDay + rules.adultAge
+    }
+
     /// The hens in the breeding pen.
     public var pennedHens: [Bird] { pennedBirds.filter { $0.sex == .hen } }
 }

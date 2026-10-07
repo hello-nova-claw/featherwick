@@ -679,10 +679,16 @@ func pennedText(_ id: UUID, _ s: GameState) -> String {
     let name = birdName(id, s)
     guard let bird = s.bird(id), bird.revealed else { return "\(name) goes into the breeding pen." }
     if bird.sex == .rooster {
+        let grown = s.penRoosterGrownDay.map { " He is still young: the pen hens' eggs stay clear until day \($0)." }
         return "\(name) goes into the breeding pen. He fathers the eggs of the hens in the pen, and only theirs."
+            + (grown ?? "")
     }
     guard let rooster = s.penRooster else {
         return "\(name) goes into the breeding pen. Her eggs won't be fertile until a rooster joins her: pen <name>"
+    }
+    if let day = s.penRoosterGrownDay {
+        return "\(name) goes into the breeding pen. \(rooster.name) is still young, so her eggs stay clear "
+            + "until day \(day). After that, her chicks will have \(rooster.name) for a father."
     }
     return "\(name) goes into the breeding pen. Her chicks will have \(rooster.name) for a father."
 }
@@ -692,6 +698,7 @@ public func penLines(_ s: GameState) -> [String] {
     guard s.isOpen(.breedingPen) else { return [notYetText(.breedingPen, s)] }
     var out = ["Breeding pen (1 rooster, \(s.rules.penHens) hens). Pen birds keep their coop perch."]
     out.append("  Rooster: " + (s.penRooster.map { birdLabel($0, s) } ?? "none (the pen hens' eggs are not fertile)"))
+    if let day = s.penRoosterGrownDay { out.append("    still young: the pen hens' eggs stay clear until day \(day)") }
     let hens = s.pennedHens
     if hens.isEmpty { out.append("  Hens: none") }
     for hen in hens { out.append("  Hen: " + birdLabel(hen, s)) }

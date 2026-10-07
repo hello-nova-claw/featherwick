@@ -331,6 +331,28 @@ struct BreedingPenTextTests {
         #expect(!penLines(s).isEmpty)
     }
 
+    @Test func aYoungPenRoosterIsNotCalledTheWorkingSire() {
+        var rng = SeededRNG(seed: 3)
+        var s = Engine.newGame(earlyGame: false, using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        s.day = 60
+        let born = s.day - s.rules.growerAge  // a cockerel: sex shows, not grown
+        let cockerel = Bird(
+            id: UUID(), name: "Rufus", breed: .orpington, genome: Breed.orpington.purebred(.rooster),
+            hatchDay: born, origin: "Test", revealed: true)
+        let hen = Bird(
+            id: UUID(), name: "Hazel", breed: .orpington, genome: Breed.orpington.purebred(.hen),
+            hatchDay: 0, origin: "Test", revealed: true)
+        s.coop += [cockerel, hen]
+        _ = Engine.apply(.penBird(cockerel.id), to: &s, using: &rng)
+        let ev = Engine.apply(.penBird(hen.id), to: &s, using: &rng)
+        let day = born + s.rules.adultAge
+        let words = ev.compactMap { eventText($0, s) }.joined()
+        #expect(words.contains("stay clear until day \(day)"))
+        #expect(!words.hasSuffix("Her chicks will have Rufus for a father."))
+        #expect(penLines(s).contains { $0.contains("stay clear until day \(day)") })
+    }
+
     @Test func theTooYoungWordsDoNotNameASex() {
         var rng = SeededRNG(seed: 3)
         let s = Engine.newGame(earlyGame: false, using: &rng)

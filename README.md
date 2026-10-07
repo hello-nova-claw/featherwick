@@ -111,6 +111,8 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 - Laying (night step 8):
   - A penned hen's egg is fathered by the penned rooster only, if he is an adult.
   - A penned hen with no adult rooster in the pen lays eggs that are not fertile, like a coop with no rooster.
+  - A cockerel may go in the pen before he is grown, so the keeper can plan. The words, the CLI and the
+    app say that the pen hens' eggs stay clear until his grown day (`GameState.penRoosterGrownDay`).
   - A coop hen's egg is fathered by a random adult coop rooster. The penned rooster never fathers it.
   - The pen's birds do not count toward coop rooster tension (`Rules.extraRoosters`). The coop
     roosters do not unsettle the penned hens.
