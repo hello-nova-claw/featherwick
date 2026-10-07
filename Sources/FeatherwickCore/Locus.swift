@@ -95,6 +95,14 @@ public enum Loci {
 
     public static let all: [LocusDefinition] = zLinked + autosomal
 
+    /// The single genes with a look of their own (colour, pattern, feathering, eggs), in `all` order.
+    /// Every gene that is not one of the many small genes behind a `QuantitativeTrait`. Worked out, not
+    /// listed, so a new single gene appended to `Loci` is picked up by `Knowledge` at once.
+    public static let mendelian: [LocusDefinition] = {
+        let quantitative = Set(QuantitativeTrait.all.flatMap { $0.loci.map(\.id) })
+        return all.filter { !quantitative.contains($0.id) }
+    }()
+
     private static let byID: [LocusID: LocusDefinition] =
         Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
 

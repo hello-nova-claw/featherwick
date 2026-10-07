@@ -571,8 +571,9 @@ public enum Engine {
             let father = youngBird(.rooster, origin: "Local flock", s, &rng)
             var egg = Breeding.layEgg(mother: mother, father: father, day: s.day, using: &rng)
             // Keep the parents on record, so the chick's family tree is not blank.
-            s.pedigree[mother.id] = PedigreeRecord(mother)
-            s.pedigree[father.id] = PedigreeRecord(father)
+            // The keeper never sees them, so their records hold no look.
+            s.pedigree[mother.id] = PedigreeRecord(mother, look: nil)
+            s.pedigree[father.id] = PedigreeRecord(father, look: nil)
             egg.collectedDay = s.day
             egg.candled = true
             s.coins -= cost
@@ -780,7 +781,7 @@ public enum Engine {
                 guard
                     var chick = Breeding.hatch(
                         egg, name: "Chick \(s.chicksHatched + 1)", onDay: s.day,
-                        origin: "Henhaven", using: &rng)
+                        origin: Bird.homeOrigin, using: &rng)
                 else {
                     returnUnhatched(egg, &s)
                     unhatched += 1

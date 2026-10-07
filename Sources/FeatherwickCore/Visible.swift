@@ -1,0 +1,184 @@
+import Foundation
+
+// What the keeper can see of a bird.
+//
+// `Knowledge` (and later the planner) reads only these values. They are made here, from the bird's
+// look (`Phenotype`) and from facts the keeper is told, so the code that reasons about hidden genes
+// never touches a bird's genes (core rule 8: no hidden-gene leaks).
+
+extension Bird {
+    /// The origin of every chick hatched at home. Any other origin is a bird from outside the flock.
+    public static let homeOrigin = "Henhaven"
+}
+
+/// How much of a bird's look the keeper can see.
+public enum LookLevel: String, Hashable, Codable, Sendable {
+    /// A chick whose sex does not show yet: its down, and fluffy (silkie) down.
+    case down
+    /// A grown bird (grower or older, or told by its breeder): feather colour and pattern.
+    case feathers
+    /// A grown hen at point of lay: her feathers and her eggs.
+    case laying
+}
+
+/// The look of a bird as the keeper saw it. Nil fields were not visible.
+///
+/// Only visible values: no genes. A chick shows its down only (`chickDown`); a grown bird shows its
+/// feathers; a laying hen shows her eggs too.
+public struct SeenLook: Hashable, Codable, Sendable {
+    /// The down of a chick whose sex does not show yet. Nil once the feathers show.
+    public var chickDown: ChickDown?
+    public var colour: FeatherColour?
+    public var isBarred: Bool?
+    public var isLaced: Bool?
+    /// Silkie feathering shows at every age: a silkie chick is drawn with fluffy down.
+    public var isSilkieFeathered: Bool
+    /// A laying hen's egg colour, as she lays it.
+    public var eggColour: EggColour?
+    public var eggIsSpeckled: Bool?
+
+    public init(
+        chickDown: ChickDown? = nil, colour: FeatherColour? = nil, isBarred: Bool? = nil, isLaced: Bool? = nil,
+        isSilkieFeathered: Bool, eggColour: EggColour? = nil, eggIsSpeckled: Bool? = nil
+    ) {
+        self.chickDown = chickDown
+        self.colour = colour
+        self.isBarred = isBarred
+        self.isLaced = isLaced
+        self.isSilkieFeathered = isSilkieFeathered
+        self.eggColour = eggColour
+        self.eggIsSpeckled = eggIsSpeckled
+    }
+
+    /// The part of a look the keeper sees at `level`. `.laying` needs a hen's look (a rooster has no egg).
+    public init(_ p: Phenotype, level: LookLevel) {
+        isSilkieFeathered = p.isSilkieFeathered
+        switch level {
+        case .down:
+            chickDown = p.chickDown
+        case .feathers, .laying:
+            colour = p.colour
+            isBarred = p.isBarred
+            isLaced = p.isLaced
+            if level == .laying, let egg = p.eggColour {
+                eggColour = egg
+                eggIsSpeckled = p.eggIsSpeckled
+            }
+        }
+    }
+
+    /// What the keeper sees of `bird` today.
+    public init(of bird: Bird, in s: GameState) {
+        let level: LookLevel =
+            if !bird.revealed {
+                .down
+            } else if bird.sex == .hen, bird.stage(onDay: s.day, rules: s.rules) == .adult {
+                .laying
+            } else {
+                .feathers
+            }
+        self.init(bird.phenotype, level: level)
+    }
+
+    public var level: LookLevel { chickDown != nil ? .down : eggColour != nil ? .laying : .feathers }
+
+    /// The look with the egg colour in the coarse form the single genes decide: chocolate is a dark
+    /// brown and olive a dark green. How dark is the brown-depth trait, which `Knowledge` does not track.
+    public var coarse: SeenLook {
+        var c = self
+        c.eggColour = eggColour.map {
+            switch $0 {
+            case .chocolate: .brown
+            case .olive: .green
+            default: $0
+            }
+        }
+        return c
+    }
+}
+
+/// One bird as the keeper knows it: plain values only, never genes.
+///
+/// A bird whose sex does not show yet has `sex`, `breed` and `isPurebred` nil, and only its down as a look.
+public struct Visible: Hashable, Codable, Sendable, Identifiable {
+    public let id: UUID
+    public let name: String
+    /// Nil until the bird's sex shows (or for a record that does not say).
+    public let sex: Sex?
+    public let stage: LifeStage
+    /// Nil until the breed shows.
+    public let breed: Breed?
+    public let isPurebred: Bool?
+    public let origin: String
+    public let motherID: UUID?
+    public let fatherID: UUID?
+    /// Nil for a bird the keeper never saw, such as a parent of a bought egg.
+    public let look: SeenLook?
+    /// The friendliness band the keeper sees. Nil for a bird the keeper never handled.
+    public let friendliness: Friendliness?
+    /// A show-type grade, once the planner has one. Not filled yet.
+    public let typeGrade: Grade?
+
+    public init(
+        id: UUID, name: String, sex: Sex?, stage: LifeStage, breed: Breed?, isPurebred: Bool?, origin: String,
+        motherID: UUID?, fatherID: UUID?, look: SeenLook?, friendliness: Friendliness? = nil,
+        typeGrade: Grade? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.sex = sex
+        self.stage = stage
+        self.breed = breed
+        self.isPurebred = isPurebred
+        self.origin = origin
+        self.motherID = motherID
+        self.fatherID = fatherID
+        self.look = look
+        self.friendliness = friendliness
+        self.typeGrade = typeGrade
+    }
+
+    /// A bird the keeper has (or had, if rehomed). Sex and breed only once they show.
+    public init(bird: Bird, in s: GameState) {
+        self.init(
+            id: bird.id, name: bird.name, sex: bird.revealed ? bird.sex : nil,
+            stage: bird.stage(onDay: s.day, rules: s.rules),
+            breed: bird.revealed ? bird.breed : nil, isPurebred: bird.revealed ? bird.isPurebred : nil,
+            origin: bird.origin, motherID: bird.motherID, fatherID: bird.fatherID,
+            look: SeenLook(of: bird, in: s), friendliness: bird.friendliness)
+    }
+
+    /// A family-tree record. Its sex is known from its place in the tree (mothers are hens), unless
+    /// its look is a chick's down, which hides the sex.
+    public init(record r: PedigreeRecord, in s: GameState) {
+        let age = s.day - r.hatchDay
+        let stage: LifeStage = age >= s.rules.adultAge ? .adult : age >= s.rules.growerAge ? .grower : .chick
+        let hidden = r.look?.level == .down
+        self.init(
+            id: r.id, name: r.name, sex: hidden ? nil : r.sex, stage: stage, breed: hidden ? nil : r.breed,
+            isPurebred: hidden ? nil : r.purebred, origin: r.origin, motherID: r.motherID, fatherID: r.fatherID,
+            look: r.look)
+    }
+
+    /// True for a bird bred outside the flock: no parents on record, and not hatched at home.
+    /// Its genes are then one of its breed's public recipes (`RecipeTable`).
+    public var isFromOutside: Bool { motherID == nil && fatherID == nil && origin != Bird.homeOrigin }
+
+    /// True if the keeper has seen the bird (owned or rehomed birds, and records that keep a look).
+    public var isSeen: Bool { look != nil }
+
+    /// Every bird the keeper knows: owned birds (home, lost, boarding), rehomed birds and family-tree
+    /// records. Sorted by id, so the order never depends on where a bird is kept.
+    /// Not included: the neighbour's starter chicks before one is chosen, and a trade offer's hen.
+    public static func all(in s: GameState) -> [Visible] {
+        var seen: Set<UUID> = []
+        var out: [Visible] = []
+        for b in s.ownedBirds + s.rehomed where seen.insert(b.id).inserted {
+            out.append(Visible(bird: b, in: s))
+        }
+        for r in s.pedigree.values where seen.insert(r.id).inserted {
+            out.append(Visible(record: r, in: s))
+        }
+        return out.map { (key: $0.id.uuidString, bird: $0) }.sorted { $0.key < $1.key }.map(\.bird)
+    }
+}

@@ -29,6 +29,16 @@ public enum Simulation {
 
     /// One game: `days` nights from a fresh start on `seed` with `rules`.
     public static func run(seed: UInt64, days: Int, rules: Rules = .standard) -> Report {
+        simulate(seed: seed, days: days, rules: rules).report
+    }
+
+    /// The same game as `run`, played the same way, but returns where it ended: the final state.
+    /// For tests and tools that need a real, played flock.
+    public static func play(seed: UInt64, days: Int, rules: Rules = .standard) -> GameState {
+        simulate(seed: seed, days: days, rules: rules).state
+    }
+
+    private static func simulate(seed: UInt64, days: Int, rules: Rules) -> (state: GameState, report: Report) {
         var rng = SeededRNG(seed: seed)
         var s = Engine.newGame(rules: rules, using: &rng)
         var r = Report(
@@ -47,7 +57,7 @@ public enum Simulation {
         r.breedBook = s.breedBook.count
         r.eggBook = s.eggBook.count
         r.storiesFinished = s.stories.values.count(where: \.rewarded)
-        return r
+        return (s, r)
     }
 
     public static func runMany(seeds: ClosedRange<UInt64>, days: Int, rules: Rules = .standard) -> [Report] {

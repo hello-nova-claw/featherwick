@@ -23,8 +23,14 @@ public struct PedigreeRecord: Hashable, Codable, Sendable {
     public let fatherID: UUID?
     public let origin: String
     public let hatchDay: Int
+    /// What the keeper saw of this bird, if they ever saw it. Nil for a bird nobody showed them,
+    /// such as a parent of a bought egg, and for every record in a save made before looks were kept.
+    /// `Knowledge` reads nil as "look unknown": breed evidence only.
+    public let look: SeenLook?
 
-    public init(_ b: Bird) {
+    /// A record of a bird. Give `look` only for a bird the keeper has seen (`SeenLook(of:in:)`).
+    /// Without it the record says nothing about the bird's look.
+    public init(_ b: Bird, look: SeenLook? = nil) {
         id = b.id
         name = b.name
         breed = b.breed
@@ -34,6 +40,7 @@ public struct PedigreeRecord: Hashable, Codable, Sendable {
         fatherID = b.fatherID
         origin = b.origin
         hatchDay = b.hatchDay
+        self.look = look
     }
 
     /// "orpington hen", "olive egger rooster".
@@ -74,7 +81,7 @@ public enum Pedigree {
     /// Any bird the game knows about: owned, lost, boarding, rehomed, or an outside parent.
     public static func record(_ id: UUID?, in s: GameState) -> PedigreeRecord? {
         guard let id else { return nil }
-        return s.bird(id).map(PedigreeRecord.init) ?? s.pedigree[id]
+        return s.bird(id).map { PedigreeRecord($0) } ?? s.pedigree[id]
     }
 
     /// Wright's kinship coefficient between two birds: the inbreeding their chick would have.
@@ -142,7 +149,7 @@ public enum Pedigree {
     /// Every known chick of this bird, oldest first.
     public static func offspring(of id: UUID, in s: GameState) -> [PedigreeRecord] {
         let known =
-            (s.birdsAtHome + s.lost.map(\.bird) + s.boarding + s.rehomed).map(PedigreeRecord.init)
+            (s.birdsAtHome + s.lost.map(\.bird) + s.boarding + s.rehomed).map { PedigreeRecord($0) }
             + Array(s.pedigree.values)
         var seen: Set<UUID> = []
         return known.filter { ($0.motherID == id || $0.fatherID == id) && seen.insert($0.id).inserted }
