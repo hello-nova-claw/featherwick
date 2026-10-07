@@ -39,6 +39,8 @@ public enum Milestones {
         Milestone(id: "lapChicken") { s in s.ownedBirds.contains { $0.friendliness == .lapChicken } },
         Milestone(id: "storyteller") { s in s.stories.values.contains { $0.rewarded } },
         Milestone(id: "elderHen") { s in s.ownedBirds.contains { $0.isRetired(onDay: s.day, rules: s.rules) } },
+        Milestone(id: "chocolateEgg") { s in s.eggBook.contains { $0.colour == .chocolate } },
+        Milestone(id: "greenEgg") { s in s.eggBook.contains { $0.colour == .green } },
     ]
 }
 

@@ -311,6 +311,32 @@ struct JobsTests {
         #expect(ev.contains(.seasonGoalReached(.collectEggs, coins: s.rules.seasonGoalRewardCoins)))
     }
 
+    /// No breed in play lays chocolate eggs (Marans is planned), so the "new egg" goal does not wait
+    /// for one. A chocolate egg found anyway is still a new egg.
+    @Test func theNewEggGoalOnlyAsksForColoursABreedInPlayCanMake() {
+        var (s, rng) = Self.game()
+        var hen = Bird(
+            id: makeID(using: &rng), name: "Hen", breed: .orpington, genome: Breed.orpington.purebred(.hen),
+            hatchDay: s.day - s.rules.adultAge, origin: "t", revealed: true)
+        hen.needsName = nil
+        s.coop.append(hen)
+        let canMakeChocolate = BreedTable.inGame.contains {
+            $0.fixes(BrownShell.brown) && $0.brownDepth > Rules.chocolateShellDepth
+        }
+        #expect(!canMakeChocolate)
+        #expect(!Engine.newEggColours().contains(.chocolate))
+        #expect(Engine.newEggColours().contains(.green))
+        let end = Engine.goalEndDay(s)
+        #expect(Engine.availableGoals(s, endDay: end).contains { $0.kind == .newEgg })
+        for colour in EggColour.allCases where colour != .chocolate {
+            for speckled in [false, true] { s.eggBook.insert(EggBookEntry(colour: colour, speckled: speckled)) }
+        }
+        #expect(!Engine.availableGoals(s, endDay: end).contains { $0.kind == .newEgg })
+        let before = Engine.goalMeasure(.newEgg, in: s)
+        s.eggBook.insert(EggBookEntry(colour: .chocolate, speckled: false))
+        #expect(Engine.goalMeasure(.newEgg, in: s) == before + 1)
+    }
+
     @Test func aGoalSetLateInASeasonRunsOnThroughTheNext() {
         var (s, _) = Self.game()
         s.day = s.rules.daysPerSeason - 2

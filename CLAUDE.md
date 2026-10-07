@@ -60,9 +60,13 @@ components, screens 1a–8a). The painted farm and bird art come later; dashed b
   (tap opens the bird card; press and rub sends `.pet`). In the yards the coop birds are rigged chickens
   inside the scene (`Scene/SceneChicken.swift`: `YardScene`, `SceneChicken`).
   `Feedback/`: `Haptics` and `Sound` (bundled `Sounds/*.caf`, silent if missing), with on/off switches in Settings. `GameStore.run` plays event feedback through `GameFeedback`.
+- Morning report (`Sheets/MorningReportSheet.swift`): after Sleep, one page of the night, before the farm.
+  Core's `MorningReport.from(events:state:)` sorts the night's events into groups; every event lands in one.
+  A new `GameEvent` needs a group in `MorningReport.group(of:)`. Settings has a switch (on by default).
 - Day or night follows the device clock (18:00–05:59 is night), via `\.palette`. Settings ▸ Time of day (`TimeOfDayPin`) pins day or night for testing.
 - Fonts (Libre Caslon Display/Text, Figtree; OFL) are bundled in `Fonts/` and registered at launch.
 - ≡ → "Open test tools" shows the old plain screens (`TestTools/`), with every action and the full log.
+- `Beta/`: TestFlight questions after the first hatch and the first show (once per save slot). Compiled only with the `BETA` flag (Beta config, "Featherwick Beta" scheme) or `DEBUG`, and shown only on a sandbox receipt. Answers go to `beta-notes.json` (not the save); Settings ▸ Share beta notes.
 
 ```sh
 brew install xcodegen      # once

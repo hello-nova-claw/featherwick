@@ -25,6 +25,7 @@ public struct Breed: RawRepresentable, Hashable, Codable, Sendable, ExpressibleB
     // Planned
     public static let australorp: Breed = "australorp"
     public static let plymouthRock: Breed = "plymouth rock"
+    public static let marans: Breed = "marans"
     public static let leghorn: Breed = "leghorn"
 
     /// Breeds in the game now, in table order. Planned breeds are not included.
@@ -112,6 +113,9 @@ public struct BreedDefinition: Sendable, Identifiable {
     public let broodiness: Double
     /// Temperament: the share of calm genes in birds bred outside the player's flock, 0...1.
     public let calmness: Double
+    /// Shell depth: the share of brown-depth genes, 0...1. Purebreds get exactly this share;
+    /// birds bred outside the player's flock draw each gene with this chance. 0.5 is average.
+    public var brownDepth: Double = 0.5
     /// Which shared art parts the breed uses, its skin colours and its size.
     public let look: BreedLook
     public let note: String
@@ -140,7 +144,7 @@ public enum BreedTable {
         BreedDefinition(
             id: .silkie, displayName: "Silkie", status: .inGame, isStarter: false,
             signature: [.two(Feathering.silkie)],
-            varieties: [.black, .blue, .buff, .lavender, .white], broodiness: 0.6, calmness: 0.75,
+            varieties: [.black, .blue, .buff, .lavender, .white], broodiness: 0.6, calmness: 0.75, brownDepth: 0.2,
             look: BreedLook(
                 body: .fluffy, comb: .walnut, combTone: .mulberry, legs: .featheredFiveToe, legTone: .slate,
                 head: .crested, size: 0.7),
@@ -160,7 +164,7 @@ public enum BreedTable {
         BreedDefinition(
             id: .araucana, displayName: "Araucana", status: .inGame, isStarter: true,
             signature: [.two(BlueShell.blue)],
-            varieties: [.black, .blue, .buff, .lavender], broodiness: 0.2, calmness: 0.4,
+            varieties: [.black, .blue, .buff, .lavender], broodiness: 0.2, calmness: 0.4, brownDepth: 0.2,
             look: BreedLook(body: .light, comb: .pea, legTone: .willow, size: 0.85),
             note: "Lays blue eggs. Crossed with brown-egg breeds, makes olive eggers."),
         BreedDefinition(
@@ -176,6 +180,13 @@ public enum BreedTable {
             varieties: [.barred, .buff], broodiness: 0.2, calmness: 0.6,
             look: BreedLook(body: .medium, comb: .single, legTone: .yellow, size: 1.1),
             note: "The Barred Rock. Black-and-white barring. Brown eggs."),
+        BreedDefinition(
+            id: .marans, displayName: "Marans", status: .planned, isStarter: false,
+            signature: [.two(BrownShell.brown)],
+            varieties: [.black], broodiness: 0.2, calmness: 0.6, brownDepth: 0.9,
+            look: BreedLook(body: .heavy, comb: .single, legTone: .slate, size: 1.1),
+            note: "French. Famous for very dark chocolate eggs. Crossed with blue-egg breeds, "
+                + "makes the darkest olive eggers."),
         // Real White Leghorns: dominant white (I/I) over extended black (E, the default), single comb,
         // clean yellow legs, small and flighty, rarely broody. They lay white eggs; cream is the
         // closest egg colour the game has (no blue or brown shell genes).
@@ -193,11 +204,13 @@ public enum BreedTable {
 }
 
 extension Breed {
-    /// A true-breeding bird of this breed: default genes, then the breed's signature, then the variety.
+    /// A true-breeding bird of this breed: default genes, then the breed's signature and shell depth,
+    /// then the variety.
     public func purebred(_ sex: Sex, variety: ColourVariety? = nil, barred: Bool = false) -> Genome {
         let def = definition
         var genome = Genome(sex: sex)
         for gene in def.signature { gene.apply(to: &genome) }
+        QuantitativeTrait.brownDepth.setShare(def.brownDepth, in: &genome)
         for gene in (variety ?? def.varieties.first ?? .black).genes { gene.apply(to: &genome) }
         if barred { GeneSetting.two(Barring.barred).apply(to: &genome) }
         return genome
