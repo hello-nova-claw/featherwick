@@ -130,6 +130,23 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 - The app shows the note in the log, and as a toast. The app keeps only the newest two toasts, so a busy
   night can push it out.
 
+### What might hatch: unlock and words
+
+- The first why note opens the planner. The night sets `GameState.plannerKnown` and sends
+  `.plannerIntroduced` right after that `hatchSurprise`. This happens once a game.
+- The neighbour says: "You can work this out ahead of time, you know. Come and look at the pen."
+  Before the breeding pen opens, she says she will show the keeper once they have one.
+- The unlock makes no random draw. Old saves load with `plannerKnown` false. They wait for the next why note.
+- `Command.openPlanner` sets `plannerOpened`. It costs no daylight and returns no events. Before the
+  unlock it does nothing. The pen shows a "New" notice (`plannerNoticeText`) until the keeper opens the panel.
+- Words (`FeatherwickText/PlannerText.swift`): `plannerText`, `plannerReasonText`, `plannerPanelText`,
+  `plannerLines`, `plannerNoticeText`, `carrierText`, `carrierReasonText`, `carrierLines`.
+  - Ratios read "About 1 in 4 black, 2 in 4 blue, 1 in 4 splash." Never a percentage or a decimal.
+  - A reason names only a bird the keeper owns or has rehomed. Any other bird is "a bird".
+  - A bird whose sex does not show yet gets its name, never he or she.
+- CLI: `plan` shows the pen's forecast. `plan <hen> <rooster>` shows any pair. `carries <name>` shows
+  what a bird surely carries. Before the unlock, both say "Not yet".
+
 ## Breeding pen
 
 `BreedingPen.swift`. The keeper chooses which rooster fathers which hens' eggs.
