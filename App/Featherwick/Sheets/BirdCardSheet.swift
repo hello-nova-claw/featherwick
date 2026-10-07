@@ -289,14 +289,26 @@ struct LastWords: View {
     }
 }
 
-/// The family tree, three generations, as text for now.
+/// The family tree, three generations, as text for now. A bird the keeper has proven carries something
+/// hidden shows it under its line ("carries lavender"), once the planner is known. Read only: no commands.
 struct FamilyTreeSheet: View {
     @Environment(GameStore.self) private var store
+    @Environment(\.palette) private var palette
     let birdID: UUID
     var body: some View {
         SheetPage(context: "Family tree") {
-            Text(treeLines(birdID, store.state).joined(separator: "\n"))
-                .font(.system(.footnote, design: .monospaced))
+            VStack(alignment: .leading, spacing: Space.xs) {
+                ForEach(Array(treeEntries(birdID, store.state).enumerated()), id: \.offset) { _, line in
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(line.text).font(.system(.footnote, design: .monospaced))
+                        if let carries = line.carries {
+                            Text(carries).font(Typeface.caption).foregroundStyle(palette.inkMuted)
+                                .padding(.leading, Space.l)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .presentationDetents([.medium, .large])
     }

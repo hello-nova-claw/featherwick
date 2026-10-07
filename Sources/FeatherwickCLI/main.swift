@@ -75,9 +75,11 @@ func showsScreen(_ s: GameState) { showsLines(s).forEach { print($0) } }
 /// Finds a bird by name, matched the way names are kept unique (`NameBook.key`): case and spaces
 /// don't count, so "chick 3" can be typed as "chick3" too.
 /// Read-only and renaming commands pass `includeLost` so a bird the fox scared off can still be reached.
-func findBird(_ query: String, _ s: GameState, includeLost: Bool = false) -> Bird? {
+/// Read-only commands about family pass `includeRehomed` too: a rehomed bird stays in the family tree.
+/// Birds you have come first, so a rehomed bird never hides one with the same name.
+func findBird(_ query: String, _ s: GameState, includeLost: Bool = false, includeRehomed: Bool = false) -> Bird? {
     let q = NameBook.key(query)
-    let birds = s.birdsAtHome + s.boarding + (includeLost ? s.lost.map(\.bird) : [])
+    let birds = s.birdsAtHome + s.boarding + (includeLost ? s.lost.map(\.bird) : []) + (includeRehomed ? s.rehomed : [])
     return birds.first { NameBook.key($0.name) == q }
 }
 
@@ -332,7 +334,8 @@ while true {
             break
         }
         guard words.count > 1,
-            let bird = findBird(words.dropFirst().joined(separator: ""), game.state, includeLost: true)
+            let bird = findBird(
+                words.dropFirst().joined(separator: ""), game.state, includeLost: true, includeRehomed: true)
         else {
             print("Use: carries <name>")
             break

@@ -121,3 +121,12 @@ public struct Bird: Identifiable, Hashable, Codable, Sendable {
         sex == .hen && age(onDay: day) >= rules.retirementAgeDays
     }
 }
+
+extension Bird {
+    /// Where a bird from outside the flock came from (`origin`). Saves store these words: never change one.
+    public static let neighbourOrigin = "Neighbour"
+    public static let shopOrigin = "Speckle & Down"
+    public static let localFlockOrigin = "Local flock"
+    public static let showOrigin = "County show"
+    public static let villageOrigin = "A Featherwick neighbour"
+}

@@ -204,6 +204,26 @@ import Testing
         #expect(carrierText(barring) == "Carries barring")
     }
 
+    /// The family tree shows each bird's carrier notes in a few words, rehomed birds too, and none
+    /// before the keeper knows the planner.
+    @Test func theFamilyTreeShowsCarrierNotes() {
+        var (s, hen, _, chick) = Self.flock()
+        #expect(carrierShortText([]) == nil)
+        let root = treeLines(chick, s).first ?? ""
+        #expect(root.hasPrefix("Moss") && root.contains(" · carries lavender"), "\(root)")
+        #expect(treeEntries(chick, s).first?.carries?.hasPrefix("carries lavender") == true)
+        // Clover shows her lavender, so her line in Moss's tree carries no note for it.
+        #expect(treeLines(chick, s).first { $0.contains("Mother: Clover") }?.contains("carries lavender") == false)
+        // A rehomed bird keeps its notes in the tree.
+        let moss = s.brooder.removeFirst()
+        s.rehomed.append(moss)
+        #expect(treeLines(chick, s).first?.contains("carries lavender") == true)
+        #expect(treeLines(hen, s).isEmpty == false)
+        s.plannerKnown = false
+        #expect(treeEntries(chick, s).allSatisfy { $0.carries == nil })
+        #expect(!treeLines(chick, s).contains { $0.contains("carries") })
+    }
+
     /// An unrevealed chick with a proven hidden allele: a note and a reason, and no sexed word.
     @Test func anUnrevealedChickGetsASexlessCarrierNote() {
         let (s, _, _, chick) = Self.flock()

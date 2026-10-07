@@ -312,10 +312,10 @@ private func seenLook(_ id: UUID, _ s: GameState) -> SeenLook? {
 private func originWords(_ id: UUID, _ s: GameState) -> String {
     guard let origin = s.bird(id)?.origin else { return "outside the flock" }
     switch origin {
-    case "Neighbour": return "the neighbour"
-    case "Local flock": return "a local flock"
-    case "County show": return "the county show"
-    case "A Featherwick neighbour": return "a Featherwick neighbour"
+    case Bird.neighbourOrigin: return "the neighbour"
+    case Bird.localFlockOrigin: return "a local flock"
+    case Bird.showOrigin: return "the county show"
+    case Bird.villageOrigin: return "a Featherwick neighbour"
     default: return origin
     }
 }
@@ -538,6 +538,14 @@ public func carrierReasonText(_ p: ProvenAllele, bird: UUID, _ s: GameState) -> 
 /// The carrier notes for a bird's card, each with its reason. Empty before the keeper meets the planner.
 public func carrierLines(_ bird: UUID, _ s: GameState) -> [String] {
     Planner.carrierNotes(for: bird, in: s).map { "\(carrierText($0)). \(carrierReasonText($0, bird: bird, s))" }
+}
+
+/// A bird's carrier notes in a few words, for the family tree: "carries lavender and blue eggs". Nil for none.
+public func carrierShortText(_ notes: [ProvenAllele]) -> String? {
+    let items = notes.map { carrierText($0).replacingOccurrences(of: "Carries ", with: "") }
+    guard let last = items.last else { return nil }
+    let list = items.count == 1 ? last : items.dropLast().joined(separator: ", ") + " and " + last
+    return "carries \(list)"
 }
 
 /// What `carries <name>` says when nothing hidden is certain yet.
