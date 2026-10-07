@@ -583,7 +583,7 @@ Sleep waits until every slot is spent, and nothing is ever lost: a refused erran
 
 - **Slots today** (`GameState.slotsToday(rules:)`): `daySlots` (3), plus `slotBonusCoopUpgraded` (1)
   once the coop has more perches than it started with, plus `slotBonusLapChicken` (1) while a lap chicken
-  is at home (in the coop or the brooder). Never more than `maxDaySlots` (5).
+  is at home (in the coop, in the brooder, or a chick with its mother). Never more than `maxDaySlots` (5).
 - **Slots left** (`slotsLeft`): today's slots minus `slotsUsed`, never below 0. Today's slots can drop
   in the day, for example when a lap chicken goes to a new home.
 - **What each command costs** (`Engine.errand(for:)`):
