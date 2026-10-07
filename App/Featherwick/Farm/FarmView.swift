@@ -128,13 +128,13 @@ struct FarmView: View {
             HStack(spacing: 0) {
                 ForEach(FarmPanel.allCases) { p in
                     FarmPanelView(panel: p, openBird: { sheet = .bird($0) })
-                    // The Barn's birds, in the ground band (see `FarmBirds.swift`).
-                    // The yards draw theirs inside the scene, so they sort against the trees.
-                    .overlay {
-                        if !SceneArt.hasScene(p) { PanelBirds(panel: p) { sheet = .bird($0) } }
-                    }
-                    .containerRelativeFrame(.horizontal)
-                    .id(p)
+                        // The Barn's birds, in the ground band (see `FarmBirds.swift`).
+                        // The yards draw theirs inside the scene, so they sort against the trees.
+                        .overlay {
+                            if !SceneArt.hasScene(p) { PanelBirds(panel: p) { sheet = .bird($0) } }
+                        }
+                        .containerRelativeFrame(.horizontal)
+                        .id(p)
                 }
             }
             .scrollTargetLayout()
