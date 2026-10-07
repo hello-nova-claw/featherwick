@@ -254,7 +254,7 @@ public struct Knowledge: Equatable, Codable, Sendable {
                 var changed = true
                 while changed {
                     changed = false
-                    for c in birds.indices where (mother[c] != nil || father[c] != nil) && up(c, l, space) {
+                    for c in birds.indices where hasParents(c) && !sexBlind(c, space) && up(c, l, space) {
                         changed = true
                     }
                     for p in birds.indices where !chicks[p].isEmpty && down(p, l, space) { changed = true }
@@ -262,7 +262,23 @@ public struct Knowledge: Equatable, Codable, Sendable {
             }
         }
 
+        func hasParents(_ c: Int) -> Bool { mother[c] != nil || father[c] != nil }
+
+        /// True for a sex-linked gene of a bird whose sex does not show. Its parents are not used to
+        /// narrow it: a daughter gets her one Z from her father, a son one from each parent, so what the
+        /// parents allow differs by sex, and a narrower set could tell a barred chick's sex (as real
+        /// keepers autosex barred chicks). Such a gene keeps what its look and origin allow, which hold
+        /// both sexes' forms alike. It still counts as evidence about its parents (`down`): that check
+        /// accepts either sex, so it cannot depend on the chick's.
+        func sexBlind(_ c: Int, _ space: GenotypeSpace) -> Bool {
+            birds[c].sex == nil && space.locus.inheritance == .zLinked
+        }
+
         /// A bird from outside the flock is one of its breed's recipes that gives the look it shows.
+        ///
+        /// This uses today's recipes. A bird from an old save may have come from a recipe the game no
+        /// longer has, and then its look can fit no recipe: origin evidence is skipped for that bird,
+        /// rather than counted as a contradiction. Its look and family still count.
         mutating func applyOrigin(_ b: Int, _ v: Visible) {
             let level = v.look?.level
             let look = v.look?.coarse

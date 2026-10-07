@@ -77,7 +77,7 @@ import Testing
             "carrier notes",
             { s in
                 let k = Knowledge.of(s)
-                let notes = s.ownedBirds.map(\.id).sorted { $0.uuidString < $1.uuidString }.map {
+                let notes = (s.ownedBirds + s.rehomed).map(\.id).sorted { $0.uuidString < $1.uuidString }.map {
                     [$0.uuidString: k.provenHidden($0, includeDefault: true)]
                 }
                 return try KnowledgeTests.encode(notes)
@@ -114,50 +114,96 @@ import Testing
         return out
     }
 
-    /// Replaces the genes of `g` with others that give the identical `Phenotype`: at each single gene in
-    /// turn, a different genotype when one keeps the look, picked by `rng`. The quantitative genes stay
-    /// as they are: Knowledge does not track them, and the friendliness band and egg shade read them.
-    /// Returns how many genes changed.
-    static func swapHidden(_ g: inout Genome, _ rng: inout SeededRNG) -> Int {
-        let before = Phenotype(g)
+    /// How much of a bird the keeper saw, worked out here from the game's own facts, not from `Visible`.
+    /// At home: its down until it is revealed, then its feathers, and a grown hen's eggs. Out of sight
+    /// (rehomed, boarding, lost): only the look frozen when it left, or its down for an old save.
+    static func seenLevel(_ b: Bird, away: Bool, _ s: GameState) -> LookLevel {
+        if away { return b.lastSeenLook?.level ?? .down }
+        if !b.revealed { return .down }
+        return b.sex == .hen && b.stage(onDay: s.day, rules: s.rules) == .adult ? .laying : .feathers
+    }
+
+    /// Replaces the genes of `g` with others that keep `key` (what the keeper saw) the same: at each
+    /// single gene in turn, a different genotype when one keeps it, picked by `rng`. With `newSex`, a
+    /// bird whose sex does not show first tries the other sex (with any barring that keeps the look).
+    /// The quantitative genes stay as they are: Knowledge does not track them, and the egg shade reads
+    /// them. Returns how many genes changed (a sex change counts as one).
+    static func swapHidden(
+        _ g: inout Genome, keeping key: (Genome) -> SeenLook, newSex: Bool = false, _ rng: inout SeededRNG
+    ) -> Int {
+        let before = key(g)
         var changed = 0
-        for space in GenotypeSpace.all {
-            let current = truth(g, space)
-            let options = space.genotypes(in: space.mask(for: g.sex)).filter { $0 != current }.shuffled(using: &rng)
-            for option in options {
+        if newSex, Bool.random(using: &rng) {
+            let barring = GenotypeSpace.all.first { $0.locus.id == Barring.locus }!
+            let other: Sex = g.sex == .hen ? .rooster : .hen
+            for z in barring.genotypes(in: barring.mask(for: other)).shuffled(using: &rng) {
+                let b = z.alleles.compactMap(Barring.init(rawValue:))
                 var trial = g
-                trial.setAlleles(option.alleles, at: space.locus)
-                if Phenotype(trial) == before {
+                trial.sexChromosomes = other == .hen ? .hen(z: b[0]) : .rooster(z: AllelePair(b[0], b[1]))
+                if key(trial) == before {
                     g = trial
                     changed += 1
                     break
                 }
             }
         }
-        precondition(Phenotype(g) == before)
+        for space in GenotypeSpace.all {
+            let current = truth(g, space)
+            let options = space.genotypes(in: space.mask(for: g.sex)).filter { $0 != current }.shuffled(using: &rng)
+            for option in options {
+                var trial = g
+                trial.setAlleles(option.alleles, at: space.locus)
+                if key(trial) == before {
+                    g = trial
+                    changed += 1
+                    break
+                }
+            }
+        }
+        precondition(key(g) == before)
         return changed
     }
 
-    /// Swaps the genes of every bird and every egg's chick in the state.
+    /// Swaps the genes of every bird and every egg's chick in the state, keeping only what the keeper
+    /// saw of each bird (`seenLevel`). A bird whose sex does not show may change sex. Eggs' chicks and a
+    /// trade offer's hen were never seen; they keep their whole `Phenotype`, which is stricter.
     static func swapAll(_ s: inout GameState, _ rng: inout SeededRNG) -> Int {
         var changed = 0
-        func birds(_ list: inout [Bird]) {
-            for i in list.indices { changed += swapHidden(&list[i].genome, &rng) }
+        let state = s
+        func swap(_ b: inout Bird, away: Bool) {
+            let level = seenLevel(b, away: away, state)
+            changed += swapHidden(
+                &b.genome, keeping: { SeenLook(Phenotype($0), level: level).coarse }, newSex: !b.revealed, &rng)
         }
-        func eggs(_ list: inout [Egg]) {
-            for i in list.indices where list[i].embryo != nil { changed += swapHidden(&list[i].embryo!, &rng) }
+        let whole = { (g: Genome) in SeenLook(Phenotype(g), level: .laying) }
+        for i in s.brooder.indices { swap(&s.brooder[i], away: false) }
+        for i in s.henChicks.indices { swap(&s.henChicks[i], away: false) }
+        for i in s.coop.indices { swap(&s.coop[i], away: false) }
+        for i in s.boarding.indices { swap(&s.boarding[i], away: true) }
+        for i in s.rehomed.indices { swap(&s.rehomed[i], away: true) }
+        for i in s.lost.indices { swap(&s.lost[i].bird, away: true) }
+        if s.tradeOffer != nil { changed += swapHidden(&s.tradeOffer!.hen.genome, keeping: whole, &rng) }
+        for i in s.nest.indices where s.nest[i].embryo != nil {
+            changed += swapHidden(&s.nest[i].embryo!, keeping: whole, &rng)
         }
-        birds(&s.brooder)
-        birds(&s.henChicks)
-        birds(&s.coop)
-        birds(&s.boarding)
-        birds(&s.rehomed)
-        for i in s.lost.indices { changed += swapHidden(&s.lost[i].bird.genome, &rng) }
-        if s.tradeOffer != nil { changed += swapHidden(&s.tradeOffer!.hen.genome, &rng) }
-        eggs(&s.nest)
-        eggs(&s.carton)
-        for i in s.clutches.indices { eggs(&s.clutches[i].eggs) }
+        for i in s.carton.indices where s.carton[i].embryo != nil {
+            changed += swapHidden(&s.carton[i].embryo!, keeping: whole, &rng)
+        }
+        for c in s.clutches.indices {
+            for i in s.clutches[c].eggs.indices where s.clutches[c].eggs[i].embryo != nil {
+                changed += swapHidden(&s.clutches[c].eggs[i].embryo!, keeping: whole, &rng)
+            }
+        }
         return changed
+    }
+
+    /// True if what Knowledge shows of an unsexed bird's sex-linked genes holds both a hen's form and a
+    /// rooster's, so it cannot tell the sex.
+    static func sexBlind(_ k: Knowledge, _ id: UUID) -> Bool {
+        Loci.zLinked.allSatisfy { locus in
+            let c = k.candidates(id, locus.id)
+            return c.contains { $0.alleles.count == 1 } && c.contains { $0.alleles.count == 2 }
+        }
     }
 
     struct BlindResult: Sendable {
@@ -166,6 +212,7 @@ import Testing
         var genesSwapped = 0
         var proven = 0
         var contradictions = 0
+        var sexesSwapped = 0
         var mismatches: [String] = []
         var unsound: [String] = []
 
@@ -175,6 +222,7 @@ import Testing
             genesSwapped += o.genesSwapped
             proven += o.proven
             contradictions += o.contradictions
+            sexesSwapped += o.sexesSwapped
             mismatches += o.mismatches.prefix(5)
             unsound += o.unsound.prefix(5)
         }
@@ -190,6 +238,7 @@ import Testing
         r.birds = k.birds.count
         for b in s.ownedBirds + s.rehomed {
             r.proven += k.provenHidden(b.id).count
+            if !b.revealed, !sexBlind(k, b.id) { r.unsound.append("seed \(seed): \(b.name)'s sex shows") }
             for space in GenotypeSpace.all where !k.candidates(b.id, space.locus.id).contains(truth(b.genome, space)) {
                 r.unsound.append("seed \(seed): \(b.name) at \(space.locus.id) is \(truth(b.genome, space))")
             }
@@ -197,7 +246,9 @@ import Testing
         do {
             let before = try blindOutputs.map { try $0.make(s) }
             var rng = SeededRNG(seed: seed ^ 0x5357_4150)  // "SWAP"
+            let sexes = Dictionary(uniqueKeysWithValues: (s.ownedBirds + s.rehomed).map { ($0.id, $0.sex) })
             r.genesSwapped = swapAll(&s, &rng)
+            r.sexesSwapped = (s.ownedBirds + s.rehomed).count { sexes[$0.id] != $0.sex }
             let after = try blindOutputs.map { try $0.make(s) }
             for (i, output) in blindOutputs.enumerated() where before[i] != after[i] {
                 r.mismatches.append("seed \(seed): \(output.name) changed")
@@ -232,9 +283,11 @@ import Testing
         let elapsed = clock.now - start
         print(
             "Knowledge blind test: \(total.games) games × \(Self.blindDays) days, \(total.birds) birds, "
-                + "\(total.genesSwapped) genes swapped, \(total.proven) carrier notes, \(elapsed)")
+                + "\(total.genesSwapped) genes swapped, \(total.sexesSwapped) chicks changed sex, "
+                + "\(total.proven) carrier notes, \(elapsed)")
         #expect(total.games == Self.blindGames)
         #expect(total.genesSwapped > 0)
+        #expect(total.sexesSwapped > 0)
         #expect(total.proven > 0)
         #expect(total.mismatches.isEmpty, "\(total.mismatches)")
         // Sound in normal play: evidence never contradicts itself, and the truth is never ruled out.
@@ -568,6 +621,83 @@ import Testing
         #expect(odd.allSatisfy { $0.look.chickDown == .yellow }, "\(odd)")
     }
 
+    /// Barred hen × plain rooster: a barred chick can only be a son (real keepers autosex this way). Its
+    /// sex does not show yet, so Knowledge must keep the hen's and the rooster's barred forms alike.
+    @Test func anUnsexedBarredChickKeepsBothSexes() {
+        let barredHen = Self.genome(.hen) { $0.sexChromosomes = .hen(z: .barred) }
+        let son = Self.genome(.rooster) { $0.sexChromosomes = .rooster(z: AllelePair(.barred, .plain)) }
+        let k = Knowledge.of([
+            Self.seen(1, .hen, Self.look(barredHen)),
+            Self.seen(2, .rooster, Self.look(Self.genome(.rooster)), origin: "Speckle & Down"),
+            Self.seen(3, nil, Self.look(son, .down), mother: 1, father: 2, breed: nil, stage: .chick),
+        ])
+        #expect(
+            k.candidates(Self.id(3), Barring.locus)
+                == Self.genotypes(Barring.locus, [["B"], ["B", "B"], ["B", "b+"]]))
+        #expect(Self.sexBlind(k, Self.id(3)))
+        // The look-alike pullet chick gives the very same knowledge.
+        let daughter = Self.genome(.hen) { $0.sexChromosomes = .hen(z: .barred) }
+        #expect(Self.look(daughter, .down) == Self.look(son, .down))
+    }
+
+    // MARK: - Birds out of sight
+
+    /// A grower hen rehomed before she laid. Her egg genes never showed, so no age she reaches later
+    /// may tell the keeper anything about them, or about her father.
+    @Test func aRehomedGrowerHenNeverShowsHerEggs() throws {
+        var (s, rng) = startedGame(sex: .hen)
+        let father = Self.bird(Self.genome(.rooster), .orpington, origin: Bird.homeOrigin, s, &rng)
+        let hen = Self.bird(
+            Self.genome(.hen) { $0.blueShell = AllelePair(.blue, .white) }, .orpington, origin: Bird.homeOrigin, s,
+            &rng, age: s.rules.growerAge, father: father.id)
+        s.coop += [father, hen]
+        _ = Engine.apply(.rehome(hen.id), to: &s, using: &rng)
+        try #require(s.rehomed.contains { $0.id == hen.id })
+        #expect(s.rehomed.first { $0.id == hen.id }?.lastSeenLook?.level == .feathers)
+        s.day += 2 * s.rules.adultAge
+        let k = Knowledge.of(s)
+        #expect(Visible.all(in: s).first { $0.id == hen.id }?.look?.eggColour == nil)
+        for locus in [BlueShell.locus, BrownShell.locus, Speckle.locus] {
+            #expect(k.candidates(hen.id, locus) == Self.all(locus, .hen), "\(locus)")
+            #expect(k.candidates(father.id, locus) == Self.all(locus, .rooster), "\(locus)")
+        }
+        #expect(k.provenHidden(father.id).isEmpty)
+    }
+
+    /// Lost and boarding birds are out of sight too: their look stays as it was when they left, and
+    /// comes back to today's when they are home again.
+    @Test func lostAndBoardingBirdsKeepTheLookTheyLeftWith() {
+        var (s, rng) = startedGame(sex: .hen)
+        let blue = Self.genome(.hen) { $0.blueShell = .homozygous(.blue) }
+        let lost = Self.bird(blue, .orpington, origin: Bird.homeOrigin, s, &rng, age: s.rules.growerAge)
+        let boarding = Self.bird(blue, .orpington, origin: Bird.homeOrigin, s, &rng, age: s.rules.growerAge)
+        s.lost.append(LostBird(bird: lost.leavingSight(in: s, onDay: s.day), returnsOnDay: s.day + 999))
+        s.boarding.append(boarding.leavingSight(in: s, onDay: s.day))
+        s.day += s.rules.adultAge
+        let k = Knowledge.of(s)
+        for b in [lost, boarding] {
+            #expect(Visible.all(in: s).first { $0.id == b.id }?.look?.level == .feathers)
+            #expect(k.candidates(b.id, BlueShell.locus) == Self.all(BlueShell.locus, .hen))
+        }
+        // Home again, she lays where the keeper sees.
+        var home = s.boarding.removeFirst()
+        home.lastSeenLook = nil
+        s.coop.append(home)
+        #expect(Visible.all(in: s).first { $0.id == home.id }?.look?.eggColour != nil)
+    }
+
+    /// A rehomed bird from a save made before looks were frozen: the day it left is not known, so it
+    /// shows only its down.
+    @Test func anOldRehomedBirdShowsOnlyItsDown() {
+        var (s, rng) = startedGame(sex: .hen)
+        let hen = Self.bird(Self.genome(.hen), .orpington, origin: Bird.homeOrigin, s, &rng)
+        s.rehomed.append(hen)
+        #expect(hen.lastSeenLook == nil)
+        let v = Visible.all(in: s).first { $0.id == hen.id }
+        #expect(v?.look?.level == .down)
+        #expect(v?.sex == .hen)  // its sex showed before it left
+    }
+
     // MARK: - Origin
 
     @Test func aLavenderOrpingtonFromTheShopIsPinnedEverywhere() {
@@ -677,6 +807,17 @@ import Testing
         let k = Knowledge.of(s)
         #expect(k.candidates(mother.id, Lavender.locus) == Self.genotypes(Lavender.locus, [["lav+", "lav"]]))
         #expect(k.provenHidden(mother.id).first { $0.allele == "lav" }?.evidence == .child(chick.id))
+    }
+
+    /// An outside bird from an old save may fit no recipe the game has now (here: a silkie-feathered
+    /// Orpington). Origin evidence is skipped for it, not counted as a contradiction.
+    @Test func aLookThatFitsNoRecipeSkipsOriginEvidence() {
+        let odd = Self.genome(.hen) { $0.feathering = .homozygous(.silkie) }
+        let k = Knowledge.of([Self.seen(1, .hen, Self.look(odd, .laying), origin: "Speckle & Down")])
+        #expect(k.contradictions == 0)
+        #expect(k.candidates(Self.id(1), Feathering.locus) == Self.genotypes(Feathering.locus, [["h", "h"]]))
+        // No breed evidence: lacing, which every Orpington recipe leaves plain, stays open.
+        #expect(k.state(Self.id(1), Lacing.locus) == .open)
     }
 
     /// A record with no look (a parent of a bought egg) gives its breed's recipes and nothing more.

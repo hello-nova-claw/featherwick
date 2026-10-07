@@ -474,7 +474,7 @@ public enum Engine {
             if let (keyPath, i) = locate(offer.roosterID, in: s, groups: [\.coop, \.brooder]) {
                 let rooster = s[keyPath: keyPath][i]
                 s[keyPath: keyPath][i] = offer.hen  // she takes his place
-                s.rehomed.append(rooster)
+                s.rehomed.append(rooster.leavingSight(in: s, onDay: s.day))
                 s.tradeOffer = nil
                 if s.starterID == rooster.id { s.starterID = nil }
                 var ev: [GameEvent] = [.tradeAccepted(rooster: rooster.id, hen: offer.hen.id)]
@@ -883,7 +883,7 @@ public enum Engine {
                 // A fright and time living rough make a bird warier of people.
                 let away = min(r.maxLostTamenessLoss, r.lostDayTamenessLoss * Double(days + 1))
                 b.changeTameness(by: -(r.foxFrightTamenessLoss + away))
-                s.lost.append(LostBird(bird: b, returnsOnDay: s.day + 1 + days))
+                s.lost.append(LostBird(bird: b.leavingSight(in: s, onDay: s.day), returnsOnDay: s.day + 1 + days))
             }
             ev.append(.foxVisited(scared: scared.map(\.id)))
             leavePenIfGone(&s)  // a scared bird leaves the pen; the keeper pens it again when it is home
@@ -923,6 +923,7 @@ public enum Engine {
             if s.coop.count < s.perches {
                 var b = lb.bird
                 b.noLayUntilDay = s.day + r.scaredNoLayDays
+                b.lastSeenLook = nil  // home again: the keeper sees it as it is now
                 s.coop.append(b)
                 ev.append(.birdReturned(b.id))
             } else {
@@ -1014,6 +1015,7 @@ public enum Engine {
         func perch(_ b: Bird) {
             var b = b
             b.waitingSinceDay = nil
+            b.lastSeenLook = nil  // home again, if it was boarding
             s.coop.append(b)
         }
 
@@ -1054,7 +1056,8 @@ public enum Engine {
                 s.brooder.append(b)
                 waiting.insert(b.id)
             } else {
-                s.boarding.append(b)
+                // Moved in the night: the keeper last saw it yesterday.
+                s.boarding.append(b.leavingSight(in: s, onDay: day - 1))
             }
         }
         s.henChicks = withMother
@@ -1072,7 +1075,7 @@ public enum Engine {
                 continue
             }
             if waitedTooLong(&b) {
-                ev.append(.rehomedByNeighbour(b.id, coins: sendToNewHome(b, &s)))
+                ev.append(.rehomedByNeighbour(b.id, coins: sendToNewHome(b, &s, lastSeenOnDay: day - 1)))
             } else {
                 keptInBrooder.append(b)
                 ev.append(.needsHome(b.id))
@@ -1082,7 +1085,7 @@ public enum Engine {
         var keptBoarding: [Bird] = []
         for var b in s.boarding {
             if waitedTooLong(&b) {
-                ev.append(.rehomedByNeighbour(b.id, coins: sendToNewHome(b, &s)))
+                ev.append(.rehomedByNeighbour(b.id, coins: sendToNewHome(b, &s, lastSeenOnDay: day - 1)))
             } else {
                 keptBoarding.append(b)
                 if !wereBoarding.contains(b.id) { ev.append(.boardingWithNeighbour(b.id)) }
@@ -1094,12 +1097,14 @@ public enum Engine {
 
     /// A bird leaves the flock for a good home in Featherwick. The keeper is paid what it is worth.
     /// The caller has already taken it out of its group.
-    static func sendToNewHome(_ bird: Bird, _ s: inout GameState) -> Int {
+    static func sendToNewHome(_ bird: Bird, _ s: inout GameState, lastSeenOnDay: Int? = nil) -> Int {
         let coins = s.rehomeValue(of: bird)
         s.coins += coins
         var bird = bird
         bird.waitingSinceDay = nil
-        s.rehomed.append(bird)
+        // A rehome by the keeper is by day. One by the neighbour is in the night (`findHomes`), after
+        // the new day began: the keeper last saw the bird the day before.
+        s.rehomed.append(bird.leavingSight(in: s, onDay: lastSeenOnDay ?? s.day))
         if s.starterID == bird.id { s.starterID = nil }
         if s.tradeOffer?.roosterID == bird.id { s.tradeOffer = nil }  // a new offer comes in the morning if needed
         return coins
@@ -1161,7 +1166,7 @@ public enum Engine {
         } else if s.coop.count < s.perches {
             s.coop.append(hen)
         } else {
-            s.boarding.append(hen)
+            s.boarding.append(hen.leavingSight(in: s, onDay: s.day - 1))  // the keeper has not seen her yet
             ev.append(.boardingWithNeighbour(hen.id))
         }
         ev += recordBreed(hen, into: &s.breedBook)

@@ -9,6 +9,14 @@ import Foundation
 extension Bird {
     /// The origin of every chick hatched at home. Any other origin is a bird from outside the flock.
     public static let homeOrigin = "Henhaven"
+
+    /// The bird as it goes out of the keeper's sight: its look on `day`, the last day the keeper saw
+    /// it, is frozen in `lastSeenLook`. A bird already out of sight keeps the look it had.
+    func leavingSight(in s: GameState, onDay day: Int) -> Bird {
+        var b = self
+        if b.lastSeenLook == nil { b.lastSeenLook = SeenLook(seenToday: self, onDay: day, rules: s.rules) }
+        return b
+    }
 }
 
 /// How much of a bird's look the keeper can see.
@@ -67,12 +75,34 @@ public struct SeenLook: Hashable, Codable, Sendable {
         }
     }
 
-    /// What the keeper sees of `bird` today.
+    /// What the keeper has seen of `bird`. A bird at home shows today's look. A bird out of sight
+    /// (rehomed, boarding or lost) keeps the look frozen when it left (`Bird.lastSeenLook`): it may
+    /// grow up while away, but the keeper never sees it lay. An away bird from a save made before
+    /// looks were frozen shows only its down, the safe choice: the day it left is not known.
     public init(of bird: Bird, in s: GameState) {
+        let away =
+            s.rehomed.contains { $0.id == bird.id } || s.boarding.contains { $0.id == bird.id }
+            || s.lost.contains { $0.bird.id == bird.id }
+        self.init(of: bird, in: s, away: away)
+    }
+
+    init(of bird: Bird, in s: GameState, away: Bool) {
+        if let frozen = bird.lastSeenLook {
+            self = frozen
+        } else if away {
+            self.init(bird.phenotype, level: .down)
+        } else {
+            self.init(seenToday: bird, onDay: s.day, rules: s.rules)
+        }
+    }
+
+    /// The look of a bird in front of the keeper on `day`: its down until it is revealed, then its
+    /// feathers, and a grown hen's eggs too.
+    init(seenToday bird: Bird, onDay day: Int, rules: Rules) {
         let level: LookLevel =
             if !bird.revealed {
                 .down
-            } else if bird.sex == .hen, bird.stage(onDay: s.day, rules: s.rules) == .adult {
+            } else if bird.sex == .hen, bird.stage(onDay: day, rules: rules) == .adult {
                 .laying
             } else {
                 .feathers
@@ -114,16 +144,13 @@ public struct Visible: Hashable, Codable, Sendable, Identifiable {
     public let fatherID: UUID?
     /// Nil for a bird the keeper never saw, such as a parent of a bought egg.
     public let look: SeenLook?
-    /// The friendliness band the keeper sees. Nil for a bird the keeper never handled.
-    public let friendliness: Friendliness?
     /// The type band a show judge gave the bird at its newest show with a type note. Nil until a judge
     /// has said: never worked out from genes, so it tells the keeper only what they were shown.
     public let typeBand: JudgeNote.Band?
 
     public init(
         id: UUID, name: String, sex: Sex?, stage: LifeStage, breed: Breed?, isPurebred: Bool?, origin: String,
-        motherID: UUID?, fatherID: UUID?, look: SeenLook?, friendliness: Friendliness? = nil,
-        typeBand: JudgeNote.Band? = nil
+        motherID: UUID?, fatherID: UUID?, look: SeenLook?, typeBand: JudgeNote.Band? = nil
     ) {
         self.id = id
         self.name = name
@@ -135,7 +162,6 @@ public struct Visible: Hashable, Codable, Sendable, Identifiable {
         self.motherID = motherID
         self.fatherID = fatherID
         self.look = look
-        self.friendliness = friendliness
         self.typeBand = typeBand
     }
 
@@ -146,8 +172,17 @@ public struct Visible: Hashable, Codable, Sendable, Identifiable {
             stage: bird.stage(onDay: s.day, rules: s.rules),
             breed: bird.revealed ? bird.breed : nil, isPurebred: bird.revealed ? bird.isPurebred : nil,
             origin: bird.origin, motherID: bird.motherID, fatherID: bird.fatherID,
-            look: SeenLook(of: bird, in: s), friendliness: bird.friendliness,
-            typeBand: Self.typeBand(of: bird.id, in: s))
+            look: SeenLook(of: bird, in: s), typeBand: Self.typeBand(of: bird.id, in: s))
+    }
+
+    /// The same, when the caller already knows whether the bird is out of sight.
+    init(bird: Bird, in s: GameState, away: Bool) {
+        self.init(
+            id: bird.id, name: bird.name, sex: bird.revealed ? bird.sex : nil,
+            stage: bird.stage(onDay: s.day, rules: s.rules),
+            breed: bird.revealed ? bird.breed : nil, isPurebred: bird.revealed ? bird.isPurebred : nil,
+            origin: bird.origin, motherID: bird.motherID, fatherID: bird.fatherID,
+            look: SeenLook(of: bird, in: s, away: away), typeBand: Self.typeBand(of: bird.id, in: s))
     }
 
     /// A family-tree record. Its sex is known from its place in the tree (mothers are hens), unless
@@ -183,8 +218,11 @@ public struct Visible: Hashable, Codable, Sendable, Identifiable {
     public static func all(in s: GameState) -> [Visible] {
         var seen: Set<UUID> = []
         var out: [Visible] = []
-        for b in s.ownedBirds + s.rehomed where seen.insert(b.id).inserted {
-            out.append(Visible(bird: b, in: s))
+        for b in s.birdsAtHome where seen.insert(b.id).inserted {
+            out.append(Visible(bird: b, in: s, away: false))
+        }
+        for b in s.lost.map(\.bird) + s.boarding + s.rehomed where seen.insert(b.id).inserted {
+            out.append(Visible(bird: b, in: s, away: true))
         }
         for r in s.pedigree.values where seen.insert(r.id).inserted {
             out.append(Visible(record: r, in: s))
