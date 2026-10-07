@@ -59,7 +59,7 @@ struct ShowDayView: View {
     }
 }
 
-/// One class at the show: its name and difficulty, then each of your entries in it.
+/// One class at the show: its name and difficulty, the top three (rivals too), then each of your entries.
 struct ShowClassSection: View {
     @Environment(\.palette) private var palette
     let showClass: ShowClass
@@ -70,15 +70,148 @@ struct ShowClassSection: View {
         VStack(alignment: .leading, spacing: Space.s) {
             Text(showClass.name).font(Typeface.title2)
             Text(subtitle).font(Typeface.label).foregroundStyle(palette.inkMuted)
+            if !podium.isEmpty {
+                ShowPodium(showClass: showClass, podium: podium, day: results.first?.day ?? 0)
+            }
             ForEach(Array(results.enumerated()), id: \.offset) { _, r in
                 ShowEntryResult(result: r)
             }
         }
     }
 
+    /// Every result in a class carries the same podium. Empty for results from older saves.
+    private var podium: [PodiumPlace] { results.lazy.compactMap(\.podium).first ?? [] }
+
     private var subtitle: String {
         let difficulty = "\(difficultyName(showClass.kind)) class"
         return featured ? "\(difficulty) · featured, bonus prizes" : difficulty
+    }
+}
+
+/// The top three in a class, whoever they belong to. Your own places have an ink frame.
+struct ShowPodium: View {
+    let showClass: ShowClass
+    let podium: [PodiumPlace]
+    let day: Int
+
+    var body: some View {
+        let owners: [String?] = podiumOwnerNames(podium)
+        VStack(alignment: .leading, spacing: Space.xs) {
+            Text("The top three").font(Typeface.item)
+            ForEach(Array(podium.enumerated()), id: \.offset) { i, place in
+                let who: String = podiumWhoText(place, owner: owners[i], in: showClass)
+                PodiumRow(place: place, who: who, showClass: showClass, day: day)
+            }
+        }
+    }
+}
+
+/// One podium place: rosette, a small drawing, who, the score, and "Why?" for the judge's notes.
+struct PodiumRow: View {
+    @Environment(\.palette) private var palette
+    let place: PodiumPlace
+    let who: String
+    let showClass: ShowClass
+    let day: Int
+    @State private var showsWhy = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.xs) {
+            HStack(spacing: Space.s) {
+                RibbonMark(placing: place.placing, size: 16)
+                PodiumArt(entrant: place.entrant, showClass: showClass, day: day)
+                summary
+                Spacer(minLength: Space.s)
+                whyButton
+            }
+            if showsWhy { JudgeNotes(notes: place.notes) }
+        }
+        .padding(Space.s)
+        .background { frame }
+    }
+
+    /// "Why?" opens the judge's notes under the row; "Hide" closes them.
+    private var whyButton: some View {
+        let label: String = showsWhy ? "Hide" : "Why?"
+        let spoken: String = showsWhy ? "Hide the judge's notes" : "Why it placed: the judge's notes"
+        return Button(label) { showsWhy.toggle() }
+            .buttonStyle(.textAction)
+            .accessibilityLabel(spoken)
+    }
+
+    private var summary: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(sentenceCase(who)).font(Typeface.item)
+            Text("\(placingText(place.placing)), \(place.score) of 100")
+                .font(Typeface.label).foregroundStyle(palette.inkMuted)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private var frame: some View {
+        if place.isKeeper {
+            RoundedRectangle(cornerRadius: Radius.control).stroke(palette.ink, lineWidth: 1.2)
+        }
+    }
+}
+
+/// A small drawing of a podium entrant: the bird from its genes, or an egg in the plate's colour.
+struct PodiumArt: View {
+    @Environment(GameStore.self) private var store
+    let entrant: PodiumEntrant
+    let showClass: ShowClass
+    let day: Int
+
+    private let height: CGFloat = 40
+
+    var body: some View {
+        art.frame(width: 48, height: height)
+    }
+
+    @ViewBuilder
+    private var art: some View {
+        switch entrant {
+        case .rivalBird(_, let bird):
+            ChickenRig(colours: rivalColours(bird), height: height)
+        case .rivalPlate(_, let colour, let speckled):
+            EggMark(colour: colour, speckled: speckled, size: CGSize(width: 22, height: 28))
+        case .keeper(_, let birdID):
+            keeperArt(birdID)
+        }
+    }
+
+    /// A rival as it looked on show day. Its colours come from its genes, like any bird's.
+    private func rivalColours(_ bird: Bird) -> ChickenColours {
+        let look: Look = bird.look(onDay: day, rules: store.state.rules)
+        return ChickenColours(look: look)
+    }
+
+    @ViewBuilder
+    private func keeperArt(_ id: UUID?) -> some View {
+        if let id, let bird = store.state.bird(id) {
+            ChickenRig(colours: ChickenColours(bird: bird, state: store.state), height: height)
+        } else if case .eggs(let colour) = showClass {
+            EggMark(colour: colour, size: CGSize(width: 22, height: 28))
+        } else {
+            ArtPlaceholder(label: "bird").frame(width: height, height: height)
+        }
+    }
+}
+
+/// The judge's notes, in italic, as the judge said them.
+struct JudgeNotes: View {
+    @Environment(\.palette) private var palette
+    let notes: [JudgeNote]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.xs) {
+            ForEach(Array(notes.enumerated()), id: \.offset) { _, note in
+                Text("“\(sentenceCase(noteText(note))).”")
+                    .font(Typeface.serifItalic(18))
+                    .foregroundStyle(palette.inkSoft)
+            }
+        }
     }
 }
 
@@ -103,7 +236,7 @@ struct ShowEntryResult: View {
             if let won {
                 Text(won).font(Typeface.body).foregroundStyle(palette.inkSoft)
             }
-            notes
+            JudgeNotes(notes: result.notes ?? [])
         }
     }
 
@@ -112,16 +245,6 @@ struct ShowEntryResult: View {
         let treats = result.treats ?? 0
         guard result.prize > 0 || treats > 0 else { return nil }
         return "Won \(prizeWords(coins: result.prize, treats: treats))"
-    }
-
-    private var notes: some View {
-        VStack(alignment: .leading, spacing: Space.xs) {
-            ForEach(Array((result.notes ?? []).enumerated()), id: \.offset) { _, note in
-                Text("“\(sentenceCase(noteText(note))).”")
-                    .font(Typeface.serifItalic(18))
-                    .foregroundStyle(palette.inkSoft)
-            }
-        }
     }
 }
 
