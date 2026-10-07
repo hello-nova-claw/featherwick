@@ -15,7 +15,12 @@ struct RootView: View {
             let palette = Palette.forGame(evening: evening, asleep: store.asleep, pinned: pinned)
             Group {
                 if case .choosingStarter(let chicks) = store.state.phase {
-                    StarterView(chicks: chicks)
+                    // Day 1: Hazel says hello and asks the keeper's name, then offers a chick.
+                    if store.state.keeperName == nil {
+                        WelcomeView()
+                    } else {
+                        StarterView(chicks: chicks)
+                    }
                 } else {
                     FarmView()
                 }
@@ -40,9 +45,8 @@ struct StarterView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Space.l) {
                 Text("Henhaven").font(Typeface.title)
-                Text("“I keep orpingtons, wyandottes and araucanas. Take whichever chick you like.”")
-                    .font(Typeface.speech)
-                Text("Mabel, over the fence").font(Typeface.label).foregroundStyle(palette.inkMuted)
+                Text("“\(People.chickOffer(store.state.keeperName ?? ""))”").font(Typeface.speech)
+                Text("\(People.neighbour), over the fence").font(Typeface.label).foregroundStyle(palette.inkMuted)
                 HStack(spacing: Space.m) {
                     ForEach(Array(chicks.enumerated()), id: \.element.id) { index, chick in
                         Button {
@@ -82,5 +86,45 @@ struct StarterView: View {
         }
         .foregroundStyle(palette.ink)
         .background(palette.paper)
+    }
+}
+
+/// Day 1, first screen: Hazel leans over the back fence and asks the keeper's name.
+struct WelcomeView: View {
+    @Environment(GameStore.self) private var store
+    @Environment(\.palette) private var palette
+    @State private var name = ""
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Space.l) {
+                Text("Henhaven").font(Typeface.title)
+                ArtPlaceholder(label: "Hazel", radius: 36).frame(width: 72, height: 72)
+                ForEach(People.welcome, id: \.self) { line in
+                    Text("“\(line)”").font(Typeface.speech).fixedSize(horizontal: false, vertical: true)
+                }
+                Text("\(People.neighbour), over the fence").font(Typeface.label).foregroundStyle(palette.inkMuted)
+                TextField("Your name", text: $name)
+                    .font(Typeface.serif(30, relativeTo: .title))
+                    .textInputAutocapitalization(.words)
+                    .submitLabel(.done)
+                    .onSubmit(sayName)
+                    .background(alignment: .bottom) {
+                        HLine().stroke(palette.ink.opacity(0.5), style: Stitch.underline).frame(height: 2).offset(y: 4)
+                    }
+                Button("That's me", action: sayName)
+                    .buttonStyle(.primary)
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            .padding(.horizontal, Space.sheetSide)
+            .padding(.vertical, Space.xxl)
+        }
+        .foregroundStyle(palette.ink)
+        .background(palette.paper)
+    }
+
+    private func sayName() {
+        guard !name.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        store.run(.nameKeeper(name))
     }
 }

@@ -84,6 +84,7 @@ func findBird(_ query: String, _ s: GameState, includeLost: Bool = false) -> Bir
 let help = """
     Commands:
       look                 see your birds and supplies
+      iam <your name>      tell Hazel your name (any time)
       choose <1-3> <name>  pick your starter chick
       feed                 feed everyone for today (basic feed is free)
       feed premium         use premium feed: feeds them and lifts laying (buy feed first)
@@ -159,6 +160,10 @@ func prompt(_ s: GameState) -> String {
 
 print("Featherwick · slot: \(store.slot) · save: \(store.url.path)")
 print("Type help for commands.\n")
+if case .choosingStarter = game.state.phase, game.state.keeperName == nil {
+    People.welcome.forEach { print("\(People.neighbour): \"\($0)\"") }
+    print("(iam <your name>)")
+}
 look(game.state)
 
 /// New birds you hatched or bought need a name. Ask now, with a suggestion (Enter takes it).
@@ -186,6 +191,8 @@ while true {
     switch verb {
     case "help", "?": print(help)
     case "look", "l": look(game.state)
+    case "iam":
+        run(.nameKeeper(line.split(separator: " ").dropFirst().joined(separator: " ")))
     case "choose":
         let index = (words.count > 1 ? Int(words[1]) : nil) ?? 0
         let original = line.split(separator: " ").dropFirst(2).joined(separator: " ")

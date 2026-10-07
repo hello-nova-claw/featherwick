@@ -522,6 +522,7 @@ struct HatchingEdgeCases {
     @Test func hatchedChicksAreNumberedAcrossClutchesAndStartHidden() {
         var (s, rng) = gameWithIncubator(fertile: 4)
         s.brooderSize = 6  // room for the starter and 4 chicks
+        let day = s.day
         _ = Engine.apply(.incubate(count: 2), to: &s, using: &rng)
         night(&s, &rng)
         _ = Engine.apply(.incubate(count: 2), to: &s, using: &rng)
@@ -529,7 +530,9 @@ struct HatchingEdgeCases {
         let hatched = s.brooder.filter { $0.origin == "Henhaven" }
         #expect(hatched.map(\.name) == ["Chick 1", "Chick 2", "Chick 3", "Chick 4"])
         #expect(hatched.allSatisfy { !$0.revealed })
-        #expect(hatched.prefix(2).allSatisfy { $0.hatchDay == 1 } && hatched.suffix(2).allSatisfy { $0.hatchDay == 2 })
+        #expect(
+            hatched.prefix(2).allSatisfy { $0.hatchDay == day + 1 }
+                && hatched.suffix(2).allSatisfy { $0.hatchDay == day + 2 })
     }
 
     @Test func buyingTheBigIncubatorFirstMeansNoGiftLater() {

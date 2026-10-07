@@ -212,7 +212,7 @@ struct ShowPanel: View {
             Engine.eligibleClasses(for: bird, in: s).contains(tip.showClass)
         {
             VStack(alignment: .leading, spacing: Space.s) {
-                Text("The neighbour thinks \(bird.name) could do well in the \(tip.showClass.name) class.")
+                Text("Hazel thinks \(bird.name) could do well in the \(tip.showClass.name) class.")
                     .font(Typeface.serifItalic(17)).foregroundStyle(palette.inkSoft)
                 // No daylight left for the show desk: the words in place of the button.
                 if let closed = daylightRefusalText(.enterShowIn(bird.id, tip.showClass), in: s) {
@@ -518,7 +518,7 @@ struct BackFenceSheet: View {
                 Spacer()
                 CloseButton()
             }
-            Text("Mabel, over the fence").font(Typeface.label).foregroundStyle(palette.inkMuted)
+            Text("\(People.neighbour), over the fence").font(Typeface.label).foregroundStyle(palette.inkMuted)
             Text(speech(s)).font(Typeface.speech)
             VStack(spacing: 0) {
                 StitchDivider()

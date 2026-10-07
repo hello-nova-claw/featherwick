@@ -75,6 +75,8 @@ enum FarmSheet: Identifiable, Hashable {
         case betaPrompt(BetaMoment)
     #endif
     case morningReport
+    /// Day 1: Hazel shows the keeper round the farm, one place at a time.
+    case tour
     var id: Self { self }
 }
 
@@ -133,27 +135,9 @@ struct FarmView: View {
             ShowDayView(report: report)
                 .environment(\.palette, palette)
         }
-        .onChange(of: store.openRequest) { _, request in
-            if let request {
-                #if DEBUG || BETA
-                    // A beta question never pushes a sheet aside: it waits until that sheet closes.
-                    if case .betaPrompt = request, sheet != nil || swapping != nil {
-                        store.openRequest = nil
-                        return
-                    }
-                    // Nothing pushes a beta question aside either: the request waits until it closes.
-                    if case .betaPrompt? = sheet {
-                        afterBeta = request
-                        store.openRequest = nil
-                        return
-                    }
-                #endif
-                // A sheet for a place also moves the farm to that place's panel.
-                if case .place(let place) = request { scrolled = .containing(place) }
-                sheet = request
-                store.openRequest = nil
-            }
-        }
+        .onChange(of: store.openRequest) { _, request in openRequested(request) }
+        // A request made before the farm was on screen (the day-1 tour, set as the starter screen closes).
+        .onAppear { openRequested(store.openRequest) }
         .onChange(of: sheet) { _, new in if let new { shownSheet = new } }
         .onChange(of: store.showReport) { _, report in showReportChanged(report) }
         // A show night: the show opens once the keeper is back from the morning report.
@@ -275,6 +259,29 @@ struct FarmView: View {
         showDay = report
     }
 
+    /// Opens what the store asked for, unless a beta question must not be pushed aside.
+    private func openRequested(_ request: FarmSheet?) {
+        if let request {
+            #if DEBUG || BETA
+                // A beta question never pushes a sheet aside: it waits until that sheet closes.
+                if case .betaPrompt = request, sheet != nil || swapping != nil {
+                    store.openRequest = nil
+                    return
+                }
+                // Nothing pushes a beta question aside either: the request waits until it closes.
+                if case .betaPrompt? = sheet {
+                    afterBeta = request
+                    store.openRequest = nil
+                    return
+                }
+            #endif
+            // A sheet for a place also moves the farm to that place's panel.
+            if case .place(let place) = request { scrolled = .containing(place) }
+            sheet = request
+            store.openRequest = nil
+        }
+    }
+
     /// The neighbour's note from the night, once the morning report (and any show) is closed.
     private func presentNeighbourNoteIfWaiting() {
         guard showDay == nil, sheet == nil, swapping == nil, store.morningReport == nil, !store.neighbourNotes.isEmpty
@@ -324,6 +331,7 @@ struct FarmView: View {
             case .betaPrompt(let moment): BetaPromptSheet(moment: moment)
         #endif
         case .morningReport: MorningReportSheet()
+        case .tour: TourSheet(show: { scrolled = .containing($0) })
         }
     }
 

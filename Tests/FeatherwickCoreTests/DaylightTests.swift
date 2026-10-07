@@ -260,7 +260,7 @@ struct DaylightTests {
         }
         let (a, rngA) = play()
         let (b, rngB) = play()
-        #expect(a.day == 40)
+        #expect(a.day == 41)  // 40 nights from day 1
         #expect(a == b)
         #expect(rngA == rngB)
     }

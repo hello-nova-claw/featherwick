@@ -167,7 +167,7 @@ struct CoopSheet: View {
     private func perchWaitText(_ bird: Bird, _ s: GameState) -> String {
         guard let nights = s.nightsUntilRehomed(bird.id) else { return "\(bird.name) is waiting for a perch." }
         let when = nights <= 1 ? "tomorrow" : "in \(nights) nights"
-        return "\(bird.name) is waiting for a perch. Without one, the neighbour finds \(bird.name) a home \(when)."
+        return "\(bird.name) is waiting for a perch. Without one, Hazel finds \(bird.name) a home \(when)."
     }
 
     @ViewBuilder
@@ -316,7 +316,7 @@ struct YardSheet: View {
                     .font(Typeface.label).foregroundStyle(palette.inkMuted)
             }
             if !s.boarding.isEmpty {
-                Text("Staying with the neighbour").font(Typeface.item)
+                Text("Staying with Hazel").font(Typeface.item)
                 Text(s.boarding.map(\.name).joined(separator: ", ") + ". Make room so they can come home.")
                     .font(Typeface.label).foregroundStyle(palette.inkMuted)
             }

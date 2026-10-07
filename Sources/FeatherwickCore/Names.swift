@@ -19,7 +19,7 @@ public enum NameBook {
     // Long lists, so a suggestion does not come round again in a long game. Each name is in one
     // list only. A new name can go anywhere in its list.
     public static let neutral = [
-        "Pepper", "Biscuit", "Nutmeg", "Pip", "Sorrel", "Bramble", "Juniper", "Pebble", "Sage", "Wren", "Quill",
+        "Pepper", "Biscuit", "Nutmeg", "Pip", "Sorrel", "Bramble", "Juniper", "Pebble", "Sage", "Quill",
         "Dumpling", "Tansy", "Fennel", "Sprout", "Button", "Crumble", "Toffee", "Moss", "Ember", "Acorn", "Almond",
         "Anise", "Apple", "Ash", "Aspen", "Barley", "Bean", "Berry", "Birch", "Bonbon", "Bracken", "Brioche",
         "Buckwheat", "Bun", "Butterscotch", "Caramel", "Cardamom", "Cashew", "Chai", "Chestnut", "Chickpea", "Chive",
@@ -35,7 +35,7 @@ public enum NameBook {
         "Tumble", "Turnip", "Waffle", "Walnut", "Wheat", "Whisk", "Yarrow", "Zest", "Cobnut", "Hazelnut",
     ]
     public static let hens = [
-        "Clover", "Maple", "Hazel", "Marigold", "Henrietta", "Daisy", "Primrose", "Mabel", "Rosie", "Florence", "Ivy",
+        "Clover", "Maple", "Marigold", "Henrietta", "Daisy", "Primrose", "Mabel", "Rosie", "Florence", "Ivy",
         "Poppy", "Edith", "Willow", "Matilda", "Winifred", "Bluebell", "Hattie", "Agnes", "Dot", "Ada", "Adelaide",
         "Agatha", "Alma", "Annie", "Beatrice", "Bella", "Bertha", "Betty", "Blanche", "Bonnie", "Cecily", "Clara",
         "Clementine", "Cora", "Daphne", "Delia", "Dolly", "Dora", "Doris", "Edna", "Effie", "Eleanor", "Elsie",

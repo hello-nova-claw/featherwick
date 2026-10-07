@@ -36,13 +36,12 @@ struct JobsTests {
 
     @Test func jobsAreSetEachMorning() {
         var (s, rng) = Self.game()
-        #expect(s.jobBoard == nil && s.todaysJobs.isEmpty)  // none before the first morning
-        let ev = Self.sleep(&s, &rng)
+        // Day 1 is a whole day: its jobs are set when the keeper takes the starter.
         #expect(s.jobBoard?.day == 1)
         #expect(Set(s.todaysJobs.map(\.kind)) == [.feed, .petBird, .giveTreat])
         #expect(s.todaysJobs.first { $0.kind == .petBird }?.birdID == s.starterID)
+        let ev = Self.sleep(&s, &rng)
         #expect(ev.contains(.jobsSet(count: 3)))
-        _ = Self.sleep(&s, &rng)
         #expect(s.jobBoard?.day == 2)
         #expect(s.todaysJobs.count <= s.rules.jobsPerDay)
     }
@@ -88,7 +87,6 @@ struct JobsTests {
         var rng = SeededRNG(seed: 4)
         var s = Engine.newGame(using: &rng)
         _ = Engine.apply(.chooseStarter(index: 0, name: "Basil"), to: &s, using: &rng)
-        night(&s, &rng)
         // Day 1: only handling is open. No treats, no coop door, no shop yet.
         #expect(Set(s.todaysJobs.map(\.kind)) == [.feed, .petBird])
         for _ in 0..<45 {
@@ -131,7 +129,6 @@ struct JobsTests {
 
     @Test func unfinishedJobsSimplyGoInTheMorning() {
         var (s, rng) = Self.game()
-        _ = Self.sleep(&s, &rng)
         let coins = s.coins
         _ = Self.sleep(&s, &rng)
         #expect(s.jobBoard?.day == 2)
@@ -277,9 +274,11 @@ struct JobsTests {
     // MARK: - The season goal
 
     @Test func aGoalIsSetOnTheFirstMorning() throws {
-        var (s, rng) = Self.game()
+        var rng = SeededRNG(seed: 3)
+        var s = Engine.newGame(earlyGame: false, using: &rng)
         #expect(s.seasonGoal == nil)
-        let ev = Self.sleep(&s, &rng)
+        // Day 1 is the first morning: the goal comes with the starter.
+        let ev = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
         let goal = try #require(s.seasonGoal)
         #expect(ev.contains(.seasonGoalSet(goal.kind, previous: nil)))
         #expect(goal.startDay == 1 && goal.endDay == s.rules.daysPerSeason)
@@ -378,8 +377,11 @@ struct JobsTests {
     }
 
     @Test func seasonGoalsCanBeTurnedOff() {
-        var (s, rng) = Self.game()
-        s.rules.seasonGoals = false
+        var rng = SeededRNG(seed: 3)
+        var r = Rules.standard
+        r.seasonGoals = false
+        var s = Engine.newGame(rules: r, earlyGame: false, using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
         _ = Self.sleep(&s, &rng)
         #expect(s.seasonGoal == nil)
     }

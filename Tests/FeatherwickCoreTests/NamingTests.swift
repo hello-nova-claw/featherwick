@@ -8,6 +8,7 @@ struct NamingTests {
         var rng = SeededRNG(seed: 11)
         var r = Rules.standard
         r.foxChance = 0
+        r.jobsPerDay = 0  // no job ticks in the naming events
         var s = Engine.newGame(rules: r, earlyGame: false, using: &rng)
         _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
         return (s, rng)

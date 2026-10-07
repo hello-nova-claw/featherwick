@@ -1,3 +1,4 @@
+import FeatherwickText
 import SwiftUI
 
 /// What the neighbour said overnight: lessons and show news. It opens on its own, so a new keeper
@@ -9,7 +10,7 @@ struct NeighbourNoteSheet: View {
 
     var body: some View {
         SheetPage(context: "Over the back fence") {
-            Text("A word from the neighbour").font(Typeface.title)
+            Text("A word from \(People.neighbour)").font(Typeface.title)
             ForEach(Array(store.neighbourNotes.enumerated()), id: \.offset) { item in
                 Text(item.element).font(Typeface.body).foregroundStyle(palette.inkSoft)
                     .fixedSize(horizontal: false, vertical: true)
