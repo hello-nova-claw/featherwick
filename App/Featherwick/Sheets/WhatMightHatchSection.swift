@@ -19,8 +19,8 @@ struct WhatMightHatchSection: View {
         case .hidden:
             EmptyView()
         case .needsHen, .needsRooster:
+            // No notice here: "this pair" needs a pair. It shows once a hen and a rooster are penned.
             StitchDivider()
-            notice(s)
             if let line = plannerPanelText(panel, s) {
                 Text(line).font(Typeface.body).foregroundStyle(palette.inkMuted)
             }

@@ -15,8 +15,8 @@ struct FlockView: View {
                 group("Coop (\(s.coop.count)/\(s.perches) perches)", s.coop)
                 group("Lost (they always come home)", s.lost.map(\.bird))
                 group("Staying with the neighbour", s.boarding)
-                let planner = plannerLines(s)
-                if !planner.isEmpty {
+                if s.plannerKnown {
+                    let planner = plannerLines(s)
                     Section("What might hatch") {
                         ForEach(Array(planner.enumerated()), id: \.offset) { _, line in Text(line).font(.subheadline) }
                     }
