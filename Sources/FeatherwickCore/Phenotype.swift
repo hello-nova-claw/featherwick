@@ -1,5 +1,7 @@
 public enum FeatherColour: String, Hashable, Codable, Sendable, CaseIterable {
-    // New colours go at the end: the shop draws its colours in this order.
+    // New colours go at the end, because the shop special draws its colours in this order.
+    // That alone does not keep old seeds: a new variety on an in-game breed also grows the pools that
+    // starters, shop birds, gifts and show rivals draw from, so every seed changes from day 0.
     case black, blue, splash, lavender, buff, white
 }
 
