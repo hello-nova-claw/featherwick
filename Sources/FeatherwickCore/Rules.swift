@@ -40,6 +40,8 @@ public struct Rules: Codable, Hashable, Sendable {
     public var broodyHatchDays = 3  // under a broody hen
     public var incubatorHatchDays = 3  // nights in the incubator
     public var chicksToLearnCandling = 1  // the neighbour teaches candling once this many chicks have hatched
+    /// Hatch-day notes from the neighbour on a chick that looks like neither parent. Few, so each one is a treat.
+    public var hatchWhyNotesPerDay = 1
     public var maxClutch = 6  // eggs under one broody hen
     public var giftIncubatorSize = 1  // the neighbour's old incubator, given with the first fertile egg
     public var bigIncubatorSize = 6  // the one you buy

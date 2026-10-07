@@ -304,6 +304,25 @@ public func shopSpecialText(_ special: ShopSpecial) -> String {
     return name.prefix(1).uppercased() + String(name.dropFirst()) + "\(rare) \(special.price) coins"
 }
 
+/// The neighbour's one-sentence "why" for a chick that looks like neither parent. It names only
+/// colours the chick or its parents show, and never the chick's sex (it may not show yet).
+public func hatchReasonText(_ r: HatchReason) -> String {
+    switch r {
+    case .recessiveFromBothParents(let locus):
+        let look =
+            switch locus {
+            case Lavender.locus: "lavender"
+            case BaseColour.locus: "buff"
+            default: "that colour"
+            }
+        return "Both parents must carry \(look) out of sight, and this one got a copy from each!"
+    case .blueSplitsThreeWays:
+        return "Blue never breeds true: two blues hatch black, blue and splash, and black with splash hatches all blue!"
+    case .whiteHidIt:
+        return "White hides every other colour, so a white bird can pass on a colour it never shows!"
+    }
+}
+
 public func birdName(_ id: UUID, _ s: GameState) -> String { s.bird(id)?.name ?? "a bird" }
 
 /// "gold laced", "barred blue", "lavender"...
@@ -592,6 +611,8 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         var back = n == 1 ? "It's back in the carton." : "They're back in the carton."
         if s.carton.count >= s.cartonCapacity { back = "The carton is full, so look in the nest boxes." }
         return "\(opener) \(eggs) \(why) \(back)"
+    case .hatchSurprise(let id, let reason):
+        return "The neighbour peers at \(birdName(id, s)): \"\(hatchReasonText(reason))\""
     case .learnedCandling:
         return """
             The neighbour comes round with a torch. "Here, let me show you a trick." She holds an egg up \

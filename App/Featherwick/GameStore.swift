@@ -256,6 +256,9 @@ final class GameStore {
         case .chicksHatched(let ids, _):
             let one = ids.count == 1
             return (one ? "A chick has hatched" : "\(ids.count) chicks have hatched", "Name", .naming)
+        case .hatchSurprise(let id, _):
+            // Shown with the hatch toast: the neighbour says why a chick looks like neither parent.
+            return eventText(event, s).map { ($0, "View", .bird(id)) }
         case .revealed(let id, let sex, _):
             let name = s.bird(id)?.name ?? "A chick"
             return ("\(name) is a \(sex == .hen ? "pullet" : "cockerel")", "View", .bird(id))

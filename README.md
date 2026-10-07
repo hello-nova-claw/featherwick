@@ -34,7 +34,7 @@ sets the difficulty of a new game. Type `help` in the game for commands. `day 10
 the neighbour, new stock, the show, jobs, the season goal, eggs, other) for the app's morning report.
 Every event lands in exactly one group. IDs and events only; the words come from `eventText`.
 
-Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
+Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
 
 ## The early game (tutorial timeline)
 
@@ -102,6 +102,29 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
   the step starts (or on any night while it waits), the neighbour shows you at once. So the step never sticks.
 - Every fertile egg hatches (cozy rule).
 - Saves from before this rule keep candling (`canCandle` is true when it is missing).
+
+### Hatch-day "why" note (`HatchWhy.swift`)
+
+- A chick can hatch looking like neither parent. Then the neighbour says why, in one sentence.
+  Event: `.hatchSurprise(chick:reason:)`. It comes after the chick's `chicksHatched` event.
+- Both parents must be birds you own now (not rehomed), and revealed (grower stage or older), so you have
+  seen their looks.
+- The check uses only what you can see: the chick's down and each parent's look, as the down it gives
+  (`Phenotype.chickDown`). Buff and white both give yellow down. Barred down hides the colour under it.
+  So a buff chick from white parents gets no note, and a barred chick's colour is never named.
+- The words never say the chick's sex. Sex shows only at the grower stage.
+- The engine picks one reason (`HatchReason`). Priority, first match wins:
+  1. `whiteHidIt`: a parent is white. White hides every other colour, so a white bird passes on colours it never shows.
+  2. `recessiveFromBothParents(locus)`: the chick is lavender (then buff) and no parent is. Each parent carried one hidden copy.
+  3. `blueSplitsThreeWays`: chick and parents are all black, blue or splash. Blue x blue gives black, blue and
+     splash. Black x splash gives blue.
+  - Reasons 2 and 3 need an unbarred chick. If no reason fits, there is no note.
+  - A plain chick from two barred parents gets no note. A barred hen gives her barring to every son,
+    so that chick is always a pullet. A note would tell its sex before the grower stage.
+- At most `Rules.hatchWhyNotesPerDay` (1) notes a night. The first chick that qualifies gets it.
+- The note uses no random draws, so the same seed hatches the same chicks as before.
+- The app shows the note in the log, and as a toast. The app keeps only the newest two toasts, so a busy
+  night can push it out.
 
 ## Breeding pen
 

@@ -177,6 +177,9 @@ public enum GameEvent: Hashable, Codable, Sendable {
     /// Clear eggs that were set without being candled first. They sit the full time, never hatch, and go back
     /// to the carton (or the nest boxes if the carton is full), now known to be clear.
     case eggsDidNotHatch(count: Int, hen: UUID?)
+    /// A chick hatched looking like neither parent, and the neighbour says why (see `HatchWhy.swift`).
+    /// Comes after the chick's `chicksHatched`. At most `Rules.hatchWhyNotesPerDay` a day.
+    case hatchSurprise(chick: UUID, reason: HatchReason)
     /// The neighbour shows the keeper how to candle eggs.
     case learnedCandling
     case renamed(UUID)
@@ -741,12 +744,15 @@ public enum Engine {
     static func hatchDue<R: RandomNumberGenerator>(_ s: inout GameState, _ rng: inout R) -> [GameEvent] {
         var ev: [GameEvent] = []
         var waiting: [Clutch] = []
+        // Chicks hatch only in this night step, so a local count keeps the daily limit.
+        var whyNotes = 0
         for clutch in s.clutches {
             guard clutch.hatchDay <= s.day else {
                 waiting.append(clutch)
                 continue
             }
             var ids: [UUID] = []
+            var notes: [GameEvent] = []
             var unhatched = 0
             for egg in clutch.eggs {
                 guard
@@ -770,8 +776,13 @@ public enum Engine {
                     s.brooder.append(chick)
                 }
                 ids.append(chick.id)
+                if whyNotes < s.rules.hatchWhyNotesPerDay, let note = hatchSurprise(chick, s) {
+                    notes.append(note)
+                    whyNotes += 1
+                }
             }
             if !ids.isEmpty { ev.append(.chicksHatched(ids, hen: clutch.henID)) }
+            ev += notes
             if unhatched > 0 { ev.append(.eggsDidNotHatch(count: unhatched, hen: clutch.henID)) }
             // No chicks to raise: a hen whose eggs were all clear stops being broody and lays again.
             // A hen already raising chicks (fostered ones) stays broody for them.
