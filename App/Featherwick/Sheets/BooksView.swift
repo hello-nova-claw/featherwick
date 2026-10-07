@@ -247,6 +247,8 @@ struct SettingsSheet: View {
             StitchDivider()
             FeedbackToggles()
             StitchDivider()
+            MorningReportToggle()
+            StitchDivider()
             TimeOfDayPicker()
             StitchDivider()
             Text("Fast forward").font(Typeface.item)

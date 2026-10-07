@@ -47,6 +47,11 @@ final class GameStore {
     private(set) var neighbourNotes: [String] = []
     /// The show that was just held. The farm shows it full screen until the player goes back.
     private(set) var showReport: ShowReport?
+    /// What happened overnight, after the keeper chose Sleep. The farm shows it once, before the farm,
+    /// until the keeper goes back. Nil when the "Morning report" switch is off.
+    private(set) var morningReport: MorningReport?
+    /// True only while `sleep()` runs the night, so test tools and fast forward make no report.
+    private var reportingNight = false
     /// Shop stock the keeper has looked at since the early game brought it in. The game has no idea of
     /// "seen", so the app keeps it (per save slot), and the farm gate stops saying "new in today".
     private(set) var seenNewStock: Set<Feature>
@@ -101,18 +106,27 @@ final class GameStore {
         let events = Engine.apply(command, to: &state, using: &rng)
         save = SaveGame(state: state, rng: rng)
         if Self.isShopping(command) { sawNewStock() }
+        // The morning report shows the whole night, so its events get no toasts and no separate neighbour note.
+        let morning =
+            reportingNight && command == .passNight ? MorningReport.from(events: events, state: state) : nil
         for event in events {
-            if let toast = toast(for: event, in: state) ?? handlingToast(for: event, in: events, before, state) {
+            if morning == nil,
+                let toast = toast(for: event, in: state) ?? handlingToast(for: event, in: events, before, state)
+            {
                 showToast(toast)
             }
             guard let words = eventText(event, state) else { continue }
-            if Self.isNeighbourNote(event) { neighbourNotes.append(words) }
+            if morning == nil, Self.isNeighbourNote(event) { neighbourNotes.append(words) }
             var rejected = false
             if case .rejected = event { rejected = true }
             append(words, rejected: rejected)
         }
         // Sound and haptics for what just happened (eggs, hatching, coins, a "no").
         GameFeedback.play(for: events)
+        if let morning {
+            morningReport = morning
+            openRequest = .morningReport
+        }
         if !neighbourNotes.isEmpty, openRequest == nil { openRequest = .neighbourNote }
         // Several nights can pass in one go (`fullDays`): the newest show wins.
         if let report = Self.report(from: events, in: state) { showReport = report }
@@ -128,6 +142,16 @@ final class GameStore {
         default: false
         }
     }
+
+    /// The keeper goes to bed: the night passes, and the morning report opens if the switch is on.
+    func sleep() {
+        reportingNight = MorningReportSetting.isOn
+        defer { reportingNight = false }
+        run(.passNight)
+    }
+
+    /// The keeper is back from the morning report.
+    func finishMorningReport() { morningReport = nil }
 
     /// The keeper has read the neighbour's notes.
     func readNeighbourNotes() { neighbourNotes.removeAll() }
@@ -167,6 +191,7 @@ final class GameStore {
         save = Self.newSave(rules: difficulty.rules)
         log = []
         showReport = nil
+        morningReport = nil
         // A new game brings its stock in again, so it is all new again.
         seenNewStock = []
         UserDefaults.standard.removeObject(forKey: seenStockKey)
@@ -179,7 +204,7 @@ final class GameStore {
     // MARK: - New stock at the farm gate
 
     /// The early-game steps that bring new stock to Speckle & Down.
-    static let shopFeatures: [Feature] = [.treats, .premiumFeed, .birdShop, .coopUpgrade, .incubatorShop]
+    static let shopFeatures: [Feature] = MorningReport.newStockFeatures
 
     /// Stock the early game brought in this morning that the keeper has not looked at yet.
     var hasNewStock: Bool {
