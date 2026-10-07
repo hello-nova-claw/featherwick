@@ -698,7 +698,7 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .birdUnpenned(let id): return "\(birdName(id, s)) goes back to the coop flock."
     case .slotSpent(_, let left):
         return left == 0
-            ? "The light's going. Time for bed soon: sleep"
+            ? "The light's going. Time for bed: sleep"
             : "The sun moves on. Time for \(left) more thing\(left == 1 ? "" : "s") today."
     case .rested(let time): return restedText(time, s)
     }
@@ -715,35 +715,65 @@ func noTimeLeftText(_ errand: Errand) -> String {
     }
 }
 
+/// The time of day and the errands left, for the CLI `time` command and the app's sun mark.
+public func timeOfDayText(_ s: GameState) -> String {
+    guard s.isOpen(.daylight) else { return notYetText(.daylight, s) }
+    let time =
+        switch s.timeOfDay {
+        case .morning: "Morning."
+        case .afternoon: "Afternoon."
+        case .evening: "Evening."
+        }
+    let left = s.slotsLeft
+    guard left > 0 else { return "\(time) No time left for errands: sleep" }
+    return "\(time) Time for \(left) more errand\(left == 1 ? "" : "s")."
+}
+
 /// A line for a rest, by time of day. Chosen from the shop seed, the day and the slot, never the game
 /// RNG, so reading it changes nothing and the same rest always reads the same.
 func restedText(_ time: TimeOfDay, _ s: GameState) -> String {
-    let lines: [String]
-    switch time {
-    case .morning:
-        lines = [
-            "You sit on the step with a cup of tea and watch them scratch about.",
-            "You lean on the fence while the dew burns off the grass.",
-            "You stand and listen to the morning chatter in the coop.",
-        ]
-    case .afternoon:
-        let n = starterName(s)
-        lines = [
-            "\(n) falls asleep on your boot.",
-            "You doze in the warm grass while the flock dust-bathes nearby.",
-            "You watch a hen chase a moth, lose it, and pretend she meant to.",
-        ]
-    case .evening:
-        lines = [
-            "The flock drifts toward the coop on its own.",
-            "The light goes gold over the yard. Someone clucks a sleepy complaint.",
-            "You watch the last bird hop up to the perch.",
-        ]
-    }
+    let lines = restedLines(time, s)
     let mix =
         s.shopSeed ^ (UInt64(truncatingIfNeeded: s.day) &* 0x9E37_79B9_7F4A_7C15)
         ^ UInt64(truncatingIfNeeded: s.slotsUsed)
     return lines[Int(mix % UInt64(lines.count))]
+}
+
+/// Every line a rest can read at this time of day. Rule 8: no line names a sex, so "it" and "the flock",
+/// never "she" or "a hen".
+public func restedLines(_ time: TimeOfDay, _ s: GameState) -> [String] {
+    switch time {
+    case .morning:
+        return [
+            "You sit on the step with a cup of tea and watch them scratch about.",
+            "You lean on the fence while the dew burns off the grass.",
+            "You stand a while and listen to the morning chatter.",
+            "You sit on an upturned bucket and watch the sun come over the hedge.",
+        ]
+    case .afternoon:
+        return [
+            bootNap(s),
+            "You doze in the warm grass while the flock dust-bathes nearby.",
+            "You watch a chicken chase a moth, lose it, and pretend it meant to.",
+            "You sit in the shade and count feathers drifting past.",
+        ]
+    case .evening:
+        return [
+            "The flock drifts toward the coop on its own.",
+            "The light goes gold over the yard. Someone clucks a sleepy complaint.",
+            "You watch the last bird hop up to bed.",
+            "The swallows come out, and the yard goes quiet and soft.",
+        ]
+    }
+}
+
+/// The nap on the keeper's boot: the starter if still at home, else one of the flock.
+func bootNap(_ s: GameState) -> String {
+    if let id = s.starterID, let starter = s.birdsAtHome.first(where: { $0.id == id }) {
+        return "\(starter.name) falls asleep on your boot."
+    }
+    return s.birdsAtHome.isEmpty
+        ? "You nearly fall asleep on the step in the sun." : "One of the flock falls asleep on your boot."
 }
 
 /// What penning a bird means for the eggs. A bird is penned only once its sex shows.
