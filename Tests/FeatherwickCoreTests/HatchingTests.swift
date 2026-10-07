@@ -62,7 +62,7 @@ struct HatchingTests {
         night(&s, &rng)
         #expect(
             Engine.apply(.buyIncubator, to: &s, using: &rng) == [
-                .incubatorBought(cost: r.incubatorPrice, size: r.bigIncubatorSize)
+                .incubatorBought(cost: r.incubatorPrice, size: r.bigIncubatorSize), .slotSpent(.village, left: 2),
             ])
         #expect(Engine.apply(.buyIncubator, to: &s, using: &rng) == [.rejected(.alreadyHaveIncubator)])
     }
@@ -73,7 +73,10 @@ struct HatchingTests {
         s.coins = 100
         let price = s.rules.fertileEggPrice
         let gift = GameEvent.neighbourGaveIncubator(size: s.rules.giftIncubatorSize, ownRooster: false)
-        #expect(Engine.apply(.buy(.fertileEgg), to: &s, using: &rng) == [.boughtEgg(cost: price), gift])
+        #expect(
+            Engine.apply(.buy(.fertileEgg), to: &s, using: &rng) == [
+                .boughtEgg(cost: price), gift, .slotSpent(.village, left: 2),
+            ])
         #expect(s.incubatorSize == s.rules.giftIncubatorSize && s.incubatorGiftGiven)
         // Once: a second egg brings nothing more, and nor do the nights.
         #expect(Engine.apply(.buy(.fertileEgg), to: &s, using: &rng) == [.boughtEgg(cost: price)])
@@ -124,7 +127,10 @@ struct HatchingTests {
         var (s, rng) = startedGame(sex: .hen)
         s.coins = 100
         s.incubatorSize = s.rules.bigIncubatorSize
-        #expect(Engine.apply(.buy(.fertileEgg), to: &s, using: &rng) == [.boughtEgg(cost: s.rules.fertileEggPrice)])
+        #expect(
+            Engine.apply(.buy(.fertileEgg), to: &s, using: &rng) == [
+                .boughtEgg(cost: s.rules.fertileEggPrice), .slotSpent(.village, left: 2),
+            ])
         #expect(s.incubatorSize == s.rules.bigIncubatorSize)
     }
 
@@ -230,7 +236,10 @@ struct HatchingTests {
             clearEgg(mother: hen, day: 0, rng: &rng),
             clearEgg(mother: hen, day: 0, rng: &rng),
         ]
-        #expect(Engine.apply(.candle, to: &s, using: &rng) == [.candled(fertile: 1, clear: 2)])
+        #expect(
+            Engine.apply(.candle, to: &s, using: &rng) == [
+                .candled(fertile: 1, clear: 2), .slotSpent(.candling, left: 2),
+            ])
         #expect(Engine.apply(.candle, to: &s, using: &rng) == [.rejected(.nothingToCandle)])
         let ev = Engine.apply(.sellClearEggs, to: &s, using: &rng)
         guard case .eggsSold(let n, _, _) = ev.first else {
@@ -288,7 +297,10 @@ struct FosterHenTests {
         #expect(s.henChicks[0].motherID == layer.id)
         #expect(s.henChicks[0].raisedBy == foster)
         #expect(Engine.apply(.rehome(foster), to: &s, using: &rng) == [.rejected(.birdIsBusy)])
-        #expect(Engine.apply(.rehome(layer.id), to: &s, using: &rng) == [.rehomed(layer.id, coins: 8)])
+        #expect(
+            Engine.apply(.rehome(layer.id), to: &s, using: &rng) == [
+                .rehomed(layer.id, coins: 8), .slotSpent(.neighbour, left: 2),
+            ])
     }
 }
 
@@ -382,7 +394,10 @@ struct LearningToCandleTests {
         s.canCandle = true
         let fertile = s.carton[0].id
         let clear = s.carton[1].id
-        #expect(Engine.apply(.candleEgg(fertile), to: &s, using: &rng) == [.candled(fertile: 1, clear: 0)])
+        #expect(
+            Engine.apply(.candleEgg(fertile), to: &s, using: &rng) == [
+                .candled(fertile: 1, clear: 0), .slotSpent(.candling, left: 2),
+            ])
         #expect(Engine.apply(.candleEgg(clear), to: &s, using: &rng) == [.candled(fertile: 0, clear: 1)])
         #expect(Engine.apply(.candleEgg(clear), to: &s, using: &rng) == [.rejected(.alreadyCandled)])
         #expect(Engine.apply(.candleEgg(UUID()), to: &s, using: &rng) == [.rejected(.noSuchEgg)])

@@ -14,6 +14,7 @@ import Foundation
 
 /// One step of the early game. Each is introduced once, on its day, with the neighbour's words.
 /// Steps that are only lessons (`handling`, `coopDoor`, `breedBook`, `laying`) lock nothing.
+/// `daylight` locks only `rest`; once it is introduced, errands take daylight (see Daylight.swift).
 /// Cases are in timeline order.
 public enum Feature: String, Hashable, Codable, Sendable, CaseOrdered {
     /// Lesson: pick the chick up every day. Chicks learn trust fastest.
@@ -26,6 +27,8 @@ public enum Feature: String, Hashable, Codable, Sendable, CaseOrdered {
     case coopDoor
     /// Lesson: the sex shows, and the bird goes in the Breed Book. Every breed and colour you keep does.
     case breedBook
+    /// Lesson: there is only so much daylight. Errands take a slot of the day; care is always free.
+    case daylight
     /// Speckle & Down sells birds and fertile eggs: pullets, cockerels, the daily special, story breeds.
     case birdShop
     /// More perches for the coop.
@@ -88,6 +91,7 @@ extension Engine {
         case .buyIncubator: .incubatorShop
         case .enterShow, .enterShowIn, .enterEggs, .enterEggPlate: .shows
         case .penBird, .unpenBird: .breedingPen
+        case .rest: .daylight
         default: nil
         }
     }

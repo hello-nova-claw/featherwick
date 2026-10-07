@@ -100,7 +100,7 @@ struct TurnoverTests {
             for _ in 0..<80 {
                 _ = Engine.apply(premium ? .feedPremium : .feed, to: &s, using: &rng)
                 _ = Engine.apply(.closeCoop, to: &s, using: &rng)
-                ev += Engine.apply(.passNight, to: &s, using: &rng)
+                ev += sleepTonight(&s, &rng)
             }
             return eggsLaid(ev, by: hen.id)
         }

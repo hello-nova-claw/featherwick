@@ -28,6 +28,7 @@ struct TextTests {
                 run(.enterShow(b.id))
             }
             if day % 3 != 0 { run(.closeCoop) }  // some nights open: fox and foraging
+            while s.isOpen(.daylight), s.slotsLeft > 0 { run(.rest) }  // sleep waits for evening
             run(.passNight)
         }
         return seen
@@ -287,6 +288,7 @@ struct TextTests {
         s.coop.append(hen)
         _ = Engine.apply(.enterShow(hen.id), to: &s, using: &rng)
         _ = Engine.apply(.feed, to: &s, using: &rng)
+        Engine.restUntilEvening(&s, using: &rng)
         let events = Engine.apply(.passNight, to: &s, using: &rng)
 
         let podiums = events.compactMap { e -> (ShowClass, [PodiumPlace])? in

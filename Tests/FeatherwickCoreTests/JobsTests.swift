@@ -17,7 +17,7 @@ struct JobsTests {
     }
 
     static func sleep(_ s: inout GameState, _ rng: inout SeededRNG) -> [GameEvent] {
-        Engine.apply(.passNight, to: &s, using: &rng)
+        sleepTonight(&s, &rng)
     }
 
     /// The part of the early game a job needs, if any.
@@ -370,7 +370,7 @@ struct JobsTests {
         #expect(game.state.rules.jobsPerDay == Rules.standard.jobsPerDay)
         #expect(game.state.rules.seasonGoals)
         let day = game.state.day
-        _ = Engine.apply(.passNight, to: &game.state, using: &game.rng)
+        _ = sleepTonight(&game.state, &game.rng)
         #expect(game.state.jobBoard?.day == day + 1)
         #expect(!game.state.todaysJobs.isEmpty)
         #expect(game.state.seasonGoal != nil)

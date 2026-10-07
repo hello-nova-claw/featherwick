@@ -57,7 +57,7 @@ struct NamingTests {
             _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
             guard s.brooder[0].sex == .rooster else { continue }
             var ev: [GameEvent] = []
-            for _ in 0..<s.rules.growerAge + 1 { ev += Engine.apply(.passNight, to: &s, using: &rng) }
+            for _ in 0..<s.rules.growerAge + 1 { ev += sleepTonight(&s, &rng) }
             guard let id = ev.compactMap({ if case .neighbourGaveHen(let id) = $0 { id } else { nil } }).first else {
                 continue
             }

@@ -143,7 +143,10 @@ struct ShopTests {
         var (s, rng) = startedGame(sex: .hen)
         s.coins = 100
         s.incubatorSize = 1
-        #expect(Engine.apply(.buy(.fertileEgg), to: &s, using: &rng) == [.boughtEgg(cost: 6)])
+        #expect(
+            Engine.apply(.buy(.fertileEgg), to: &s, using: &rng) == [
+                .boughtEgg(cost: 6), .slotSpent(.village, left: 2),
+            ])
         #expect(s.carton.count == 1 && s.carton[0].isFertile && s.carton[0].isCandled)
         _ = Engine.apply(.incubate(count: 1), to: &s, using: &rng)
         let ev = night(&s, &rng)

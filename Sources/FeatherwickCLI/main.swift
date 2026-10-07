@@ -122,8 +122,9 @@ let help = """
       unpen <name>         take a bird out of the breeding pen
       upgrade coop         add \(game.state.rules.perchesPerUpgrade) perches (\(game.state.rules.coopUpgradePrice) coins)
       close                shut the coop door (safe from the fox, but you must feed)
+      rest                 sit a while: spends one slot of daylight
       sleep                pass the night (door left open? birds forage: fed free + a small bonus, but fox risk)
-      day [n]              do a full day n times: feed, collect, close, sleep
+      day [n]              do a full day n times: feed, collect, close, rest until evening, sleep
       book                 Breed Book and egg colours
       journal              your milestones and what to aim for next
       jobs                 today's jobs and this season's goal (do all the jobs for a small reward)
@@ -373,6 +374,7 @@ while true {
         }
         run(.upgradeCoop)
     case "close": run(.closeCoop)
+    case "rest": run(.rest)
     case "sleep", "s": run(.passNight)
     case "day":
         let n = max(1, words.count > 1 ? Int(words[1]) ?? 1 : 1)
@@ -381,6 +383,7 @@ while true {
             if !game.state.nest.isEmpty { run(.collectEggs) }
             if game.state.carton.count >= game.state.cartonCapacity { run(.sellEggs) }
             run(.closeCoop)
+            while game.state.isOpen(.daylight), game.state.slotsLeft > 0 { run(.rest) }
             run(.passNight)
         }
     case "book", "b": book(game.state)

@@ -14,7 +14,8 @@ struct SaveFormatTests {
         var s = Engine.newGame(using: &rng)
         _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
         for _ in 0..<40 {
-            for c in [Command.feed, .collectEggs, .closeCoop, .passNight] { _ = Engine.apply(c, to: &s, using: &rng) }
+            for c in [Command.feed, .collectEggs, .closeCoop] { _ = Engine.apply(c, to: &s, using: &rng) }
+            sleepTonight(&s, &rng)
         }
         return SaveGame(state: s, rng: rng)
     }
@@ -62,7 +63,7 @@ struct SaveFormatTests {
 
     @Test func aLoadedOldSaveKeepsPlaying() throws {
         var game = try SaveFormat.decode(Self.fixture("save-v0"))
-        for _ in 0..<30 { _ = Engine.apply(.passNight, to: &game.state, using: &game.rng) }
+        for _ in 0..<30 { _ = sleepTonight(&game.state, &game.rng) }
         #expect(!game.state.ownedBirds.isEmpty)
         #expect(InvariantTests.problems(in: game.state).isEmpty)
     }

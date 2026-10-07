@@ -56,7 +56,7 @@ struct ShowEventTests {
         #expect(s.coins == 100 - s.rules.showEntryFee)  // the fee is a coin sink, paid on entry
         let afterEntry = s.coins
 
-        _ = Engine.apply(.passNight, to: &s, using: &rng)
+        _ = sleepTonight(&s, &rng)
         #expect(s.isShowDay)
 
         let theme = ShowTheme.forSeason(s.season)
@@ -78,7 +78,7 @@ struct ShowEventTests {
             let champ = Self.championOrpington(in: s, rng: &rng)
             s.coop.append(champ)
             _ = Engine.apply(.enterShow(champ.id), to: &s, using: &rng)
-            _ = Engine.apply(.passNight, to: &s, using: &rng)
+            _ = sleepTonight(&s, &rng)
             return s.showResults
         }
         #expect(playOut() == playOut())
@@ -99,7 +99,7 @@ struct ShowEventTests {
         #expect(s.carton.isEmpty)  // the plate goes to the show
         #expect(s.showEntries.count == 1)
 
-        _ = Engine.apply(.passNight, to: &s, using: &rng)
+        _ = sleepTonight(&s, &rng)
         let eggResult = s.showResults.first { if case .eggs = $0.showClass { return true } else { return false } }
         #expect(eggResult != nil)
         #expect(eggResult?.placing == 1)
@@ -191,13 +191,13 @@ struct ShowEventTests {
         s.coop.append(champ)
 
         let ev = Engine.apply(.enterShowIn(champ.id, .pet), to: &s, using: &rng)
-        #expect(ev == [.enteredInShow(champ.id, .pet)])
+        #expect(ev == [.enteredInShow(champ.id, .pet), .slotSpent(.showDesk, left: 2)])
         #expect(s.showEntries.first?.showClass == .pet)
         // Once per show, whatever the class.
         let again = Engine.apply(.enterShowIn(champ.id, .breed(.orpington)), to: &s, using: &rng)
         #expect(again == [.rejected(.alreadyEntered)])
 
-        _ = Engine.apply(.passNight, to: &s, using: &rng)
+        _ = sleepTonight(&s, &rng)
         let result = s.showResults.first { $0.birdID == champ.id }
         #expect(result?.showClass == .pet)
         #expect(result?.fieldSize == (s.rules.showCompetitorsByKind[.pet] ?? 0) + 1)
@@ -210,7 +210,7 @@ struct ShowEventTests {
         _ = Engine.apply(.enterShowIn(champ.id, .breed(.orpington)), to: &s, using: &rng)
         s.coop[0].purebredFlag = false  // no longer a purebred: the breed class will not have it
 
-        _ = Engine.apply(.passNight, to: &s, using: &rng)
+        _ = sleepTonight(&s, &rng)
         #expect(s.showResults.first { $0.birdID == champ.id }?.showClass == .pet)
     }
 
@@ -221,7 +221,7 @@ struct ShowEventTests {
         s.carton = eggs + spare
 
         let ev = Engine.apply(.enterEggPlate(eggs.map(\.id)), to: &s, using: &rng)
-        #expect(ev == [.enteredInShow(nil, .eggs(.brown))])
+        #expect(ev == [.enteredInShow(nil, .eggs(.brown)), .slotSpent(.showDesk, left: 2)])
         #expect(s.carton.map(\.id) == spare.map(\.id))
         #expect(Set(s.showEntries.first?.eggs.map(\.id) ?? []) == Set(eggs.map(\.id)))
         #expect(s.coins == 100 - s.rules.showEntryFee)
@@ -290,7 +290,7 @@ struct ShowEventTests {
         s.coop.append(cross)
         _ = Engine.apply(.enterShow(cross.id), to: &s, using: &rng)
 
-        let ev = Engine.apply(.passNight, to: &s, using: &rng)
+        let ev = sleepTonight(&s, &rng)
         let won = Engine.prize(for: 1, in: .pet, theme: ShowTheme.forSeason(s.season), rules: s.rules)
         #expect(won.treats == s.rules.showPrizeTreats[.pet]?[0])
         #expect(won.treats > 0)
@@ -314,7 +314,7 @@ struct ShowEventTests {
         _ = Engine.apply(.enterEggs, to: &s, using: &rng)
         #expect(s.showEntries.count == 3)
 
-        _ = Engine.apply(.passNight, to: &s, using: &rng)
+        _ = sleepTonight(&s, &rng)
         #expect(s.showResults.count == 3)
         for result in s.showResults {
             #expect(result.fieldSize == (s.rules.showCompetitorsByKind[result.showClass.kind] ?? 0) + 1)
@@ -362,7 +362,7 @@ struct ShowEventTests {
         s.coop.append(champ)
         let theme = s.nextShowTheme
         _ = Engine.apply(.enterShow(champ.id), to: &s, using: &rng)
-        _ = Engine.apply(.passNight, to: &s, using: &rng)
+        _ = sleepTonight(&s, &rng)
         #expect(s.showResults.first?.theme == theme)
         #expect(theme == ShowTheme.forSeason(s.season))
     }
@@ -409,7 +409,7 @@ struct ShowEventTests {
             s.coop.append(bird)
             _ = Engine.apply(.enterShow(bird.id), to: &s, using: &rng)
         }
-        return Engine.apply(.passNight, to: &s, using: &rng)
+        return sleepTonight(&s, &rng)
     }
 
     static func rivalBirds(_ podium: [PodiumPlace]) -> [Bird] {
@@ -485,7 +485,7 @@ struct ShowEventTests {
         for i in eggs.indices { eggs[i].shape = 0 }  // a poor plate: rivals beat it
         s.carton = eggs
         _ = Engine.apply(.enterEggs, to: &s, using: &rng)
-        _ = Engine.apply(.passNight, to: &s, using: &rng)
+        _ = sleepTonight(&s, &rng)
         let podium = s.showResults.first?.podium ?? []
         #expect(podium.count == 3)
         for place in podium {
@@ -547,7 +547,7 @@ struct ShowEventTests {
             // The keeper's own day: whether the flock was fed or foraged.
             s.fedToday = fed
             s.foragedToday = foraged
-            _ = Engine.apply(.passNight, to: &s, using: &rng)
+            _ = sleepTonight(&s, &rng)
             return s.showResults.first?.podium ?? []
         }
         let fedDay = podium(fed: true, foraged: false)

@@ -68,6 +68,11 @@ struct InvariantTests {
         return p
     }
 
+    /// Sleep, or rest first while daylight is left (sleep waits for evening; see `DaylightTests`).
+    static func bedtime(_ s: GameState) -> Command {
+        s.isOpen(.daylight) && s.slotsLeft > 0 ? .rest : .passNight
+    }
+
     static func randomCommand(_ s: GameState, _ pick: inout SeededRNG) -> Command {
         let birds = s.birdsAtHome + s.boarding
         let anyBird = birds.randomElement(using: &pick)?.id ?? UUID()
@@ -81,7 +86,7 @@ struct InvariantTests {
             // A mostly careful keeper: usually feeds and shuts the coop before bed, but not always.
             if !s.fedToday, Double.random(in: 0..<1, using: &pick) < 0.85 { return .feed }
             if s.coopDoorOpen, Double.random(in: 0..<1, using: &pick) < 0.9 { return .closeCoop }
-            return .passNight
+            return bedtime(s)
         case 30..<54: return .feed
         case 54..<58: return .collectEggs  // rarely, so nests fill up (broody hens, floor eggs)
         case 58..<61: return .sellEggs
@@ -95,7 +100,7 @@ struct InvariantTests {
         case 91..<94:
             // A keeper rehomes when the flock is crowded, not their first two birds.
             if !s.boarding.isEmpty { return .rehome(s.boarding[0].id) }
-            return birds.count >= 3 ? .rehome(anyBird) : .passNight
+            return birds.count >= 3 ? .rehome(anyBird) : bedtime(s)
         case 94..<97: return .upgradeCoop
         case 97..<98:
             // Shopping and trades.

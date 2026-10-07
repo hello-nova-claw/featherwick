@@ -60,7 +60,8 @@ public enum Simulation {
         for e in Engine.apply(c, to: &s, using: &rng) { tally(e, &r) }
     }
 
-    /// A sensible day: feed, collect, candle, hatch what fits, sell the rest, make room, shut up, sleep.
+    /// A sensible day: feed, collect, candle, hatch what fits, sell the rest, make room, shut up, rest until
+    /// evening, sleep.
     private static func playDay(_ s: inout GameState, _ rng: inout SeededRNG, _ r: inout Report) {
         apply(.feed, &s, &rng, &r)
         if !s.nest.isEmpty { apply(.collectEggs, &s, &rng, &r) }
@@ -87,6 +88,7 @@ public enum Simulation {
         maybeEnterShow(&s, &rng, &r)
         makeRoom(&s, &rng, &r)
         apply(.closeCoop, &s, &rng, &r)
+        for e in Engine.restUntilEvening(&s, using: &rng) { tally(e, &r) }
         apply(.passNight, &s, &rng, &r)
     }
 

@@ -86,7 +86,10 @@ struct RoomTests {
         s.coins = 0
         #expect(Engine.apply(.upgradeCoop, to: &s, using: &rng) == [.rejected(.notEnoughCoins(needed: 30, have: 0))])
         s.coins = 100
-        #expect(Engine.apply(.upgradeCoop, to: &s, using: &rng) == [.coopUpgraded(perches: 5, cost: 30)])
+        #expect(
+            Engine.apply(.upgradeCoop, to: &s, using: &rng) == [
+                .coopUpgraded(perches: 5, cost: 30), .slotSpent(.building, left: 3),
+            ])
         #expect(s.coins == 70)
         s.perches = s.rules.maxPerches
         #expect(Engine.apply(.upgradeCoop, to: &s, using: &rng) == [.rejected(.coopAtMax)])

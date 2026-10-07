@@ -89,6 +89,9 @@ struct RehomeQualityTests {
         #expect(s.rehomeValue(of: pip) == 2 + 18)  // a chick: 2, plus 2 ribbons × 6 × 1.5
         // Rehoming pays the price with ribbons.
         s.coop.append(plainBird(rng: &rng))  // so Pip is not the last bird
-        #expect(Engine.apply(.rehome(pip.id), to: &s, using: &rng) == [.rehomed(pip.id, coins: 20)])
+        #expect(
+            Engine.apply(.rehome(pip.id), to: &s, using: &rng) == [
+                .rehomed(pip.id, coins: 20), .slotSpent(.neighbour, left: 2),
+            ])
     }
 }
