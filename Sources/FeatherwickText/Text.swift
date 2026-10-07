@@ -222,6 +222,77 @@ public func placingText(_ placing: Int) -> String {
     return "\(placing)\(suffix)"
 }
 
+// MARK: - The show podium
+
+/// Village keepers who show at the county show. A rival's owner number (`Engine.showOwnerSlots`) picks
+/// one. Changing this list renames the owners of past podiums; nothing else depends on it.
+public let showKeeperNames: [String] = [
+    "Mrs Pennywhistle", "Mr Hollyoak", "Miss Thistlewood", "Old Tom Furrow", "Mrs Bramble", "Mr Ashdown",
+    "Auntie Clover", "the Misses Wren", "Mr Pippin", "Mrs Goodacre", "Farmer Lark", "Mrs Honeysett",
+    "Mr Mossop", "Granny Fennel", "Mr Quince", "Mrs Dimity",
+]
+
+/// The owner of each podium place, in order: nil for the keeper's own entries. Two rivals on one
+/// podium never share a name: a name already used steps on to the next one in the list.
+public func podiumOwnerNames(_ podium: [PodiumPlace]) -> [String?] {
+    let count = showKeeperNames.count
+    var used: Set<Int> = []
+    return podium.map { place in
+        guard let owner = rivalOwner(place.entrant) else { return nil }
+        var i = ((owner % count) + count) % count
+        while used.contains(i), used.count < count { i = (i + 1) % count }
+        used.insert(i)
+        return showKeeperNames[i]
+    }
+}
+
+func rivalOwner(_ entrant: PodiumEntrant) -> Int? {
+    switch entrant {
+    case .keeper: nil
+    case .rivalBird(let owner, _): owner
+    case .rivalPlate(let owner, _, _): owner
+    }
+}
+
+/// A show bird as a spectator sees it: "buff Orpington hen", "black Silkie cock". Show birds are
+/// adults, so breed, colour and sex are plain to see.
+public func showBirdText(_ bird: Bird) -> String {
+    "\(colourText(bird.phenotype)) \(bird.breed.definition.displayName) \(bird.sex == .hen ? "hen" : "cock")"
+}
+
+/// Who stood in a podium place: "Mrs Pennywhistle's buff Orpington hen", "your Champion",
+/// "Mr Hollyoak's plate of brown eggs", "your plate of brown eggs".
+public func podiumWhoText(_ place: PodiumPlace, owner: String?, in cls: ShowClass) -> String {
+    switch place.entrant {
+    case .keeper(let name, let birdID):
+        if birdID == nil, case .eggs(let colour) = cls { return "your plate of \(colour.rawValue) eggs" }
+        return "your \(name)"
+    case .rivalBird(_, let bird):
+        return "\(owner ?? "a visitor")'s \(showBirdText(bird))"
+    case .rivalPlate(_, let colour, let speckled):
+        return "\(owner ?? "a visitor")'s plate of \(speckled ? "speckled " : "")\(colour.rawValue) eggs"
+    }
+}
+
+/// Why the judge placed it there: its notes in one line, with the same words as the keeper's own.
+public func podiumWhyText(_ place: PodiumPlace) -> String {
+    place.notes.map(noteText).joined(separator: "; ")
+}
+
+/// The podium in lines: "1st: Mrs Pennywhistle's buff Orpington hen, 88 of 100 — buff, a standard colour; …".
+public func podiumLines(_ cls: ShowClass, _ podium: [PodiumPlace]) -> [String] {
+    let owners = podiumOwnerNames(podium)
+    return zip(podium, owners).map { place, owner in
+        let who = podiumWhoText(place, owner: owner, in: cls)
+        return "\(placingText(place.placing)): \(who), \(place.score) of 100 — \(podiumWhyText(place))"
+    }
+}
+
+/// Where a seen Breed Book entry came from: "Seen at the Summer Fete".
+public func seenText(_ seen: SeenBreedBookEntry) -> String {
+    "Seen at the \(showThemeName(seen.theme))"
+}
+
 /// One line for Speckle & Down's daily special: "Splash Silkie pullet — rare! 50 coins".
 /// The seller names breed, sex and colour, so nothing here is hidden.
 public func shopSpecialText(_ special: ShopSpecial) -> String {
@@ -548,6 +619,12 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return "\n🎪 The Featherwick county show, day \(day): the \(showThemeName(theme))! \(showThemeLine(theme))"
     case .showNoEntries:
         return "The show came and went. You didn't enter anything this time — next one is day \(s.nextShowDay)."
+    case .showPodium(let cls, let podium):
+        guard !podium.isEmpty else { return nil }
+        let lines = podiumLines(cls, podium).map { "    " + $0 }
+        return "  \(cls.name), the top three:\n" + lines.joined(separator: "\n")
+    case .breedBookEntrySeen(let entry, let theme):
+        return "Seen at the \(showThemeName(theme)): \(entryText(entry)). Added to the Breed Book."
     case .showPlacing(let r):
         let medal =
             switch r.placing {
@@ -823,6 +900,11 @@ public func bookLines(_ s: GameState) -> [String] {
     pure.forEach { out.append("  " + $0) }
     out.append("Crosses (\(crosses.count)):")
     crosses.forEach { out.append("  " + $0) }
+    let seen = s.breedBookSeenOnly
+    if !seen.isEmpty {
+        out.append("Seen at shows (\(seen.count)):")
+        seen.forEach { out.append("  \(entryText($0.entry)) — \(seenText($0).lowercasedFirst), day \($0.day)") }
+    }
     out.append("Egg colours (\(s.eggBook.count)):")
     for e in s.eggBook.sorted(by: { $0.colour.rawValue < $1.colour.rawValue }) {
         out.append("  \(e.speckled ? "speckled " : "")\(e.colour.rawValue)")

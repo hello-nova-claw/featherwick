@@ -224,6 +224,10 @@ final class GameStore {
             let view = s.isOpen(.breedBook)
             let words = "\(entryText(entry).capitalized) added to the Breed Book"
             return (words, view ? "View" : nil, view ? .books : nil)
+        case .breedBookEntrySeen(let entry, let theme):
+            let view = s.isOpen(.breedBook)
+            let words = "\(entryText(entry).capitalized) added to the Breed Book (seen at the \(showThemeName(theme)))"
+            return (words, view ? "View" : nil, view ? .books : nil)
         case .newEggBookEntry(let entry):
             let view = s.isOpen(.breedBook)
             let words = "\(entry.speckled ? "Speckled " : "")\(entry.colour.rawValue) eggs added to the Egg Book"

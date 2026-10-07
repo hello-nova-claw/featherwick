@@ -52,7 +52,7 @@ struct BreedBook: View {
                 .font(Typeface.label).foregroundStyle(palette.inkMuted)
             LazyVGrid(columns: columns, spacing: 24) {
                 ForEach(breeds) { breed in
-                    BreedTile(breed: breed, colours: colours(of: breed, in: s))
+                    BreedTile(breed: breed, colours: colours(of: breed, in: s), seen: seen(of: breed, in: s))
                 }
             }
             let crosses = s.breedBook.filter(\.isCross).map(entryText).sorted()
@@ -60,6 +60,7 @@ struct BreedBook: View {
                 Text("Crosses").font(Typeface.item)
                 ForEach(crosses, id: \.self) { Text($0.prefix(1).uppercased() + $0.dropFirst()).font(Typeface.body) }
             }
+            SeenAtShows(seen: s.breedBookSeenOnly)
         }
     }
 
@@ -68,16 +69,61 @@ struct BreedBook: View {
         s.breedBook.filter { !$0.isCross && $0.variety == breed.id.rawValue }
             .sorted { entryText($0) < entryText($1) }
     }
+
+    /// Looks of this breed seen on a show podium but not owned.
+    private func seen(of breed: BreedDefinition, in s: GameState) -> [BreedBookEntry] {
+        s.breedBookSeenOnly.map(\.entry).filter { !$0.isCross && $0.variety == breed.id.rawValue }
+            .sorted { entryText($0) < entryText($1) }
+    }
 }
 
-/// A collection tile: art, name, and a dot per colour (filled found, dashed still to find).
+/// Looks seen on show podiums that the keeper has never owned, each with the show it was seen at.
+struct SeenAtShows: View {
+    @Environment(\.palette) private var palette
+    let seen: [SeenBreedBookEntry]
+
+    var body: some View {
+        if !seen.isEmpty {
+            VStack(alignment: .leading, spacing: Space.s) {
+                Text("Seen at shows").font(Typeface.item)
+                ForEach(seen, id: \.self) { row($0) }
+            }
+        }
+    }
+
+    private func row(_ s: SeenBreedBookEntry) -> some View {
+        HStack(spacing: Space.s) {
+            SeenDot(colour: s.entry.colour)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(sentenceCase(entryText(s.entry))).font(Typeface.body)
+                Text("\(seenText(s)), day \(s.day)").font(Typeface.label).foregroundStyle(palette.inkMuted)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// A colour seen at a show but not owned: a paler dab with a dashed rim.
+struct SeenDot: View {
+    @Environment(\.palette) private var palette
+    let colour: FeatherColour
+    var size: CGFloat = 8
+
+    var body: some View {
+        Circle().fill(Pigment.feather(colour).opacity(0.45)).frame(width: size, height: size)
+            .overlay(Circle().stroke(palette.ink.opacity(0.5), style: Stitch.unknown))
+    }
+}
+
+/// A collection tile: art, name, and a dot per colour (filled owned, pale seen at a show, dashed still to find).
 struct BreedTile: View {
     @Environment(\.palette) private var palette
     let breed: BreedDefinition
     let colours: [BreedBookEntry]
+    var seen: [BreedBookEntry] = []
 
     var body: some View {
-        let known = !colours.isEmpty
+        let known = !colours.isEmpty || !seen.isEmpty
         VStack(alignment: .leading, spacing: Space.s) {
             ZStack {
                 if known {
@@ -90,15 +136,10 @@ struct BreedTile: View {
             .aspectRatio(1, contentMode: .fit)
             if known {
                 Text(breed.displayName).font(Typeface.serif(15))
-                HStack(spacing: Space.xs) {
-                    ForEach(0..<max(breed.varieties.count, colours.count), id: \.self) { i in
-                        if i < colours.count {
-                            Circle().fill(Pigment.feather(colours[i].colour)).frame(width: 8, height: 8)
-                                .overlay(Circle().stroke(palette.ink.opacity(0.3), lineWidth: 0.5))
-                        } else {
-                            UnknownDot(size: 8)
-                        }
-                    }
+                dots
+                if colours.isEmpty {
+                    Text("seen at a show").font(Typeface.serifItalic(13, relativeTo: .footnote))
+                        .foregroundStyle(palette.inkMuted)
                 }
             } else {
                 Text("lays \(breed.eggColour.rawValue) eggs").font(Typeface.serifItalic(13, relativeTo: .footnote))
@@ -106,10 +147,29 @@ struct BreedTile: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(
-            known
-                ? "\(breed.displayName), \(colours.count) of \(breed.varieties.count) colours found"
-                : "Breed not found yet. Lays \(breed.eggColour.rawValue) eggs")
+        .accessibilityLabel(known ? knownLabel : "Breed not found yet. Lays \(breed.eggColour.rawValue) eggs")
+    }
+
+    /// Owned colours, then colours only seen at a show, then a dashed dot per colour still to find.
+    private var dots: some View {
+        let total: Int = max(breed.varieties.count, colours.count + seen.count)
+        return HStack(spacing: Space.xs) {
+            ForEach(0..<total, id: \.self) { i in
+                if i < colours.count {
+                    Circle().fill(Pigment.feather(colours[i].colour)).frame(width: 8, height: 8)
+                        .overlay(Circle().stroke(palette.ink.opacity(0.3), lineWidth: 0.5))
+                } else if i < colours.count + seen.count {
+                    SeenDot(colour: seen[i - colours.count].colour)
+                } else {
+                    UnknownDot(size: 8)
+                }
+            }
+        }
+    }
+
+    private var knownLabel: String {
+        let found = "\(breed.displayName), \(colours.count) of \(breed.varieties.count) colours found"
+        return seen.isEmpty ? found : "\(found), \(seen.count) more seen at shows"
     }
 }
 

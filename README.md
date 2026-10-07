@@ -255,7 +255,36 @@ Each show has a theme from the season of its day (`ShowTheme`). The featured kin
 | Winter | Winter Championship | Breed. Every rival picks `winterChampionshipExtraPicks` more candidates. |
 
 `GameState.nextShowTheme` gives the theme of the next show. Each `ShowResult` keeps the bird, coins,
-treats, the judge's notes and the theme. CLI: `enter <name>`, `enter <name> pet`, `enter eggs`, `shows`.
+treats, the judge's notes, the theme and the podium. CLI: `enter <name>`, `enter <name> pet`, `enter eggs`, `shows`.
+
+#### The podium
+
+The keeper sees the top three in each class they entered, rivals too, and why each one placed.
+
+- `ShowResult.podium` holds up to 3 `PodiumPlace`s, best first: the placing, who stood there
+  (`PodiumEntrant`), the score and the judge's notes. A class with fewer than 3 judged entries has a
+  smaller podium. A disqualified entry never stands on it.
+- The judge's notes are the same `JudgeNote`s as the keeper's own entries get. The words come from `noteText`.
+- A rival bird is kept whole (`Bird`), so its colour comes from its genes, like any bird. Show birds
+  are adults, so a spectator sees breed, colour and sex. Nothing hidden is told.
+- An egg class podium holds plates: colour and speckle, no bird.
+- Each rival has an owner number (`Engine.showOwner`, 0..<`showOwnerSlots`). It comes from the rival's
+  own ID, not from the game RNG. Keeping the podium draws no extra random numbers, so existing seeds
+  play the same shows. FeatherwickText turns the number into a village name (`showKeeperNames`).
+  Two rivals on one podium never share a name.
+- The engine sends `.showPodium(class, places)` before the placings of each class.
+- Saves: `podium` is optional. Results from older saves have no podium.
+
+#### Seen at a show (Breed Book)
+
+- A rival bird on a podium adds its look to the Breed Book as *seen*: `GameState.seenAtShows`
+  (`SeenBreedBookEntry`: the look, the show day and the theme). The event is `.breedBookEntrySeen`.
+- Each look is seen once. A look the keeper owns is never added as seen: owned beats seen.
+  `breedBookSeenOnly` hides seen looks the keeper has owned since.
+- Seen looks do not count as owned. Milestones, jobs and season goals count `breedBook` only.
+- Egg plates add nothing to the Egg Book: rival plates are plain eggs of the class colour, which the
+  keeper's own plate in that class already shows.
+- The app marks seen looks with a pale, dashed dot and "Seen at the Summer Fete". CLI: `book`.
 
 ## Friendliness
 

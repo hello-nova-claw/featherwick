@@ -233,4 +233,84 @@ struct TextTests {
             #expect(!words.isEmpty, "\(e)")
         }
     }
+
+    // MARK: - The show podium
+
+    /// A buff Orpington hen with no show type: the rivals beat her.
+    static func plainHen(_ s: GameState) -> Bird {
+        Bird(
+            id: UUID(uuidString: "6D0F1C2A-3B4C-4D5E-8F60-718293A4B5C6")!, name: "Dot", breed: .orpington,
+            genome: Breed.orpington.purebred(.hen, variety: .buff), hatchDay: s.day - s.rules.adultAge,
+            origin: "test", revealed: true)
+    }
+
+    @Test func thePodiumNamesRivalsAndSaysWhyTheyWon() {
+        var rng = SeededRNG(seed: 3)
+        var s = Engine.newGame(earlyGame: false, using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        s.day = s.rules.showIntervalDays - 1
+        s.coins = 100
+        s.coopDoorOpen = false
+        let hen = Self.plainHen(s)
+        s.coop.append(hen)
+        _ = Engine.apply(.enterShow(hen.id), to: &s, using: &rng)
+        _ = Engine.apply(.feed, to: &s, using: &rng)
+        let events = Engine.apply(.passNight, to: &s, using: &rng)
+
+        let podiums = events.compactMap { e -> (ShowClass, [PodiumPlace])? in
+            if case .showPodium(let cls, let podium) = e { return (cls, podium) }
+            return nil
+        }
+        guard let first = podiums.first else {
+            Issue.record("no podium")
+            return
+        }
+        let (cls, podium) = first
+        let lines = podiumLines(cls, podium)
+        #expect(lines.count == 3)
+        #expect(lines.first?.hasPrefix("1st: ") == true)
+        for (line, place) in zip(lines, podium) {
+            #expect(line.contains("\(place.score) of 100"))
+            #expect(line.contains(podiumWhyText(place)))
+            #expect(!podiumWhyText(place).isEmpty)
+        }
+        // Rivals are named after a village keeper, with breed, colour and sex.
+        let rivalLines = zip(lines, podium).filter { !$0.1.isKeeper }.map { $0.0 }
+        #expect(!rivalLines.isEmpty)
+        for line in rivalLines {
+            #expect(showKeeperNames.contains { line.contains("\($0)'s ") }, "\(line)")
+            #expect(line.contains("Orpington hen"), "\(line)")
+        }
+        let words = eventText(.showPodium(cls, podium), s) ?? ""
+        #expect(words.contains("the top three"))
+
+        // Each new look seen on the podium is added to the Breed Book as seen.
+        let seen = events.filter { if case .breedBookEntrySeen = $0 { true } else { false } }
+        #expect(seen.count == s.seenAtShows.count)
+        for e in seen { #expect(eventText(e, s)?.hasPrefix("Seen at the \(showThemeName(.summerFete))") == true) }
+        if let first = s.breedBookSeenOnly.first {
+            #expect(seenText(first) == "Seen at the Summer Fete")
+            #expect(bookLines(s).contains("Seen at shows (\(s.breedBookSeenOnly.count)):"))
+        }
+    }
+
+    /// Two rivals with the same owner number still get two different names.
+    @Test func rivalsOnOnePodiumHaveDifferentOwners() {
+        var rng = SeededRNG(seed: 1)
+        let s = Engine.newGame(earlyGame: false, using: &rng)
+        let hen = Self.plainHen(s)
+        let plate = PodiumEntrant.rivalPlate(owner: 7, colour: .brown, speckled: false)
+        let podium = [
+            PodiumPlace(placing: 1, entrant: .rivalBird(owner: 7, bird: hen), score: 80, notes: [.inFineCondition]),
+            PodiumPlace(placing: 2, entrant: plate, score: 70, notes: []),
+            PodiumPlace(placing: 3, entrant: .keeper(name: "Pip", birdID: nil), score: 60, notes: []),
+        ]
+        let owners = podiumOwnerNames(podium)
+        #expect(owners[0] != nil && owners[1] != nil && owners[0] != owners[1])
+        #expect(owners[2] == nil)
+        #expect(showBirdText(hen) == "buff Orpington hen")
+        #expect(podiumWhoText(podium[2], owner: nil, in: .eggs(.brown)) == "your plate of brown eggs")
+        #expect(podiumWhoText(podium[2], owner: nil, in: .pet) == "your Pip")
+        #expect(podiumLines(.breed(.orpington), podium)[0].hasSuffix("— in fine condition"))
+    }
 }
