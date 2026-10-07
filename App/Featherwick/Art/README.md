@@ -1,8 +1,11 @@
 # Farm art
 
-**Not in use now.** The farm is four swipe panels (Barn, Yard, Far yard, Shop). Each panel is a flat
-colour until its painting exists (`FarmPanel` in `Farm/FarmView.swift`). The files below are kept for
-the panel paintings to come.
+`Scene/` holds the placeholder 2.5D scene art for the Yard and the Far yard: a landscape (value +
+material) and a walk mask per panel. Do not edit them by hand: they come from
+`python3 scripts/make_scene_art.py`. See "Farm scene (2.5D)" in `docs/design/README.md`.
+
+**The files below are not in use now.** The Barn and the Shop are a flat colour until their painting
+exists (`FarmPanel` in `Farm/FarmView.swift`). The files are kept for the panel paintings to come.
 
 `farm-day.png` is the farm painting for now (a mockup). Portrait, about 6:13; 1290×2796 px is
 ideal. No text, no chickens: the game draws those.

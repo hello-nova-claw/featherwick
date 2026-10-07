@@ -179,7 +179,7 @@ All screens are 393×852 (iPhone 15/16). Sheets sit over the dimmed farm.
 ### 1a / 1b — Farm (day / night)
 - Full-bleed painted scene (SpriteKit).
 - HUD top-left and top-right (see Components), 58–62pt from top.
-- 4 panels to swipe between: Barn, Yard, Far yard, Shop. Until the paintings exist, each panel is a flat colour with a dashed "scene" box.
+- 4 panels to swipe between: Barn, Yard, Far yard, Shop. The Yard and the Far yard draw a placeholder 2.5D scene (see Farm scene). Until their paintings exist, the Barn and the Shop are a flat colour with a dashed "scene" box.
 - Place labels on each panel, each anchored to the bottom-centre of its tap area. Barn: Coop and Potting shed. Yard: Yard. Far yard: Back fence. Shop: Farm gate.
 - Panel rail: a white box down the right side, under the HUD, with one dot per panel in swipe order. Tap a dot to go there. The current panel is an ink dot. A panel off screen with a notice gets a bigger dot in its notice colour (decision, then collect, then story) with a ring. Others are small `unknown` dots. VoiceOver reads the panel name and its notices.
 - Bottom: "Books" (Caslon Display 23) bottom-left, then "Today", and a settings button "≡" bottom-right, all white boxes with radius 10, 56pt tall, 24pt above the home indicator.
@@ -232,12 +232,34 @@ The Show tab: the next show's theme name and day, the entry fee, and the feature
 - **Buttons:** pressed scale 0.97 over 120ms. Light haptic on Cuddle, Treat and Set to hatch.
 
 ### Birds on the farm
-Until the bird art exists, each bird is a soft blob (`BirdSwatch`): feather colour, comb, and lacing or barring from its real look. Chicks are small, growers are medium, adults are full size.
-- **Where:** birds stay in a ground band in the lower part of each panel, below the place labels and above Books and ≡. Coop birds stroll between the Yard and the Far yard: each bird stays 20–60 seconds on one, then walks off the shared edge (the Yard's right, the Far yard's left) and walks in on the other. Each bird has its own rhythm from its id and the clock, not the game's dice, so it is the same on every panel. Even one bird strolls. Brooder chicks and hen chicks sit in a dashed "brooder" box on the Barn panel. At night, or with the coop door shut, the coop birds roost in rows on dashed perches on the Barn panel. Lost and boarding birds are not shown.
-- **Movement:** every 2–4 seconds a bird walks a short way slowly, or stops to peck (a small bob). A bird held under a finger waits. Reduce Motion: birds stand still and do not stroll. Coop birds then stay in the Yard, and with more than 6, every third bird stands in the Far yard.
+Until the bird art exists, birds are placeholders. In the Yard and the Far yard, each coop bird is a rigged chicken (see Chicken rig) inside the 2.5D scene. On the Barn panel, each bird is a soft blob (`BirdSwatch`). Both take their colours from the bird's real look: feather colour, comb, and lacing or barring. Chicks are small, growers are medium, adults are full size.
+- **Where:** coop birds stroll between the Yard and the Far yard: each bird stays 20–60 seconds on one, then walks off the shared edge (the Yard's right, the Far yard's left) and walks in on the other. Each bird has its own rhythm from its id and the clock, not the game's dice, so it is the same on every panel. Even one bird strolls. Brooder chicks and hen chicks sit in a dashed "brooder" box on the Barn panel. At night, or with the coop door shut, the coop birds roost in rows on dashed perches on the Barn panel. Lost and boarding birds are not shown.
+- **In the scene** (`Scene/SceneChicken.swift`): the chickens are in the scene's middle group, with the trees (see Farm scene).
+  - **Ground point:** each chicken stands with its feet on one point. Its Y sets the draw order and the size (`SceneDepth`). So a chicken walks behind a tree when its feet are above the tree's base, and in front when they are below. A grown chicken is 64pt tall at the bottom of the panel and 0.45 of that at the hill line. Chicks and growers keep the blob ratios.
+  - **Walking:** a chicken walks only to targets on white ground in the walk mask (`WalkMask.randomTarget`), at most 0.18 of the panel at a time. Without a mask, it stays in the old ground band. It faces the way it walks, its legs move, and it ambles at about 26pt a second at full size (slower when far). Then it stands, and sometimes pecks. The draw order changes halfway through a walk.
+  - **Start:** each chicken has the same start every time, from its id, moved to the nearest walkable ground.
+  - **Strolling:** to leave, a chicken walks off the edge at its own height. It comes in on the other panel from the edge, at the nearest height where the ground at the edge is walkable.
+  - **Touch:** the touch area is at least 44pt, also for a small chicken near the hill.
+- **On the Barn:** blobs stay in a ground band in the lower part of the panel, below the place labels and above Books and ≡.
+- **Movement:** every 2–4 seconds a bird walks a short way slowly, or stops to peck. A bird held under a finger waits. Reduce Motion: birds stand still at their start and do not stroll. Coop birds then stay in the Yard, and with more than 6, every third bird stands in the Far yard.
 - **No labels** by default. Tap a bird (a short touch, no movement) to open its bird card.
 - **Petting:** press and rub a bird (3 turns back and forth, or 120pt of rubbing with one turn). One pet per press. The bird squishes and leans with the finger, then 3 small buff dabs float up. A bird already petted today only leans in. It is not an error.
 - **VoiceOver:** each bird is a button named for the bird. "Pet" is an action.
+
+### Chicken rig
+A placeholder chicken on a fixed skeleton (`App/Featherwick/Scene/Chicken*.swift`). Each part is a simple shape now. The real art replaces each part's shape and keeps the same joints.
+- **Joints**, back to front. A child part rides on its parent:
+  - `leg_back`: swings at its hip. It is drawn behind the body.
+  - `body`: tilts at the hip to peck. The tail and wing ride on it.
+  - `neck`: swings down at the shoulder. It rides on the body.
+  - `head`: turns to look (-1 back, 0 side, 1 at the viewer). It rides on the neck and holds the comb, beak, eye and wattle.
+  - `eyelid`: a comb-red patch that grows down over the eye to blink. It rides on the head. On a chick it is the down colour.
+  - `leg_front`: swings at its hip, opposite the back leg. It is drawn in front of the body.
+- **Ground point:** the bottom centre of the rig's frame, between the feet. The scene places each chicken by this point.
+- **Numbers:** every joint position is a fraction of the rig height, in `ChickenRigMetrics`. The rig faces right; the scene mirrors it to face left.
+- **Chicks** use their own build: a round ball of down, tiny legs, no comb. Colours come from the bird's look, as for `BirdSwatch`.
+- **Motion** (`AnimatedChicken`): walking swings the legs; pecking runs one peck (0.6 s); idle blinks every 3–6 s and sometimes looks around. A still bird does not redraw. Reduce Motion: no walking cycle, peck or looks. Blinks stay.
+- **Rig lab:** ≡ ▸ Open test tools ▸ Debug ▸ Rig lab has a slider for each joint.
 
 ### Sound and haptics
 Soft and few. Settings (≡) has a switch for each; both start on.
@@ -246,6 +268,43 @@ Soft and few. Settings (≡) has a switch for each; both start on.
 - **Unknown → known reveals** (breed, sex): animate the dashed outline to a filled state (~400ms), then show a toast ("Lavender added to the Breed Book").
 - **Reduce Motion:** replace slides and scales with fades.
 - **VoiceOver:** every dab or dot group reads as text ("Friendliness: friendly, 3 of 4"). Carton cups read "Blue egg, fertile".
+
+## Farm scene (2.5D)
+The Yard and the Far yard draw a 2.5D scene (`App/Featherwick/Scene/`). The art is a placeholder: a basic hill and sky, simple tree shapes and grass tufts. But it uses the same tools as the real paintings will. The Barn and the Shop stay flat colours for now.
+
+**One landscape.** The Yard and the Far yard are one landscape, side by side. The script paints both as one wide picture and cuts it in two, so the hills, sky and grass meet at the join without a seam. They share one hill line and one tree line: a tree near the join shows on both panels. Lower trees stand only by the outer edges, never at the join.
+
+**Three rules.** Each thing in the scene has a ground point: a bird's feet, a trunk's base. Its Y on screen sets everything (`SceneDepth`).
+- **Draw order = ground Y.** Lower on screen is nearer, so it draws on top. A bird walks behind a tree while its feet are above the tree's base, and in front when they are below.
+- **Size = ground Y.** Things are smallest at the hill line (scale 0.45) and full size at the bottom edge (1.0). A bird that walks up the yard gets smaller. The two numbers are `SceneDepth.farScale` and `nearScale`.
+- **Walk area = a mask.** White ground is walkable; black is not (sky, hills, the pond, the ground kept for the coop run and the back fence, the strip under the buttons). Birds pick targets only inside white (`WalkMask.randomTarget`).
+
+**Three layer groups.**
+1. **Back:** sky, far hills and the yard ground, from one landscape PNG. Never sorted.
+2. **Middle:** trees, fences, the coop and the birds, in one stack, each sorted by its ground Y (`.zIndex(depth.zIndex(forGroundY:))`).
+3. **Front:** grass tufts along the bottom edge. Always on top.
+
+**Trees.** Five designs (`TreeKind`: oak, poplar, pine, apple, birch), each a trunk and a canopy in separate materials. Code places them along the hill line with random spacing, size and left/right flip, plus one or two lower in the yard near the outer edges (`TreeLine.makeJoined`). The dice are seeded per panel, never the game's, so a panel always has the same trees. A new panel gets its own tree line with no new painting. Each tree sways slowly on its own about its trunk base. Reduce Motion: no sway.
+
+**Colour: ramps and masks.** The art holds value (light and dark) and material, not colour. One shader (`SeasonRamp.metal`) maps each value along the ramp of its material for the season (`SeasonRamp.swift`). So one painting serves every season:
+- Spring: fresh green. Summer: deep green. Autumn: gold grass under red and orange trees. Winter: pale.
+- Each tree turns its leaf hue a little, so autumn trees differ. Pines are evergreen.
+- Night: the same shader takes colour out and multiplies a blue-grey, as on the flat panels.
+
+**Art files.** Per panel, two PNGs in `App/Featherwick/Art/Scene/`:
+- `scene-<panel>-land.png` (660 × 1434, half of a 1320 × 2868 screen). R = value. G and B = two material bits: 00 sky, 10 far hill, 11 grass, 01 pond. Neighbouring materials differ in one bit, so a soft edge never mixes in a third. Drawn trees and tufts use the same channels (trees: 00 leaves, 10 trunk, 11 evergreen).
+- `scene-<panel>-walk.png` (220 × 478, greyscale): the walk mask.
+- The scene stretches both to the panel, so the hill line and the mask are fractions of the screen.
+
+The masks are made once, before the build, by a script. The app only loads the PNGs. To change the art, edit and run:
+
+```sh
+python3 scripts/make_scene_art.py   # needs Pillow and numpy; same output every run
+```
+
+It also writes `Scene/SceneArtLayout.swift` (hill line and building ground per panel), so code and art agree. Commit the PNGs and that file together.
+
+**Performance.** Nothing in the scene runs on a timer. Only the tree sway animates (one repeating animation per tree). A redraw every second made swiping between panels stutter.
 
 ## State (sketch)
 - `GameClock`: day number, season, time of day, `isNight`.
