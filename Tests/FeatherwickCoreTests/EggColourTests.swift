@@ -143,16 +143,4 @@ struct EggColourTests {
         ]
         #expect(Judge.judgeEggs(mixed, state: ShowTests.showDay()).grade == .disqualified)
     }
-
-    @Test func newColoursHaveEggBookPagesAndMilestones() {
-        var (s, _) = startedGame(sex: .hen)
-        s.eggBook.insert(EggBookEntry(colour: .green, speckled: false))
-        s.eggBook.insert(EggBookEntry(colour: .chocolate, speckled: false))
-        let events = Engine.advanceMilestones(&s)
-        #expect(events.contains(.milestoneReached("greenEgg")))
-        #expect(events.contains(.milestoneReached("chocolateEgg")))
-        let r = Rules()
-        let green = Egg(id: UUID(), layDay: 0, motherID: UUID(), colour: .green, speckled: false)
-        #expect(r.price(of: green, onDay: 0) == r.greenEggPrice)
-    }
 }

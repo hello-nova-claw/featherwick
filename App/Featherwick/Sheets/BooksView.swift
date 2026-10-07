@@ -224,9 +224,9 @@ struct EggBook: View {
         case .cream: "Silkies lay these."
         case .brown: "Orpingtons and Australorps lay these."
         case .blue: "Araucanas carry the blue-egg gene."
-        case .olive: "Cross a blue-egg bird with a dark brown-egg bird."
-        case .chocolate: "Breed from the darkest brown-egg hens."
-        case .green: "Cross a blue-egg bird with a light brown-egg bird."
+        case .olive: "Cross an Araucana with a brown-egg breed. Some of the hens lay olive eggs."
+        case .chocolate: "Very dark brown eggs. Rare in Featherwick."
+        case .green: "Cross an Araucana with a brown-egg breed. Some of the hens lay green eggs."
         }
     }
 }
