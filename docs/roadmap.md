@@ -23,10 +23,13 @@ Work in progress and ideas, newest decisions first. Move an item to "Done" when 
 - iCloud save sync.
 - Game Center friends.
 - Live trading and a shared county show with other players (needs a server; builds on trade codes).
-- Art: the 4 panel paintings (Barn, Yard, Far yard, Shop) at 1320 × 2868 px, as layers; bird art
-  from the shared parts kit (`Look`).
+- Art: the 4 panel paintings (Barn, Yard, Far yard, Shop) at 1320 × 2868 px; bird art from the
+  shared parts kit (`Look`). The Yard and the Far yard already have a placeholder 2.5D scene
+  (value + material art, season ramps, walk mask, seeded swaying trees). The paintings replace its
+  PNGs and tree shapes with the same channels. See "Farm scene (2.5D)" in `docs/design/README.md`.
+- Birds in the 2.5D scene: walk targets from the walk mask, scale and draw order from ground Y.
 - Sounds: 4 files (cluck, egg, hatch, coins). See `App/Featherwick/Sounds/README.md`.
-- Parallax between layers when swiping; trees that sway; seasonal layer swaps.
+- Parallax between layers when swiping. (Trees that sway and season colours: done in the 2.5D scene.)
 
 ## Done
 

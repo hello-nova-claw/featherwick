@@ -19,7 +19,8 @@ enum Place: String, CaseIterable, Identifiable {
 }
 
 /// The farm is four panels side by side. Swipe left or right between them.
-/// Each panel is a flat colour until its painting exists.
+/// The Yard and the Far yard draw a 2.5D scene (`Scene/FarmScene.swift`); the others are a flat colour until
+/// their painting exists.
 enum FarmPanel: Int, CaseIterable, Identifiable {
     case barn, yard, farYard, shop
     var id: Int { rawValue }
@@ -70,7 +71,7 @@ enum FarmSheet: Identifiable, Hashable {
     var id: Self { self }
 }
 
-/// The farm screen: four panels to swipe between (flat colours until the art exists), the HUD,
+/// The farm screen: four panels to swipe between (placeholder scenes and flat colours), the HUD,
 /// the place labels and the birds on each panel, and Books, the panel dots and settings at the bottom.
 struct FarmView: View {
     @Environment(GameStore.self) private var store
@@ -285,14 +286,30 @@ struct FarmView: View {
     }
 }
 
-/// One farm panel: its stand-in colour, a dashed box where its painting will go, and its place
-/// labels. Night darkens and cools the colour, as it will the paintings.
+/// One farm panel and its place labels. The Yard and the Far yard draw the 2.5D scene (`FarmScene`).
+/// The others show a stand-in colour and a dashed box where the painting will go. Night darkens and
+/// cools both.
 struct FarmPanelView<PlaceButton: View>: View {
+    @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
     let panel: FarmPanel
     @ViewBuilder let label: (Place) -> PlaceButton
 
     var body: some View {
+        ZStack {
+            if SceneArt.hasScene(panel) {
+                FarmScene(panel: panel, season: store.state.season)
+            } else {
+                standIn
+            }
+            VStack(spacing: Space.xl) {
+                ForEach(panel.places) { label($0) }
+            }
+        }
+    }
+
+    /// A flat colour and a dashed box, until the panel's scene exists.
+    private var standIn: some View {
         ZStack {
             panel.colour
                 .saturation(palette.isNight ? 0.55 : 1)
@@ -305,9 +322,6 @@ struct FarmPanelView<PlaceButton: View>: View {
             ArtPlaceholder(label: "\(panel.name.lowercased()) scene")
                 .padding(.horizontal, Space.xl)
                 .padding(.vertical, 140)  // clear of the HUD and the bottom row
-            VStack(spacing: Space.xl) {
-                ForEach(panel.places) { label($0) }
-            }
         }
     }
 }

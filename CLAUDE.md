@@ -49,8 +49,12 @@ components, screens 1a–8a). The painted farm and bird art come later; dashed b
   `Stitch`), marks (eggs, feathers, dabs) and components (buttons, tabs, sheet page, notices).
   Use these; do not hard-code colours, fonts or sizes in screens.
 - `Farm/FarmView.swift`: HUD, 4 swipe panels, a panel rail (dots, right side), Books, ≡. Panels left to right: Barn (Coop,
-  Potting shed), Yard (Yard), Far yard (Back fence), Shop (Farm gate). A panel is a flat colour until its
-  painting exists. Each place opens a sheet (`Sheets/`). Notices under a place come from game state.
+  Potting shed), Yard (Yard), Far yard (Back fence), Shop (Farm gate). Barn and Shop are a flat colour until
+  their painting exists. Each place opens a sheet (`Sheets/`). Notices under a place come from game state.
+- `Scene/`: the 2.5D scene on the Yard and Far yard (`FarmScene`): depth from ground Y (`SceneDepth`), walk
+  mask (`WalkMask`), seeded trees (`SceneTrees`), tufts, and the season-ramp shader (`SeasonRamp.swift/.metal`).
+  Art in `Art/Scene/` and `Scene/SceneArtLayout.swift` come from `python3 scripts/make_scene_art.py`;
+  run it after changing the script and commit its output. See "Farm scene (2.5D)" in `docs/design/README.md`.
 - `Farm/FarmBirds.swift`: the flock as blobs (`BirdSwatch`) on their panels. Tap opens the bird card;
   press and rub sends `.pet`. `Feedback/`: `Haptics` and `Sound` (bundled `Sounds/*.caf`, silent if missing),
   with on/off switches in Settings. `GameStore.run` plays event feedback through `GameFeedback`.
