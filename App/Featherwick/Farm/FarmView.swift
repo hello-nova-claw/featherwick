@@ -553,22 +553,13 @@ struct HUD: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(daylightWords(s))
+            .accessibilityLabel(timeOfDayText(s))
             if showsTime {
-                Text(daylightWords(s)).font(Typeface.label).foregroundStyle(palette.inkSoft)
+                Text(timeOfDayText(s)).font(Typeface.label).foregroundStyle(palette.inkSoft)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
-}
-
-/// "Afternoon. Time for 2 more errands." The time of day and the errands that still fit today.
-/// Local words: FeatherwickText has no helper for this line yet.
-func daylightWords(_ s: GameState) -> String {
-    let time = s.timeOfDay.rawValue.capitalized
-    let left = s.slotsLeft
-    if left == 0 { return "\(time). The light's gone: time for bed." }
-    return "\(time). Time for \(left) more errand\(left == 1 ? "" : "s")."
 }
 
 /// Over the farm while a rest plays (or night falls): what the keeper did with the time, and a cover
