@@ -303,11 +303,11 @@ public enum Judge {
             + (egg.shell ?? 0.75) + (s.rules.isStale(egg, onDay: s.day) ? 0 : 1)
     }
 
-    /// Shell quality of an egg laid today, 0...1. Real shells thin with stress, summer heat and age.
+    /// Shell quality of an egg laid today, 0...1. Real shells thin with stress and age. (No summer penalty:
+    /// a keeper cannot do anything about the season, so it only felt unfair.)
     public static func shellQuality(of hen: Bird, in s: GameState) -> Double {
         var value = 1.0
         if s.day < hen.noLayUntilDay + s.rules.scaredNoLayDays { value -= 0.3 }  // just over a fright
-        if s.season == .summer { value -= 0.2 }
         let years = hen.age(onDay: s.day) / (s.rules.daysPerSeason * Season.allCases.count)
         value -= 0.1 * Double(years)
         return max(0.1, value)

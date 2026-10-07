@@ -200,7 +200,7 @@ changes shape. `Tests/.../Fixtures/save-v0.json` is a real old save; it must alw
 - Show type and egg shape are quantitative traits (`QuantitativeTrait.swift`): many small genes,
   half from each parent, score capped. Selective breeding works; nothing can exceed the maximum.
   Birds from outside the flock get random quality genes from their own ID.
-- Condition and shell quality come from care: frights, broodiness, hunger, heat, age.
+- Condition and shell quality come from care: frights, broodiness, hunger, age. The season does not mark shells down.
 - No mark for what every bird does in a season. Every bird moults in autumn, so the judge does not
   mark the moult. (`JudgeNote.moulting` stays only so old show results load.)
 - Grades are absolute (fair → excellent). `judge <name>` / `judge eggs` are practice: judging with no competitors.

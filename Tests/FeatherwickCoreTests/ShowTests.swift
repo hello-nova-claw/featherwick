@@ -327,14 +327,14 @@ struct ShowTests {
         #expect(shapes == [QuantitativeTrait.eggShape.score(hen.genome)])
     }
 
-    @Test func shellsAreThinnerInSummerAndWithAge() {
+    @Test func shellsThinWithAgeButNotInSummer() {
         var rng = SeededRNG(seed: 13)
         var s = Self.showDay()
         let young = Self.bird(.orpington, age: 30, s: s, rng: &rng)
         #expect(Judge.shellQuality(of: young, in: s) == 1)
         s.day = s.rules.daysPerSeason + 1  // summer
         let summer = Self.bird(.orpington, age: 30, s: s, rng: &rng)
-        #expect(Judge.shellQuality(of: summer, in: s) < 1)
+        #expect(Judge.shellQuality(of: summer, in: s) == 1)
         let veryOld = Self.bird(.orpington, age: 10_000, s: s, rng: &rng)
         #expect(Judge.shellQuality(of: veryOld, in: s) == 0.1)
     }
