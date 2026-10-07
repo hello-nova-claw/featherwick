@@ -176,6 +176,26 @@ import Testing
         #expect(Self.has(lines) { Self.isNotPossible($0, .colour(.white)) })
         #expect(Self.has(lines) { Self.isNotPossible($0, .barred) })
         #expect(lines.map(Self.group) == lines.map(Self.group).sorted())
+        // Black shows whenever its genes are there: no "if one of them is hiding black" line.
+        for c in [FeatherColour.black, .blue, .splash, .white] {
+            #expect(!Self.has(lines) { Self.isPossible($0, .colour(c)) }, "\(c)")
+        }
+    }
+
+    /// The family showed lavender: the possible line names that evidence, never "nobody showed it".
+    @Test func aPossibleLineNamesTheFamilyThatShowedIt() {
+        var (s, rng) = startedGame(sex: .hen)
+        let mother = Self.add(
+            KnowledgeTests.genome(.hen) { $0.lavender = .homozygous(.lavender) }, .orpington, &s, &rng)
+        let hen = Self.add(
+            KnowledgeTests.genome(.hen) { $0.lavender = AllelePair(.normal, .lavender) }, .orpington, &s, &rng,
+            mother: mother)
+        let rooster = Self.add(KnowledgeTests.genome(.rooster), .orpington, &s, &rng)
+        let lines = Self.lines(s, hen: hen, rooster: rooster)
+        #expect(
+            lines.contains(
+                .possible(.colour(.lavender), .parent(bird: hen.id, parent: mother.id, locus: Lavender.locus))))
+        #expect(!lines.contains(.possible(.colour(.lavender), .unknownFamily(locus: Lavender.locus))))
     }
 
     /// The same look and family give the same forecast, whatever the birds really carry (rule 8).
@@ -447,8 +467,9 @@ import Testing
         #expect(Planner.panel(in: s) == Planner.panel(in: s))
     }
 
-    /// A full pen: well under a few milliseconds in a release build. A debug build is about ten times
-    /// slower, so it checks a looser limit. The median is printed either way.
+    /// A full pen (3 hens and a rooster, Knowledge built once): under 5 ms in a release build (about
+    /// 1 ms measured, with 34 birds known). `swift test` runs a debug build, about ten times slower, so it
+    /// checks under 100 ms. The limits leave room for slow CI machines; the median is printed either way.
     @Test func aFullPenIsQuick() {
         var s = Self.simGames.max { $0.coop.count < $1.coop.count }!
         let pairs = Self.coopPairs(s)
@@ -495,11 +516,43 @@ import Testing
                         #expect(id == hen.id || id == rooster.id || seen.contains(id), "\(line)")
                     }
                     if case .ratio(_, _, let d, _) = line { #expect([2, 4, 8, 16].contains(d)) }
+                    Self.checkShape(line, family: family, hen: hen.id, rooster: rooster.id)
                 }
             }
         }
         print("Planner reasons: \(pairs) pairs, \(lines) lines in \(Self.simGames.count) games")
         #expect(pairs > 100)
+    }
+
+    /// Lines the words expect: egg colours only in the egg-colours and "likely no" lines; "possible"
+    /// and "likely no" only for traits a bird can hide; "nobody in the family has shown it" only when
+    /// nobody in the pair's seen family (the pair, parents, grandparents, chicks) has.
+    static func checkShape(_ line: Forecast, family: [Visible], hen: UUID, rooster: UUID) {
+        let hidable: [FeatherwickCore.Trait] = [
+            .colour(.lavender), .colour(.buff), .barred, .laced, .silkieFeathered, .speckledEggs,
+        ]
+        switch line {
+        case .certain(.eggColour, _), .ratio(.eggColour, _, _, _), .possible(.eggColour, _),
+            .notPossible(.eggColour, _):
+            Issue.record("egg colour outside its own line: \(line)")
+        case .possible(let t, let r):
+            #expect(hidable.contains(t), "\(line)")
+            guard case .unknownFamily = r else { break }
+            let byID = Dictionary(family.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+            func parents(_ v: Visible) -> [Visible] { [v.motherID, v.fatherID].compactMap { $0.flatMap { byID[$0] } } }
+            let pair = [hen, rooster].compactMap { byID[$0] }
+            let up = pair.flatMap(parents)
+            let chicks = family.filter {
+                $0.motherID == hen || $0.fatherID == hen || $0.motherID == rooster || $0.fatherID == rooster
+            }
+            let relatives = pair + up + up.flatMap(parents) + chicks
+            #expect(!relatives.contains { ($0.look.map(FeatherwickCore.Trait.shown) ?? 0) & t.bit != 0 }, "\(line)")
+        case .likely(let t, _):
+            if case .eggColour = t { break }
+            #expect(hidable.contains(t), "\(line)")
+        default:
+            break
+        }
     }
 
     // MARK: - 9. Carrier notes
