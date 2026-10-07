@@ -390,16 +390,7 @@ while true {
         run(.upgradeCoop)
     case "close": run(.closeCoop)
     case "rest": run(.rest)
-    case "time":
-        let s = game.state
-        guard s.isOpen(.daylight) else {
-            print(notYetText(.daylight, s))
-            break
-        }
-        let left = s.slotsLeft
-        let errands =
-            left == 0 ? "No time left for errands: sleep" : "Time for \(left) more errand\(left == 1 ? "" : "s")"
-        print("\(s.timeOfDay.rawValue.capitalized). \(errands).")
+    case "time": print(timeOfDayText(game.state))
     case "sleep", "s": run(.passNight)
     case "day":
         let n = max(1, words.count > 1 ? Int(words[1]) ?? 1 : 1)
