@@ -538,6 +538,43 @@ struct ShowEventTests {
         #expect(s.breedBook.count == 1)
     }
 
+    @Test func rivalsBringTheirOwnDayNotTheKeepers() {
+        func podium(fed: Bool, foraged: Bool) -> [PodiumPlace] {
+            var (s, rng) = Self.eveOfShow(seed: 42)
+            let weak = Self.weakOrpington(in: s, rng: &rng)
+            s.coop.append(weak)
+            _ = Engine.apply(.enterShow(weak.id), to: &s, using: &rng)
+            // The keeper's own day: whether the flock was fed or foraged.
+            s.fedToday = fed
+            s.foragedToday = foraged
+            _ = Engine.apply(.passNight, to: &s, using: &rng)
+            return s.showResults.first?.podium ?? []
+        }
+        let fedDay = podium(fed: true, foraged: false)
+        #expect(!fedDay.isEmpty)
+        // Rivals are judged the same whatever the keeper did with their own flock.
+        #expect(podium(fed: false, foraged: true).map { $0.score } == fedDay.map { $0.score })
+    }
+
+    @Test func rivalsHaveTheirOwnLuckOfCondition() {
+        var (s, rng) = Self.eveOfShow()
+        var hungry = 0
+        var foraged = 0
+        let count = 400
+        for _ in 0..<count {
+            var bird = Self.weakOrpington(in: s, rng: &rng)
+            let day = Engine.rivalsDay(&bird, s)
+            if !day.fedToday { hungry += 1 }
+            if day.foragedToday { foraged += 1 }
+        }
+        // Near the odds in Rules, and never all one way.
+        #expect(abs(Double(hungry) / Double(count) - s.rules.rivalHungryChance) < 0.06)
+        #expect(abs(Double(foraged) / Double(count) - s.rules.rivalForagedChance) < 0.08)
+        s.rules.rivalHungryChance = 0
+        var bird = Self.weakOrpington(in: s, rng: &rng)
+        #expect(Engine.rivalsDay(&bird, s).fedToday)
+    }
+
     @Test func podiumsAreDeterministicUnderAFixedSeed() {
         func playOut() -> ([ShowResult], [SeenBreedBookEntry], SeededRNG) {
             var (s, rng) = Self.eveOfShow(seed: 42)

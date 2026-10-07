@@ -354,6 +354,20 @@ extension Engine {
         return Int(local.next() % UInt64(showOwnerSlots))
     }
 
+    /// A rival comes from its own farm, so its condition is its own luck, not the keeper's day: whether it
+    /// was fed, had a good forage, or had a fright, at the odds in `Rules`. Drawn from the bird's ID (like
+    /// its owner), so it moves no game randomness. Returns the day to judge it in; a fright marks the bird.
+    static func rivalsDay(_ bird: inout Bird, _ s: GameState) -> GameState {
+        var local = SeededRNG(seed: ShopSpecial.seed(from: bird.id) ^ 0x4441_5953)  // "DAYS"
+        var day = s
+        day.fedToday = Double.random(in: 0..<1, using: &local) >= s.rules.rivalHungryChance
+        day.foragedToday = Double.random(in: 0..<1, using: &local) < s.rules.rivalForagedChance
+        if Double.random(in: 0..<1, using: &local) < s.rules.rivalStressedChance {
+            bird.noLayUntilDay = max(bird.noLayUntilDay, s.day + 1)
+        }
+        return day
+    }
+
     /// One AI entry: the best of `picks` random candidates. More picks make a stronger field.
     static func rival<R: RandomNumberGenerator>(
         for cls: ShowClass, picks: Int, _ s: GameState, _ rng: inout R
@@ -377,24 +391,26 @@ extension Engine {
         switch cls {
         case .breed(let breed):
             let colour = breed.definition.varieties.randomElement(using: &rng)!
-            let bird = Bird(
+            var bird = Bird(
                 id: makeID(using: &rng), name: "a \(breed.definition.displayName)", breed: breed,
                 genome: breed.purebred(.hen, variety: colour), hatchDay: s.day - s.rules.adultAge,
                 origin: "County show", revealed: true
             ).withFounderQuality()
+            let day = rivalsDay(&bird, s)
             let shown = PodiumEntrant.rivalBird(owner: showOwner(of: bird.id), bird: bird)
-            return RivalEntry(name: bird.name, card: Judge.judge(bird, in: cls, state: s), entrant: shown)
+            return RivalEntry(name: bird.name, card: Judge.judge(bird, in: cls, state: day), entrant: shown)
         case .pet:
             let breed = Breed.starters.randomElement(using: &rng)!
             let colour = breed.definition.varieties.randomElement(using: &rng)!
-            let bird = Bird(
+            var bird = Bird(
                 id: makeID(using: &rng), name: "a visitor's \(breed.definition.displayName)", breed: breed,
                 genome: breed.purebred(.hen, variety: colour), hatchDay: s.day - s.rules.adultAge,
                 origin: "County show", revealed: true
             )
             .withFounderQuality().withTameness(Double.random(in: 0.2...0.95, using: &rng))
+            let day = rivalsDay(&bird, s)
             let shown = PodiumEntrant.rivalBird(owner: showOwner(of: bird.id), bird: bird)
-            return RivalEntry(name: bird.name, card: Judge.judge(bird, in: .pet, state: s), entrant: shown)
+            return RivalEntry(name: bird.name, card: Judge.judge(bird, in: .pet, state: day), entrant: shown)
         case .eggs(let colour):
             // A matched plate from one unseen hen: a single shape and shell across the plate.
             let shape = Int.random(in: 0...QuantitativeTrait.eggShape.maxScore, using: &rng)

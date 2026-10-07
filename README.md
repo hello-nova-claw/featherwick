@@ -268,6 +268,10 @@ The keeper sees the top three in each class they entered, rivals too, and why ea
 - A rival bird is kept whole (`Bird`), so its colour comes from its genes, like any bird. Show birds
   are adults, so a spectator sees breed, colour and sex. Nothing hidden is told.
 - An egg class podium holds plates: colour and speckle, no bird.
+- A rival brings its own day, not the keeper's. Its condition is its own luck (`Engine.rivalsDay`):
+  not fed (`rivalHungryChance`, 15%), a good forage (`rivalForagedChance`, 30%) or a fright
+  (`rivalStressedChance`, 8%). The odds are drawn from the rival's ID, so they move no game randomness.
+  What the keeper did with their own flock never changes a rival's score.
 - Each rival has an owner number (`Engine.showOwner`, 0..<`showOwnerSlots`). It comes from the rival's
   own ID, not from the game RNG. Keeping the podium draws no extra random numbers, so existing seeds
   play the same shows. FeatherwickText turns the number into a village name (`showKeeperNames`).
