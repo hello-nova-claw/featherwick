@@ -108,14 +108,78 @@ struct ShowTests {
         s.fedToday = false
         b.noLayUntilDay = s.day + 2
         b.broodyUntilDay = s.day + 3
-        s.day = s.rules.daysPerSeason * 2 + 1  // autumn: moulting
+        s.day = s.rules.daysPerSeason * 2 + 1  // autumn
         b = Bird(
             id: b.id, name: b.name, breed: b.breed, genome: b.genome, hatchDay: s.day - 40, origin: "t",
             revealed: true, noLayUntilDay: s.day + 2)
         b.broodyUntilDay = s.day + 3
         let (value, notes) = Judge.condition(of: b, in: s)
-        #expect(value == 0)
-        #expect(Set(notes) == [.moulting, .stressed, .broody, .hungry])
+        #expect(abs(value - 0.1) < 1e-9)  // 1 - 0.4 stressed - 0.3 broody - 0.2 hungry
+        #expect(Set(notes) == [.stressed, .broody, .hungry])
+    }
+
+    // MARK: - Forecast: what the keeper knows before the show
+
+    /// Every bird moults in autumn, so the moult sets no bird apart: the judge does not mark it.
+    @Test func anAutumnShowDoesNotMarkTheMoult() {
+        var rng = SeededRNG(seed: 5)
+        var s = Self.showDay(day: Rules.standard.daysPerSeason * 2 - 10)  // late summer
+        #expect(s.season(onDay: s.nextShowDay) == .autumn)
+        let b = Self.bird(.orpington, s: s, rng: &rng)
+        #expect(Judge.forecast(for: b, in: s).isEmpty)
+        s.day = s.nextShowDay
+        #expect(Judge.condition(of: b, in: s) == (1, [.inFineCondition]))
+    }
+
+    @Test func theForecastSeesBroodyAndFrightsThatLastToShowDay() {
+        var rng = SeededRNG(seed: 6)
+        let s = Self.showDay(day: 10)
+        var b = Self.bird(.orpington, s: s, rng: &rng)
+        b.broodyUntilDay = s.nextShowDay - 1  // over before the show
+        b.noLayUntilDay = s.nextShowDay - 1
+        #expect(Judge.forecast(for: b, in: s).isEmpty)
+        b.broodyUntilDay = s.nextShowDay + 2
+        b.noLayUntilDay = s.nextShowDay + 1
+        #expect(Judge.forecast(for: b, in: s) == [.stressed, .broody])
+    }
+
+    @Test func theForecastAsksForFeedOnlyOnTheEveOfTheShow() {
+        var rng = SeededRNG(seed: 7)
+        var s = Self.showDay(day: 10)
+        s.fedToday = false
+        let b = Self.bird(.orpington, s: s, rng: &rng)
+        #expect(Judge.forecast(for: b, in: s).isEmpty)  // days to go: they will be fed
+        s.day = s.nextShowDay - 1
+        #expect(Judge.forecast(for: b, in: s) == [.hungry])
+        s.fedToday = true
+        #expect(Judge.forecast(for: b, in: s).isEmpty)
+    }
+
+    /// The forecast and the judge agree: what the forecast says is what the judge sees on the day.
+    @Test func theForecastMatchesTheJudgeOnShowDay() {
+        var rng = SeededRNG(seed: 8)
+        for start in stride(from: 1, to: 120, by: 7) {
+            var s = Self.showDay(day: start)
+            s.day = s.nextShowDay - 1
+            s.fedToday = start % 2 == 0
+            var b = Self.bird(.orpington, age: 60, s: s, rng: &rng)
+            if start % 3 == 0 { b.broodyUntilDay = s.day + 3 }
+            let forecast = Judge.forecast(for: b, in: s)
+            var onTheDay = s
+            onTheDay.day += 1  // the night passes; the judge sees whether they were fed yesterday
+            let seen = Judge.condition(of: b, in: onTheDay).notes.filter { $0 != .inFineCondition }
+            #expect(Set(forecast) == Set(seen), "day \(start)")
+        }
+    }
+
+    @Test func breedCardsNoteTypeAndFeathering() {
+        var rng = SeededRNG(seed: 9)
+        let s = Self.showDay()
+        let silkie = Judge.judge(Self.bird(.silkie, rng: &rng), in: .breed(.silkie), state: s)
+        #expect(silkie.notes.contains(.feathering(silkie: true)))
+        let orp = Judge.judge(Self.bird(.orpington, rng: &rng), in: .breed(.orpington), state: s)
+        #expect(orp.notes.contains(.feathering(silkie: false)))
+        #expect(orp.notes.contains { if case .type = $0 { true } else { false } })
     }
 
     // MARK: - Show type is inherited
@@ -263,14 +327,14 @@ struct ShowTests {
         #expect(shapes == [QuantitativeTrait.eggShape.score(hen.genome)])
     }
 
-    @Test func shellsAreThinnerInSummerAndWithAge() {
+    @Test func shellsThinWithAgeButNotInSummer() {
         var rng = SeededRNG(seed: 13)
         var s = Self.showDay()
         let young = Self.bird(.orpington, age: 30, s: s, rng: &rng)
         #expect(Judge.shellQuality(of: young, in: s) == 1)
         s.day = s.rules.daysPerSeason + 1  // summer
         let summer = Self.bird(.orpington, age: 30, s: s, rng: &rng)
-        #expect(Judge.shellQuality(of: summer, in: s) < 1)
+        #expect(Judge.shellQuality(of: summer, in: s) == 1)
         let veryOld = Self.bird(.orpington, age: 10_000, s: s, rng: &rng)
         #expect(Judge.shellQuality(of: veryOld, in: s) == 0.1)
     }

@@ -147,10 +147,57 @@ public func showKindName(_ kind: ShowKind) -> String {
     }
 }
 
-/// What the theme means for the player, in one sentence.
+/// What the theme means for the player: the bonus, and anything special about the season.
 public func showThemeLine(_ theme: ShowTheme) -> String {
     let bonus = "The \(showKindName(theme.featured)) \(theme.featured == .pet ? "pays" : "pay") extra coins."
-    return theme == .winterChampionship ? bonus + " The rivals are the strongest of the year." : bonus
+    return showSeasonNote(theme).map { "\(bonus) \($0)" } ?? bonus
+}
+
+/// What the season does to the show, or nil when nothing. Told before the show, never only after.
+public func showSeasonNote(_ theme: ShowTheme) -> String? {
+    switch theme {
+    case .winterChampionship: "The rivals are the strongest of the year."
+    case .springEggFair, .summerFete, .harvestShow: nil
+    }
+}
+
+/// What the judge looks at in a kind of class, with the points for each part (`ShowPoints`).
+public func judgingText(_ kind: ShowKind) -> String {
+    let parts: [(String, Int)] =
+        switch kind {
+        case .breed:
+            [
+                ("type (size, shape and carriage)", ShowPoints.breedType),
+                ("a standard colour and feathering", ShowPoints.breedColour),
+                ("condition", ShowPoints.breedCondition),
+            ]
+        case .pet: [("condition", ShowPoints.petCondition), ("friendliness", ShowPoints.petFriendliness)]
+        case .eggs:
+            [
+                ("a matched plate", ShowPoints.eggMatch), ("shape", ShowPoints.eggShape),
+                ("shells", ShowPoints.eggShell), ("freshness", ShowPoints.eggFreshness),
+            ]
+        }
+    return "Judged on " + parts.map { "\($0.0) \($0.1)" }.joined(separator: " · ")
+}
+
+/// A condition worry for show day (`Judge.forecast`), with what the keeper can do about it.
+public func forecastText(_ n: JudgeNote) -> String {
+    switch n {
+    case .stressed: "still nervous after a fright"
+    case .broody: "broody: a broody hen loses condition"
+    case .hungry: "hungry unless you feed the flock today"
+    case .lacksVigour: "closely bred, so lacks a little vigour"
+    default: noteText(n)
+    }
+}
+
+/// How a bird should look on the next show day: "In fine condition for day 84." or
+/// "On day 84: broody: …; still nervous after a fright".
+public func showReadinessText(_ bird: Bird, _ s: GameState) -> String {
+    let worries = Judge.forecast(for: bird, in: s)
+    if worries.isEmpty { return "In fine condition for day \(s.nextShowDay)." }
+    return "On day \(s.nextShowDay): " + worries.map(forecastText).joined(separator: "; ") + "."
 }
 
 /// "12 coins", "3 treats" or "8 coins and 3 treats". Empty when nothing was won.
@@ -203,7 +250,8 @@ public func noteText(_ n: JudgeNote) -> String {
     case .notMatched: "the eggs do not match"
     case .plateNeeds(let n): "a plate needs \(n) eggs"
     case .standardColour(let c): "\(c), a standard colour"
-    case .type(let b): "type \(b.rawValue)"
+    case .feathering(let silkie): silkie ? "true silkie feathering, soft as down" : "smooth, tight feathering"
+    case .type(let b): "type \(b.rawValue): \(typeWords(b))"
     case .moulting: "moulting"
     case .stressed: "still nervous after a fright"
     case .broody: "broody and out of condition"
@@ -215,6 +263,16 @@ public func noteText(_ n: JudgeNote) -> String {
     case .shape(let b): "shape \(b.rawValue)"
     case .shell(let b): "shells \(b.rawValue)"
     case .staleEggs(let n): "\(n) stale"
+    }
+}
+
+/// What a type band looks like in the hand. Type is body size, shape and carriage.
+func typeWords(_ b: JudgeNote.Band) -> String {
+    switch b {
+    case .poor: "small, and not the breed's shape"
+    case .fair: "a little small or narrow for the breed"
+    case .good: "a good size and shape"
+    case .excellent: "a fine size and shape, carried proudly"
     }
 }
 
@@ -286,7 +344,6 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
                 + "Candle your eggs to find them (candle), or buy fertile eggs at Speckle & Down: they come candled."
         case .nameTaken: "Another bird in your flock already has that name."
         case .nameTooLong(let max): "That name is too long. Use \(max) letters or fewer."
-        case .breedNotInShop: "Speckle & Down doesn't sell that breed. Type shop to see what they have."
         case .brooderFull(let room):
             room == 0
                 ? "The brooder is full. Make room first: rehome a bird or upgrade the coop so the brooder birds can move out."
@@ -372,11 +429,10 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return
             "The neighbour comes round with a basket. \"She hatched every one. Here, one of my own girls, to say thank you.\" \(birdName(id, s)) moves into Henhaven."
     case .shopUnlocked(let breed):
-        return "Speckle & Down now sells \(breed.definition.displayName) pullets. Type: shop"
+        return
+            "Speckle & Down now stocks \(breed.definition.displayName)s. A surprise pullet or cockerel from the shop may be one."
     case .storyFinished:
         return nil
-    case .boughtBreed(let id, let breed, let cost):
-        return "You buy \(birdName(id, s)), a \(breed.definition.displayName) pullet, for \(cost) coins."
     case .boughtTreats(let count, let cost):
         return "You buy a bag of \(count) mealworm treats for \(cost) coins. You have \(s.treats) treats."
     case .handled(let id, let kind):
@@ -483,7 +539,10 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .enteredInShow(let id, let cls):
         let who = id.flatMap { s.bird($0)?.name } ?? "your eggs"
         let show = showThemeName(s.nextShowTheme)
-        return "\(who) entered in the \(cls.name) class at the \(show) (day \(s.nextShowDay))."
+        let entered = "\(who) entered in the \(cls.name) class at the \(show) (day \(s.nextShowDay))."
+        // Say now what the judge will see, so nothing is a surprise on the day.
+        guard let bird = id.flatMap({ s.bird($0) }), !Judge.forecast(for: bird, in: s).isEmpty else { return entered }
+        return "\(entered) \(showReadinessText(bird, s))"
     case .showDay(let day):
         let theme = ShowTheme.forSeason(s.season(onDay: day))
         return "\n🎪 The Featherwick county show, day \(day): the \(showThemeName(theme))! \(showThemeLine(theme))"
@@ -793,6 +852,7 @@ public func showsLines(_ s: GameState) -> [String] {
         }
         let rivals = r.showCompetitorsByKind[kind] ?? 0
         out.append(line + " · \(rivals) rival\(rivals == 1 ? "" : "s")")
+        out.append("    \(judgingText(kind)).")
     }
     if s.showEntries.isEmpty {
         out.append("No entries yet. Enter a bird (enter <name>) or your best plate of eggs (enter eggs).")
@@ -800,7 +860,7 @@ public func showsLines(_ s: GameState) -> [String] {
         out.append("Entered for day \(s.nextShowDay):")
         for e in s.showEntries {
             if let id = e.birdID, let b = s.bird(id) {
-                out.append("  \(b.name) — \(Engine.entryClass(e, of: b, in: s).name) class")
+                out.append("  \(b.name) — \(Engine.entryClass(e, of: b, in: s).name) class. \(showReadinessText(b, s))")
             } else if let first = e.eggs.first {
                 out.append("  a plate of \(first.speckled ? "speckled " : "")\(first.colour.rawValue) eggs")
             }

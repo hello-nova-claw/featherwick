@@ -40,7 +40,7 @@ struct EarlyGameTests {
 
     @Test(arguments: [
         (Command.buy(.pullet), Feature.birdShop), (.buy(.cockerel), .birdShop), (.buy(.fertileEgg), .birdShop),
-        (.buySpecial, .birdShop), (.buyBreed(.silkie), .birdShop), (.upgradeCoop, .coopUpgrade),
+        (.buySpecial, .birdShop), (.upgradeCoop, .coopUpgrade),
         (.buyIncubator, .incubatorShop), (.buy(.treats), .treats), (.buy(.premiumFeed), .premiumFeed),
         (.enterEggs, .shows), (.enterEggPlate([]), .shows),
     ])

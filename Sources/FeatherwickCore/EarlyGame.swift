@@ -80,7 +80,7 @@ extension Engine {
         switch command {
         case .buy(.treats): .treats
         case .buy(.premiumFeed): .premiumFeed
-        case .buy(.pullet), .buy(.cockerel), .buy(.fertileEgg), .buySpecial, .buyBreed: .birdShop
+        case .buy(.pullet), .buy(.cockerel), .buy(.fertileEgg), .buySpecial: .birdShop
         case .upgradeCoop: .coopUpgrade
         case .buyIncubator: .incubatorShop
         case .enterShow, .enterShowIn, .enterEggs, .enterEggPlate: .shows

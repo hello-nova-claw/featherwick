@@ -197,6 +197,27 @@ struct TextTests {
     }
 
     /// The daily special names breed, sex and colour; basic stock never names its breed before purchase.
+    @Test func theKeeperIsToldOfABroodySpellBeforeTheShow() {
+        var rng = SeededRNG(seed: 3)
+        var s = Engine.newGame(earlyGame: false, using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        s.day = s.rules.daysPerSeason * 2 - 5
+        s.coins = 100
+        let id = s.brooder[0].id
+        #expect(showReadinessText(s.bird(id)!, s).hasPrefix("In fine condition"))
+        s.brooder[0].broodyUntilDay = s.nextShowDay + 2
+        #expect(showReadinessText(s.bird(id)!, s).contains("broody"))
+        let words = Engine.apply(.enterShow(id), to: &s, using: &rng).compactMap { eventText($0, s) }
+        #expect(words.contains { $0.contains("broody") }, "\(words)")
+    }
+
+    @Test func everyKindOfClassSaysWhatItIsJudgedOn() {
+        #expect(judgingText(.breed).contains("type") && judgingText(.breed).contains("50"))
+        #expect(judgingText(.pet).contains("friendliness"))
+        #expect(judgingText(.eggs).contains("freshness"))
+        for band in JudgeNote.Band.allCases { #expect(noteText(.type(band)).contains(":")) }
+    }
+
     @Test func theShopSpecialHasWords() {
         let rare = ShopSpecial(breed: .silkie, sex: .hen, colour: .splash, price: 50, isRare: true)
         #expect(shopSpecialText(rare) == "Splash Silkie pullet — rare! 50 coins")

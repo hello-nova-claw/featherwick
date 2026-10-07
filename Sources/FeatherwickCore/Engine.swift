@@ -28,8 +28,6 @@ public enum Command: Hashable, Codable, Sendable {
     case giveTreat(UUID)
     /// Hand over what a storyline step asks for (for example, fertile eggs).
     case deliver(story: String)
-    /// Buy a pullet of a breed a storyline has unlocked at Speckle & Down.
-    case buyBreed(Breed)
     /// Enter a bird in the next county show in its default class: its breed class, or the pet class.
     case enterShow(UUID)
     /// Enter your best matched plate of eggs in the next county show.
@@ -88,7 +86,6 @@ public enum Rejection: Hashable, Codable, Sendable {
     case noTreats
     case nothingToDeliver
     case needFertileEggs(need: Int, have: Int)
-    case breedNotInShop
     case nameTaken
     case nameTooLong(max: Int)
     /// A chick cannot be shown, and a bird may enter only the classes it is eligible for.
@@ -181,7 +178,6 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case storyGift(String, UUID)
     case shopUnlocked(Breed)
     case storyFinished(String)
-    case boughtBreed(UUID, Breed, cost: Int)
     case handled(UUID, Handling)
     /// The bird moved up a friendliness band.
     case friendlierNow(UUID, Friendliness)
@@ -418,18 +414,6 @@ public enum Engine {
         case .deliver(let story):
             return deliver(story, &s)
 
-        case .buyBreed(let breed):
-            guard s.shopBreeds.contains(breed) else { return [.rejected(.breedNotInShop)] }
-            let cost = s.rules.rareBreedPulletPrice
-            if s.coins < cost { return [.rejected(.notEnoughCoins(needed: cost, have: s.coins))] }
-            if s.coop.count >= s.perches { return [.rejected(.noFreePerch)] }
-            let bird = youngBird(.hen, origin: "Speckle & Down", s, &rng, breed: breed).waitingForName()
-            s.coins -= cost
-            s.coop.append(bird)
-            var ev: [GameEvent] = [.boughtBreed(bird.id, breed, cost: cost)]
-            ev += recordBreed(bird, into: &s.breedBook)
-            return ev
-
         case .acceptTrade:
             guard let offer = s.tradeOffer else { return [.rejected(.noTradeOffer)] }
             if let (keyPath, i) = locate(offer.roosterID, in: s, groups: [\.coop, \.brooder]) {
@@ -509,7 +493,9 @@ public enum Engine {
         switch item {
         case .pullet, .cockerel:
             if s.coop.count >= s.perches { return [.rejected(.noFreePerch)] }
-            let bird = youngBird(item == .pullet ? .hen : .rooster, origin: "Speckle & Down", s, &rng).waitingForName()
+            let breed = s.surpriseBreeds.randomElement(using: &rng)!
+            let sex: Sex = item == .pullet ? .hen : .rooster
+            let bird = youngBird(sex, origin: "Speckle & Down", s, &rng, breed: breed).waitingForName()
             s.coins -= cost
             s.coop.append(bird)
             var ev: [GameEvent] = [.boughtBird(bird.id, item: item, cost: cost)]

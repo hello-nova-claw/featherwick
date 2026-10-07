@@ -188,8 +188,6 @@ while true {
         case "treats", "treat", "mealworms": run(.buy(.treats))
         case "feed", "premium", "premiumfeed": run(.buy(.premiumFeed))
         case "special": run(.buySpecial)
-        case let other where game.state.shopBreeds.contains(where: { $0.rawValue == other }):
-            run(.buyBreed(Breed(rawValue: other)))
         default: print("You can buy: pullet, cockerel, egg, special, treats, feed, incubator. Basic feed is free.")
         }
     case "shop":
@@ -219,11 +217,6 @@ while true {
         guard s.isOpen(.birdShop) else {
             if rows.isEmpty { print("  The shelves are bare today. Come back soon.") }
             break
-        }
-        for breed in s.shopBreeds.sorted(by: { $0.rawValue < $1.rawValue }) {
-            print(
-                "  \(breed.rawValue.padding(toLength: 11, withPad: " ", startingAt: 0)) a \(breed.definition.displayName) pullet          \(r.rareBreedPulletPrice) coins"
-            )
         }
         if let special = s.todaysSpecial {
             print("  special     today only: \(shopSpecialText(special))")

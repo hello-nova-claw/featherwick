@@ -40,9 +40,8 @@ struct StoryTests {
         #expect(s.carton.isEmpty)
         #expect(Engine.storyAwaitingDelivery(s) == nil)
 
-        // The shop does not sell Silkies until the gift has come.
-        s.coins = 100
-        #expect(Engine.apply(.buyBreed(.silkie), to: &s, using: &rng) == [.rejected(.breedNotInShop)])
+        // Surprise stock is starter breeds only until the gift has come.
+        #expect(!s.surpriseBreeds.contains(.silkie))
 
         var ev: [GameEvent] = []
         for _ in 0..<4 { ev += Self.night(&s, &rng) }
@@ -52,13 +51,8 @@ struct StoryTests {
         #expect(silkie.breed == .silkie && silkie.sex == .hen && silkie.revealed && silkie.phenotype.isSilkieFeathered)
         #expect(ev.contains(.shopUnlocked(.silkie)) && ev.contains(.storyFinished("broodySilkie")))
 
-        // Now the shop sells Silkie pullets.
-        let bought = Engine.apply(.buyBreed(.silkie), to: &s, using: &rng)
-        guard case .boughtBreed(let id, .silkie, let cost)? = bought.first else {
-            Issue.record("no purchase: \(bought)")
-            return
-        }
-        #expect(cost == s.rules.rareBreedPulletPrice && s.bird(id)?.breed == .silkie)
+        // Now a surprise pullet or cockerel may be a Silkie. There is no Silkie-only sale.
+        #expect(s.surpriseBreeds.contains(.silkie))
 
         // Rewards are given once: more nights bring nothing new.
         var later: [GameEvent] = []

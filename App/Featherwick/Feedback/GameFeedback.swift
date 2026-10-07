@@ -20,6 +20,13 @@ enum GameFeedback {
                 success = true
             case .eggsSold, .rehomed, .showPrizesWon:
                 cues.insert(.coins)
+                success = true
+            // Spending: a clear tap in the hand, so the keeper knows the purchase went through
+            // and does not tap "Buy" twice.
+            case .boughtBird, .boughtEgg, .boughtTreats, .boughtPremiumFeed, .boughtSpecial,
+                .incubatorBought, .coopUpgraded, .enteredInShow:
+                cues.insert(.coins)
+                success = true
             case .rejected(.alreadyPettedToday):
                 break  // Not an error: the bird just leans in (see `BirdBlob`).
             case .rejected:

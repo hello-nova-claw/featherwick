@@ -157,6 +157,6 @@ struct ShowTakings: View {
 }
 
 /// "not placed" → "Not placed". Judge's notes and placings are written lower case.
-private func sentenceCase(_ s: String) -> String {
+func sentenceCase(_ s: String) -> String {
     s.prefix(1).uppercased() + s.dropFirst()
 }

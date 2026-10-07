@@ -24,6 +24,9 @@ targets:
     configFiles:
       Debug: Config/Signing.xcconfig
       Release: Config/Signing.xcconfig
+    # A shared scheme for the app. Without it, Xcode lists only the package's schemes (the
+    # `featherwick` CLI among them), and running that on an iPhone fails with "not codesigned".
+    scheme: {}
     dependencies:
       - package: Featherwick
         product: FeatherwickCore

@@ -96,8 +96,13 @@ public enum JudgeNote: Hashable, Codable, Sendable {
     case plateNeeds(Int)
     // Breed and colour
     case standardColour(String)
+    /// The feathering the standard asks for: silkie (true for a Silkie) or normal.
+    case feathering(silkie: Bool)
+    /// Show type: body size, shape and carriage (`QuantitativeTrait.showType`).
     case type(Band)
     // Condition
+    /// No longer given: every bird moulted in autumn, so it marked nothing that set one bird apart.
+    /// Kept so old show results still load.
     case moulting
     case stressed
     case broody
@@ -153,11 +158,6 @@ public enum Judge {
     public static func condition(of bird: Bird, in s: GameState) -> (value: Double, notes: [JudgeNote]) {
         var value = 1.0
         var notes: [JudgeNote] = []
-        // Real hens moult in autumn: shows avoid the moult for good reason.
-        if s.season == .autumn {
-            value -= 0.3
-            notes.append(.moulting)
-        }
         if s.day < bird.noLayUntilDay {
             value -= 0.4
             notes.append(.stressed)
@@ -174,12 +174,32 @@ public enum Judge {
             value = min(1, value + s.rules.forageConditionBonus)
             notes.append(.foraged)
         }
-        if s.rules.inbreedingMatters, let f = bird.inbreeding, f >= 0.0625 {
+        if lacksVigour(bird, s.rules), let f = bird.inbreeding {
             value -= min(s.rules.maxInbreedingConditionLoss, f)
             notes.append(.lacksVigour)
         }
         if notes.isEmpty { notes.append(.inFineCondition) }
         return (max(0, value), notes)
+    }
+
+    /// Closely bred birds show less vigour. Only when `Rules.inbreedingMatters` is on.
+    static func lacksVigour(_ bird: Bird, _ rules: Rules) -> Bool {
+        guard rules.inbreedingMatters, let f = bird.inbreeding else { return false }
+        return f >= 0.0625
+    }
+
+    /// What the keeper can know now about a bird's condition on the next show day, so a broody spell
+    /// or a fright is never a surprise at the show. Empty when nothing is in the way.
+    /// The same checks as `condition(of:in:)`, looked at on the show day. Hunger shows only on the eve
+    /// of the show: the judge sees whether the flock was fed the day before.
+    public static func forecast(for bird: Bird, in s: GameState) -> [JudgeNote] {
+        let day = s.nextShowDay
+        var notes: [JudgeNote] = []
+        if day < bird.noLayUntilDay { notes.append(.stressed) }
+        if bird.isBroody(onDay: day) { notes.append(.broody) }
+        if day == s.day + 1, !s.fedToday { notes.append(.hungry) }
+        if lacksVigour(bird, s.rules) { notes.append(.lacksVigour) }
+        return notes
     }
 
     public static func judge(_ bird: Bird, in showClass: ShowClass, state s: GameState) -> JudgeCard {
@@ -217,7 +237,10 @@ public enum Judge {
         let points =
             type * Double(ShowPoints.breedType) + Double(ShowPoints.breedColour)
             + condition * Double(ShowPoints.breedCondition)
-        return card(cls, points, [.standardColour(look.colourName), .type(.init(type))] + conditionNotes)
+        let notes: [JudgeNote] = [
+            .standardColour(look.colourName), .feathering(silkie: look.silkieFeathered), .type(.init(type)),
+        ]
+        return card(cls, points, notes + conditionNotes)
     }
 
     /// Any bird, purebred or cross: judged on condition and on how calmly it sits in the judge's hands.
@@ -280,11 +303,11 @@ public enum Judge {
             + (egg.shell ?? 0.75) + (s.rules.isStale(egg, onDay: s.day) ? 0 : 1)
     }
 
-    /// Shell quality of an egg laid today, 0...1. Real shells thin with stress, summer heat and age.
+    /// Shell quality of an egg laid today, 0...1. Real shells thin with stress and age. (No summer penalty:
+    /// a keeper cannot do anything about the season, so it only felt unfair.)
     public static func shellQuality(of hen: Bird, in s: GameState) -> Double {
         var value = 1.0
         if s.day < hen.noLayUntilDay + s.rules.scaredNoLayDays { value -= 0.3 }  // just over a fright
-        if s.season == .summer { value -= 0.2 }
         let years = hen.age(onDay: s.day) / (s.rules.daysPerSeason * Season.allCases.count)
         value -= 0.1 * Double(years)
         return max(0.1, value)

@@ -2,7 +2,7 @@ import FeatherwickCore
 import FeatherwickText
 import SwiftUI
 
-/// 2a / 2b: one bird. Art, name, breed line, four facts, then Cuddle and Treat.
+/// 2a / 2b: one bird. Art, name, breed line, four facts, show notes, then Cuddle and Treat.
 struct BirdCardSheet: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
@@ -33,6 +33,7 @@ struct BirdCardSheet: View {
                 .frame(maxWidth: .infinity)
                 facts(bird, s)
                     .padding(.vertical, Space.l)
+                showNotes(bird, s)
                 ribbons(bird, s)
                 handlingButtons(bird, s)
                 moreActions(bird, s)
@@ -86,6 +87,32 @@ struct BirdCardSheet: View {
                 }
                 laysFact(bird, stage, s)
             }
+        }
+    }
+
+    /// Before a show: how the bird should look on the day (a broody spell, a fright), so nothing
+    /// is a surprise. After one: what the judge said, kept on the bird's card.
+    @ViewBuilder
+    private func showNotes(_ bird: Bird, _ s: GameState) -> some View {
+        let canEnter = s.isOpen(.shows) && !Engine.eligibleClasses(for: bird, in: s).isEmpty
+        let last = s.showResults.last { $0.birdID == bird.id && !($0.notes ?? []).isEmpty }
+        if canEnter || last != nil {
+            VStack(alignment: .leading, spacing: Space.l) {
+                if canEnter {
+                    Fact(label: "Next show") {
+                        Text(showReadinessText(bird, s)).font(Typeface.body)
+                    }
+                }
+                if let last {
+                    Fact(label: "Judge's notes, day \(last.day)") {
+                        ForEach(Array((last.notes ?? []).enumerated()), id: \.offset) { _, note in
+                            Text("“\(sentenceCase(noteText(note))).”")
+                                .font(Typeface.serifItalic(17)).foregroundStyle(palette.inkSoft)
+                        }
+                    }
+                }
+            }
+            .padding(.bottom, Space.l)
         }
     }
 
@@ -288,7 +315,7 @@ struct NamingSheet: View {
                     Text("A suggestion.").font(Typeface.label).foregroundStyle(palette.inkMuted)
                     Button("Try another") {
                         tries += 1
-                        name = suggestion(for: bird, in: s, skipping: tries)
+                        name = NameBook.suggestion(for: bird, in: s, skipping: tries)
                     }
                     .buttonStyle(.textAction)
                 }
@@ -336,15 +363,6 @@ struct NamingSheet: View {
 
     private func pronoun(_ bird: Bird) -> String {
         bird.revealed ? (bird.sex == .hen ? "her" : "him") : "it"
-    }
-
-    /// The next free name from the same list the game's own suggestion uses.
-    private func suggestion(for bird: Bird, in s: GameState, skipping n: Int) -> String {
-        let list = !bird.revealed ? NameBook.neutral : bird.sex == .hen ? NameBook.hens : NameBook.roosters
-        let free = list.filter { !NameBook.isTaken($0, exceptID: bird.id, in: s) }
-        guard !free.isEmpty else { return NameBook.suggestion(for: bird, in: s) }
-        let first = free.firstIndex(of: NameBook.suggestion(for: bird, in: s)) ?? 0
-        return free[(first + n) % free.count]
     }
 }
 
