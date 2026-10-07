@@ -234,7 +234,9 @@ and in "likely no" lines ("Likely no blue eggs").
    "Every barred chick will be a cockerel, every plain one a pullet." Buff and white hide barring.
    If a chick can be buff or white, a plain chick can be a cockerel, so there is no sex-link line.
 4. **Egg colours.** Always one line: "Hens from this pair will lay cream or brown eggs." If an open
-   gene could add a colour, the line ends with "unless one of them carries blue" (or brown).
+   gene could add a colour, the line ends with "unless one of them carries blue" or "unless one of
+   them carries brown". When the family showed that gene, the reason is the family evidence, and
+   the line ends with "unless one of them is hiding another egg colour".
 5. **Likely.** A parent with at least `plannerLikelyAfterChicks` (5) seen chicks, none of which shows
    an allele it may hide: "Likely no barred chicks." For an egg gene, only laying daughters count.
    For a hen's Z gene, only sons count. It is a likelihood, not a proof.
@@ -272,6 +274,10 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
   hen that laid blue or green eggs showed blue shell. This holds for the egg-colour line too.
 - A parent or a chick is named only for a non-plain allele ("barring came down from his mother").
   A plain allele proven through family gives the family tree.
+- A parent is named only when that parent alone is proven to carry the allele. When it takes
+  both parents to prove it, and both or neither surely carry it, the reason is the family tree.
+- A chick's down counts as shown: barred down shows barring, slate shows blue, pale grey shows
+  splash, silver shows lavender. Yellow down is buff or white, so it shows neither.
 - Many chicks: "Pip has had 5 chicks and none showed barring."
 - The judge's notes, the family trees, or a white parent.
 - A reason names only a bird the keeper owns or has rehomed. Any other bird is "a bird".

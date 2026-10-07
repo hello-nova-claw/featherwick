@@ -353,6 +353,116 @@ import Testing
         }
     }
 
+    /// Every reason in the lines that credits `bird`'s allele at `locus` to a parent.
+    static func creditedParents(_ lines: [Forecast], _ bird: UUID, _ locus: LocusID) -> [UUID] {
+        lines.compactMap { line in
+            if case .parent(bird, let p, locus) = line.reason { return p }
+            return nil
+        }
+    }
+
+    /// A son that both parents' genes prove carries blue shell: his brown-laying mother is pinned
+    /// without it, his father (a shop Araucana) has two. The credit goes to the father, never the mother.
+    @Test func blueShellIsCreditedToTheParentWhoCarriesIt() {
+        var (s, rng) = startedGame(sex: .hen)
+        let mother = Self.add(Breed.orpington.purebred(.hen), .orpington, origin: Self.shop, &s, &rng)
+        let father = Self.add(Breed.araucana.purebred(.rooster), .araucana, origin: Self.shop, &s, &rng)
+        let son = Self.add(
+            KnowledgeTests.genome(.rooster) {
+                $0.blueShell = AllelePair(.blue, .white)
+                $0.brownShell = AllelePair(.brown, .noCoating)
+            }, .orpington, &s, &rng, mother: mother, father: father)
+        let creamHen = Self.add(
+            KnowledgeTests.genome(.hen) { $0.brownShell = .homozygous(.noCoating) }, .orpington, &s, &rng)
+        let k = Knowledge.of(s)
+        #expect(k.provenHidden(son.id).first { $0.allele == "O" }?.evidence == .parents(mother.id, father.id))
+        let lines = Self.lines(s, hen: creamHen, rooster: son)
+        let credited = Self.creditedParents(lines, son.id, BlueShell.locus)
+        #expect(!credited.contains(mother.id), "\(lines)")
+        #expect(
+            lines.contains(
+                .eggColours(
+                    [.cream, .brown, .blue, .green], sure: true,
+                    .parent(bird: son.id, parent: father.id, locus: BlueShell.locus))))
+    }
+
+    /// A buff son (barring hidden) of a plain mother and a father pinned barred twice over: the
+    /// barring came from the father. The mother is never named.
+    @Test func barringIsCreditedToTheParentWhoCarriesIt() {
+        func look(_ edit: (inout Genome) -> Void, _ sex: Sex, _ level: LookLevel = .feathers) -> SeenLook {
+            KnowledgeTests.look(KnowledgeTests.genome(sex, edit), level)
+        }
+        let barred: (inout Genome) -> Void = { $0.sexChromosomes = .hen(z: .barred) }
+        let birds = [
+            // The father's mother: barred, with a buff mother (so she carries buff).
+            KnowledgeTests.seen(1, .hen, look({ $0.baseColour = .homozygous(.buff) }, .hen)),
+            KnowledgeTests.seen(
+                2, .hen,
+                look(
+                    {
+                        $0.baseColour = AllelePair(.black, .buff)
+                        barred(&$0)
+                    }, .hen), mother: 1),
+            // The father's father: a shop barred Orpington, two barred copies.
+            KnowledgeTests.seen(
+                3, .rooster, KnowledgeTests.look(Breed.orpington.purebred(.rooster, variety: .barred)),
+                origin: Self.shop),
+            // The father: barred, two copies (one from each parent).
+            KnowledgeTests.seen(
+                4, .rooster,
+                look({ $0.sexChromosomes = .rooster(z: .homozygous(.barred)) }, .rooster), mother: 2, father: 3),
+            // The mother: plain black, with a buff mother.
+            KnowledgeTests.seen(6, .hen, look({ $0.baseColour = .homozygous(.buff) }, .hen)),
+            KnowledgeTests.seen(5, .hen, look({ $0.baseColour = AllelePair(.black, .buff) }, .hen), mother: 6),
+            // The son: buff, so his barring does not show.
+            KnowledgeTests.seen(
+                7, .rooster, look({ $0.baseColour = .homozygous(.buff) }, .rooster), mother: 5, father: 4),
+            // His mate: plain black with a buff mother.
+            KnowledgeTests.seen(9, .hen, look({ $0.baseColour = .homozygous(.buff) }, .hen)),
+            KnowledgeTests.seen(
+                8, .hen, look({ $0.baseColour = AllelePair(.black, .buff) }, .hen, .laying), mother: 9),
+        ]
+        let k = Knowledge.of(birds)
+        let son = KnowledgeTests.id(7)
+        #expect(
+            k.provenHidden(son).first { $0.allele == "B" }?.evidence
+                == .parents(KnowledgeTests.id(5), KnowledgeTests.id(4)))
+        let lines = Planner.forecast(hen: birds[8], rooster: birds[6], knowledge: k, family: birds)
+        #expect(Self.ratio(lines, .barred) ?? (0, 0) == (1, 4))
+        let credited = Self.creditedParents(lines, son, Barring.locus)
+        #expect(!credited.contains(KnowledgeTests.id(5)), "\(lines)")
+        #expect(
+            lines.contains(
+                .ratio(
+                    .barred, numerator: 1, denominator: 4,
+                    .parent(bird: son, parent: KnowledgeTests.id(4), locus: Barring.locus))))
+    }
+
+    /// A chick with barred down showed barring: never "no one in their family has shown barring".
+    @Test func chickDownCountsAsShown() {
+        let hen = KnowledgeTests.genome(.hen)
+        let buff = KnowledgeTests.genome(.rooster) { $0.baseColour = .homozygous(.buff) }
+        let barredChick = KnowledgeTests.genome(.rooster) {
+            $0.baseColour = AllelePair(.black, .buff)
+            $0.sexChromosomes = .rooster(z: AllelePair(.barred, .plain))
+        }
+        #expect(KnowledgeTests.look(barredChick, .down).chickDown == .darkWithHeadSpot)
+        let birds = [
+            KnowledgeTests.seen(1, .hen, KnowledgeTests.look(hen, .laying)),
+            KnowledgeTests.seen(2, .rooster, KnowledgeTests.look(buff)),
+            KnowledgeTests.seen(
+                3, nil, KnowledgeTests.look(barredChick, .down), mother: 1, father: 2, breed: nil, stage: .chick),
+        ]
+        #expect(FeatherwickCore.Trait.shown(by: birds[2].look!) & FeatherwickCore.Trait.barred.bit != 0)
+        let lines = Planner.forecast(hen: birds[0], rooster: birds[1], knowledge: Knowledge.of(birds), family: birds)
+        #expect(!lines.contains { $0.reason == .unknownFamily(locus: Barring.locus) }, "\(lines)")
+        #expect(
+            lines.contains(
+                .possible(
+                    .barred, .chick(bird: KnowledgeTests.id(2), chick: KnowledgeTests.id(3), locus: Barring.locus))),
+            "\(lines)")
+    }
+
     // MARK: - Likely
 
     /// A buff rooster can hide barring. Five plain black chicks, none barred: "likely no barred chicks".
