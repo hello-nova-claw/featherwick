@@ -55,9 +55,10 @@ components, screens 1a–8a). The painted farm and bird art come later; dashed b
   mask (`WalkMask`), seeded trees (`SceneTrees`), tufts, and the season-ramp shader (`SeasonRamp.swift/.metal`).
   Art in `Art/Scene/` and `Scene/SceneArtLayout.swift` come from `python3 scripts/make_scene_art.py`;
   run it after changing the script and commit its output. See "Farm scene (2.5D)" in `docs/design/README.md`.
-- `Farm/FarmBirds.swift`: the flock as blobs (`BirdSwatch`) on their panels. Tap opens the bird card;
-  press and rub sends `.pet`. `Feedback/`: `Haptics` and `Sound` (bundled `Sounds/*.caf`, silent if missing),
-  with on/off switches in Settings. `GameStore.run` plays event feedback through `GameFeedback`.
+- `Farm/FarmBirds.swift`: where each bird is drawn, blobs (`BirdSwatch`) on the Barn, and `PettableBird`
+  (tap opens the bird card; press and rub sends `.pet`). In the yards the coop birds are rigged chickens
+  inside the scene (`Scene/SceneChicken.swift`: `YardScene`, `SceneChicken`).
+  `Feedback/`: `Haptics` and `Sound` (bundled `Sounds/*.caf`, silent if missing), with on/off switches in Settings. `GameStore.run` plays event feedback through `GameFeedback`.
 - Day or night follows the device clock (18:00–05:59 is night), via `\.palette`. Settings ▸ Time of day (`TimeOfDayPin`) pins day or night for testing.
 - Fonts (Libre Caslon Display/Text, Figtree; OFL) are bundled in `Fonts/` and registered at launch.
 - ≡ → "Open test tools" shows the old plain screens (`TestTools/`), with every action and the full log.
