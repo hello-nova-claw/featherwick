@@ -172,7 +172,9 @@ struct SexGuessTests {
         #expect(s.sexGuessesRight == 3)
         #expect(all.count(where: { $0 == .milestoneReached("henOrRoo") }) == 1)
         #expect(s.milestonesReached.contains("henOrRoo"))
-        #expect(Milestones.all.last?.id == "henOrRoo")
+        // Appended after the milestones that came before it, so old saves keep their ladder order.
+        let ids = Milestones.all.map(\.id)
+        #expect(ids.firstIndex(of: "henOrRoo")! > ids.firstIndex(of: "greenEgg")!)
     }
 
     @Test func theResolutionSitsWithTheGrowingNews() {
