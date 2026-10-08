@@ -109,6 +109,7 @@ public struct Rules: Codable, Hashable, Sendable {
     public var startCoins = 25
     // Basic feed is free and unlimited. Feeding is still a daily task: unfed hens don't lay.
     public var creamEggPrice = 1
+    public var whiteEggPrice = 1
     public var brownEggPrice = 2
     public var blueEggPrice = 3
     public var oliveEggPrice = 4
@@ -238,6 +239,10 @@ public struct Rules: Codable, Hashable, Sendable {
     public static let chocolateShellDepth = 0.8
     /// Brown coating over blue at this depth or more gives olive; below it, green.
     public static let oliveShellDepth = 0.4
+    /// With no blue shell and no brown coating, depth at or below this gives white eggs; above it,
+    /// cream. Real shells are white under the tint. 0.05 is at most one "+" allele of 20, so a
+    /// Silkie (0.2) and an average bird (0.5) stay cream and a Leghorn (0) lays white.
+    public static let whiteShellDepth = 0.05
 
     /// Coins a neighbour pays to adopt a bird. Rarer and finer birds are worth more.
     ///
@@ -264,7 +269,7 @@ public struct Rules: Codable, Hashable, Sendable {
             switch egg {
             case .olive, .green, .chocolate: value += rareOliveEggs
             case .blue: value += rareSmall
-            case .cream, .brown: break
+            case .cream, .brown, .white: break
             }
             if p.eggIsSpeckled { value += rareSpeckledEggs }
         }
@@ -311,6 +316,7 @@ public struct Rules: Codable, Hashable, Sendable {
             case .olive: oliveEggPrice
             case .chocolate: chocolateEggPrice
             case .green: greenEggPrice
+            case .white: whiteEggPrice
             }
         base += egg.speckled ? speckleBonus : 0
         guard isStale(egg, onDay: day) else { return base }

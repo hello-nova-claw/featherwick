@@ -357,6 +357,9 @@ struct JobsTests {
         #expect(!canMakeChocolate)
         #expect(!Engine.newEggColours().contains(.chocolate))
         #expect(Engine.newEggColours().contains(.green))
+        // White needs a breed in play that lays white. The Leghorn is planned, so the goal never asks for it.
+        #expect(!BreedTable.inGame.contains { $0.eggColour == .white })
+        #expect(!Engine.newEggColours().contains(.white))
         let end = Engine.goalEndDay(s)
         #expect(Engine.availableGoals(s, endDay: end).contains { $0.kind == .newEgg })
         for colour in EggColour.allCases where colour != .chocolate {

@@ -81,6 +81,7 @@ Implement as asset-catalog colours with an "Any / Dark" pair, driven by the game
 | Olive | `#868755` | with darker speckles `#5C5D37` so it never reads as brown |
 | Chocolate | `#5E3A26` | `#6E4630`, `#5E3A26`, `#4A2B1B` |
 | Green | `#9DB58E` | `#B5C9A6`, `#9DB58E` |
+| White | `#FAF8F3` (paler and cooler than cream, so the two read apart; the ink outline shows it on paper) | `#FDFCF9`, `#FAF8F3` |
 
 ### Typography
 Fonts (Google Fonts, OFL): **Libre Caslon Display**, **Libre Caslon Text** (regular and italic), **Figtree** (300, 400, 500).
@@ -209,7 +210,7 @@ Chick art, "Just hatched in the brooder", the question "What shall we call her?"
 Tabs "Breeds | Eggs | Inheritance", close. Title "Breed Book", progress "7 of 24 breeds, 12 of 120 colours". A 3-column grid of collection tiles in a fixed order, so gaps show where unfound breeds belong. Colour dots on a tile: filled for a colour you have owned, pale with a dashed rim for a colour only seen on a show podium, dashed and empty for a colour still to find. A breed only seen at a show gets its tile, with "seen at a show" in italic under the name. Under the grid, "Seen at shows" lists each seen look with its show ("Seen at the Summer Fete, day 28"). A look you own later moves out of that list. A tile with an owned colour opens the breed's page (a sheet): art box, name, "Found on day N", each found colour as a feather swatch with its name, then the lore under headings. Other tiles stay closed.
 
 ### 4b — Egg Book (full screen)
-Same header with the Eggs tab selected. "9 of 20 shades found". One row per egg colour, in `EggColour` order (Cream, Brown, Blue, Olive, Chocolate, Green): name and "n of 5", then 5 egg shapes, filled if found and dashed if not. An italic hint appears on rows that are still empty.
+Same header with the Eggs tab selected. "5 of 14 eggs found" (each `EggColour`, plain and speckled: 7 × 2). One row per egg colour, in `EggColour` order (Cream, Brown, Blue, Olive, Chocolate, Green, White): name and "n of 2", then 2 egg shapes (plain, speckled), filled if found and dashed if not. An italic hint appears on rows that are still empty.
 
 ### 4c — Inheritance (full screen)
 Same header with the Inheritance tab selected. Title "Inheritance", then "What your pairs have shown" (label, `inkMuted`). One row per rule, in the order first seen, each in body type with a stitch divider under it: "Blue × blue → 1 black : 2 blue : 1 splash". Before the first rule, a dashed box (`Stitch.unknown`, radius `tile`) holds "Set eggs from a pair in the pen and what you learn ends up here." in italic.

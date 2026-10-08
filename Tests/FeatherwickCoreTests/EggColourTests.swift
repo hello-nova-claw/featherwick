@@ -19,7 +19,7 @@ struct EggColourTests {
 
     @Test func theColourRule() {
         for share in [0.0, 0.5, 1.0] {
-            #expect(Self.colour(Self.hen(blue: false, brown: false, depth: share)) == .cream)
+            #expect(Self.colour(Self.hen(blue: false, brown: false, depth: share)) == (share == 0 ? .white : .cream))
             #expect(Self.colour(Self.hen(blue: true, brown: false, depth: share)) == .blue)
         }
         #expect(Self.colour(Self.hen(blue: false, brown: true, depth: 0.2)) == .brown)
@@ -28,6 +28,94 @@ struct EggColourTests {
         #expect(Self.colour(Self.hen(blue: true, brown: true, depth: 0.2)) == .green)
         #expect(Self.colour(Self.hen(blue: true, brown: true, depth: Rules.oliveShellDepth)) == .olive)
         #expect(Self.colour(Self.hen(blue: true, brown: true, depth: 0.9)) == .olive)
+    }
+
+    /// The bare shell is white. With no blue and no brown coating, depth is the faint tint that makes
+    /// it cream. Only a shell with (almost) none of it is white.
+    @Test func noBlueNoCoatingAndLowDepthIsWhite() {
+        let steps = Double(Self.depth.maxScore)
+        for plus in 0...Self.depth.maxScore {
+            let share = Double(plus) / steps
+            let expected: EggColour = share <= Rules.whiteShellDepth ? .white : .cream
+            #expect(Self.colour(Self.hen(blue: false, brown: false, depth: share)) == expected)
+        }
+        #expect(Self.colour(Self.hen(blue: false, brown: false, depth: 0)) == .white)
+        #expect(Self.colour(Self.hen(blue: false, brown: false, depth: 0.05)) == .white)
+        #expect(Self.colour(Self.hen(blue: false, brown: false, depth: 0.1)) == .cream)
+        // Blue and brown shells ignore the white threshold.
+        #expect(Self.colour(Self.hen(blue: true, brown: false, depth: 0)) == .blue)
+        #expect(Self.colour(Self.hen(blue: false, brown: true, depth: 0)) == .brown)
+        #expect(Self.colour(Self.hen(blue: true, brown: true, depth: 0)) == .green)
+        // Roosters lay nothing, white or not.
+        var rooster = Genome(sex: .rooster)
+        Self.depth.setShare(0, in: &rooster)
+        #expect(Phenotype(rooster).eggColour == nil)
+    }
+
+    /// The threshold sits below every breed in play, so no in-game breed changes colour.
+    @Test func whiteChangesNoBreedInPlay() {
+        #expect(Breed.silkie.definition.brownDepth > Rules.whiteShellDepth)
+        #expect(Breed.silkie.definition.eggColour == .cream)
+        #expect(Breed.orpington.definition.eggColour == .brown)
+        #expect(Breed.wyandotte.definition.eggColour == .brown)
+        #expect(Breed.australorp.definition.eggColour == .brown)
+        #expect(Breed.araucana.definition.eggColour == .blue)
+        #expect(Breed.marans.definition.eggColour == .chocolate)
+        #expect(Phenotype(Genome(sex: .hen)).eggColour == .cream)  // the default (old saves)
+        for def in BreedTable.inGame { #expect(def.eggColour != .white, "\(def.id)") }
+    }
+
+    /// Real Leghorns lay white eggs. So does a purebred Leghorn, and a Leghorn from outside the flock.
+    @Test func aLeghornLaysWhite() throws {
+        #expect(Breed.leghorn.definition.eggColour == .white)
+        #expect(Self.depth.fraction(Breed.leghorn.purebred(.hen)) <= Rules.whiteShellDepth)
+        var rng = SeededRNG(seed: 8)
+        for _ in 0..<50 {
+            let outside = Bird(
+                id: makeID(using: &rng), name: "o", breed: .leghorn, genome: Breed.leghorn.purebred(.hen),
+                hatchDay: 0, origin: "Shop"
+            ).withFounderQuality()
+            #expect(outside.phenotype.eggColour == .white)
+            let chick = try Breeding.cross(
+                mother: Breed.leghorn.purebred(.hen), father: Breed.leghorn.purebred(.rooster), using: &rng)
+            if chick.sex == .hen { #expect(Self.colour(chick) == .white) }
+        }
+    }
+
+    /// White × cream, like a Leghorn × Silkie cross. The first cross is a pale cream (the tint is
+    /// half from each parent). Bred on, the tint sorts out: some daughters lay white, some cream.
+    /// Back to a Leghorn, most daughters lay white. As in real flocks, through many small genes.
+    @Test func whiteTimesCreamGivesASpreadThroughDepth() throws {
+        var rng = SeededRNG(seed: 31)
+        let leghornHen = Breed.leghorn.purebred(.hen)
+        let leghornRooster = Breed.leghorn.purebred(.rooster)
+        let f1 = try (0..<60).map { _ in
+            try Breeding.cross(mother: leghornHen, father: Breed.silkie.purebred(.rooster), using: &rng)
+        }
+        for chick in f1 {
+            if chick.sex == .hen { #expect(Self.colour(chick) == .cream) }
+            #expect(Self.depth.fraction(chick) == 0.1)  // halfway between 0 and 0.2
+        }
+        let f1Hens = f1.filter { $0.sex == .hen }
+        let f1Roosters = f1.filter { $0.sex == .rooster }
+        try #require(!f1Hens.isEmpty && !f1Roosters.isEmpty)
+
+        func whiteShare(_ chicks: [Genome]) -> Double {
+            let hens = chicks.filter { $0.sex == .hen }
+            return Double(hens.count(where: { Self.colour($0) == .white })) / Double(hens.count)
+        }
+        // F2: about 5 in 16 white (one "+" or none, out of four that can sort out).
+        let f2 = try (0..<2000).map { i in
+            try Breeding.cross(
+                mother: f1Hens[i % f1Hens.count], father: f1Roosters[i % f1Roosters.count], using: &rng)
+        }
+        #expect(abs(whiteShare(f2) - 5.0 / 16) < 0.05)
+        #expect(Set(f2.compactMap(Self.colour)) == [.white, .cream])
+        // Backcross to a Leghorn: about 3 in 4 white.
+        let back = try (0..<2000).map { i in
+            try Breeding.cross(mother: f1Hens[i % f1Hens.count], father: leghornRooster, using: &rng)
+        }
+        #expect(abs(whiteShare(back) - 3.0 / 4) < 0.05)
     }
 
     /// A bird with no depth genes (every bird in an older save) lays what it laid before.
