@@ -189,6 +189,9 @@ public struct GameState: Hashable, Codable, Sendable {
     public var plannerKnown = false
     /// True once the keeper has opened the "What might hatch" panel. The pen shows a notice until then.
     public var plannerOpened = false
+    /// Each hen's laying, counted as she lays (see Records.swift). The egg lists lose sold and set eggs,
+    /// so this is the only egg history. Empty in saves from before it: `SaveFormat` back-fills it.
+    public var layRecords: [HenLayRecord] = []
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

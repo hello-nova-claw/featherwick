@@ -792,6 +792,31 @@ To add one: append a `Milestone` to `Milestones.all` (list order is the ladder),
   turn both off (`startedGame`); `JobsTests` covers them.
 - CLI: `jobs`. App: the "Today" button on the farm opens the jobs sheet.
 
+### Flock record book
+
+`Records.swift`. The numbers the keeper already made, in one place. It only reads and counts. Nothing
+here changes play.
+
+- **Eggs.** One row for each hen: her total, her eggs in the last `recordWindowDays` (14) days, and the
+  day of her first egg. Sold, set and hatched eggs count. A broken floor egg does not count.
+- The egg lists lose sold and set eggs. So each hen's laying is counted as she lays
+  (`GameState.layRecords`: total, first egg day, and her lay days in the window). The engine adds to it
+  in the night's lay step. It draws nothing from the game RNG, so seeded games stay the same.
+- A rehomed hen keeps her row and her total. Her name has the note "rehomed".
+- A visible hen who has not laid yet shows "none yet", not 0. A chick whose sex does not show yet is
+  never in this table (rule 8).
+- **Ribbons.** One row for each bird with a 1st, 2nd or 3rd place in a bird class (`showResults`).
+  Egg plates have no bird, so they are not in this table.
+- **The flock.** Birds now (lost and boarding birds included), hatched here, bought at Speckle & Down,
+  rehomed, and hens retired now. Then the first hatch day, the first ribbon day (egg plates count) and
+  the days kept. All of these come from existing state: each bird's `origin`, the rehomed list, show
+  results and the day.
+- An old save has no egg history. On load, `SaveFormat` starts each hen's record from the eggs that
+  the save still holds (nest, carton, clutches). Bought fertile eggs have a mother from outside the
+  flock, so they do not count.
+- No gene, inbreeding or quantitative trait shows here. Eggs and ribbons are things the keeper saw.
+- CLI: `records`. App: the "Records" tab in Books. Words: `RecordsText.swift`.
+
 ## Daylight and errands
 
 `Daylight.swift`. A day has a few slots of daylight. Care is always free, and an errand takes a slot.

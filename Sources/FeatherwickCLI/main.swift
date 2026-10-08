@@ -134,6 +134,7 @@ let help = """
       day [n]              do a full day n times: feed, collect, close, rest until evening, sleep
       book                 Breed Book and egg colours
       journal              your milestones and what to aim for next
+      records              the record book: eggs per hen, ribbons, the flock
       jobs                 today's jobs and this season's goal (do all the jobs for a small reward)
       slot [name]          list your saves, or switch to / create a save slot
       sim [days] [games]   balance report: simulate seeded games and show the numbers
@@ -461,6 +462,7 @@ while true {
     case "book", "b": book(game.state)
     case "journal", "goals", "j": journal(game.state)
     case "jobs", "today": jobsLines(game.state).forEach { print($0) }
+    case "records", "record": recordsLines(game.state).forEach { print($0) }
     case "new":
         if words.count > 1, words[1] == "yes" {
             game = newSave(seed: UInt64.random(in: .min ... .max))

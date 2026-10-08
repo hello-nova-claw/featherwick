@@ -208,6 +208,10 @@ public struct Rules: Codable, Hashable, Sendable {
     /// The largest "in N" a ratio line uses (2, 4, 8 or 16). Finer shares are "possible" instead.
     public var plannerMaxRatioDenominator = 16
 
+    // Flock record book (see Records.swift).
+    /// Days behind the "last N days" egg count.
+    public var recordWindowDays = 14
+
     public init() {}
 
     /// How an adult hen's laying falls with age: full until `layDeclineStartDays`, then down to

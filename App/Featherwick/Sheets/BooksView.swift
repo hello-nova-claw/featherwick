@@ -8,19 +8,21 @@ struct BooksView: View {
     @Environment(\.palette) private var palette
     @State private var tab = BookTab.breeds
 
-    enum BookTab: Hashable { case breeds, eggs }
+    enum BookTab: Hashable { case breeds, eggs, records }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Space.l) {
                 HStack {
-                    WordTabs(tabs: [(.breeds, "Breeds"), (.eggs, "Eggs")], selection: $tab)
+                    WordTabs(
+                        tabs: [(.breeds, "Breeds"), (.eggs, "Eggs"), (.records, RecordsWords.tab)], selection: $tab)
                     Spacer()
                     CloseButton()
                 }
                 switch tab {
                 case .breeds: BreedBook()
                 case .eggs: EggBook()
+                case .records: RecordBook()
                 }
             }
             .padding(.horizontal, Space.sheetSide)
@@ -228,6 +230,106 @@ struct EggBook: View {
         case .chocolate: "Very dark brown eggs. Rare in Featherwick."
         case .green: "Cross an Araucana with a brown-egg breed. Some of the hens lay green eggs."
         }
+    }
+}
+
+/// The flock record book: eggs per hen, ribbons per bird, and the flock in numbers (Core's `Records`).
+/// Names in Caslon, numbers in Figtree. A hen who has not laid yet reads "none yet", not 0.
+struct RecordBook: View {
+    @Environment(GameStore.self) private var store
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        let r = Records.of(store.state)
+        VStack(alignment: .leading, spacing: Space.l) {
+            Text(RecordsWords.title).font(Typeface.title)
+            eggs(r)
+            ribbons(r)
+            flock(r.flock)
+        }
+    }
+
+    private func eggs(_ r: FlockRecords) -> some View {
+        VStack(alignment: .leading, spacing: Space.s) {
+            Text(RecordsWords.eggs).font(Typeface.item)
+            if r.eggs.isEmpty {
+                Text(RecordsWords.noHensYet).font(Typeface.note).foregroundStyle(palette.inkMuted)
+            } else {
+                Grid(alignment: .leading, horizontalSpacing: Space.m, verticalSpacing: Space.s) {
+                    GridRow {
+                        header(RecordsWords.hen)
+                        header(RecordsWords.total).gridColumnAlignment(.trailing)
+                        header(RecordsWords.recent(r.windowDays)).gridColumnAlignment(.trailing)
+                        header(RecordsWords.firstEgg).gridColumnAlignment(.trailing)
+                    }
+                    ForEach(r.eggs, id: \.henID) { row in
+                        GridRow {
+                            Text(eggRowName(row)).font(Typeface.serif(15))
+                            if let total = row.total, let recent = row.recent, let first = row.firstEggDay {
+                                number("\(total)")
+                                number("\(recent)")
+                                number(RecordsWords.day(first))
+                            } else {
+                                Text(RecordsWords.noneYet).font(Typeface.serifItalic(14, relativeTo: .footnote))
+                                    .foregroundStyle(palette.inkMuted)
+                                    .gridCellColumns(3)
+                                    .gridCellAnchor(.trailing)
+                            }
+                        }
+                    }
+                }
+            }
+            StitchDivider()
+        }
+    }
+
+    private func ribbons(_ r: FlockRecords) -> some View {
+        VStack(alignment: .leading, spacing: Space.s) {
+            Text(RecordsWords.ribbons).font(Typeface.item)
+            if r.ribbons.isEmpty {
+                Text(RecordsWords.noRibbonsYet).font(Typeface.note).foregroundStyle(palette.inkMuted)
+            } else {
+                Grid(alignment: .leading, horizontalSpacing: Space.m, verticalSpacing: Space.s) {
+                    GridRow {
+                        header(RecordsWords.bird)
+                        header(RecordsWords.first).gridColumnAlignment(.trailing)
+                        header(RecordsWords.second).gridColumnAlignment(.trailing)
+                        header(RecordsWords.third).gridColumnAlignment(.trailing)
+                    }
+                    ForEach(Array(r.ribbons.enumerated()), id: \.offset) { _, row in
+                        GridRow {
+                            Text(row.name).font(Typeface.serif(15))
+                            number("\(row.firsts)")
+                            number("\(row.seconds)")
+                            number("\(row.thirds)")
+                        }
+                    }
+                }
+            }
+            StitchDivider()
+        }
+    }
+
+    private func flock(_ f: FlockFacts) -> some View {
+        VStack(alignment: .leading, spacing: Space.s) {
+            Text(RecordsWords.flock).font(Typeface.item)
+            Grid(alignment: .leading, horizontalSpacing: Space.m, verticalSpacing: Space.s) {
+                ForEach(flockFactLines(f), id: \.label) { line in
+                    GridRow {
+                        Text(line.label).font(Typeface.serif(15))
+                        number(line.value).gridColumnAlignment(.trailing)
+                    }
+                }
+            }
+        }
+    }
+
+    private func header(_ words: String) -> some View {
+        Text(words).font(Typeface.label).foregroundStyle(palette.inkMuted)
+    }
+
+    private func number(_ words: String) -> some View {
+        Text(words).font(Typeface.number).monospacedDigit()
     }
 }
 

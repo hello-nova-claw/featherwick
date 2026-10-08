@@ -72,9 +72,12 @@ public enum SaveFormat {
             try migrate(&root)
         }
         root["version"] = currentVersion
+        // A save from before the record book: its egg history starts from the eggs it still holds.
+        let hasLayRecords = (root["state"] as? [String: Any])?["layRecords"] != nil
         fillNewSettings(&root)
         let current = try JSONSerialization.data(withJSONObject: root)
-        guard let envelope = try? JSONDecoder().decode(Envelope.self, from: current) else { throw LoadError.notASave }
+        guard var envelope = try? JSONDecoder().decode(Envelope.self, from: current) else { throw LoadError.notASave }
+        if !hasLayRecords { Records.backFill(&envelope.state) }
         return SaveGame(state: envelope.state, rng: envelope.rng)
     }
 
