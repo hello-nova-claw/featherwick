@@ -99,7 +99,7 @@ public struct MorningReport: Hashable, Sendable {
             .rejected, .starterChosen, .fed, .eggsCollected, .eggsSold, .coopClosed, .incubatorBought,
             .candled, .eggsSet, .renamed, .rehomed, .coopUpgraded, .boughtBird, .boughtEgg, .tradeAccepted,
             .boughtTreats, .boughtPremiumFeed, .fedPremium, .boughtSpecial, .birdPenned, .birdUnpenned, .slotSpent,
-            .rested:
+            .rested, .keeperNamed:
             return .other
         }
     }

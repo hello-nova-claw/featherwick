@@ -14,7 +14,7 @@ struct FlockView: View {
                 group("Chicks with their mother", s.henChicks)
                 group("Coop (\(s.coop.count)/\(s.perches) perches)", s.coop)
                 group("Lost (they always come home)", s.lost.map(\.bird))
-                group("Staying with the neighbour", s.boarding)
+                group("Staying with Hazel", s.boarding)
                 if s.plannerKnown {
                     let planner = plannerLines(s)
                     Section("What might hatch") {

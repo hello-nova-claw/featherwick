@@ -58,6 +58,8 @@ public enum Command: Hashable, Codable, Sendable {
     /// The keeper opened the "What might hatch" panel (see Planner.swift). Clears the pen's "New" notice.
     /// Costs no daylight and says nothing. Does nothing before the keeper has met the planner.
     case openPlanner
+    /// The keeper's own name, for the neighbour and the shop to use. Any time, even before the starter.
+    case nameKeeper(String)
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -137,6 +139,8 @@ public enum Rejection: Hashable, Codable, Sendable {
     case notEveningYet(slotsLeft: Int)
     /// A rest with no daylight left: it is time for bed.
     case timeForBed
+    /// A keeper's name needs at least one letter.
+    case blankName
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -263,6 +267,8 @@ public enum GameEvent: Hashable, Codable, Sendable {
     /// The first hatch-day "why" note also showed the keeper that hatches can be worked out ahead of
     /// time: "What might hatch" is open now (see Planner.swift). Right after that `hatchSurprise`. Once a game.
     case plannerIntroduced
+    /// The keeper gave their name.
+    case keeperNamed(String)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -285,6 +291,9 @@ public enum Engine {
                 ).withFounderQuality().withTameness(rules.brooderChickTameness))
         }
         var s = GameState(rules: rules, phase: .choosingStarter(chicks))
+        // The game starts on day 1. The chicks hatched the day before, so ages and the timeline stay as
+        // they were when games started on day 0: only the empty first night is gone.
+        s.day = 1
         s.canCandle = false  // learned from the neighbour after the first hatch, or for a story
         if earlyGame { s.introduced = [] }  // introduced one thing at a time (EarlyGame.swift)
         s.shopSeed = chicks.first.map { ShopSpecial.seed(from: $0.id) } ?? 0  // no extra RNG draw
@@ -309,6 +318,7 @@ public enum Engine {
         if case .chooseStarter(let index, let name) = command {
             return chooseStarter(index: index, name: name, &s)
         }
+        if case .nameKeeper(let name) = command { return nameKeeper(name, &s) }
         guard s.phase == .playing else { return [.rejected(.chooseStarterFirst)] }
         if let feature = feature(for: command), !s.isOpen(feature) { return [.rejected(.notYet(feature))] }
         if let refusal = daylightRefusal(for: command, in: s) { return [.rejected(refusal)] }
@@ -321,7 +331,7 @@ public enum Engine {
         _ command: Command, _ s: inout GameState, _ rng: inout R
     ) -> [GameEvent] {
         switch command {
-        case .chooseStarter:
+        case .chooseStarter, .nameKeeper:
             return []  // handled in `perform`
         case .feed:
             let needed = s.birdsAtHome.count
@@ -847,7 +857,22 @@ public enum Engine {
         s.brooder.append(chick)
         s.starterID = chick.id
         s.phase = .playing
-        return [.starterChosen(chick.id)]
+        return [.starterChosen(chick.id)] + firstMorning(&s)
+    }
+
+    /// Day 1 is a whole day: its lessons, its jobs and the season goal are there from the start, as on
+    /// any other morning. Only the morning steps run: nothing grows, lays or hatches. No randomness.
+    static func firstMorning(_ s: inout GameState) -> [GameEvent] {
+        resetDaylight(&s)
+        return introduceFeatures(&s) + advanceSeasonGoal(&s) + setTodaysJobs(&s)
+    }
+
+    static func nameKeeper(_ name: String, _ s: inout GameState) -> [GameEvent] {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty { return [.rejected(.blankName)] }
+        guard trimmed.count <= NameBook.maxLength else { return [.rejected(.nameTooLong(max: NameBook.maxLength))] }
+        s.keeperName = trimmed
+        return [.keeperNamed(trimmed)]
     }
 
     // MARK: - Night and morning

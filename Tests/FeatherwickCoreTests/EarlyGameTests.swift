@@ -25,11 +25,37 @@ struct EarlyGameTests {
         return ev
     }
 
-    @Test func aNewKeeperStartsWithOneChickAndNothingOpen() {
+    @Test func aNewKeeperStartsOnDay1WithOneChickAndTheFirstLesson() {
         let (s, _) = Self.newKeeper()
+        #expect(s.day == 1)
         #expect(s.ownedBirds.count == 1)
-        #expect(s.introduced.isEmpty)
-        #expect(s.nextFeature?.feature == .handling)
+        // Day 1 is a whole day: its lesson, jobs and season goal come with the starter.
+        #expect(s.introduced == [.handling])
+        #expect(!s.todaysJobs.isEmpty && s.seasonGoal != nil)
+        #expect(s.nextFeature?.feature == .treats)
+    }
+
+    @Test func theKeeperGivesTheirNameBeforeOrAfterTheStarter() {
+        var rng = SeededRNG(seed: 1)
+        var s = Engine.newGame(using: &rng)
+        #expect(s.keeperName == nil)
+        #expect(Engine.apply(.nameKeeper("   "), to: &s, using: &rng) == [.rejected(.blankName)])
+        let long = String(repeating: "a", count: NameBook.maxLength + 1)
+        #expect(
+            Engine.apply(.nameKeeper(long), to: &s, using: &rng) == [.rejected(.nameTooLong(max: NameBook.maxLength))])
+        #expect(s.keeperName == nil)
+        #expect(Engine.apply(.nameKeeper("  Anna "), to: &s, using: &rng) == [.keeperNamed("Anna")])
+        #expect(s.keeperName == "Anna")
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Basil"), to: &s, using: &rng)
+        // A new name later, from Settings. No daylight is spent.
+        let slots = s.slotsLeft
+        #expect(Engine.apply(.nameKeeper("Annie"), to: &s, using: &rng) == [.keeperNamed("Annie")])
+        #expect(s.keeperName == "Annie" && s.slotsLeft == slots)
+    }
+
+    @Test func hazelAndWrenAreNeverSuggestedForABird() {
+        let all = NameBook.neutral + NameBook.hens + NameBook.roosters
+        #expect(!all.contains("Hazel") && !all.contains("Wren"))
     }
 
     @Test func oldSavesAndSkippedEarlyGamesHaveEverythingOpen() throws {
@@ -71,7 +97,9 @@ struct EarlyGameTests {
             if case .introduced(let f) = e { return f }
             return nil
         }
-        #expect(order == Feature.allCases.sorted { s.introductionDay(of: $0) < s.introductionDay(of: $1) })
+        // Day 1's lesson came with the starter, before the first night.
+        let later = Feature.allCases.filter { s.introductionDay(of: $0) > 1 }
+        #expect(order == later.sorted { s.introductionDay(of: $0) < s.introductionDay(of: $1) })
         #expect(s.introduced == Set(Feature.allCases))
         #expect(s.nextFeature == nil)
     }

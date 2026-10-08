@@ -24,7 +24,7 @@ The CLI writes `featherwick-save*.json` in the current folder (git-ignored). Do 
 | Path | What |
 | --- | --- |
 | `Sources/FeatherwickCore` | Pure game logic. All rules live here. |
-| `Sources/FeatherwickText` | The words players read (events, screens, milestones). Shared by CLI and app. |
+| `Sources/FeatherwickText` | The words players read (events, screens, milestones). Shared by CLI and app. `People.swift`: Hazel (neighbour), Wren (shop), the day-1 welcome and tour. |
 | `Sources/FeatherwickCLI/main.swift` | Thin text front end. Parses input, prints text. No rules, no words. |
 | `App/` | iOS test app (SwiftUI, no art yet). `project.yml` is the XcodeGen spec. |
 | `Tests/FeatherwickCoreTests` | One suite per system. `Fixtures/save-v0.json` is a real old save. |
@@ -63,6 +63,8 @@ components, screens 1a–8a). The painted farm and bird art come later; dashed b
   inside the scene (`Scene/SceneChicken.swift`: `YardScene`, `SceneChicken`).
   `Feedback/`: `Haptics` and `Sound` (bundled `Sounds/*.caf`, silent if missing), with on/off switches in Settings. `GameStore.run` plays event feedback through `GameFeedback`.
 - What might hatch (`Sheets/WhatMightHatchSection.swift`): the forecast in the breeding pen sheet, and carrier lines on the bird card.
+- Day 1 (`RootView.swift`, `Sheets/TourSheet.swift`): Hazel asks the keeper's name (`.nameKeeper`), offers a chick, then
+  walks the keeper round the four places. The game starts on day 1.
 - Morning report (`Sheets/MorningReportSheet.swift`): after Sleep, one page of the night, before the farm.
   Core's `MorningReport.from(events:state:)` sorts the night's events into groups; every event lands in one.
   A new `GameEvent` needs a group in `MorningReport.group(of:)`. Settings has a switch (on by default).

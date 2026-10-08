@@ -28,7 +28,7 @@ public func plannerNoticeText(_ s: GameState) -> String? {
 
 /// What `plan` and `carries` say before the keeper has met the planner.
 public func plannerNotYetText(_ s: GameState) -> String {
-    "Not yet. Hatch a few chicks first, and the neighbour will show you a trick."
+    "Not yet. Hatch a few chicks first, and Hazel will show you a trick."
 }
 
 /// The whole panel as text lines: the heading, then each penned hen's forecast with the rooster.
@@ -316,7 +316,7 @@ private func seenLook(_ id: UUID, _ s: GameState) -> SeenLook? {
 private func originWords(_ id: UUID, _ s: GameState) -> String {
     guard let origin = s.bird(id)?.origin else { return "outside the flock" }
     switch origin {
-    case Bird.neighbourOrigin: return "the neighbour"
+    case Bird.neighbourOrigin: return "Hazel"
     case Bird.localFlockOrigin: return "a local flock"
     case Bird.showOrigin: return "the county show"
     case Bird.villageOrigin: return "a Featherwick neighbour"

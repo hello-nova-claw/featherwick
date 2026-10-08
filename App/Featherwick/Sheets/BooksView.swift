@@ -242,6 +242,7 @@ struct SettingsSheet: View {
     var body: some View {
         SheetPage(context: "Settings") {
             Text("Henhaven").font(Typeface.title)
+            KeeperNameField()
             Button("Open test tools") { testTools = true }.buttonStyle(.secondary)
             Text("The plain lists from the test build: every action, the full log, the simulator.")
                 .font(Typeface.caption).foregroundStyle(palette.inkMuted)
@@ -320,5 +321,31 @@ struct FeedbackToggles: View {
                 .font(Typeface.caption).foregroundStyle(palette.inkMuted)
         }
         .tint(palette.ink)
+    }
+}
+
+/// Settings: the keeper's own name, as Hazel and Wren say it.
+struct KeeperNameField: View {
+    @Environment(GameStore.self) private var store
+    @Environment(\.palette) private var palette
+    @State private var name = ""
+
+    var body: some View {
+        HStack(spacing: Space.m) {
+            TextField("Your name", text: $name)
+                .font(Typeface.body)
+                .textInputAutocapitalization(.words)
+                .submitLabel(.done)
+                .onSubmit(save)
+            Button("Save", action: save)
+                .buttonStyle(.secondary)
+                .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || name == store.state.keeperName)
+        }
+        .onAppear { name = store.state.keeperName ?? "" }
+    }
+
+    private func save() {
+        guard !name.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        store.run(.nameKeeper(name))
     }
 }

@@ -63,7 +63,7 @@ public func storyText(_ id: String, step: String?) -> String {
     switch (id, step) {
     case ("broodySilkie", nil):
         return """
-            The neighbour leans over the fence, laughing. "My old Silkie has gone broody again. She's sitting on a golf ball! \
+            Hazel leans over the fence, laughing. "My old Silkie has gone broody again. She's sitting on a golf ball! \
             If you could spare 3 eggs you know are fertile, she'd hatch them for you." (Candle your eggs, then: give eggs)
             """
     case ("broodySilkie", "sitting"):
@@ -403,7 +403,7 @@ public func cardText(_ c: JudgeCard) -> String {
 func homeDeadline(_ id: UUID, _ s: GameState) -> String {
     guard let nights = s.nightsUntilRehomed(id) else { return "" }
     let when = nights <= 1 ? "by tomorrow" : "in \(nights) nights"
-    return " If no perch is free \(when), the neighbour will find \(birdName(id, s)) a new home."
+    return " If no perch is free \(when), Hazel will find \(birdName(id, s)) a new home."
 }
 
 public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
@@ -430,7 +430,7 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         case .noSuchEgg: "That egg is not in your carton."
         case .eggIsClear: "That egg is clear. It will never hatch."
         case .cannotCandleYet:
-            "You don't know how to candle eggs yet. Hatch a chick first, and the neighbour will show you."
+            "You don't know how to candle eggs yet. Hatch a chick first, and Hazel will show you."
         case .alreadyCandled: "You have already held that egg up to the light."
         case .notBroody: "She isn't broody. Only a broody hen will sit on eggs."
         case .henAlreadySitting: "She is already sitting on eggs."
@@ -439,7 +439,7 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
             "You only have \(have) egg\(have == 1 ? "" : "s") in your carton. Collect first: collect"
         case .nothingToCandle: "You have already candled every egg in the carton."
         case .birdsBoarding:
-            "You can't set eggs while a bird is staying with the neighbour. Make room first: rehome a bird or upgrade the coop."
+            "You can't set eggs while a bird is staying with Hazel. Make room first: rehome a bird or upgrade the coop."
         case .birdIsBusy: "She is sitting on eggs or caring for chicks. She can't go to a new home right now."
         case .coopAtMax: "The coop can't hold any more perches."
         case .lastBird: "That's your only bird. Keep at least one, or Henhaven would be empty."
@@ -480,6 +480,7 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         case .notEveningYet(let left):
             "The sun's still up. There's time for \(left) more thing\(left == 1 ? "" : "s")."
         case .timeForBed: "The light's gone. Time for bed: sleep"
+        case .blankName: "A name needs at least one letter."
         }
     case .starterChosen(let id): return "You take \(birdName(id, s)) home and settle them under the heat lamp."
     case .fed: return "You fill the feeder and top up the water."
@@ -504,7 +505,7 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .newBreedBookEntry(let entry): return "New Breed Book entry: \(entryText(entry))."
     case .neighbourGaveHen(let id):
         return
-            "The neighbour visits: \"He'll want some company.\" She gives you a young hen: \(birdLabel(s.bird(id)!, s))."
+            "Hazel visits: \"He'll want some company.\" She gives you a young hen: \(birdLabel(s.bird(id)!, s))."
     case .movedToCoop(let id): return "\(birdName(id, s)) is big enough to move from the brooder to the coop."
     case .needsHome(let id):
         return
@@ -512,16 +513,16 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
             + "Make room: rehome a bird (rehome <name>) or add perches (upgrade coop, \(s.rules.coopUpgradePrice) coins)."
             + homeDeadline(id, s)
     case .boardingWithNeighbour(let id):
-        return "\(birdName(id, s)) is staying with the neighbour: no perch, and the brooder is full. "
+        return "\(birdName(id, s)) is staying with Hazel: no perch, and the brooder is full. "
             + "You can't set eggs until \(birdName(id, s)) has a home. Rehome a bird or upgrade the coop."
             + homeDeadline(id, s)
     case .rehomedByNeighbour(let id, let coins):
-        return "No perch came free for \(birdName(id, s)), so the neighbour found \(birdName(id, s)) a good home "
+        return "No perch came free for \(birdName(id, s)), so Hazel found \(birdName(id, s)) a good home "
             + "down the lane. They pay you \(coins) coin\(coins == 1 ? "" : "s")."
     case .namedForYou(let id):
         return "Everyone has started calling the new bird \(birdName(id, s)). The name stuck. "
             + "(You can rename a bird any time.)"
-    case .cameHomeFromBoarding(let id): return "\(birdName(id, s)) comes home from the neighbour's to a free perch."
+    case .cameHomeFromBoarding(let id): return "\(birdName(id, s)) comes home from Hazel's to a free perch."
     case .rehomed(let id, let coins):
         return
             "\(birdName(id, s)) goes to a new home in Featherwick. They pay you \(coins) coin\(coins == 1 ? "" : "s")."
@@ -546,10 +547,10 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return "You hand the eggs over the fence, carefully."
     case .storyGiftWaitingForRoom:
         return
-            "The neighbour has a gift for you, but your coop has no free perch. Make room, and it arrives that night."
+            "Hazel has a gift for you, but your coop has no free perch. Make room, and it arrives that night."
     case .storyGift(_, let id):
         return
-            "The neighbour comes round with a basket. \"She hatched every one. Here, one of my own girls, to say thank you.\" \(birdName(id, s)) moves into Henhaven."
+            "Hazel comes round with a basket. \"She hatched every one. Here, one of my own girls, to say thank you.\" \(birdName(id, s)) moves into Henhaven."
     case .shopUnlocked(let breed):
         return
             "Speckle & Down now stocks \(breed.definition.displayName)s. A surprise pullet or cockerel from the shop may be one."
@@ -605,7 +606,7 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
                 + "Set your egg in it, and in about \(nights) night\(nights == 1 ? "" : "s") you'll have a chick.\""
         }
         // Plain words, not command names: the app and the CLI both show this note.
-        return "The neighbour leans over the fence. \(note)\n\n"
+        return "Hazel leans over the fence. \(note)\n\n"
             + "To hatch eggs, choose them from the carton and set them in the incubator. "
             + "Fertile eggs hatch into the brooder; clear ones come back to the carton."
     case .candled(let fertile, let clear):
@@ -637,14 +638,14 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         if s.carton.count >= s.cartonCapacity { back = "The carton is full, so look in the nest boxes." }
         return "\(opener) \(eggs) \(why) \(back)"
     case .hatchSurprise(let id, let reason):
-        return "The neighbour peers at \(birdName(id, s)): \"\(hatchReasonText(reason))\""
+        return "Hazel peers at \(birdName(id, s)): \"\(hatchReasonText(reason))\""
     case .plannerIntroduced:
         // Right after the first why note. Before the pen opens, the neighbour saves the trick for later.
         let next = s.isOpen(.breedingPen) ? "Come and look at the pen." : "I'll show you once you have a breeding pen."
         return "She winks. \"You can work this out ahead of time, you know. \(next)\""
     case .learnedCandling:
         return """
-            The neighbour comes round with a torch. "Here, let me show you a trick." She holds an egg up \
+            Hazel comes round with a torch. "Here, let me show you a trick." She holds an egg up \
             to the light. "See the shadow and the little veins? That one's fertile. A clear one just glows." \
             You can candle eggs now. Candle before you set them, and a clear egg won't take a place in the incubator.
               candle          hold the carton eggs up to a light to see which are fertile
@@ -726,6 +727,7 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
             ? "The light's going. Time for bed: sleep"
             : "The sun moves on. Time for \(left) more thing\(left == 1 ? "" : "s") today."
     case .rested(let time): return restedText(time, s)
+    case .keeperNamed(let name): return "\(People.neighbour) waves over the fence. \"Welcome, \(name)!\""
     }
 }
 
@@ -735,7 +737,7 @@ func noTimeLeftText(_ errand: Errand) -> String {
     case .village: "Speckle & Down will be shut by the time you get there. Tomorrow."
     case .candling: "Too dark to candle now. First thing in the morning."
     case .showDesk: "The show desk has packed up for the day."
-    case .neighbour: "The neighbour's lights are off. Pop round tomorrow."
+    case .neighbour: "Hazel's lights are off. Pop round tomorrow."
     case .building: "Not enough light left to build. Tomorrow."
     }
 }
@@ -969,7 +971,7 @@ extension String {
 public func yardLines(_ s: GameState) -> [String] {
     var out: [String] = []
     if case .choosingStarter(let chicks) = s.phase {
-        out.append("The neighbour keeps orpingtons, wyandottes and araucanas. She offers you one chick.")
+        out.append("Hazel keeps orpingtons, wyandottes and araucanas. She offers you one chick.")
         for (i, c) in chicks.enumerated() { out.append("  \(i + 1). a chick with \(downText(c.phenotype.chickDown))") }
         out.append("Choose one: choose <1-3> <name>")
         return out
@@ -1012,7 +1014,7 @@ public func yardLines(_ s: GameState) -> [String] {
     }
     if !s.boarding.isEmpty {
         out.append(
-            "Staying with the neighbour (no eggs can be set until they have a home): "
+            "Staying with Hazel (no eggs can be set until they have a home): "
                 + s.boarding.map(\.name).joined(separator: ", "))
     }
     let fertile = s.carton.count(where: { $0.isCandled && $0.isFertile })
@@ -1189,12 +1191,12 @@ public func introducedText(_ f: Feature, _ s: GameState) -> String? {
     case .handling:
         let n = starterName(s)
         return """
-            The neighbour leans over the fence. "How's \(n) settling in? Pick \(n) up every day. \
+            Hazel leans over the fence. "How's \(n) settling in? Pick \(n) up every day. \
             Chicks learn to trust you fastest while they're small." (pet \(n))
             """
     case .treats:
         return """
-            The neighbour hands you a twist of paper. "Mealworms! Chickens adore them. One a day from your hand, \
+            Hazel hands you a twist of paper. "Mealworms! Chickens adore them. One a day from your hand, \
             and they'll follow you anywhere." You get \(r.welcomeTreats) treats. Speckle & Down sells more. \
             (treat <name>, buy treats)
             """
@@ -1204,7 +1206,7 @@ public func introducedText(_ f: Feature, _ s: GameState) -> String? {
     case .coopDoor:
         let n = starterName(s)
         return """
-            The neighbour looks at \(n). "Nearly big enough for the coop! Remember to shut the coop door at night. \
+            Hazel looks at \(n). "Nearly big enough for the coop! Remember to shut the coop door at night. \
             A fox comes by now and then. It won't hurt anyone, but it gives them a terrible fright. \
             Leave the door open and they forage all night, and come back fed. Your choice." (close)
             """
@@ -1214,18 +1216,18 @@ public func introducedText(_ f: Feature, _ s: GameState) -> String? {
         }
         let what = "\(colourText(starter.phenotype)) \(starter.varietyName) \(kindWord(starter, s))"
         return """
-            The neighbour peers at \(starter.name). "So that's what \(subjectPronoun(starter))'s turned into: \
+            Hazel peers at \(starter.name). "So that's what \(subjectPronoun(starter))'s turned into: \
             \(article(what)) \(what)! Write that in your Breed Book. Every breed and colour you keep goes in it." (book)
             """
     case .laying:
         let hens = s.birdsAtHome.filter { $0.revealed && $0.sex == .hen }
         guard let hen = hens.min(by: { $0.hatchDay < $1.hatchDay }) else {
-            return "The neighbour's hens are laying well. \"Roosters don't lay, mind. A pullet from Speckle & Down "
+            return "Hazel's hens are laying well. \"Roosters don't lay, mind. A pullet from Speckle & Down "
                 + "would.\" (shop)"
         }
         let n = hen.name
         return """
-            The neighbour nods at \(n). "\(n) will start to lay soon. Hens lay when they were fed the day before. \
+            Hazel nods at \(n). "\(n) will start to lay soon. Hens lay when they were fed the day before. \
             Collect the eggs every day: full nest boxes mean broken eggs, and old eggs sell for less." (collect, sell)
             """
     case .daylight:
@@ -1245,7 +1247,7 @@ public func introducedText(_ f: Feature, _ s: GameState) -> String? {
             + "\(r.incubatorPrice) coins. (buy incubator)"
     case .breedingPen:
         return """
-            The neighbour helps you fence off a corner of the coop. "A breeding pen! Put one rooster in with up to \
+            Hazel helps you fence off a corner of the coop. "A breeding pen! Put one rooster in with up to \
             \(r.penHens) hens. Then you know who fathered every egg they lay. They keep their perches, so it costs \
             you no room." (pen <name>, unpen <name>, pen)
             """
@@ -1263,7 +1265,7 @@ public func notYetText(_ f: Feature, _ s: GameState) -> String {
     case .coopUpgrade: return "The carpenter is busy. Ask about more perches \(when)."
     case .shows: return "There is no show to enter yet."
     case .incubatorShop: return "Speckle & Down has no incubators in yet. They come \(when)."
-    case .breedingPen: return "There is no breeding pen yet. The neighbour comes to help build one \(when)."
+    case .breedingPen: return "There is no breeding pen yet. Hazel comes to help build one \(when)."
     case .daylight: return "No need to rest yet. There's plenty of daylight."
     case .handling, .coopDoor, .breedBook, .laying: return "Not yet."
     }
@@ -1276,7 +1278,7 @@ public func showTipText(_ tip: ShowTip?, _ s: GameState) -> String {
     let show = "The \(showThemeName(theme)) is coming up next week, on day \(day)."
     guard let tip, let bird = s.bird(tip.birdID) else {
         return """
-            The neighbour waves a poster over the fence. "\(show) Your birds are a bit young to show this time. \
+            Hazel waves a poster over the fence. "\(show) Your birds are a bit young to show this time. \
             There's one every season." (shows)
             """
     }
@@ -1306,5 +1308,5 @@ public func showTipText(_ tip: ShowTip?, _ s: GameState) -> String {
         if classes.count > 1 { said += " The \(classes[0].name) class is a tough crowd this year." }
     }
     let command = tip.showClass == .pet && classes.count > 1 ? "enter \(n) pet" : "enter \(n)"
-    return "The neighbour leans over the fence with a poster. \"\(said)\" \(showThemeLine(theme)) (\(command))"
+    return "Hazel leans over the fence with a poster. \"\(said)\" \(showThemeLine(theme)) (\(command))"
 }
