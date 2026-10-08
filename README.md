@@ -721,7 +721,7 @@ too) stay in the state; outside parents, such as those of a bought egg, are kept
   with "lacks vigour".
 - CLI: `tree <name>`, `kin <name> <name>`.
 
-## Names
+## Names and quirks
 
 `Names.swift`. Birds you hatch or buy arrive with `needsName`; the UI asks for a name at once,
 with a suggestion (Enter takes it). Birds given by people (gift hen, trade hen, story gifts)
@@ -735,6 +735,11 @@ arrive already named by their keeper. Any bird you own can be renamed any time, 
   A chick whose sex is still hidden gets a neutral suggestion, so the name never gives it away.
 - A bird still unnamed after `autoNameNights` takes its suggestion (see "Birds never wait forever").
 - The app shows "needs a name" under the Coop button.
+- Quirks (`Quirks.swift`, words in `quirkText`) are small habits for flavour, such as "Dust-bath lover".
+  They change no rule and are not saved. They come from the bird's ID, like a name suggestion.
+  Every bird has two neutral quirks for life. When its sex shows, about half of birds
+  (`quirkSexShare`) gain a third quirk for their sex. So a chick's quirks never give its sex away.
+  The bird card shows them under the facts.
 
 ## Storylines
 
