@@ -120,6 +120,12 @@ extension Engine {
                 ev.append(.showAnnounced(tip))
             }
         }
+        // "What might hatch" lives in the breeding pen, so it opens with the pen at the latest. A keeper
+        // who saw a surprise chick first already knows it. A save already past the pen's day gets it tonight.
+        if s.isOpen(.breedingPen), !s.plannerKnown {
+            s.plannerKnown = true
+            ev.append(.plannerShownAtPen)
+        }
         return ev
     }
 
