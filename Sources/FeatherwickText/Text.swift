@@ -1053,6 +1053,34 @@ public func milestoneText(_ id: String) -> (title: String, hint: String) {
     }
 }
 
+/// A quirk in one line, present tense. Hen and rooster lines may say she or he: they show only once
+/// the bird's sex is visible (`Quirks.of`).
+public func quirkText(_ q: Quirk) -> String {
+    switch q {
+    case .dustBathLover: "Dust-bath lover. Finds the one dry patch and rolls in it."
+    case .singsWhenLaying: "Sings when laying. She tells the whole farm about every egg."
+    case .firstToTheGate: "First to the gate. Waits there at dawn for the door to open."
+    case .escapeArtist: "Escape artist. Knows every gap in the fence."
+    case .followsYouAbout: "Follows you about. Never more than three steps behind."
+    case .sitsOnTheFencePost: "Sits on the fence post. Keeps watch over the yard from up there."
+    case .hatesRain: "Hates rain. Sulks under the coop at the first drop."
+    case .likesACuddleAtDusk: "Likes a cuddle at dusk. Comes to sit with you as the light goes."
+    case .hoardsTheMealworms: "Hoards the mealworms. Runs off with one before the others look up."
+    case .talksToTheDucks: "Talks to the ducks next door. Chatters at the fence for hours."
+    case .roostsOnTheHighestPerch: "Roosts on the highest perch. Nobody else may have it."
+    case .broodsOverGolfBalls: "Broods over golf balls. She sits on them as if they will hatch."
+    case .napsInTheSun: "Naps in the sun. Flops down with one wing out."
+    case .pecksAtBootlaces: "Pecks at bootlaces. Yours are never safe."
+    case .runsAtTheFox: "Runs at the fox. He puffs up and charges the hedge."
+    case .alwaysLastToBed: "Always last to bed. Still pecking about when the others roost."
+    }
+}
+
+/// This bird's quirks, one line each, for the bird card.
+public func quirkLines(_ bird: Bird, _ s: GameState) -> [String] {
+    Quirks.of(bird, in: s).map(quirkText)
+}
+
 public func journalLines(_ s: GameState) -> [String] {
     var out: [String] = []
     let done = Milestones.all.count(where: { s.milestonesReached.contains($0.id) })
