@@ -264,7 +264,7 @@ struct RecordBook: View {
                     }
                     ForEach(r.eggs, id: \.henID) { row in
                         GridRow {
-                            Text(eggRowName(row)).font(Typeface.serif(15))
+                            Text(eggRowName(row)).font(Typeface.rowName)
                             if let total = row.total, let recent = row.recent, let first = row.firstEggDay {
                                 number("\(total)")
                                 number("\(recent)")
@@ -298,7 +298,7 @@ struct RecordBook: View {
                     }
                     ForEach(Array(r.ribbons.enumerated()), id: \.offset) { _, row in
                         GridRow {
-                            Text(row.name).font(Typeface.serif(15))
+                            Text(row.name).font(Typeface.rowName)
                             number("\(row.firsts)")
                             number("\(row.seconds)")
                             number("\(row.thirds)")
@@ -316,7 +316,7 @@ struct RecordBook: View {
             Grid(alignment: .leading, horizontalSpacing: Space.m, verticalSpacing: Space.s) {
                 ForEach(flockFactLines(f), id: \.label) { line in
                     GridRow {
-                        Text(line.label).font(Typeface.serif(15))
+                        Text(line.label).font(Typeface.rowName)
                         number(line.value).gridColumnAlignment(.trailing)
                     }
                 }
