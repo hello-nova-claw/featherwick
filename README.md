@@ -350,6 +350,9 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
   (not grown yet) in the pen.
 - A rule names no bird. It says the parents' looks and what hatches. Feather-colour rules list the
   parents in colour order, not hen first: the colour genes are not sex-linked.
+- The page heading is "Inheritance", with "What your pairs have shown" under it. A rule is true for
+  the pair it came from. It is not a law for every bird with the same look: two black birds can hide
+  different genes.
 - Each rule shows once, in the order first seen. Before the first rule, a dashed box says:
   "Set eggs from a pair in the pen and what you learn ends up here."
 - State: `GameState.seenRules` (an ordered list with no repeats). Old saves start empty.

@@ -17,7 +17,7 @@ import Testing
             inheritanceText(.colours(.black, .blue, [ColourShare(.blue, 1)], denominator: 2))
                 == "black × blue → 1 in 2 blue")
         #expect(
-            inheritanceText(.sexLink(barredAre: .rooster))
+            inheritanceText(.sexLink)
                 == "barred hen × plain rooster → barred chicks are cockerels")
         #expect(
             inheritanceText(.trait(.barred, hen: true, rooster: false, numerator: 1, denominator: 2))
@@ -32,7 +32,8 @@ import Testing
         let s = Engine.newGame(earlyGame: false, using: &rng)
         #expect(
             inheritanceLines(s) == [
-                "Inheritance", "  Set eggs from a pair in the pen and what you learn ends up here.",
+                "Inheritance", "What your pairs have shown",
+                "  Set eggs from a pair in the pen and what you learn ends up here.",
             ])
     }
 
@@ -49,7 +50,7 @@ import Testing
                     t.plannerKnown = true
                     t.pen = [hen.id, rooster.id]
                     t.seenRules = Inheritance.rules(forHen: hen.id, in: t)
-                    for line in inheritanceLines(t).dropFirst() {
+                    for line in inheritanceLines(t).dropFirst(2) {
                         checked += 1
                         #expect(!line.contains("%"), "\(line)")
                         let words = Set(line.split(whereSeparator: { !$0.isLetter }).map(String.init))

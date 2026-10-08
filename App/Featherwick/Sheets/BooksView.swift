@@ -244,6 +244,7 @@ struct InheritanceBook: View {
         let rules = Inheritance.known(in: store.state)
         VStack(alignment: .leading, spacing: Space.l) {
             Text(inheritanceTitleText).font(Typeface.title)
+            Text(inheritanceSubtitleText).font(Typeface.label).foregroundStyle(palette.inkMuted)
             if rules.isEmpty {
                 Text(inheritanceEmptyText)
                     .font(Typeface.serifItalic(14, relativeTo: .footnote))

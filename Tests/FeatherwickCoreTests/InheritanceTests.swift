@@ -70,7 +70,7 @@ import Testing
         Self.setEgg(from: barred, father: plain, &s, &rng)
         let rules = Inheritance.known(in: s)
         #expect(rules.first == Self.blueRule)
-        #expect(rules.contains(.sexLink(barredAre: .rooster)))
+        #expect(rules.contains(.sexLink))
         #expect(rules.contains(.trait(.barred, hen: true, rooster: false, numerator: 1, denominator: 2)))
         #expect(rules.contains(.colours(.black, .black, [ColourShare(.black, 1)], denominator: 1)))
         #expect(Set(rules).count == rules.count)
@@ -138,7 +138,7 @@ import Testing
             var s = Simulation.play(seed: seed, days: KnowledgeTests.blindDays)
             let before = Self.pageForAllPairs(s)
             var rng = SeededRNG(seed: seed ^ 0x5357_4150)
-            _ = KnowledgeTests.swapAll(&s, &rng)
+            #expect(KnowledgeTests.swapAll(&s, &rng) > 0, "seed \(seed): nothing swapped")
             let after = Self.pageForAllPairs(s)
             #expect(before == after, "seed \(seed)")
             pairs += before.count
@@ -157,7 +157,7 @@ import Testing
             var rng = baseRNG
             if swapped {
                 var swap = SeededRNG(seed: 99)
-                _ = KnowledgeTests.swapAll(&s, &swap)
+                #expect(KnowledgeTests.swapAll(&s, &swap) > 0, "nothing swapped")
             }
             let mother = s.coop.first { $0.id == hen.id }!
             let father = s.coop.first { $0.id == rooster.id }!

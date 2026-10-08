@@ -9,8 +9,12 @@ import Foundation
 /// The page before the first rule.
 public let inheritanceEmptyText = "Set eggs from a pair in the pen and what you learn ends up here."
 
-/// The page heading.
+/// The page heading (and the Books tab).
 public let inheritanceTitleText = "Inheritance"
+
+/// Under the heading: each rule held for a pair the keeper set eggs from, not for every bird that looks
+/// the same. Two black birds can hide different genes.
+public let inheritanceSubtitleText = "What your pairs have shown"
 
 /// One rule in plain words: "blue × blue → 1 black : 2 blue : 1 splash".
 public func inheritanceText(_ rule: InheritanceRule) -> String {
@@ -20,18 +24,17 @@ public func inheritanceText(_ rule: InheritanceRule) -> String {
     case .trait(let t, let hen, let rooster, let n, let d):
         let parents = "\(parentWord(t, hen, "hen")) × \(parentWord(t, rooster, "rooster"))"
         return "\(parents) → \(outcome(t, n, d))"
-    case .sexLink(let barredAre):
-        return barredAre == .rooster
-            ? "barred hen × plain rooster → barred chicks are cockerels"
-            : "plain hen × barred rooster → barred chicks are pullets"
+    case .sexLink:
+        return "barred hen × plain rooster → barred chicks are cockerels"
     }
 }
 
-/// The page as text lines: the heading, then one rule a line, or the empty note. For the CLI.
+/// The page as text lines: the heading and subtitle, then one rule a line, or the empty note. For the CLI.
 public func inheritanceLines(_ s: GameState) -> [String] {
     let rules = Inheritance.known(in: s)
-    guard !rules.isEmpty else { return [inheritanceTitleText, "  " + inheritanceEmptyText] }
-    return [inheritanceTitleText] + rules.map { "  " + inheritanceText($0) }
+    let heading = [inheritanceTitleText, inheritanceSubtitleText]
+    guard !rules.isEmpty else { return heading + ["  " + inheritanceEmptyText] }
+    return heading + rules.map { "  " + inheritanceText($0) }
 }
 
 /// "all lavender", "1 black : 2 blue : 1 splash", or "1 in 4 splash" when the shares do not cover

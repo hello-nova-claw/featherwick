@@ -34,8 +34,9 @@ public enum InheritanceRule: Hashable, Codable, Sendable {
     /// `hen` and `rooster` say whether each parent shows it; nil when it cannot show (a rooster's eggs,
     /// or a hen not laying yet). An egg trait counts the pair's daughters.
     case trait(Trait, hen: Bool?, rooster: Bool?, numerator: Int, denominator: Int)
-    /// "Barred hen × plain rooster → barred chicks are cockerels."
-    case sexLink(barredAre: Sex)
+    /// "Barred hen × plain rooster → barred chicks are cockerels." The only sex-link the planner finds:
+    /// a hen passes her one barring gene to her sons only. No payload, so no false rule can be built.
+    case sexLink
 }
 
 // `Inheritance` (Locus.swift) is how a gene passes down: autosomal or Z-linked. The page's functions
@@ -65,8 +66,8 @@ extension Inheritance {
                 if let rule = traitRule(t, 1, 1, hen, rooster) { out.append(rule) }
             case .ratio(let t, let n, let d, _):
                 if let rule = traitRule(t, n, d, hen, rooster) { out.append(rule) }
-            case .sexLink(let barredAre, _):
-                out.append(.sexLink(barredAre: barredAre))
+            case .sexLink(.rooster, _):
+                out.append(.sexLink)
             default:
                 break
             }
