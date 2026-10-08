@@ -40,10 +40,10 @@ import Testing
             return
         }
         _ = Engine.apply(.openPlanner, to: &s, using: &rng)
-        #expect(Inheritance.known(in: s).isEmpty)
+        #expect(InheritancePage.known(in: s).isEmpty)
         let events = Self.setEgg(from: hen, father: rooster, &s, &rng)
         #expect(events.contains { if case .eggsSet = $0 { true } else { false } })
-        #expect(Inheritance.known(in: s) == [Self.blueRule])
+        #expect(InheritancePage.known(in: s) == [Self.blueRule])
     }
 
     @Test func theSameRuleIsNotRepeated() {
@@ -55,7 +55,7 @@ import Testing
             Breed.orpington.purebred(.hen, variety: .blue), .orpington, origin: Self.shop, &s, &rng)
         s.pen.append(hen2.id)
         Self.setEgg(from: hen2, father: rooster, &s, &rng)
-        #expect(Inheritance.known(in: s) == [Self.blueRule])
+        #expect(InheritancePage.known(in: s) == [Self.blueRule])
     }
 
     @Test func rulesKeepTheOrderFirstSeen() {
@@ -68,7 +68,7 @@ import Testing
         let plain = PlannerTests.add(Breed.orpington.purebred(.rooster), .orpington, origin: Self.shop, &s, &rng)
         s.pen = [barred.id, plain.id]
         Self.setEgg(from: barred, father: plain, &s, &rng)
-        let rules = Inheritance.known(in: s)
+        let rules = InheritancePage.known(in: s)
         #expect(rules.first == Self.blueRule)
         #expect(rules.contains(.sexLink))
         #expect(rules.contains(.trait(.barred, hen: true, rooster: false, numerator: 1, denominator: 2)))
@@ -82,11 +82,11 @@ import Testing
         let coopHen = PlannerTests.add(
             Breed.orpington.purebred(.hen, variety: .blue), .orpington, origin: Self.shop, &s, &rng)
         Self.setEgg(from: coopHen, father: rooster, &s, &rng)
-        #expect(Inheritance.known(in: s).isEmpty)
+        #expect(InheritancePage.known(in: s).isEmpty)
         // A penned hen with no rooster in the pen.
         s.pen = [hen.id]
         Self.setEgg(from: hen, father: rooster, &s, &rng)
-        #expect(Inheritance.known(in: s).isEmpty)
+        #expect(InheritancePage.known(in: s).isEmpty)
         // A cockerel in the pen fathers nothing yet.
         let cockerel = PlannerTests.add(
             Breed.orpington.purebred(.rooster, variety: .blue), .orpington, origin: Self.shop, &s, &rng,
@@ -95,12 +95,12 @@ import Testing
         s.pen = [hen.id, cockerel.id]
         #expect(s.penRoosterGrownDay != nil)
         Self.setEgg(from: hen, father: cockerel, &s, &rng)
-        #expect(Inheritance.known(in: s).isEmpty)
+        #expect(InheritancePage.known(in: s).isEmpty)
         // Before the keeper has met the planner.
         s.pen = [hen.id, rooster.id]
         s.plannerKnown = false
         Self.setEgg(from: hen, father: rooster, &s, &rng)
-        #expect(Inheritance.known(in: s).isEmpty)
+        #expect(InheritancePage.known(in: s).isEmpty)
     }
 
     @Test func eggsUnderABroodyHenCountToo() {
@@ -111,7 +111,7 @@ import Testing
         s.carton.append(egg)
         _ = Engine.apply(.sitEggs(hen: hen.id, eggs: [egg.id]), to: &s, using: &rng)
         #expect(s.clutch(under: hen.id) != nil)
-        #expect(Inheritance.known(in: s) == [Self.blueRule])
+        #expect(InheritancePage.known(in: s) == [Self.blueRule])
     }
 
     // MARK: - Rule 8
@@ -125,7 +125,7 @@ import Testing
             var t = s
             t.plannerKnown = true
             t.pen = [hen.id, rooster.id]
-            out.append(Inheritance.rules(forHen: hen.id, in: t))
+            out.append(InheritancePage.rules(forHen: hen.id, in: t))
         }
         return out
     }
@@ -162,7 +162,7 @@ import Testing
             let mother = s.coop.first { $0.id == hen.id }!
             let father = s.coop.first { $0.id == rooster.id }!
             Self.setEgg(from: mother, father: father, &s, &rng)
-            return Inheritance.known(in: s)
+            return InheritancePage.known(in: s)
         }
         #expect(page(swapped: false) == page(swapped: true))
     }
@@ -172,7 +172,7 @@ import Testing
     @Test func oldSaveLoadsWithAnEmptyPage() throws {
         let game = try SaveFormat.decode(SaveFormatTests.fixture("save-v0"))
         #expect(game.state.seenRules.isEmpty)
-        #expect(Inheritance.known(in: game.state).isEmpty)
+        #expect(InheritancePage.known(in: game.state).isEmpty)
     }
 
     @Test func thePageSurvivesASave() throws {

@@ -39,9 +39,8 @@ public enum InheritanceRule: Hashable, Codable, Sendable {
     case sexLink
 }
 
-// `Inheritance` (Locus.swift) is how a gene passes down: autosomal or Z-linked. The page's functions
-// sit on it too, so the page reads `Inheritance.known(in:)`.
-extension Inheritance {
+/// The inheritance page's rules. Not `Inheritance` (Locus.swift), which is how a gene passes down.
+public enum InheritancePage {
     /// The page: every rule the keeper has learned, in the order first seen.
     public static func known(in s: GameState) -> [InheritanceRule] { s.seenRules }
 

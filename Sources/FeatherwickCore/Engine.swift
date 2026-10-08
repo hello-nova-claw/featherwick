@@ -755,7 +755,7 @@ public enum Engine {
     /// Callers refuse eggs already known to be clear. Incubator eggs join a clutch set earlier the same day.
     /// Eggs from a penned pair add what the pen's forecast pins to the inheritance page.
     static func setEggs(_ chosen: [Egg], hen: UUID?, hatchDay: Int, _ s: inout GameState) -> [GameEvent] {
-        Inheritance.recordSetting(chosen, &s)
+        InheritancePage.recordSetting(chosen, &s)
         let chosenIDs = Set(chosen.map(\.id))
         s.carton.removeAll { chosenIDs.contains($0.id) }
         addToClutch(chosen, hen: hen, hatchDay: hatchDay, &s)

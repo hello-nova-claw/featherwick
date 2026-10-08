@@ -31,7 +31,7 @@ public func inheritanceText(_ rule: InheritanceRule) -> String {
 
 /// The page as text lines: the heading and subtitle, then one rule a line, or the empty note. For the CLI.
 public func inheritanceLines(_ s: GameState) -> [String] {
-    let rules = Inheritance.known(in: s)
+    let rules = InheritancePage.known(in: s)
     let heading = [inheritanceTitleText, inheritanceSubtitleText]
     guard !rules.isEmpty else { return heading + ["  " + inheritanceEmptyText] }
     return heading + rules.map { "  " + inheritanceText($0) }

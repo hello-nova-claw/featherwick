@@ -241,7 +241,7 @@ struct InheritanceBook: View {
     @Environment(\.palette) private var palette
 
     var body: some View {
-        let rules = Inheritance.known(in: store.state)
+        let rules = InheritancePage.known(in: store.state)
         VStack(alignment: .leading, spacing: Space.l) {
             Text(inheritanceTitleText).font(Typeface.title)
             Text(inheritanceSubtitleText).font(Typeface.label).foregroundStyle(palette.inkMuted)

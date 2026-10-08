@@ -49,7 +49,7 @@ import Testing
                     var t = s
                     t.plannerKnown = true
                     t.pen = [hen.id, rooster.id]
-                    t.seenRules = Inheritance.rules(forHen: hen.id, in: t)
+                    t.seenRules = InheritancePage.rules(forHen: hen.id, in: t)
                     for line in inheritanceLines(t).dropFirst(2) {
                         checked += 1
                         #expect(!line.contains("%"), "\(line)")

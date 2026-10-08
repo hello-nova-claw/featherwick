@@ -356,7 +356,7 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
 - Each rule shows once, in the order first seen. Before the first rule, a dashed box says:
   "Set eggs from a pair in the pen and what you learn ends up here."
 - State: `GameState.seenRules` (an ordered list with no repeats). Old saves start empty.
-- Code: `Inheritance.swift` (`Inheritance.known(in:)`, `InheritanceRule`). Words: `inheritanceText`,
+- Code: `Inheritance.swift` (`InheritancePage.known(in:)`, `InheritanceRule`). Words: `inheritanceText`,
   `inheritanceLines` (`FeatherwickText/InheritanceText.swift`). It never reads genes: the "no genome"
   test covers this file too.
 - CLI: `inheritance` prints the page.

@@ -40,8 +40,8 @@ Key Core files:
 - One file per feature: `EarlyGame`, `BreedingPen`, `Shows`, `ShowEvent`, `Friendliness`, `Pedigree`, `Names`, `Story`,
   `Milestone`, `Jobs` (daily jobs, season goals), `Daylight` (day slots, errands, the sleep gate), `Look`, `Simulation`, `HatchWhy` (hatch-day "why" note).
 - What might hatch: `Visible` (what the keeper sees, no genes), `Knowledge` + `KnowledgeTables` (genes worked
-  out by elimination), `Planner` + `PlannerTables` (the pen forecast, carrier notes), `Inheritance` (the Books
-  page: rules learned by setting eggs from a penned pair). Never read genes there.
+  out by elimination), `Planner` + `PlannerTables` (the pen forecast, carrier notes), `Inheritance`
+  (`InheritancePage`, the Books page: rules learned by setting eggs from a penned pair). Never read genes there.
 
 ## iOS app
 
