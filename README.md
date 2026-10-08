@@ -336,6 +336,28 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
 - A bird whose sex does not show yet gets sexless words: its name, never he or she.
 - Empty until the keeper has met the planner.
 
+### Inheritance page
+
+- Books has a third tab, "Inheritance". It lists what the keeper has worked out, one rule a row.
+- A rule is a ratio, a certainty or a sex-link that the forecast gave for a penned pair.
+  Examples: "blue × blue → 1 black : 2 blue : 1 splash", "lavender × lavender → all lavender",
+  "barred hen × plain rooster → barred chicks are cockerels".
+- A rule goes on the page only when the keeper sets an egg from that pair (incubator or broody hen).
+  A forecast alone adds nothing. Seeing is not the same as trying it.
+- The pair is the egg's layer, a penned hen, with the grown rooster in the pen. The hook does not read
+  the egg's father or fertility: the keeper cannot see those before candling.
+- Nothing is added before the keeper has met the planner, for a coop hen's egg, or with a cockerel
+  (not grown yet) in the pen.
+- A rule names no bird. It says the parents' looks and what hatches. Feather-colour rules list the
+  parents in colour order, not hen first: the colour genes are not sex-linked.
+- Each rule shows once, in the order first seen. Before the first rule, a dashed box says:
+  "Set eggs from a pair in the pen and what you learn ends up here."
+- State: `GameState.seenRules` (an ordered list with no repeats). Old saves start empty.
+- Code: `Inheritance.swift` (`Inheritance.known(in:)`, `InheritanceRule`). Words: `inheritanceText`,
+  `inheritanceLines` (`FeatherwickText/InheritanceText.swift`). It never reads genes: the "no genome"
+  test covers this file too.
+- CLI: `inheritance` prints the page.
+
 ### Words, app and CLI
 
 - Words (`FeatherwickText/PlannerText.swift`): `plannerText`, `plannerReasonText`, `plannerPanelText`,
@@ -356,11 +378,13 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
 - **Soundness** (`KnowledgeTests`): for each checked pair, 10,000 real `Breeding.cross` chicks.
   "Not possible" never hatches. "Certain" always hatches. A ratio lands within 3 points of the
   real share. A sure egg-colour list and a sex-link always hold.
-- **No genome** (`KnowledgeTests`): `Knowledge.swift` and `Planner.swift` must not contain "genome",
-  "Genome" or "alleles(at:". A `Visible` holds no genes.
+- **No genome** (`KnowledgeTests`): `Knowledge.swift`, `Planner.swift` and `Inheritance.swift` must not
+  contain "genome", "Genome" or "alleles(at:". A `Visible` holds no genes.
 - **Speed:** `Knowledge.of` for 40 birds under 1 ms in release, 25 ms in debug. A full pen panel
   under 5 ms in release, 100 ms in debug.
 - `PlannerTests` and `PlannerTests+Unlock` check each kind of line, the panel, the unlock and old saves.
+- `InheritanceTests` checks the page: a rule only after eggs are set, no repeats, look-alike genomes
+  give the same page, old saves load. `InheritanceTextTests` checks that no rule text names a bird.
   `PlannerTextTests` checks the words: no percentages, no sexed words for an unrevealed bird.
 - The full `swift test` takes about 20 minutes.
 

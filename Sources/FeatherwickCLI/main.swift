@@ -126,6 +126,7 @@ let help = """
       plan                 what might hatch from the pen (once the neighbour has shown you)
       plan <hen> <rooster> what might hatch from any hen and rooster
       carries <name>       what a bird surely carries but does not show
+      inheritance          what you have learned from setting eggs from a pair in the pen
       upgrade coop         add \(game.state.rules.perchesPerUpgrade) perches (\(game.state.rules.coopUpgradePrice) coins)
       close                shut the coop door (safe from the fox, but you must feed)
       rest                 sit a while: spends one slot of daylight
@@ -335,6 +336,8 @@ while true {
             family: family, kinship: Pedigree.relatedness(hen.id, rooster.id, in: s), rules: s.rules)
         print("\(hen.name) with \(rooster.name):")
         pairLines(forecast, s, pair: (hen.id, rooster.id)).forEach { print("  " + $0) }
+    case "inheritance":
+        inheritanceLines(game.state).forEach { print($0) }
     case "carries":
         guard game.state.plannerKnown else {
             print(plannerNotYetText(game.state))

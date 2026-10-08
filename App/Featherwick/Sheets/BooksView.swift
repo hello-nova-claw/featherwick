@@ -8,19 +8,22 @@ struct BooksView: View {
     @Environment(\.palette) private var palette
     @State private var tab = BookTab.breeds
 
-    enum BookTab: Hashable { case breeds, eggs }
+    enum BookTab: Hashable { case breeds, eggs, inheritance }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Space.l) {
                 HStack {
-                    WordTabs(tabs: [(.breeds, "Breeds"), (.eggs, "Eggs")], selection: $tab)
+                    WordTabs(
+                        tabs: [(.breeds, "Breeds"), (.eggs, "Eggs"), (.inheritance, inheritanceTitleText)],
+                        selection: $tab)
                     Spacer()
                     CloseButton()
                 }
                 switch tab {
                 case .breeds: BreedBook()
                 case .eggs: EggBook()
+                case .inheritance: InheritanceBook()
                 }
             }
             .padding(.horizontal, Space.sheetSide)
@@ -227,6 +230,39 @@ struct EggBook: View {
         case .olive: "Cross an Araucana with a brown-egg breed. Some of the hens lay olive eggs."
         case .chocolate: "Very dark brown eggs. Rare in Featherwick."
         case .green: "Cross an Araucana with a brown-egg breed. Some of the hens lay green eggs."
+        }
+    }
+}
+
+/// What the keeper has worked out from setting eggs from a penned pair: one row per rule, in the order
+/// first seen. A dashed box says how to fill the page before the first rule.
+struct InheritanceBook: View {
+    @Environment(GameStore.self) private var store
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        let rules = Inheritance.known(in: store.state)
+        VStack(alignment: .leading, spacing: Space.l) {
+            Text(inheritanceTitleText).font(Typeface.title)
+            if rules.isEmpty {
+                Text(inheritanceEmptyText)
+                    .font(Typeface.serifItalic(14, relativeTo: .footnote))
+                    .foregroundStyle(palette.inkMuted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(Space.l)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Radius.tile).stroke(palette.unknownBox, style: Stitch.unknown))
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(rules, id: \.self) { rule in
+                        Text(sentenceCase(inheritanceText(rule)))
+                            .font(Typeface.body)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, Space.m)
+                        StitchDivider()
+                    }
+                }
+            }
         }
     }
 }
