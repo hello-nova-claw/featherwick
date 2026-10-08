@@ -50,4 +50,12 @@ struct MilestoneTests {
         #expect(events.contains(.milestoneReached("greenEgg")))
         #expect(events.contains(.milestoneReached("chocolateEgg")))
     }
+
+    @Test func aWhiteEggIsAMilestone() {
+        var (s, _) = startedGame(sex: .hen)
+        #expect(!Engine.advanceMilestones(&s).contains(.milestoneReached("whiteEgg")))
+        s.eggBook.insert(EggBookEntry(colour: .white, speckled: false))
+        #expect(Engine.advanceMilestones(&s).contains(.milestoneReached("whiteEgg")))
+        #expect(Milestones.all.last?.id == "whiteEgg")  // appended: the ladder order of saves stays
+    }
 }

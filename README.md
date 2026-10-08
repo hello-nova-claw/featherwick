@@ -807,7 +807,7 @@ To add one: one `Storyline` in `Storylines.all`, plus its words in the UI.
 ## Goal ladder
 
 `Milestone.swift`. Small, always-visible goals that give the no-loss sandbox a direction: first
-egg, first hatch, a blue/olive/speckled/chocolate/green egg, a growing flock, a show ribbon, a lap chicken, a
+egg, first hatch, a blue/olive/speckled/chocolate/green/white egg, a growing flock, a show ribbon, a lap chicken, a
 finished storyline, a hen into retirement, a right "hen or roo?" guess. Cozy rule: a milestone is only ever *reached*, never
 failed — no deadlines, nothing lost by missing one.
 
