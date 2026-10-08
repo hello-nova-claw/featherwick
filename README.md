@@ -37,7 +37,7 @@ errands left. See "Daylight and errands".
 the neighbour, new stock, the show, jobs, the season goal, eggs, other) for the app's morning report.
 Every event lands in exactly one group. IDs and events only; the words come from `eventText`.
 
-Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note, and the first why note opens "What might hatch"; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
+Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals ("hen or roo?" guesses settle as the sex shows) → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note, and the first why note opens "What might hatch"; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
 
 ## The early game (tutorial timeline)
 
@@ -336,6 +336,31 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
 - A bird whose sex does not show yet gets sexless words: its name, never he or she.
 - Empty until the keeper has met the planner.
 
+### Inheritance page
+
+- Books has a third tab, "Inheritance". It lists what the keeper has worked out, one rule a row.
+- A rule is a ratio, a certainty or a sex-link that the forecast gave for a penned pair.
+  Examples: "blue × blue → 1 black : 2 blue : 1 splash", "lavender × lavender → all lavender",
+  "barred hen × plain rooster → barred chicks are cockerels".
+- A rule goes on the page only when the keeper sets an egg from that pair (incubator or broody hen).
+  A forecast alone adds nothing. Seeing is not the same as trying it.
+- The pair is the egg's layer, a penned hen, with the grown rooster in the pen. The hook does not read
+  the egg's father or fertility: the keeper cannot see those before candling.
+- Nothing is added before the keeper has met the planner, for a coop hen's egg, or with a cockerel
+  (not grown yet) in the pen.
+- A rule names no bird. It says the parents' looks and what hatches. Feather-colour rules list the
+  parents in colour order, not hen first: the colour genes are not sex-linked.
+- The page heading is "Inheritance", with "What your pairs have shown" under it. A rule is true for
+  the pair it came from. It is not a law for every bird with the same look: two black birds can hide
+  different genes.
+- Each rule shows once, in the order first seen. Before the first rule, a dashed box says:
+  "Set eggs from a pair in the pen and what you learn ends up here."
+- State: `GameState.seenRules` (an ordered list with no repeats). Old saves start empty.
+- Code: `Inheritance.swift` (`InheritancePage.known(in:)`, `InheritanceRule`). Words: `inheritanceText`,
+  `inheritanceLines` (`FeatherwickText/InheritanceText.swift`). It never reads genes: the "no genome"
+  test covers this file too.
+- CLI: `inheritance` prints the page.
+
 ### Words, app and CLI
 
 - Words (`FeatherwickText/PlannerText.swift`): `plannerText`, `plannerReasonText`, `plannerPanelText`,
@@ -356,11 +381,13 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
 - **Soundness** (`KnowledgeTests`): for each checked pair, 10,000 real `Breeding.cross` chicks.
   "Not possible" never hatches. "Certain" always hatches. A ratio lands within 3 points of the
   real share. A sure egg-colour list and a sex-link always hold.
-- **No genome** (`KnowledgeTests`): `Knowledge.swift` and `Planner.swift` must not contain "genome",
-  "Genome" or "alleles(at:". A `Visible` holds no genes.
+- **No genome** (`KnowledgeTests`): `Knowledge.swift`, `Planner.swift` and `Inheritance.swift` must not
+  contain "genome", "Genome" or "alleles(at:". A `Visible` holds no genes.
 - **Speed:** `Knowledge.of` for 40 birds under 1 ms in release, 25 ms in debug. A full pen panel
   under 5 ms in release, 100 ms in debug.
 - `PlannerTests` and `PlannerTests+Unlock` check each kind of line, the panel, the unlock and old saves.
+- `InheritanceTests` checks the page: a rule only after eggs are set, no repeats, look-alike genomes
+  give the same page, old saves load. `InheritanceTextTests` checks that no rule text names a bird.
   `PlannerTextTests` checks the words: no percentages, no sexed words for an unrevealed bird.
 - The full `swift test` takes about 20 minutes.
 
@@ -614,6 +641,27 @@ breeds) + 60% learned tameness. Bands: wild, skittish, friendly, lap chicken.
 - A fox fright and days lost lower tameness. Neglect never does.
 - Effects: half of the pet show class; lap chickens rehome for more.
 
+### Hen or roo?
+
+`SexGuess.swift`. Before a chick's sex shows, the keeper may guess it. This is a cuddle-time game.
+
+- `guessSex(bird, sex)`: once per chick. It is free. It costs no daylight and no coins, and no
+  early-game lesson gates it.
+- The chick must be younger than `growerAge` and its sex must not show yet. If not, the refusal is
+  `.tooLateToGuess`. A second guess is `.alreadyGuessed`. An unknown bird is `.noSuchBird`.
+- The guess is kept in `GameState.sexGuesses`. The app shows "You said hen" on the bird card.
+- On the morning the sex shows (night step "growth and reveals"), the engine emits
+  `.sexGuessResolved(bird, guessed:, actual:)` after `.revealed`. A right guess pays
+  `Rules.sexGuessTreats` (1 mealworm) into the treat bag. A wrong guess costs nothing. The guess is cleared.
+- A chick that leaves before that morning (rehomed, for example) takes its guess with it. There is no event.
+- The first right guess reaches the "Guessed hen or roo right" milestone (`henOrRoo`).
+- Rule 8: the guess reveals nothing. The refusals depend on age and the guess only, never on sex.
+  The reward comes only on the morning the sex shows anyway. No new clues: the barred head spot
+  (`Look`) and the planner's sex-link line stay the only ones.
+- No randomness. A guess does not change a seeded game.
+- CLI: `guess <name> hen|roo`. The words are the neighbour's ("You said hen, and she is. Well spotted.
+  Have a mealworm.").
+
 ## Flock turnover and feed
 
 Hens slow and retire with age, so breeding keeps mattering (`Rules.layAgeFactor`, `Bird.isRetired`).
@@ -702,7 +750,7 @@ too) stay in the state; outside parents, such as those of a bought egg, are kept
   with "lacks vigour".
 - CLI: `tree <name>`, `kin <name> <name>`.
 
-## Names
+## Names and quirks
 
 `Names.swift`. Birds you hatch or buy arrive with `needsName`; the UI asks for a name at once,
 with a suggestion (Enter takes it). Birds given by people (gift hen, trade hen, story gifts)
@@ -716,6 +764,11 @@ arrive already named by their keeper. Any bird you own can be renamed any time, 
   A chick whose sex is still hidden gets a neutral suggestion, so the name never gives it away.
 - A bird still unnamed after `autoNameNights` takes its suggestion (see "Birds never wait forever").
 - The app shows "needs a name" under the Coop button.
+- Quirks (`Quirks.swift`, words in `quirkText`) are small habits for flavour, such as "Dust-bath lover".
+  They change no rule and are not saved. They come from the bird's ID, like a name suggestion.
+  Every bird has two neutral quirks for life. When its sex shows, about half of birds
+  (`quirkSexShare`) gain a third quirk for their sex. So a chick's quirks never give its sex away.
+  The bird card shows them under the facts.
 
 ## Storylines
 
@@ -740,7 +793,7 @@ To add one: one `Storyline` in `Storylines.all`, plus its words in the UI.
 
 `Milestone.swift`. Small, always-visible goals that give the no-loss sandbox a direction: first
 egg, first hatch, a blue/olive/speckled/chocolate/green egg, a growing flock, a show ribbon, a lap chicken, a
-finished storyline, a hen into retirement. Cozy rule: a milestone is only ever *reached*, never
+finished storyline, a hen into retirement, a right "hen or roo?" guess. Cozy rule: a milestone is only ever *reached*, never
 failed — no deadlines, nothing lost by missing one.
 
 - Each `Milestone` is an id plus a test read from existing, player-visible state (so none can leak
@@ -808,7 +861,7 @@ Sleep waits until every slot is spent, and nothing is ever lost: a refused erran
 
 | Cost | Commands | Errand |
 | --- | --- | --- |
-| Free, never refused for time | `chooseStarter`, `feed`, `feedPremium`, `collectEggs`, `sellEggs`, `sellChosenEggs`, `sellClearEggs`, `closeCoop`, `pet`, `giveTreat`, `rename`, `incubate`, `incubateEggs`, `sit`, `sitEggs`, `penBird`, `unpenBird` | none |
+| Free, never refused for time | `chooseStarter`, `feed`, `feedPremium`, `collectEggs`, `sellEggs`, `sellChosenEggs`, `sellClearEggs`, `closeCoop`, `pet`, `giveTreat`, `guessSex`, `rename`, `incubate`, `incubateEggs`, `sit`, `sitEggs`, `penBird`, `unpenBird` | none |
 | One slot | `buy`, `buySpecial`, `buyIncubator` | `.village` (Speckle & Down) |
 | One slot | `candle`, `candleEgg` | `.candling` |
 | One slot | `enterShow`, `enterShowIn`, `enterEggs`, `enterEggPlate` | `.showDesk` |

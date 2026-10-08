@@ -37,10 +37,11 @@ Key Core files:
 - `GameState.swift`, `Genome.swift`, `Locus.swift`, `Alleles.swift`, `Phenotype.swift`: state and genetics.
 - `BreedTable.swift`, `Breed.swift`: breeds and colour varieties (data tables).
 - `SaveFormat.swift` (versions, migrations), `SaveStore.swift` (slots, atomic writes, backups).
-- One file per feature: `EarlyGame`, `BreedingPen`, `Shows`, `ShowEvent`, `Friendliness`, `Pedigree`, `Names`, `Story`,
+- One file per feature: `EarlyGame`, `BreedingPen`, `Shows`, `ShowEvent`, `Friendliness`, `SexGuess` ("hen or roo?"), `Pedigree`, `Names`, `Quirks`, `Story`,
   `Milestone`, `Jobs` (daily jobs, season goals), `Daylight` (day slots, errands, the sleep gate), `Look`, `Simulation`, `HatchWhy` (hatch-day "why" note).
 - What might hatch: `Visible` (what the keeper sees, no genes), `Knowledge` + `KnowledgeTables` (genes worked
-  out by elimination), `Planner` + `PlannerTables` (the pen forecast, carrier notes). Never read genes there.
+  out by elimination), `Planner` + `PlannerTables` (the pen forecast, carrier notes), `Inheritance`
+  (`InheritancePage`, the Books page: rules learned by setting eggs from a penned pair). Never read genes there.
 
 ## iOS app
 

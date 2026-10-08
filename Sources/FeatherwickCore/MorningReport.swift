@@ -94,13 +94,14 @@ public struct MorningReport: Hashable, Sendable {
         case .eggLaid, .eggBroken, .noEggsHungry, .newEggBookEntry, .wentBroody, .broodyEnded,
             .roostersSquabbling:
             return .eggs
-        case .grewUp, .revealed, .newBreedBookEntry, .movedToCoop, .needsHome, .boardingWithNeighbour,
+        case .grewUp, .revealed, .sexGuessResolved, .newBreedBookEntry, .movedToCoop, .needsHome,
+            .boardingWithNeighbour,
             .rehomedByNeighbour, .namedForYou, .birdRetired, .friendlierNow, .handled,
             // Player actions: never at night.
             .rejected, .starterChosen, .fed, .eggsCollected, .eggsSold, .coopClosed, .incubatorBought,
             .candled, .eggsSet, .renamed, .rehomed, .coopUpgraded, .boughtBird, .boughtEgg, .tradeAccepted,
             .boughtTreats, .boughtPremiumFeed, .fedPremium, .boughtSpecial, .birdPenned, .birdUnpenned, .slotSpent,
-            .rested, .keeperNamed:
+            .rested, .keeperNamed, .sexGuessed:
             return .other
         }
     }

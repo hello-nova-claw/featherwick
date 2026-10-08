@@ -60,6 +60,8 @@ public enum Command: Hashable, Codable, Sendable {
     case openPlanner
     /// The keeper's own name, for the neighbour and the shop to use. Any time, even before the starter.
     case nameKeeper(String)
+    /// "Hen or roo?": guess a chick's sex before it shows (see SexGuess.swift). Once per chick, free.
+    case guessSex(UUID, Sex)
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -141,6 +143,10 @@ public enum Rejection: Hashable, Codable, Sendable {
     case timeForBed
     /// A keeper's name needs at least one letter.
     case blankName
+    /// The chick's sex shows already, or it is past the age for a guess. Fires on age, never on sex.
+    case tooLateToGuess
+    /// The keeper has already guessed hen or roo for this chick.
+    case alreadyGuessed
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -272,6 +278,11 @@ public enum GameEvent: Hashable, Codable, Sendable {
     /// The breeding pen is open, and "What might hatch" with it, for a keeper who has not had a surprise
     /// chick yet (see `EarlyGame.swift`). Once a game, like `plannerIntroduced`.
     case plannerShownAtPen
+    /// The keeper guessed hen or roo for a chick (see SexGuess.swift).
+    case sexGuessed(UUID, Sex)
+    /// The morning the chick's sex showed: the keeper's guess and the truth. A right guess paid
+    /// `Rules.sexGuessTreats`. Comes after the chick's `revealed`.
+    case sexGuessResolved(UUID, guessed: Sex, actual: Sex)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -310,6 +321,8 @@ public enum Engine {
         datePages(after: ev, &s)
         // A bird that left the coop (rehomed, traded, scared off) leaves the pen too: no stale ids.
         leavePenIfGone(&s)
+        // A guess goes with a bird that left, silently (see SexGuess.swift).
+        dropStaleSexGuesses(&s)
         // Today's jobs tick off as the keeper does them. The night sets new ones itself.
         if command == .passNight { return ev }
         return ev + progressJobs(after: ev, &s)
@@ -536,6 +549,8 @@ public enum Engine {
             // Before the keeper has met the planner there is nothing to open, and the notice must wait.
             if s.plannerKnown { s.plannerOpened = true }
             return []
+        case .guessSex(let id, let sex):
+            return guessSex(id, sex, &s)
         }
     }
 
@@ -761,7 +776,9 @@ public enum Engine {
     /// So a clear egg that was not candled first sits the full time and comes back on hatch day
     /// (`hatchDue`). The keeper who candles first saves the space and the wait.
     /// Callers refuse eggs already known to be clear. Incubator eggs join a clutch set earlier the same day.
+    /// Eggs from a penned pair add what the pen's forecast pins to the inheritance page.
     static func setEggs(_ chosen: [Egg], hen: UUID?, hatchDay: Int, _ s: inout GameState) -> [GameEvent] {
+        InheritancePage.recordSetting(chosen, &s)
         let chosenIDs = Set(chosen.map(\.id))
         s.carton.removeAll { chosenIDs.contains($0.id) }
         addToClutch(chosen, hen: hen, hatchDay: hatchDay, &s)
@@ -973,12 +990,15 @@ public enum Engine {
         var brooder = s.brooder
         var henChicks = s.henChicks
         var coop = s.coop
-        ev += grow(&brooder, day: s.day, rules: r, book: &s.breedBook)
-        ev += grow(&henChicks, day: s.day, rules: r, book: &s.breedBook)
-        ev += grow(&coop, day: s.day, rules: r, book: &s.breedBook)
+        var growth = grow(&brooder, day: s.day, rules: r, book: &s.breedBook)
+        growth += grow(&henChicks, day: s.day, rules: r, book: &s.breedBook)
+        growth += grow(&coop, day: s.day, rules: r, book: &s.breedBook)
         s.brooder = brooder
         s.henChicks = henChicks
         s.coop = coop
+        ev += growth
+        // 4a. "Hen or roo?": the sex shows today, so the keeper's guess is settled (see SexGuess.swift).
+        ev += resolveSexGuesses(after: growth, &s)
         ev += neighbourGiftIfNeeded(&s, &rng)
 
         // 4b. A known-fertile egg in the carton and no incubator (a save from before the gift came

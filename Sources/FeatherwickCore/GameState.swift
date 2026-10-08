@@ -192,6 +192,15 @@ public struct GameState: Hashable, Codable, Sendable {
     public var plannerKnown = false
     /// True once the keeper has opened the "What might hatch" panel. The pen shows a notice until then.
     public var plannerOpened = false
+    /// The inheritance page (see Inheritance.swift): rules the keeper learned by setting eggs from a
+    /// penned pair, in the order first seen, each once. An array, not a set, to keep that order.
+    /// Empty in saves from before the page.
+    public var seenRules: [InheritanceRule] = []
+    /// "Hen or roo?" guesses for chicks whose sex does not show yet (see SexGuess.swift). Cleared on
+    /// the morning the sex shows, or when the chick leaves.
+    public var sexGuesses: [UUID: Sex] = [:]
+    /// Guesses that turned out right. The goal ladder reads it.
+    public var sexGuessesRight = 0
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

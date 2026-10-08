@@ -119,6 +119,7 @@ let help = """
       buy feed             a sack of premium feed (several days)
       pet <name>           pick a bird up and hold it (once a day; chicks learn trust fastest)
       treat <name>         give a bird a treat from your hand (once a day)
+      guess <name> hen|roo guess a young chick's sex before it shows (once; a right guess wins a mealworm)
       accept trade         accept a neighbour's offer of a hen for a rooster
       pen                  the breeding pen: one rooster fathers the eggs of the hens with him
       pen <name>           put a coop bird in the breeding pen (it keeps its perch)
@@ -126,6 +127,7 @@ let help = """
       plan                 what might hatch from the pen (once the neighbour has shown you)
       plan <hen> <rooster> what might hatch from any hen and rooster
       carries <name>       what a bird surely carries but does not show
+      inheritance          what you have learned from setting eggs from a pair in the pen
       upgrade coop         add \(game.state.rules.perchesPerUpgrade) perches (\(game.state.rules.coopUpgradePrice) coins)
       close                shut the coop door (safe from the fox, but you must feed)
       rest                 sit a while: spends one slot of daylight
@@ -296,6 +298,20 @@ while true {
             break
         }
         run(verb == "treat" ? .giveTreat(bird.id) : .pet(bird.id))
+    case "guess":
+        let guesses: [String: Sex] = ["hen": .hen, "roo": .rooster, "rooster": .rooster]
+        guard words.count > 2, let guess = guesses[words[words.count - 1]] else {
+            print("Use: guess <name> hen|roo")
+            break
+        }
+        // Lost birds too, as the engine allows: a guess is about the chick, not where it is.
+        guard
+            let bird = findBird(words.dropFirst().dropLast().joined(separator: ""), game.state, includeLost: true)
+        else {
+            print("There is no bird called \(words.dropFirst().dropLast().joined(separator: " ")).")
+            break
+        }
+        run(.guessSex(bird.id, guess))
     case "pen", "unpen":
         guard words.count > 1 else {
             if verb == "pen" { penLines(game.state).forEach { print($0) } } else { print("Use: unpen <name>") }
@@ -335,6 +351,8 @@ while true {
             family: family, kinship: Pedigree.relatedness(hen.id, rooster.id, in: s), rules: s.rules)
         print("\(hen.name) with \(rooster.name):")
         pairLines(forecast, s, pair: (hen.id, rooster.id)).forEach { print("  " + $0) }
+    case "inheritance":
+        inheritanceLines(game.state).forEach { print($0) }
     case "carries":
         guard game.state.plannerKnown else {
             print(plannerNotYetText(game.state))
