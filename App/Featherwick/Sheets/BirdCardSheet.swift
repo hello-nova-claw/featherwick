@@ -2,7 +2,7 @@ import FeatherwickCore
 import FeatherwickText
 import SwiftUI
 
-/// 2a / 2b: one bird. Art, name, breed line, four facts, what it is proven to carry, show notes, then
+/// 2a / 2b: one bird. Art, name, breed line, four facts, its quirks, what it is proven to carry, show notes, then
 /// Cuddle and Treat.
 struct BirdCardSheet: View {
     @Environment(GameStore.self) private var store
@@ -34,6 +34,7 @@ struct BirdCardSheet: View {
                 .frame(maxWidth: .infinity)
                 facts(bird, s)
                     .padding(.vertical, Space.l)
+                quirks(bird, s)
                 CarrierLines(birdID: birdID)
                 showNotes(bird, s)
                 ribbons(bird, s)
@@ -89,6 +90,21 @@ struct BirdCardSheet: View {
                 }
                 laysFact(bird, stage, s)
             }
+        }
+    }
+
+    /// The bird's little habits, one quiet line each. Flavour only; a chick's say nothing of its sex.
+    @ViewBuilder
+    private func quirks(_ bird: Bird, _ s: GameState) -> some View {
+        let lines = quirkLines(bird, s)
+        if !lines.isEmpty {
+            VStack(alignment: .leading, spacing: Space.xs) {
+                ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                    Text(line).font(Typeface.note).foregroundStyle(palette.inkSoft)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.bottom, Space.l)
         }
     }
 
