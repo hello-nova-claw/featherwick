@@ -879,7 +879,7 @@ import Testing
     }
 
     /// The files that reason about hidden genes, and what they may never contain.
-    static let blindFiles = ["Knowledge.swift", "Planner.swift"]
+    static let blindFiles = ["Knowledge.swift", "Planner.swift", "Inheritance.swift"]
     static let forbidden = ["genome", "Genome", "alleles(at:"]
 
     @Test func knowledgeSourceNeverReadsGenes() throws {

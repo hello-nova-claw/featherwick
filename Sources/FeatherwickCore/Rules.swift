@@ -11,6 +11,10 @@ public struct Rules: Codable, Hashable, Sendable {
     public var homeWaitNights = 3
     /// Nights a new bird waits for a name. Then it takes the suggested name; the player can rename it.
     public var autoNameNights = 2
+    /// Mealworms for a right "hen or roo?" guess, paid the morning the sex shows (see SexGuess.swift).
+    public var sexGuessTreats = 1
+    /// Share of birds that gain a third quirk, from their sex's set, once their sex shows (`Quirks`).
+    public var quirkSexShare = 0.5
 
     // Seasons
     public var daysPerSeason = 28
@@ -208,6 +212,10 @@ public struct Rules: Codable, Hashable, Sendable {
     public var plannerNotPossibleLines = 4
     /// The largest "in N" a ratio line uses (2, 4, 8 or 16). Finer shares are "possible" instead.
     public var plannerMaxRatioDenominator = 16
+
+    // Flock record book (see Records.swift).
+    /// Days behind the "last N days" egg count.
+    public var recordWindowDays = 14
 
     public init() {}
 

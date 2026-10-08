@@ -194,6 +194,8 @@ enum Typeface {
     static let note = serifItalic(17)
     static let place = serif(18, relativeTo: .title3)
     static let item = serif(17)
+    /// A name in a table row, such as a hen in the record book.
+    static let rowName = serif(15)
     static let body = sans(16)
     static let action = sansMedium(16)
     static let label = sans(13, relativeTo: .footnote)

@@ -417,6 +417,45 @@ struct BreedingPenTextTests {
         }
     }
 
+    // MARK: Hen or roo?
+
+    @Test func theGuessHasTheNeighboursWords() {
+        var rng = SeededRNG(seed: 5)
+        var s = Engine.newGame(earlyGame: false, using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        let pip = s.brooder[0].id
+        func words(_ guessed: Sex, _ actual: Sex) -> String {
+            eventText(.sexGuessResolved(pip, guessed: guessed, actual: actual), s) ?? ""
+        }
+        #expect(words(.hen, .hen).hasSuffix("\"You said hen, and she is. Well spotted. Have a mealworm.\""))
+        #expect(
+            words(.hen, .rooster).hasSuffix(
+                "\"You said hen. He's a cockerel, as it turns out. They fool everyone at that age.\""))
+        #expect(words(.rooster, .rooster).hasSuffix("\"You said roo, and he is. Well spotted. Have a mealworm.\""))
+        #expect(
+            words(.rooster, .hen).hasSuffix(
+                "\"You said roo. She's a pullet, as it turns out. They fool everyone at that age.\""))
+        for (g, a) in [(Sex.hen, Sex.hen), (.hen, .rooster), (.rooster, .hen), (.rooster, .rooster)] {
+            #expect(words(g, a).contains("Pip"))
+        }
+        for e in [GameEvent.sexGuessed(pip, .hen), .sexGuessed(pip, .rooster)] {
+            #expect(eventText(e, s)?.contains("Pip") == true)
+        }
+    }
+
+    /// Rule 8: a refused guess says nothing about which sex the bird is.
+    @Test func theGuessRefusalsDoNotNameASex() {
+        var rng = SeededRNG(seed: 3)
+        let s = Engine.newGame(earlyGame: false, using: &rng)
+        for r in [Rejection.tooLateToGuess, .alreadyGuessed] {
+            let words = (eventText(.rejected(r), s) ?? "").lowercased()
+            #expect(!words.isEmpty)
+            for sexWord in ["hen", "rooster", "roo ", "cockerel", "pullet", " she ", " he ", "her ", "him"] {
+                #expect(!words.contains(sexWord), "\(r) \(sexWord)")
+            }
+        }
+    }
+
     // MARK: Daylight
 
     @Test func everyDaylightRefusalAndEventHasWords() {
