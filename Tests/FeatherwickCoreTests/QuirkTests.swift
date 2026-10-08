@@ -82,6 +82,14 @@ struct QuirkTests {
         #expect(Quirk.alwaysLastToBed.rawValue == "alwaysLastToBed")
     }
 
+    /// A save made before quirks had no `quirkSexShare`: it loads with the starting share.
+    @Test func anOldSaveGetsTheStartingQuirkShare() throws {
+        let data = try SaveFormatTests.fixture("save-v0")
+        #expect(!String(decoding: data, as: UTF8.self).contains("quirkSexShare"))
+        let game = try SaveFormat.decode(data)
+        #expect(game.state.rules.quirkSexShare == 0.5)
+    }
+
     // MARK: - No effect on the game
 
     /// One seeded game played by a simple keeper. With `look`, every bird's quirks are read
