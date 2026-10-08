@@ -151,7 +151,8 @@ public enum Planner {
 
 extension Trait {
     /// Every trait the planner forecasts, in the order its lines are listed. Egg colours are coarse
-    /// (cream, brown, blue, green): how dark a brown or green egg is comes from many small genes.
+    /// (cream, brown, blue, green): how dark a brown or green egg is, and whether a cream egg is
+    /// white, comes from many small genes.
     public static let planned: [Trait] =
         FeatherColour.allCases.map { .colour($0) } + [.barred, .laced, .silkieFeathered]
         + [EggColour.cream, .brown, .blue, .green].map { .eggColour($0) } + [.speckledEggs]

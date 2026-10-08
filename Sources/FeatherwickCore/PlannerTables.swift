@@ -23,12 +23,13 @@ extension Trait {
 }
 
 extension EggColour {
-    /// The colour the single genes decide: chocolate is a dark brown and olive a dark green.
-    /// How dark is the brown-depth trait, which the planner does not forecast.
+    /// The colour the single genes decide: chocolate is a dark brown, olive a dark green and white
+    /// an untinted cream. How dark is the brown-depth trait, which the planner does not forecast.
     public var coarse: EggColour {
         switch self {
         case .chocolate: .brown
         case .olive: .green
+        case .white: .cream
         default: self
         }
     }

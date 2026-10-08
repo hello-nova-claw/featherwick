@@ -227,6 +227,7 @@ struct EggBook: View {
         case .olive: "Cross an Araucana with a brown-egg breed. Some of the hens lay olive eggs."
         case .chocolate: "Very dark brown eggs. Rare in Featherwick."
         case .green: "Cross an Araucana with a brown-egg breed. Some of the hens lay green eggs."
+        case .white: "Shells with no tint at all. Rare in Featherwick."
         }
     }
 }

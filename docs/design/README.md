@@ -81,6 +81,7 @@ Implement as asset-catalog colours with an "Any / Dark" pair, driven by the game
 | Olive | `#868755` | with darker speckles `#5C5D37` so it never reads as brown |
 | Chocolate | `#5E3A26` | `#6E4630`, `#5E3A26`, `#4A2B1B` |
 | Green | `#9DB58E` | `#B5C9A6`, `#9DB58E` |
+| White | `#FAF8F3` (paler and cooler than cream, so the two read apart; the ink outline shows it on paper) | `#FDFCF9`, `#FAF8F3` |
 
 ### Typography
 Fonts (Google Fonts, OFL): **Libre Caslon Display**, **Libre Caslon Text** (regular and italic), **Figtree** (300, 400, 500).
@@ -209,7 +210,7 @@ Chick art, "Just hatched in the brooder", the question "What shall we call her?"
 Tabs "Breeds | Eggs", close. Title "Breed Book", progress "7 of 24 breeds, 12 of 120 colours". A 3-column grid of collection tiles in a fixed order, so gaps show where unfound breeds belong. Colour dots on a tile: filled for a colour you have owned, pale with a dashed rim for a colour only seen on a show podium, dashed and empty for a colour still to find. A breed only seen at a show gets its tile, with "seen at a show" in italic under the name. Under the grid, "Seen at shows" lists each seen look with its show ("Seen at the Summer Fete, day 28"). A look you own later moves out of that list.
 
 ### 4b — Egg Book (full screen)
-Same header with the Eggs tab selected. "9 of 20 shades found". One row per egg colour, in `EggColour` order (Cream, Brown, Blue, Olive, Chocolate, Green): name and "n of 5", then 5 egg shapes, filled if found and dashed if not. An italic hint appears on rows that are still empty.
+Same header with the Eggs tab selected. "9 of 20 shades found". One row per egg colour, in `EggColour` order (Cream, Brown, Blue, Olive, Chocolate, Green, White): name and "n of 5", then 5 egg shapes, filled if found and dashed if not. An italic hint appears on rows that are still empty.
 
 ### 5a — Egg carton (sheet, top at 140pt)
 Title "Today's eggs", filters (All 7 / Fertile / Clear / Not candled). The carton is a 6×2 grid of 1pt cups inside a dashed tray. Candling mark on each cup: **filled ink dot = fertile, hollow ring = clear, no mark = not candled**, with a legend underneath. Tap cups to choose eggs (1.5pt ink ring); tap again to put one back. One egg chosen: the detail row shows a large egg, "Blue egg" and "From Juniper. Fertile, candled this morning." More than one: "3 eggs chosen". Actions act on exactly the chosen eggs: **Set 3 to hatch** (primary) and **Sell 3** (secondary with price). With none chosen, the secondary is **Sell all**. Before the keeper learns to candle, an unknown egg shows "?" in its cup, the legend says "?: can't tell yet" and the filters are hidden. After the lesson, choose one egg that is not candled and tap "Candle this egg". Setting eggs never candles them: an egg that is not candled goes in, and a clear one comes back on hatch day. When the chosen eggs cannot hatch, replace the Set to hatch button with the reason (clear egg, room for 2 more). With no incubator, there is no Set to hatch button. The coop shows no incubator and no hint about one until the keeper has one. The incubator takes more eggs on the same day until it is full.

@@ -272,7 +272,7 @@ and in "likely no" lines ("Likely no blue eggs").
   their parents, grandparents or seen chicks showed. Other traits get no line. "Likely no" lines too
   cover only traits a bird can hide, and egg colours.
 - Egg colours are coarse: cream, brown, blue, green. How dark a brown or green egg is comes from
-  many small genes. The planner does not forecast it.
+  many small genes. The planner does not forecast it. White counts as cream, for the same reason.
 - Never a percentage or a decimal. Ratios read "about 1 in 4".
 
 ### Reasons
@@ -437,23 +437,36 @@ Depth is a share from 0 to 1 (the "+" alleles out of 20).
 
 | Blue shell | Brown coating | Depth | Egg |
 | --- | --- | --- | --- |
-| no | no | any | cream |
+| no | no | up to `Rules.whiteShellDepth` (0.05) | white |
+| no | no | above 0.05 | cream |
 | no | yes | up to `Rules.chocolateShellDepth` (0.8) | brown |
 | no | yes | above 0.8 | chocolate |
 | yes | no | any | blue |
 | yes | yes | below `Rules.oliveShellDepth` (0.4) | green |
 | yes | yes | 0.4 or more | olive |
 
+- The base shell is white. Real tint and brown are one pigment, laid down by many genes. So with no
+  coating, depth is the faint tint that makes an egg cream. 0.05 is one "+" allele of 20, or none.
 - The thresholds are static numbers on `Rules`. They are the same in every game, because the
   egg colour is part of the bird's look and `Phenotype` reads no rules.
 - Depth is half from each parent, like show type. Keepers can select for darker eggs.
 - Each breed has a depth (`BreedDefinition.brownDepth`). A purebred gets exactly that share. A bird
   from outside the flock draws each depth gene with that chance, from its own ID.
-  Marans 0.9 (chocolate), Orpington, Wyandotte and Australorp 0.5, Araucana and Silkie 0.2.
+  Marans 0.9 (chocolate), Orpington, Wyandotte and Australorp 0.5, Araucana and Silkie 0.2,
+  Leghorn 0 (white).
 - So Araucana x Orpington gives mostly green eggs, and Araucana x Marans gives olive eggs.
+- Leghorn x Silkie gives pale cream eggs (depth 0.1). Bred on, about 5 in 16 daughters lay white.
+  Back to a Leghorn, about 3 in 4 do.
+- A Silkie from outside the flock draws its depth. About 1 in 15 has depth 0.05 or less, so she lays
+  white. A purebred Silkie bred at home lays cream.
 - Average depth (0.5) is the default allele set. A bird from an older save has no depth genes, so it
   lays the colour it laid before. Eggs keep the colour they were laid with.
-- New colours need no migration: `EggColour` and `EggBookEntry` only gain cases.
+- New colours need no migration: `EggColour` and `EggBookEntry` only gain cases. White was added
+  this way. An egg keeps the colour it was laid with. A hen's colour comes from her genes when the
+  game loads.
+- White is a cream with no tint. So `Knowledge` and the planner count it as cream
+  (`EggColour.coarse`), as they count chocolate as brown.
+- The "new egg" goal asks for white only when a breed in play lays white. Now none does.
 
 ## Data layer: genes, breeds, colours, saves
 
@@ -474,8 +487,8 @@ Three tables. Most new content is a table entry, not new logic.
 - White varieties use dominant white (I/I): White Silkie, White Orpington, White Leghorn.
   Simplified: real white Silkies and Orpingtons are mostly recessive white (c/c). The game has no
   recessive white gene yet.
-- The Leghorn is a White Leghorn: light body, single comb, clean yellow legs, rarely broody. Real
-  Leghorns lay white eggs. Cream is the closest egg colour in the game.
+- The Leghorn is a White Leghorn: light body, single comb, clean yellow legs, rarely broody. It lays
+  white eggs, as real Leghorns do (shell depth 0).
 - The colour a bird shows always comes from its genes (`Phenotype`), never from a variety name.
 
 How to add:
@@ -501,7 +514,7 @@ changes shape. `Tests/.../Fixtures/save-v0.json` is a real old save; it must alw
 | Pet chicken | Any grower or adult, crosses too | condition 50 · friendliness 50 |
 | Eggs | A matched plate of 3 | match 30 · shape 30 · shell 20 · freshness 20 |
 
-- An egg class is one `EggColour`: cream, brown, chocolate, blue, green or olive. A plate matches
+- An egg class is one `EggColour`: cream, brown, chocolate, blue, green, olive or white. A plate matches
   when all eggs have the same colour and speckle. So a plate of green eggs is a valid plate.
 
 - Standard colours come from the breed table: a colour is standard if one of the breed's varieties
@@ -861,7 +874,7 @@ Sleep waits until every slot is spent, and nothing is ever lost: a refused erran
 - A chick is purebred only if both parents are purebred and the same breed. Crosses are named
   like real keepers name them: olive egger (blue egg x brown egg), easter egger (other blue-egg
   crosses), barnyard mix (everything else).
-- An olive egger lays olive or green eggs, by brown depth. A barnyard mix lays cream, brown or chocolate.
+- An olive egger lays olive or green eggs, by brown depth. A barnyard mix lays white, cream, brown or chocolate.
   A purebred hen lays her breed's colour; purebred parents pass on their exact shell depth.
 - `GeneticsRealismTests` breeds tens of thousands of birds over 6 generations and fails on any
   bird a real keeper couldn't breed.

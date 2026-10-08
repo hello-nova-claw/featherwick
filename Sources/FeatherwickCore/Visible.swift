@@ -119,17 +119,12 @@ public struct SeenLook: Hashable, Codable, Sendable {
 
     public var level: LookLevel { chickDown != nil ? .down : eggColour != nil ? .laying : .feathers }
 
-    /// The look with the egg colour in the coarse form the single genes decide: chocolate is a dark
-    /// brown and olive a dark green. How dark is the brown-depth trait, which `Knowledge` does not track.
+    /// The look with the egg colour in the coarse form the single genes decide (`EggColour.coarse`):
+    /// chocolate is a dark brown, olive a dark green and white an untinted cream. How dark is the
+    /// brown-depth trait, which `Knowledge` does not track.
     public var coarse: SeenLook {
         var c = self
-        c.eggColour = eggColour.map {
-            switch $0 {
-            case .chocolate: .brown
-            case .olive: .green
-            default: $0
-            }
-        }
+        c.eggColour = eggColour?.coarse
         return c
     }
 }

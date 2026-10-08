@@ -8,7 +8,7 @@ import Testing
 struct GeneticsRealismTests {
     static let breedEgg: [Breed: EggColour] = [
         .orpington: .brown, .wyandotte: .brown, .araucana: .blue, .silkie: .cream, .australorp: .brown,
-        .leghorn: .cream,
+        .leghorn: .white,
     ]
 
     /// Problems with one bird, or [] if it looks real.
@@ -31,7 +31,7 @@ struct GeneticsRealismTests {
             case .oliveEgger: if egg != .olive && egg != .green { out.append("olive egger laying \(egg)") }
             case .easterEgger: if egg != .blue { out.append("easter egger laying \(egg)") }
             case .barnyardMix:
-                if ![.brown, .chocolate, .cream].contains(egg) { out.append("barnyard mix laying \(egg)") }
+                if ![.brown, .chocolate, .cream, .white].contains(egg) { out.append("barnyard mix laying \(egg)") }
             case nil: out.append("cross with no name")
             }
         }

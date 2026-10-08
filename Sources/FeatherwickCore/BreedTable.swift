@@ -188,14 +188,14 @@ public enum BreedTable {
             note: "French. Famous for very dark chocolate eggs. Crossed with blue-egg breeds, "
                 + "makes the darkest olive eggers."),
         // Real White Leghorns: dominant white (I/I) over extended black (E, the default), single comb,
-        // clean yellow legs, small and flighty, rarely broody. They lay white eggs; cream is the
-        // closest egg colour the game has (no blue or brown shell genes).
+        // clean yellow legs, small and flighty, rarely broody. They lay white eggs: no blue or brown
+        // shell genes, and no shell depth (at or below `Rules.whiteShellDepth`).
         BreedDefinition(
             id: .leghorn, displayName: "Leghorn", status: .planned, isStarter: false,
             signature: [],
-            varieties: [.white], broodiness: 0.05, calmness: 0.3,
+            varieties: [.white], broodiness: 0.05, calmness: 0.3, brownDepth: 0,
             look: BreedLook(body: .light, comb: .single, legTone: .yellow, size: 0.8),
-            note: "Italian. White, light and lively. A famous layer of pale eggs."),
+            note: "Italian. White, light and lively. A famous layer of white eggs."),
     ]
 
     public static var inGame: [BreedDefinition] { all.filter(\.isInGame) }
