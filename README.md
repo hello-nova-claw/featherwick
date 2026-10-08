@@ -247,7 +247,7 @@ and in "likely no" lines ("Likely no blue eggs").
 3. **Sex-link.** A barred hen, a rooster pinned not barred, and no chick can be buff or white:
    "Every barred chick will be a cockerel, every plain one a pullet." Buff and white hide barring.
    If a chick can be buff or white, a plain chick can be a cockerel, so there is no sex-link line.
-4. **Egg colours.** Always one line: "Hens from this pair will lay cream or brown eggs." If an open
+4. **Egg colours.** Always one line: "Hens from this pair will lay white, cream or brown eggs." If an open
    gene could add a colour, the line ends with "unless one of them carries blue" or "unless one of
    them carries brown". When the family showed that gene, the reason is the family evidence, and
    the line ends with "unless one of them is hiding another egg colour".
@@ -273,6 +273,8 @@ and in "likely no" lines ("Likely no blue eggs").
   cover only traits a bird can hide, and egg colours.
 - Egg colours are coarse: cream, brown, blue, green. How dark a brown or green egg is comes from
   many small genes. The planner does not forecast it. White counts as cream, for the same reason.
+  So the planner words the cream class "white or cream". A reason that names a hen's own eggs uses
+  her real colour ("Pip lays white eggs").
 - Never a percentage or a decimal. Ratios read "about 1 in 4".
 
 ### Reasons

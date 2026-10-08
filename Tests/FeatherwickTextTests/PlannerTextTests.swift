@@ -63,7 +63,16 @@ import Testing
             ),
             (
                 .eggColours([.cream, .brown], sure: false, .unknownFamily(locus: BlueShell.locus)),
-                "Hens from this pair will lay cream or brown eggs, unless one of them carries blue."
+                "Hens from this pair will lay white, cream or brown eggs, unless one of them carries blue."
+            ),
+            (
+                // Coarse cream holds white: a Leghorn pair lays white, a Silkie pair cream.
+                .eggColours([.cream], sure: true, .look(bird: hen, locus: BlueShell.locus)),
+                "Hens from this pair will lay white or cream eggs."
+            ),
+            (
+                .certain(.eggColour(.cream), .look(bird: hen, locus: BlueShell.locus)),
+                "Every hen from this pair will lay white or cream eggs."
             ),
             (
                 .likely(.eggColour(.blue), .manyChicks(bird: hen, count: 6, locus: BlueShell.locus)),

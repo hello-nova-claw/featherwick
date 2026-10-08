@@ -113,7 +113,7 @@ private func joinedRatios(_ run: [Forecast], group: RatioGroup) -> String {
         guard case .ratio(let t, let n, let d, _) = line else { return nil }
         switch t {
         case .colour(let c): return "\(n) in \(d) \(c.rawValue)"
-        case .eggColour(let e): return "\(n) in \(d) \(e.rawValue)"
+        case .eggColour(let e): return "\(n) in \(d) \(coarseEggWord(e))"
         default: return nil
         }
     }
@@ -154,7 +154,7 @@ public func plannerText(_ f: Forecast, _ s: GameState) -> String {
             ? "Every barred chick will be a cockerel, every plain one a pullet."
             : "Every barred chick will be a pullet, every plain one a cockerel."
     case .eggColours(let colours, let sure, let r):
-        let list = orList(colours.map(\.rawValue))
+        let list = orList(colours.flatMap(coarseEggWords))
         guard !sure else { return "Hens from this pair will lay \(list) eggs." }
         return "Hens from this pair will lay \(list) eggs, \(unlessClause(r))."
     case .typeOutlook(let hen, let rooster, let r):
@@ -169,7 +169,7 @@ public func plannerText(_ f: Forecast, _ s: GameState) -> String {
 /// The egg words for an egg trait ("blue eggs"), or nil for a feather trait.
 private func eggNoun(_ t: Trait) -> String? {
     switch t {
-    case .eggColour(let e): "\(e.rawValue) eggs"
+    case .eggColour(let e): "\(coarseEggWord(e)) eggs"
     case .speckledEggs: "speckled eggs"
     default: nil
     }
@@ -182,7 +182,7 @@ private func chickVerb(_ t: Trait) -> String {
     case .barred: "be barred"
     case .laced: "be laced"
     case .silkieFeathered: "have silkie feathers"
-    case .eggColour(let e): "carry \(e.rawValue) eggs"
+    case .eggColour(let e): "carry \(coarseEggWord(e)) eggs"
     case .speckledEggs: "carry speckled eggs"
     }
 }
@@ -194,7 +194,7 @@ private func chickNoun(_ t: Trait) -> String {
     case .barred: "barred chicks"
     case .laced: "laced chicks"
     case .silkieFeathered: "silkie-feathered chicks"
-    case .eggColour(let e): "\(e.rawValue) eggs"
+    case .eggColour(let e): "\(coarseEggWord(e)) eggs"
     case .speckledEggs: "speckled eggs"
     }
 }
@@ -206,10 +206,20 @@ private func hiddenNoun(_ t: Trait) -> String {
     case .barred: "barring"
     case .laced: "lacing"
     case .silkieFeathered: "silkie feathers"
-    case .eggColour(let e): "\(e.rawValue) eggs"
+    case .eggColour(let e): "\(coarseEggWord(e)) eggs"
     case .speckledEggs: "speckled eggs"
     }
 }
+
+/// The words for a coarse egg class the planner forecasts. Coarse cream holds white too: whether a
+/// cream egg is white comes from shell depth, which the planner does not forecast. Coarse brown
+/// holds chocolate, and "brown" is still true of a chocolate egg, so only cream needs two words.
+private func coarseEggWords(_ e: EggColour) -> [String] {
+    e == .cream ? [EggColour.white.rawValue, EggColour.cream.rawValue] : [e.rawValue]
+}
+
+/// "white or cream", "brown".
+private func coarseEggWord(_ e: EggColour) -> String { orList(coarseEggWords(e)) }
 
 /// "cream", "cream or brown", "blue, green or olive".
 private func orList(_ words: [String]) -> String {
