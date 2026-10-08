@@ -153,6 +153,9 @@ public struct GameState: Hashable, Codable, Sendable {
     public var tradeOffer: TradeOffer?
 
     public var breedBook: Set<BreedBookEntry> = []
+    /// The day each look first went into the Breed Book, for "Found on day N" on its lore page.
+    /// Looks found in saves from before this field have no day.
+    public var breedBookDays: [BreedBookEntry: Int] = [:]
     public var eggBook: Set<EggBookEntry> = []
     /// Looks seen on a show podium, first sighting first (see ShowEvent.swift). Not counted as owned:
     /// milestones, jobs and goals count `breedBook` only. `breedBookSeenOnly` hides looks owned since.

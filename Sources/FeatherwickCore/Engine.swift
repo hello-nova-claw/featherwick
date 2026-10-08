@@ -307,11 +307,19 @@ public enum Engine {
         _ command: Command, to s: inout GameState, using rng: inout R
     ) -> [GameEvent] {
         let ev = perform(command, to: &s, using: &rng)
+        datePages(after: ev, &s)
         // A bird that left the coop (rehomed, traded, scared off) leaves the pen too: no stale ids.
         leavePenIfGone(&s)
         // Today's jobs tick off as the keeper does them. The night sets new ones itself.
         if command == .passNight { return ev }
         return ev + progressJobs(after: ev, &s)
+    }
+
+    /// Notes the day each new Breed Book look was found. A look found at night gets the new morning's day.
+    static func datePages(after ev: [GameEvent], _ s: inout GameState) {
+        for case .newBreedBookEntry(let entry) in ev where s.breedBookDays[entry] == nil {
+            s.breedBookDays[entry] = s.day
+        }
     }
 
     /// One command, without the job tracking that `apply` adds.

@@ -598,6 +598,8 @@ The keeper sees the top three in each class they entered, rivals too, and why ea
 - Egg plates add nothing to the Egg Book: rival plates are plain eggs of the class colour, which the
   keeper's own plate in that class already shows.
 - The app marks seen looks with a pale, dashed dot and "Seen at the Summer Fete". CLI: `book`.
+- **Lore pages.** A tap on an owned breed's tile opens its page: the colours found, real breed facts
+  (`breedLore` in `FeatherwickText`, no gene words), and "Found on day N" (`GameState.breedBookDays`).
 
 ## Friendliness
 
