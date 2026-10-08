@@ -299,6 +299,9 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
 
 ### The unlock
 
+- The breeding pen opens the planner at the latest: when `.breedingPen` is open and the keeper has not met
+  the planner, the night's early-game step sets `plannerKnown` and sends `.plannerShownAtPen` (a note from
+  Hazel, in the morning report's neighbour group). A save already past the pen's day gets it the next night.
 - The first why note (`hatchSurprise`) opens the planner. That night sets `GameState.plannerKnown` and
   sends `.plannerIntroduced` right after the `hatchSurprise`. This happens once a game.
 - The neighbour says: "You can work this out ahead of time, you know. Come and look at the pen."

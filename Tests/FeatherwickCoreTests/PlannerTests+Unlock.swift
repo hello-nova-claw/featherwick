@@ -10,6 +10,8 @@ extension PlannerTests {
     /// Two black parents in the coop, set to hatch `chicks` tonight. Carriers of lavender unless `plain`.
     static func pairReadyToHatch(_ chicks: [Genome], plannerKnown: Bool = false) -> (GameState, SeededRNG) {
         var (s, rng) = startedGame(sex: .hen, rules: calmRules())
+        // No pen yet: the pen opens the planner too (see `thePenOpensThePlanner`).
+        s.introduced.remove(.breedingPen)
         s.plannerKnown = plannerKnown
         let hen = HatchWhyTests.parent(HatchWhyTests.genome(.hen, HatchWhyTests.lavCarrier), s, &rng)
         let rooster = HatchWhyTests.parent(HatchWhyTests.genome(.rooster, HatchWhyTests.lavCarrier), s, &rng)
@@ -77,6 +79,7 @@ extension PlannerTests {
 
     @Test func openingThePlannerClearsTheNotice() {
         var (s, rng) = startedGame(sex: .hen)
+        s.plannerKnown = false  // as before the pen or a surprise chick
         let slots = s.slotsUsed
         // Before the keeper has met it, there is nothing to open.
         #expect(Engine.apply(.openPlanner, to: &s, using: &rng).isEmpty)
@@ -86,6 +89,24 @@ extension PlannerTests {
         #expect(s.plannerOpened)
         #expect(s.slotsUsed == slots)  // no daylight
         #expect(Engine.errand(for: .openPlanner) == nil)
+    }
+
+    /// A keeper with no surprise chick meets the planner when the breeding pen opens. A game already past
+    /// the pen's day meets it the next night. Once a game.
+    @Test func thePenOpensThePlanner() {
+        var (s, rng) = EarlyGameTests.newKeeper()
+        let pen = s.introductionDay(of: .breedingPen)
+        var ev = EarlyGameTests.play(until: pen - 1, &s, &rng)
+        #expect(!s.plannerKnown)
+        ev = EarlyGameTests.play(until: pen, &s, &rng)
+        #expect(s.isOpen(.breedingPen) && s.plannerKnown)
+        #expect(ev.count { $0 == .plannerShownAtPen } == 1)
+        #expect(EarlyGameTests.play(until: pen + 3, &s, &rng).count { $0 == .plannerShownAtPen } == 0)
+        // A save past the pen's day that never met the planner.
+        s.plannerKnown = false
+        #expect(EarlyGameTests.play(until: s.day + 1, &s, &rng).contains(.plannerShownAtPen))
+        #expect(s.plannerKnown)
+        #expect(MorningReport.group(of: .plannerShownAtPen) == .neighbour)
     }
 
     @Test func anOldSaveHasNotMetThePlanner() throws {

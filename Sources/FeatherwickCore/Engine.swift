@@ -269,6 +269,9 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case plannerIntroduced
     /// The keeper gave their name.
     case keeperNamed(String)
+    /// The breeding pen is open, and "What might hatch" with it, for a keeper who has not had a surprise
+    /// chick yet (see `EarlyGame.swift`). Once a game, like `plannerIntroduced`.
+    case plannerShownAtPen
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.

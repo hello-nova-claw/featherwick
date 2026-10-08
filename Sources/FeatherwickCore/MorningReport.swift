@@ -79,7 +79,8 @@ public struct MorningReport: Hashable, Sendable {
             return .newStock
         case .shopUnlocked:
             return .newStock
-        case .introduced, .neighbourGaveHen, .neighbourGaveIncubator, .learnedCandling, .roosterAdvice,
+        case .introduced, .plannerShownAtPen, .neighbourGaveHen, .neighbourGaveIncubator, .learnedCandling,
+            .roosterAdvice,
             .tradeOffered, .storyStarted, .storyStep, .delivered, .storyGiftWaitingForRoom, .storyGift,
             .storyFinished:
             return .neighbour
