@@ -138,6 +138,29 @@ struct BreedTableTests {
         #expect(round == g)  // unknown "comb" gene kept, not lost
     }
 
+    /// The lore page says "Found on day N", so each new Breed Book look keeps the day it was found.
+    /// Looks from old saves have no day, and the save still loads.
+    @Test func breedBookLooksKeepTheDayTheyWereFound() throws {
+        var (s, rng) = startedGame(sex: .hen)
+        s.coins = 500
+        var found: [(BreedBookEntry, Int)] = []
+        func run(_ command: Command) {
+            for case .newBreedBookEntry(let e) in Engine.apply(command, to: &s, using: &rng) {
+                found.append((e, s.day))
+            }
+        }
+        run(.buy(.pullet))  // a shop bird goes in the book at once
+        for _ in 0..<3 { run(.passNight) }
+        #expect(!found.isEmpty)
+        for (entry, day) in found { #expect(s.breedBookDays[entry] == day) }
+        #expect(Set(s.breedBookDays.keys).isSubset(of: s.breedBook))
+
+        let data = try SaveFormat.encode(SaveGame(state: s, rng: rng))
+        #expect(try SaveFormat.decode(data).state.breedBookDays == s.breedBookDays)
+        let old = try SaveFormat.decode(SaveFormatTests.fixture("save-v0")).state
+        #expect(old.breedBookDays.isEmpty)
+    }
+
     @Test func migrationsRunInOrderAndReachObjectsAtAnyDepth() throws {
         let input: [String: Any] = ["a": [["tag": 1], ["b": ["tag": 2]]]]
         let out = try #require(

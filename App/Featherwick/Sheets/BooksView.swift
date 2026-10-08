@@ -8,20 +8,25 @@ struct BooksView: View {
     @Environment(\.palette) private var palette
     @State private var tab = BookTab.breeds
 
-    enum BookTab: Hashable { case breeds, eggs, records }
+    enum BookTab: Hashable { case breeds, eggs, inheritance, records }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Space.l) {
                 HStack {
                     WordTabs(
-                        tabs: [(.breeds, "Breeds"), (.eggs, "Eggs"), (.records, RecordsWords.tab)], selection: $tab)
+                        tabs: [
+                            (.breeds, "Breeds"), (.eggs, "Eggs"), (.inheritance, inheritanceTitleText),
+                            (.records, RecordsWords.tab),
+                        ],
+                        selection: $tab)
                     Spacer()
                     CloseButton()
                 }
                 switch tab {
                 case .breeds: BreedBook()
                 case .eggs: EggBook()
+                case .inheritance: InheritanceBook()
                 case .records: RecordBook()
                 }
             }
@@ -40,6 +45,8 @@ struct BooksView: View {
 struct BreedBook: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
+    /// The lore page open now. Only a breed the keeper owns a look of opens one.
+    @State private var page: BreedDefinition?
 
     var body: some View {
         let s = store.state
@@ -54,7 +61,19 @@ struct BreedBook: View {
                 .font(Typeface.label).foregroundStyle(palette.inkMuted)
             LazyVGrid(columns: columns, spacing: 24) {
                 ForEach(breeds) { breed in
-                    BreedTile(breed: breed, colours: colours(of: breed, in: s), seen: seen(of: breed, in: s))
+                    let owned = colours(of: breed, in: s)
+                    let tile = BreedTile(breed: breed, colours: owned, seen: seen(of: breed, in: s))
+                    if owned.isEmpty {
+                        tile  // unfound, or only seen at a show: stays closed
+                    } else {
+                        Button {
+                            page = breed
+                        } label: {
+                            tile
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Opens the \(breed.displayName) page")
+                    }
                 }
             }
             let crosses = s.breedBook.filter(\.isCross).map(entryText).sorted()
@@ -64,6 +83,7 @@ struct BreedBook: View {
             }
             SeenAtShows(seen: s.breedBookSeenOnly)
         }
+        .sheet(item: $page) { BreedPageSheet(breed: $0).environment(\.palette, palette) }
     }
 
     /// The distinct looks of this breed found so far.
@@ -76,6 +96,55 @@ struct BreedBook: View {
     private func seen(of breed: BreedDefinition, in s: GameState) -> [BreedBookEntry] {
         s.breedBookSeenOnly.map(\.entry).filter { !$0.isCross && $0.variety == breed.id.rawValue }
             .sorted { entryText($0) < entryText($1) }
+    }
+}
+
+/// A found breed's page: the colours found so far, its lore, and the day it was first found.
+/// Words come from `breedLore` and `breedFoundText` (FeatherwickText).
+struct BreedPageSheet: View {
+    @Environment(GameStore.self) private var store
+    @Environment(\.palette) private var palette
+    let breed: BreedDefinition
+
+    var body: some View {
+        let s = store.state
+        let found = s.breedBook.filter { !$0.isCross && $0.variety == breed.id.rawValue }
+            .sorted { swatchName($0) < swatchName($1) }
+        SheetPage(context: "Breed Book") {
+            ArtPlaceholder(label: "bird art · \(breed.displayName)")
+                .frame(width: 200, height: 180)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Space.l)
+            VStack(spacing: Space.s) {
+                Text(breed.displayName).font(Typeface.title)
+                if let day = breedFoundText(breed.id, s) {
+                    Text(day).font(Typeface.epithet).foregroundStyle(palette.inkSoft)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            Text("\(found.count) of \(breed.varieties.count) colours found")
+                .font(Typeface.label).foregroundStyle(palette.inkMuted)
+            VStack(alignment: .leading, spacing: Space.s) {
+                ForEach(found, id: \.self) { FeatherSwatch(colour: $0.colour, name: swatchName($0)) }
+            }
+            if let lore = breedLore(breed.id) {
+                StitchDivider()
+                ForEach(Array(lore.sections.enumerated()), id: \.offset) { _, section in
+                    VStack(alignment: .leading, spacing: Space.xs) {
+                        Text(section.heading).font(Typeface.item)
+                        Text(section.text).font(Typeface.body).fixedSize(horizontal: false, vertical: true)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+        }
+        .presentationDetents([.large])
+    }
+
+    /// The colour as a standard names it ("gold laced"). The swatch shows it next to these words.
+    private func swatchName(_ e: BreedBookEntry) -> String {
+        let colour = featherColourName(e.colour, barred: e.barred, laced: e.laced)
+        return colour + (e.silkieFeathered && breed.id != .silkie ? ", silkie-feathered" : "")
     }
 }
 
@@ -330,6 +399,40 @@ struct RecordBook: View {
 
     private func number(_ words: String) -> some View {
         Text(words).font(Typeface.number).monospacedDigit()
+    }
+}
+
+/// What the keeper has worked out from setting eggs from a penned pair: one row per rule, in the order
+/// first seen. A dashed box says how to fill the page before the first rule.
+struct InheritanceBook: View {
+    @Environment(GameStore.self) private var store
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        let rules = InheritancePage.known(in: store.state)
+        VStack(alignment: .leading, spacing: Space.l) {
+            Text(inheritanceTitleText).font(Typeface.title)
+            Text(inheritanceSubtitleText).font(Typeface.label).foregroundStyle(palette.inkMuted)
+            if rules.isEmpty {
+                Text(inheritanceEmptyText)
+                    .font(Typeface.serifItalic(14, relativeTo: .footnote))
+                    .foregroundStyle(palette.inkMuted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(Space.l)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Radius.tile).stroke(palette.unknownBox, style: Stitch.unknown))
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(rules, id: \.self) { rule in
+                        Text(sentenceCase(inheritanceText(rule)))
+                            .font(Typeface.body)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, Space.m)
+                        StitchDivider()
+                    }
+                }
+            }
+        }
     }
 }
 
