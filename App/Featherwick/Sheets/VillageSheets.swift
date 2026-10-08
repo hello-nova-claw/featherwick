@@ -213,7 +213,7 @@ struct ShowPanel: View {
         {
             VStack(alignment: .leading, spacing: Space.s) {
                 Text("Hazel thinks \(bird.name) could do well in the \(tip.showClass.name) class.")
-                    .font(Typeface.serifItalic(17)).foregroundStyle(palette.inkSoft)
+                    .font(Typeface.note).foregroundStyle(palette.inkSoft)
                 // No daylight left for the show desk: the words in place of the button.
                 if let closed = daylightRefusalText(.enterShowIn(bird.id, tip.showClass), in: s) {
                     Text(closed).font(Typeface.label).foregroundStyle(palette.inkSoft)

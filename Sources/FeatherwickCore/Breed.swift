@@ -63,6 +63,10 @@ public struct Bird: Identifiable, Hashable, Codable, Sendable {
     public var unnamedSinceDay: Int?
     /// The first night this grown bird had no perch. Cleared when it gets one.
     public var waitingSinceDay: Int?
+    /// The look the keeper last saw, frozen when the bird went out of sight: rehomed, boarding with
+    /// the neighbour, or lost. Nil while it is home. A bird out of sight keeps growing, but the keeper
+    /// does not see it lay, so `Knowledge` reads this look, not today's (see `SeenLook(of:in:)`).
+    public var lastSeenLook: SeenLook?
 
     public var isPurebred: Bool { purebredFlag ?? true }
 
@@ -116,4 +120,13 @@ public struct Bird: Identifiable, Hashable, Codable, Sendable {
     public func isRetired(onDay day: Int, rules: Rules) -> Bool {
         sex == .hen && age(onDay: day) >= rules.retirementAgeDays
     }
+}
+
+extension Bird {
+    /// Where a bird from outside the flock came from (`origin`). Saves store these words: never change one.
+    public static let neighbourOrigin = "Neighbour"
+    public static let shopOrigin = "Speckle & Down"
+    public static let localFlockOrigin = "Local flock"
+    public static let showOrigin = "County show"
+    public static let villageOrigin = "A Featherwick neighbour"
 }

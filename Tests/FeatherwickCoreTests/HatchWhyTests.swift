@@ -206,7 +206,10 @@ struct HatchWhyTests {
         #expect(!Self.reasons(with.events).isEmpty)
         #expect(Self.reasons(without.events).isEmpty)
         #expect(with.birds == without.birds)
-        let filtered = with.events.filter { if case .hatchSurprise = $0 { false } else { true } }
+        // The first note also opens "What might hatch" (`PlannerTests+Unlock.swift`): no draws either.
+        let filtered = with.events.filter {
+            if case .hatchSurprise = $0 { false } else { $0 != .plannerIntroduced }
+        }
         #expect(filtered == without.events)
     }
 }

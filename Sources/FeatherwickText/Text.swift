@@ -95,13 +95,29 @@ public func relatedText(_ r: Relatedness) -> String {
     }
 }
 
+/// One line of the family tree, with the bird's carrier notes in a few words when it has any.
+public struct TreeLine: Hashable, Sendable {
+    public let text: String
+    /// "carries lavender", or nil. Always nil before the keeper knows the planner.
+    public let carries: String?
+}
+
+/// The family tree as text lines: carrier notes after a " · ". For the CLI.
 public func treeLines(_ id: UUID, _ s: GameState) -> [String] {
-    var out: [String] = []
+    treeEntries(id, s).map { line in line.text + (line.carries.map { " · \($0)" } ?? "") }
+}
+
+/// The family tree, three generations, each bird with its carrier notes. The app shows the notes under each bird.
+public func treeEntries(_ id: UUID, _ s: GameState) -> [TreeLine] {
+    var out: [TreeLine] = []
     guard let tree = Pedigree.tree(of: id, generations: 3, in: s) else { return [] }
-    func line(_ r: PedigreeRecord) -> String {
+    // Carrier notes (`Planner.carrierNotes`), worked out once for the whole tree. None before the planner is known.
+    let knowledge = s.plannerKnown ? Knowledge.of(s) : nil
+    func text(_ r: PedigreeRecord) -> String {
         let from = r.motherID == nil && r.fatherID == nil ? ", from \(r.origin)" : ""
         return "\(r.name.isEmpty ? "unnamed" : r.name) (\(r.kind), hatched day \(r.hatchDay)\(from))"
     }
+    func carries(_ r: PedigreeRecord) -> String? { carrierShortText(knowledge?.provenHidden(r.id) ?? []) }
     func walk(_ t: FamilyTree, _ prefix: String) {
         let parents: [(String, FamilyTree.Indirect?, UUID?)] = [
             ("Mother", t.mother, t.record.motherID), ("Father", t.father, t.record.fatherID),
@@ -110,21 +126,26 @@ public func treeLines(_ id: UUID, _ s: GameState) -> [String] {
             let last = i == parents.count - 1
             let branch = prefix + (last ? "└ " : "├ ")
             if let node {
-                out.append(branch + "\(label): " + line(node.tree.record))
+                let r = node.tree.record
+                out.append(TreeLine(text: branch + "\(label): " + text(r), carries: carries(r)))
                 walk(node.tree, prefix + (last ? "  " : "│ "))
             } else if let knownID, Pedigree.record(knownID, in: s) != nil {
-                out.append(branch + "\(label): further back")
+                out.append(TreeLine(text: branch + "\(label): further back", carries: nil))
             } else if t.record.motherID != nil || t.record.fatherID != nil {
-                out.append(branch + "\(label): unknown")
+                out.append(TreeLine(text: branch + "\(label): unknown", carries: nil))
             }
         }
     }
-    out.append(line(tree.record))
+    out.append(TreeLine(text: text(tree.record), carries: carries(tree.record)))
     walk(tree, "")
     // How related the parents are, in words. No percentage: playtesters found the number a worry.
-    out.append("Parents: \(relatedText(Relatedness(kinship: Pedigree.inbreeding(of: id, in: s))))")
+    let related = relatedText(Relatedness(kinship: Pedigree.inbreeding(of: id, in: s)))
+    out.append(TreeLine(text: "Parents: \(related)", carries: nil))
     let kids = Pedigree.offspring(of: id, in: s)
-    if !kids.isEmpty { out.append("Chicks (\(kids.count)): " + kids.map { $0.name }.joined(separator: ", ")) }
+    if !kids.isEmpty {
+        out.append(
+            TreeLine(text: "Chicks (\(kids.count)): " + kids.map { $0.name }.joined(separator: ", "), carries: nil))
+    }
     return out
 }
 
@@ -618,6 +639,10 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return "\(opener) \(eggs) \(why) \(back)"
     case .hatchSurprise(let id, let reason):
         return "Hazel peers at \(birdName(id, s)): \"\(hatchReasonText(reason))\""
+    case .plannerIntroduced:
+        // Right after the first why note. Before the pen opens, the neighbour saves the trick for later.
+        let next = s.isOpen(.breedingPen) ? "Come and look at the pen." : "I'll show you once you have a breeding pen."
+        return "She winks. \"You can work this out ahead of time, you know. \(next)\""
     case .learnedCandling:
         return """
             Hazel comes round with a torch. "Here, let me show you a trick." She holds an egg up \

@@ -2,7 +2,8 @@ import FeatherwickCore
 import FeatherwickText
 import SwiftUI
 
-/// 2a / 2b: one bird. Art, name, breed line, four facts, show notes, then Cuddle and Treat.
+/// 2a / 2b: one bird. Art, name, breed line, four facts, what it is proven to carry, show notes, then
+/// Cuddle and Treat.
 struct BirdCardSheet: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
@@ -33,6 +34,7 @@ struct BirdCardSheet: View {
                 .frame(maxWidth: .infinity)
                 facts(bird, s)
                     .padding(.vertical, Space.l)
+                CarrierLines(birdID: birdID)
                 showNotes(bird, s)
                 ribbons(bird, s)
                 handlingButtons(bird, s)
@@ -107,7 +109,7 @@ struct BirdCardSheet: View {
                     Fact(label: "Judge's notes, day \(last.day)") {
                         ForEach(Array((last.notes ?? []).enumerated()), id: \.offset) { _, note in
                             Text("“\(sentenceCase(noteText(note))).”")
-                                .font(Typeface.serifItalic(17)).foregroundStyle(palette.inkSoft)
+                                .font(Typeface.note).foregroundStyle(palette.inkSoft)
                         }
                     }
                 }
@@ -287,14 +289,26 @@ struct LastWords: View {
     }
 }
 
-/// The family tree, three generations, as text for now.
+/// The family tree, three generations, as text for now. A bird the keeper has proven carries something
+/// hidden shows it under its line ("carries lavender"), once the planner is known. Read only: no commands.
 struct FamilyTreeSheet: View {
     @Environment(GameStore.self) private var store
+    @Environment(\.palette) private var palette
     let birdID: UUID
     var body: some View {
         SheetPage(context: "Family tree") {
-            Text(treeLines(birdID, store.state).joined(separator: "\n"))
-                .font(.system(.footnote, design: .monospaced))
+            VStack(alignment: .leading, spacing: Space.xs) {
+                ForEach(Array(treeEntries(birdID, store.state).enumerated()), id: \.offset) { _, line in
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(line.text).font(.system(.footnote, design: .monospaced))
+                        if let carries = line.carries {
+                            Text(carries).font(Typeface.caption).foregroundStyle(palette.inkMuted)
+                                .padding(.leading, Space.l)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .presentationDetents([.medium, .large])
     }

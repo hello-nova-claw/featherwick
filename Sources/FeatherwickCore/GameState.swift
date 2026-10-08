@@ -185,6 +185,10 @@ public struct GameState: Hashable, Codable, Sendable {
     public var slotsUsed = 0
     /// The errand kinds already run today. More of the same kind cost no more daylight.
     public var errandsToday: Set<Errand> = []
+    /// True once the keeper has met "What might hatch" (after the first hatch surprise). See Planner.swift.
+    public var plannerKnown = false
+    /// True once the keeper has opened the "What might hatch" panel. The pen shows a notice until then.
+    public var plannerOpened = false
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

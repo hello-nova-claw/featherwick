@@ -55,6 +55,9 @@ public enum Command: Hashable, Codable, Sendable {
     case unpenBird(UUID)
     /// Sit a while: spends one slot of daylight and does nothing else (see Daylight.swift).
     case rest
+    /// The keeper opened the "What might hatch" panel (see Planner.swift). Clears the pen's "New" notice.
+    /// Costs no daylight and says nothing. Does nothing before the keeper has met the planner.
+    case openPlanner
     /// The keeper's own name, for the neighbour and the shop to use. Any time, even before the starter.
     case nameKeeper(String)
 }
@@ -261,6 +264,9 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case slotSpent(Errand?, left: Int)
     /// The keeper sat a while. The time of day the rest was taken in, for the words.
     case rested(TimeOfDay)
+    /// The first hatch-day "why" note also showed the keeper that hatches can be worked out ahead of
+    /// time: "What might hatch" is open now (see Planner.swift). Right after that `hatchSurprise`. Once a game.
+    case plannerIntroduced
     /// The keeper gave their name.
     case keeperNamed(String)
 }
@@ -281,7 +287,7 @@ public enum Engine {
                 Bird(
                     id: makeID(using: &rng), name: "", breed: breed,
                     genome: breed.purebred(sex, variety: colour, barred: barred),
-                    hatchDay: 0, origin: "Neighbour"
+                    hatchDay: 0, origin: Bird.neighbourOrigin
                 ).withFounderQuality().withTameness(rules.brooderChickTameness))
         }
         var s = GameState(rules: rules, phase: .choosingStarter(chicks))
@@ -457,7 +463,7 @@ public enum Engine {
             if let blocker = rehomeBlocker(id, in: s), blocker != .noSuchBird { return [.rejected(blocker)] }
             if let (keyPath, i) = locate(id, in: s, groups: [\.brooder, \.henChicks, \.coop, \.boarding]) {
                 let bird = s[keyPath: keyPath].remove(at: i)
-                return [.rehomed(id, coins: sendToNewHome(bird, &s))]
+                return [.rehomed(id, coins: sendToNewHome(bird, &s, wasAway: keyPath == \.boarding))]
             }
             return [.rejected(.noSuchBird)]
 
@@ -478,7 +484,7 @@ public enum Engine {
             if let (keyPath, i) = locate(offer.roosterID, in: s, groups: [\.coop, \.brooder]) {
                 let rooster = s[keyPath: keyPath][i]
                 s[keyPath: keyPath][i] = offer.hen  // she takes his place
-                s.rehomed.append(rooster)
+                s.rehomed.append(rooster.leavingSight(in: s, onDay: s.day))
                 s.tradeOffer = nil
                 if s.starterID == rooster.id { s.starterID = nil }
                 var ev: [GameEvent] = [.tradeAccepted(rooster: rooster.id, hen: offer.hen.id)]
@@ -515,6 +521,10 @@ public enum Engine {
             return unpenBird(id, &s)
         case .rest:
             return [.rested(s.timeOfDay)]  // the slot itself is spent by `spendDaylight`
+        case .openPlanner:
+            // Before the keeper has met the planner there is nothing to open, and the notice must wait.
+            if s.plannerKnown { s.plannerOpened = true }
+            return []
         }
     }
 
@@ -560,7 +570,7 @@ public enum Engine {
             if s.coop.count >= s.perches { return [.rejected(.noFreePerch)] }
             let breed = s.surpriseBreeds.randomElement(using: &rng)!
             let sex: Sex = item == .pullet ? .hen : .rooster
-            let bird = youngBird(sex, origin: "Speckle & Down", s, &rng, breed: breed).waitingForName()
+            let bird = youngBird(sex, origin: Bird.shopOrigin, s, &rng, breed: breed).waitingForName()
             s.coins -= cost
             s.coop.append(bird)
             var ev: [GameEvent] = [.boughtBird(bird.id, item: item, cost: cost)]
@@ -577,12 +587,13 @@ public enum Engine {
         case .fertileEgg:
             if s.carton.count >= s.cartonCapacity { return [.rejected(.cartonFull)] }
             // From a local flock: two purebred starter birds, maybe of different breeds.
-            let mother = youngBird(.hen, origin: "Local flock", s, &rng)
-            let father = youngBird(.rooster, origin: "Local flock", s, &rng)
+            let mother = youngBird(.hen, origin: Bird.localFlockOrigin, s, &rng)
+            let father = youngBird(.rooster, origin: Bird.localFlockOrigin, s, &rng)
             var egg = Breeding.layEgg(mother: mother, father: father, day: s.day, using: &rng)
             // Keep the parents on record, so the chick's family tree is not blank.
-            s.pedigree[mother.id] = PedigreeRecord(mother)
-            s.pedigree[father.id] = PedigreeRecord(father)
+            // The keeper never sees them, so their records hold no look.
+            s.pedigree[mother.id] = PedigreeRecord(mother, look: nil)
+            s.pedigree[father.id] = PedigreeRecord(father, look: nil)
             egg.collectedDay = s.day
             egg.candled = true
             s.coins -= cost
@@ -654,7 +665,7 @@ public enum Engine {
             s.tradeOffer = nil  // every known rooster is out; they come home, and the offer comes then
             return []
         }
-        let hen = youngBird(.hen, origin: "A Featherwick neighbour", s, &rng).namedByKeeper(in: s)
+        let hen = youngBird(.hen, origin: Bird.villageOrigin, s, &rng).namedByKeeper(in: s)
         s.tradeOffer = TradeOffer(roosterID: rooster.id, hen: hen)
         return [.tradeOffered(rooster: rooster.id, hen: hen.id)]
     }
@@ -790,7 +801,7 @@ public enum Engine {
                 guard
                     var chick = Breeding.hatch(
                         egg, name: "Chick \(s.chicksHatched + 1)", onDay: s.day,
-                        origin: "Henhaven", using: &rng)
+                        origin: Bird.homeOrigin, using: &rng)
                 else {
                     returnUnhatched(egg, &s)
                     unhatched += 1
@@ -814,6 +825,11 @@ public enum Engine {
                 }
             }
             if !ids.isEmpty { ev.append(.chicksHatched(ids, hen: clutch.henID)) }
+            // The first why note opens "What might hatch". No random draw: the same seed hatches the same chicks.
+            if !notes.isEmpty, !s.plannerKnown {
+                s.plannerKnown = true
+                notes.insert(.plannerIntroduced, at: 1)
+            }
             ev += notes
             if unhatched > 0 { ev.append(.eggsDidNotHatch(count: unhatched, hen: clutch.henID)) }
             // No chicks to raise: a hen whose eggs were all clear stops being broody and lays again.
@@ -892,7 +908,7 @@ public enum Engine {
                 // A fright and time living rough make a bird warier of people.
                 let away = min(r.maxLostTamenessLoss, r.lostDayTamenessLoss * Double(days + 1))
                 b.changeTameness(by: -(r.foxFrightTamenessLoss + away))
-                s.lost.append(LostBird(bird: b, returnsOnDay: s.day + 1 + days))
+                s.lost.append(LostBird(bird: b.leavingSight(in: s, onDay: s.day), returnsOnDay: s.day + 1 + days))
             }
             ev.append(.foxVisited(scared: scared.map(\.id)))
             leavePenIfGone(&s)  // a scared bird leaves the pen; the keeper pens it again when it is home
@@ -932,6 +948,7 @@ public enum Engine {
             if s.coop.count < s.perches {
                 var b = lb.bird
                 b.noLayUntilDay = s.day + r.scaredNoLayDays
+                b.lastSeenLook = nil  // home again: the keeper sees it as it is now
                 s.coop.append(b)
                 ev.append(.birdReturned(b.id))
             } else {
@@ -1023,6 +1040,7 @@ public enum Engine {
         func perch(_ b: Bird) {
             var b = b
             b.waitingSinceDay = nil
+            b.lastSeenLook = nil  // home again, if it was boarding
             s.coop.append(b)
         }
 
@@ -1063,7 +1081,8 @@ public enum Engine {
                 s.brooder.append(b)
                 waiting.insert(b.id)
             } else {
-                s.boarding.append(b)
+                // Moved in the night: the keeper last saw it yesterday.
+                s.boarding.append(b.leavingSight(in: s, onDay: day - 1))
             }
         }
         s.henChicks = withMother
@@ -1081,7 +1100,7 @@ public enum Engine {
                 continue
             }
             if waitedTooLong(&b) {
-                ev.append(.rehomedByNeighbour(b.id, coins: sendToNewHome(b, &s)))
+                ev.append(.rehomedByNeighbour(b.id, coins: sendToNewHome(b, &s, lastSeenOnDay: day - 1)))
             } else {
                 keptInBrooder.append(b)
                 ev.append(.needsHome(b.id))
@@ -1091,7 +1110,8 @@ public enum Engine {
         var keptBoarding: [Bird] = []
         for var b in s.boarding {
             if waitedTooLong(&b) {
-                ev.append(.rehomedByNeighbour(b.id, coins: sendToNewHome(b, &s)))
+                ev.append(
+                    .rehomedByNeighbour(b.id, coins: sendToNewHome(b, &s, lastSeenOnDay: day - 1, wasAway: true)))
             } else {
                 keptBoarding.append(b)
                 if !wereBoarding.contains(b.id) { ev.append(.boardingWithNeighbour(b.id)) }
@@ -1103,12 +1123,18 @@ public enum Engine {
 
     /// A bird leaves the flock for a good home in Featherwick. The keeper is paid what it is worth.
     /// The caller has already taken it out of its group.
-    static func sendToNewHome(_ bird: Bird, _ s: inout GameState) -> Int {
+    static func sendToNewHome(
+        _ bird: Bird, _ s: inout GameState, lastSeenOnDay: Int? = nil, wasAway: Bool = false
+    )
+        -> Int
+    {
         let coins = s.rehomeValue(of: bird)
         s.coins += coins
         var bird = bird
         bird.waitingSinceDay = nil
-        s.rehomed.append(bird)
+        // A rehome by the keeper is by day. One by the neighbour is in the night (`findHomes`), after
+        // the new day began: the keeper last saw the bird the day before.
+        s.rehomed.append(bird.leavingSight(in: s, onDay: lastSeenOnDay ?? s.day, wasAway: wasAway))
         if s.starterID == bird.id { s.starterID = nil }
         if s.tradeOffer?.roosterID == bird.id { s.tradeOffer = nil }  // a new offer comes in the morning if needed
         return coins
@@ -1158,7 +1184,7 @@ public enum Engine {
         let hen = Bird(
             id: makeID(using: &rng), name: "Gift hen", breed: breed,
             genome: breed.purebred(.hen, variety: colour),
-            hatchDay: s.day - s.rules.giftHenAge, origin: "Neighbour",
+            hatchDay: s.day - s.rules.giftHenAge, origin: Bird.neighbourOrigin,
             revealed: true  // the neighbour tells you her breed and sex
         ).withFounderQuality().withTameness(s.rules.boughtBirdTameness).namedByKeeper(in: s)
         s.giftHenGiven = true
@@ -1170,7 +1196,7 @@ public enum Engine {
         } else if s.coop.count < s.perches {
             s.coop.append(hen)
         } else {
-            s.boarding.append(hen)
+            s.boarding.append(hen.leavingSight(in: s, onDay: s.day - 1))  // the keeper has not seen her yet
             ev.append(.boardingWithNeighbour(hen.id))
         }
         ev += recordBreed(hen, into: &s.breedBook)

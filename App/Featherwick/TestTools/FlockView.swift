@@ -15,6 +15,12 @@ struct FlockView: View {
                 group("Coop (\(s.coop.count)/\(s.perches) perches)", s.coop)
                 group("Lost (they always come home)", s.lost.map(\.bird))
                 group("Staying with Hazel", s.boarding)
+                if s.plannerKnown {
+                    let planner = plannerLines(s)
+                    Section("What might hatch") {
+                        ForEach(Array(planner.enumerated()), id: \.offset) { _, line in Text(line).font(.subheadline) }
+                    }
+                }
                 if let offer = s.tradeOffer {
                     Section("Trade offer") {
                         Text("A young hen (\(birdLabel(offer.hen, s))) for \(birdName(offer.roosterID, s)).")
@@ -68,6 +74,12 @@ struct BirdDetailView: View {
                     LabeledContent(
                         "A neighbour would pay", value: "\(s.rehomeValue(of: bird)) coins")
                     LabeledContent("Show class", value: Engine.showClass(for: bird, in: s).name)
+                }
+                let carries = carrierLines(id, s)
+                if !carries.isEmpty {
+                    Section("Proven to carry") {
+                        ForEach(Array(carries.enumerated()), id: \.offset) { _, line in Text(line).font(.footnote) }
+                    }
                 }
                 Section("Care") {
                     Button("Pick up and hold") { store.run(.pet(id)) }

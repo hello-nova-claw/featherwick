@@ -31,6 +31,8 @@ struct BreedingPenSheet: View {
             ForEach(0..<max(s.rules.penHens, hens.count), id: \.self) { i in
                 place(i < hens.count ? hens[i] : nil, empty: "An empty place")
             }
+            // Nothing at all until the keeper knows the planner.
+            WhatMightHatchSection()
             StitchDivider()
             Text("From the coop").font(Typeface.item)
             let candidates = s.coop.filter { Engine.canOfferPen($0.id, in: s) }

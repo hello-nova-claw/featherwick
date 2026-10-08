@@ -75,9 +75,11 @@ func showsScreen(_ s: GameState) { showsLines(s).forEach { print($0) } }
 /// Finds a bird by name, matched the way names are kept unique (`NameBook.key`): case and spaces
 /// don't count, so "chick 3" can be typed as "chick3" too.
 /// Read-only and renaming commands pass `includeLost` so a bird the fox scared off can still be reached.
-func findBird(_ query: String, _ s: GameState, includeLost: Bool = false) -> Bird? {
+/// Read-only commands about family pass `includeRehomed` too: a rehomed bird stays in the family tree.
+/// Birds you have come first, so a rehomed bird never hides one with the same name.
+func findBird(_ query: String, _ s: GameState, includeLost: Bool = false, includeRehomed: Bool = false) -> Bird? {
     let q = NameBook.key(query)
-    let birds = s.birdsAtHome + s.boarding + (includeLost ? s.lost.map(\.bird) : [])
+    let birds = s.birdsAtHome + s.boarding + (includeLost ? s.lost.map(\.bird) : []) + (includeRehomed ? s.rehomed : [])
     return birds.first { NameBook.key($0.name) == q }
 }
 
@@ -121,6 +123,9 @@ let help = """
       pen                  the breeding pen: one rooster fathers the eggs of the hens with him
       pen <name>           put a coop bird in the breeding pen (it keeps its perch)
       unpen <name>         take a bird out of the breeding pen
+      plan                 what might hatch from the pen (once the neighbour has shown you)
+      plan <hen> <rooster> what might hatch from any hen and rooster
+      carries <name>       what a bird surely carries but does not show
       upgrade coop         add \(game.state.rules.perchesPerUpgrade) perches (\(game.state.rules.coopUpgradePrice) coins)
       close                shut the coop door (safe from the fox, but you must feed)
       rest                 sit a while: spends one slot of daylight
@@ -301,6 +306,50 @@ while true {
             break
         }
         run(verb == "pen" ? .penBird(bird.id) : .unpenBird(bird.id))
+    case "plan":
+        guard game.state.plannerKnown else {
+            print(plannerNotYetText(game.state))
+            break
+        }
+        run(.openPlanner)
+        guard words.count > 1 else {
+            plannerLines(game.state).forEach { print($0) }
+            break
+        }
+        let parts = line.split(separator: " ").dropFirst().map(String.init)
+        guard parts.count == 2, let hen = findBird(parts[0], game.state, includeLost: true),
+            let rooster = findBird(parts[1], game.state, includeLost: true)
+        else {
+            print("Use: plan <hen> <rooster> (names without spaces, e.g. chick3)")
+            break
+        }
+        if let problem = plannerPairProblemText(hen: hen, rooster: rooster) {
+            print(problem)
+            break
+        }
+        let s = game.state
+        // The same inputs as the pen panel: the seen family (for "likely" lines) and how related they are.
+        let family = Visible.all(in: s)
+        let forecast = Planner.forecast(
+            hen: Visible(bird: hen, in: s), rooster: Visible(bird: rooster, in: s), knowledge: Knowledge.of(family),
+            family: family, kinship: Pedigree.relatedness(hen.id, rooster.id, in: s), rules: s.rules)
+        print("\(hen.name) with \(rooster.name):")
+        pairLines(forecast, s, pair: (hen.id, rooster.id)).forEach { print("  " + $0) }
+    case "carries":
+        guard game.state.plannerKnown else {
+            print(plannerNotYetText(game.state))
+            break
+        }
+        guard words.count > 1,
+            let bird = findBird(
+                words.dropFirst().joined(separator: ""), game.state, includeLost: true, includeRehomed: true)
+        else {
+            print("Use: carries <name>")
+            break
+        }
+        let notes = carrierLines(bird.id, game.state)
+        if notes.isEmpty { print(carrierNoneText(bird.id, game.state)) }
+        notes.forEach { print($0) }
     case "tree":
         guard words.count > 1,
             let bird = findBird(words.dropFirst().joined(separator: ""), game.state, includeLost: true)

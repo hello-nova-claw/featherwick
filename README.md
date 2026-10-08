@@ -37,7 +37,7 @@ errands left. See "Daylight and errands".
 the neighbour, new stock, the show, jobs, the season goal, eggs, other) for the app's morning report.
 Every event lands in exactly one group. IDs and events only; the words come from `eventText`.
 
-Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
+Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note, and the first why note opens "What might hatch"; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
 
 ## The early game (tutorial timeline)
 
@@ -143,6 +143,7 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 - The note uses no random draws, so the same seed hatches the same chicks as before.
 - The app shows the note in the log, and as a toast. The app keeps only the newest two toasts, so a busy
   night can push it out.
+- The first why note of a game opens the planner. See "What might hatch".
 
 ## Breeding pen
 
@@ -176,6 +177,195 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 - Old saves load with an empty pen (`SaveFormat.fillNewSettings`).
 - CLI: `pen` lists the pen, `pen <name>` and `unpen <name>` move a bird. App: "Breeding pen" in the
   Coop sheet (a rooster place and hen places), and "Pen" or "Take out of the pen" on the bird card.
+
+## What might hatch
+
+`Knowledge.swift`, `KnowledgeTables.swift`, `Visible.swift`, `Planner.swift`, `PlannerTables.swift`.
+The breeding pen shows what each penned hen and the penned rooster could hatch. Each line has a reason.
+
+**The one rule: the planner never reads genes.** It reads `Visible` birds (what the keeper can see)
+and `Knowledge` (what the keeper can work out from them). Hidden genes are found by elimination only.
+
+### What the keeper can see (`Visible`)
+
+- A `Visible` holds plain values: name, sex, stage, breed, origin, parents, look (`SeenLook`) and
+  type band. It holds no genes.
+- A bird whose sex does not show yet has no sex and no breed. Its look is its chick down only.
+- A grown bird at home shows its feathers. A grown hen at home shows her egg colour too.
+- A bird out of sight (rehomed, boarding or lost) keeps the look the keeper last saw
+  (`Bird.lastSeenLook`). The look is frozen when the bird leaves. Coming home clears it. So a grower
+  that grows up while away never shows eggs the keeper did not see.
+- An away bird from an older save has no frozen look. It counts as its chick down only, because the
+  day it left is not known.
+- Birds that count (`Visible.all(in:)`): owned birds (home, lost, boarding), rehomed birds, and
+  family-tree records. Not the neighbour's starter chicks before one is chosen, and not a trade offer's hen.
+- A family-tree record has a `look` field, but no code sets it today. So a record gives breed evidence only.
+
+### Working it out (`Knowledge`)
+
+Each bird starts with every genotype its sex allows at each single gene. Evidence removes the
+genotypes that cannot be:
+
+1. **Look.** `Phenotype` in reverse (`LookTable`). The table is made once from every combination of
+   the single genes. It never reads a real bird.
+2. **Origin.** A bird from outside the flock (no parents on record, not hatched at home) is one of its
+   breed's public recipes (`RecipeTable`) that gives its look.
+3. **Family up.** A chick keeps only genotypes its parents can give it.
+4. **Family down.** A parent keeps a genotype only if every seen chick can come from it.
+5. Steps 3 and 4 repeat until nothing changes.
+
+- A mother is a hen and a father a rooster, even before the sex shows.
+- Knowledge is sex-blind for a bird whose sex does not show yet. At a sex-linked gene its candidates
+  always hold both the hen's and the rooster's forms, and its parents do not narrow them. Otherwise
+  the set could tell a barred chick's sex. The chick still counts as evidence about its parents.
+- An outside bird from an old save may fit no recipe the game has now. Then origin evidence is
+  skipped for it. It is not a contradiction.
+- Knowledge covers the single genes (`Loci.mendelian`). That list is worked out from `Loci`, so a new
+  single gene is picked up at once. The quantitative traits (many small genes) are not tracked.
+- Type comes from the judge's type band the keeper saw at the bird's newest show (`Visible.typeBand`).
+  It is never worked out from genes.
+- Each gene ends in one of three states:
+  - `pinned`: one genotype left.
+  - `halfPinned`: more than one left, but one allele is in all of them.
+  - `open`: no allele is certain.
+- Evidence that would remove every genotype is a contradiction. It is counted and ignored. In normal play
+  there are none.
+- Knowledge is worked out on demand. It is never stored. Birds are sorted by id, so equal states give
+  byte-identical output.
+
+### The forecast (`Planner.forecast`)
+
+Lines come in this order. Within a group, lines follow `Trait.planned` (feather colours, barred,
+laced, silkie feathers, egg colours, speckled eggs). Egg colours appear only in the egg-colour line
+and in "likely no" lines ("Likely no blue eggs").
+
+1. **Certain.** Every chick shows it: "Every chick will be lavender."
+2. **Ratio.** Only when no open gene can change the share. Each gene that decides it is pinned in
+   both parents, or cannot change it (white, buff or lavender hides it). At most
+   `plannerMaxRatioDenominator` (16). Feather colours share one denominator and one sentence:
+   "About 1 in 4 black, 2 in 4 blue, 1 in 4 splash." A white parent gives no colour or pattern ratio.
+3. **Sex-link.** A barred hen, a rooster pinned not barred, and no chick can be buff or white:
+   "Every barred chick will be a cockerel, every plain one a pullet." Buff and white hide barring.
+   If a chick can be buff or white, a plain chick can be a cockerel, so there is no sex-link line.
+4. **Egg colours.** Always one line: "Hens from this pair will lay cream or brown eggs." If an open
+   gene could add a colour, the line ends with "unless one of them carries blue" or "unless one of
+   them carries brown". When the family showed that gene, the reason is the family evidence, and
+   the line ends with "unless one of them is hiding another egg colour".
+5. **Likely.** A parent with at least `plannerLikelyAfterChicks` (5) seen chicks, none of which shows
+   an allele it may hide: "Likely no barred chicks." For an egg gene, only laying daughters count.
+   For a hen's Z gene, only sons count. It is a likelihood, not a proof.
+6. **Possible.** Can hatch only if a parent hides it. Only for traits a bird can carry without
+   showing them: lavender, buff, barred, laced, silkie feathers, speckled eggs. Never black, blue,
+   splash or white: they show whenever their genes are there. When nobody in the pair's seen family
+   showed the trait: "If one of them is hiding lavender, you'll find out." When someone did, the
+   reason gives the family evidence. This is a parent's proven allele, or a parent or chick that
+   showed the gene: "Her mother, Clover, is lavender." Else it is the family tree.
+7. **Not possible.** Proven by elimination: "No lavender chicks from this pair." At most
+   `plannerNotPossibleLines` (4). Traits the pair's seen family showed come first, then the common looks.
+8. **Type.** Only when the judge gave both birds a type band: "Both judged good for type. Chicks
+   should carry it."
+9. **Kinship.** Only when the pair are related: "They are related like cousins." From `Pedigree.relatedness`.
+10. **White caveat.** A parent is white, and not every chick will be white: "White hides what's
+    underneath. Anything either of them carries could show."
+
+- "Possible" and "not possible" lines are given for the common looks, and for traits that the pair,
+  their parents, grandparents or seen chicks showed. Other traits get no line. "Likely no" lines too
+  cover only traits a bird can hide, and egg colours.
+- Egg colours are coarse: cream, brown, blue, green. How dark a brown or green egg is comes from
+  many small genes. The planner does not forecast it.
+- Never a percentage or a decimal. Ratios read "about 1 in 4".
+
+### Reasons
+
+Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brackets.
+
+- The bird's look: "Pip is blue. Blue birds always carry one of each."
+- Its breed, for a bird from outside: "Pip came from Speckle & Down as an Orpington."
+- A parent: "Her mother, Clover, is lavender."
+- A chick: "They had a lavender chick, Clover."
+- Unknown family: "No one in their family has shown lavender yet." Only when no bird in the pair's
+  seen family (the pair, parents, grandparents, chicks) showed the gene. Egg colours count: a
+  hen that laid blue or green eggs showed blue shell. This holds for the egg-colour line too.
+- A parent or a chick is named only for a non-plain allele ("barring came down from his mother").
+  A plain allele proven through family gives the family tree.
+- A parent is named only when that parent alone is proven to carry the allele. When it takes
+  both parents to prove it, and both or neither surely carry it, the reason is the family tree.
+- A chick's down counts as shown: barred down shows barring, slate shows blue, pale grey shows
+  splash, silver shows lavender. Yellow down is buff or white, so it shows neither.
+- Many chicks: "Pip has had 5 chicks and none showed barring."
+- The judge's notes, the family trees, or a white parent.
+- A reason names only a bird the keeper owns or has rehomed. Any other bird is "a bird".
+- A bird whose sex does not show yet gets its name, never he or she.
+
+### The unlock
+
+- The first why note (`hatchSurprise`) opens the planner. That night sets `GameState.plannerKnown` and
+  sends `.plannerIntroduced` right after the `hatchSurprise`. This happens once a game.
+- The neighbour says: "You can work this out ahead of time, you know. Come and look at the pen."
+  Before the breeding pen opens, she says: "I'll show you once you have a breeding pen."
+- The unlock makes no random draw. The same seed hatches the same chicks.
+- The morning report puts `.plannerIntroduced` in the hatched group.
+- The pen shows a "New" notice (`plannerNoticeText`) until the keeper opens the panel. The app shows
+  it only when a hen and a rooster are penned.
+  `Command.openPlanner` sets `plannerOpened`. It costs no daylight and returns no events. Before the
+  unlock it does nothing.
+- Panel states (`Planner.panel(in:)`):
+  - `hidden`: the keeper has not met the planner. The pen shows nothing.
+  - `needsHen`: "Pen a hen to see what might hatch."
+  - `needsRooster`: "Pen a rooster to see what might hatch."
+  - `forecast`: one forecast per penned hen with the penned rooster, hens in pen order.
+- Old saves load with `plannerKnown` and `plannerOpened` false (`SaveFormat.fillNewSettings`). They
+  wait for the next why note.
+
+### Carrier notes
+
+- The bird card lists the hidden alleles a bird surely carries: "Carries lavender."
+  `Planner.carrierNotes(for:in:)` gives them, from `Knowledge.provenHidden`.
+- A note needs an allele that every genotype left holds (pinned or half pinned), and that the look does
+  not show. Never "may carry". Plain alleles get no note on the card.
+- A tap shows the reason: "It came from Moss's mother, Clover."
+- No new state: the notes are worked out again each time from the state.
+- The family tree shows each bird's notes in a few words ("carries lavender and blue eggs",
+  `carrierShortText`), rehomed birds too. The CLI `tree` adds them after a " · ". The app's tree on
+  the bird card shows them under each bird.
+- Rehomed birds stay in Knowledge. Their chicks still count as evidence. `carries <name>` finds a
+  rehomed bird too. The app's bird card does not open for a rehomed bird.
+- A bird whose sex does not show yet gets sexless words: its name, never he or she.
+- Empty until the keeper has met the planner.
+
+### Words, app and CLI
+
+- Words (`FeatherwickText/PlannerText.swift`): `plannerText`, `plannerReasonText`, `plannerPanelText`,
+  `plannerLines`, `plannerNoticeText`, `carrierText`, `carrierReasonText`, `carrierLines`.
+- App: `Sheets/WhatMightHatchSection.swift`. "What might hatch" is in the breeding pen sheet. A feather
+  or egg mark shows the colour a line names, from its `Trait`. Carrier lines are on the bird card.
+- CLI: `plan` shows the pen's forecast (and opens the panel). `plan <hen> <rooster>` shows any revealed
+  hen and rooster. `carries <name>` shows what a bird surely carries. Before the unlock, both say
+  "Not yet".
+
+### Tests that guard it
+
+- **Blind test** (`KnowledgeTests`): 2,000 seeded games of 120 days, about 14 minutes. Every bird's
+  genes are swapped for others that keep what the keeper saw the same: the look at home, the frozen
+  look for a bird out of sight. A chick whose sex does not show may change sex too. Knowledge, the
+  carrier notes (owned and rehomed birds) and the forecasts must stay byte-identical. The forecasts
+  are for the penned pair and every revealed adult hen × rooster pair in the coop.
+- **Soundness** (`KnowledgeTests`): for each checked pair, 10,000 real `Breeding.cross` chicks.
+  "Not possible" never hatches. "Certain" always hatches. A ratio lands within 3 points of the
+  real share. A sure egg-colour list and a sex-link always hold.
+- **No genome** (`KnowledgeTests`): `Knowledge.swift` and `Planner.swift` must not contain "genome",
+  "Genome" or "alleles(at:". A `Visible` holds no genes.
+- **Speed:** `Knowledge.of` for 40 birds under 1 ms in release, 25 ms in debug. A full pen panel
+  under 5 ms in release, 100 ms in debug.
+- `PlannerTests` and `PlannerTests+Unlock` check each kind of line, the panel, the unlock and old saves.
+  `PlannerTextTests` checks the words: no percentages, no sexed words for an unrevealed bird.
+- The full `swift test` takes about 20 minutes.
+
+### Rules
+
+- `plannerLikelyAfterChicks` (5): seen chicks a parent needs, none showing an allele, before "likely no".
+- `plannerNotPossibleLines` (4): "not possible" lines in one pair's forecast, at most.
+- `plannerMaxRatioDenominator` (16): the largest "in N" a ratio uses. Finer shares say "possible".
 
 ## Birds never wait forever
 
@@ -485,6 +675,15 @@ CLI: `draw <name>`, `art`.
 `Pedigree.swift`. Every bird keeps its mother's and father's IDs. Owned birds (rehomed ones
 too) stay in the state; outside parents, such as those of a bought egg, are kept as
 `PedigreeRecord`s, so no tree breaks.
+
+- A record has an optional look (`PedigreeRecord.look`, a `SeenLook`). It is kept for future use.
+  No code sets it today, so every record has none. A record gives breed evidence only to "What might hatch".
+- The "Local flock" parents of a bought egg are records with no look: the keeper never sees them.
+- A bird that leaves sight (rehomed, boarding, lost) is not a record. It keeps the look the keeper
+  last saw in `Bird.lastSeenLook`. See "What might hatch".
+- Records in older saves have no look. The field is optional, so they load with no migration.
+- Once the planner is known, the tree shows each bird's carrier notes, rehomed birds too
+  ("carries lavender"). CLI: after a " · ". App: under the bird.
 
 - `Pedigree.tree(of:generations:)`, `offspring(of:)`, `kinship(a, b)`, `inbreeding(of:)`.
 - Inbreeding is Wright's coefficient, as real breeders use: brother × sister = 0.25, half
