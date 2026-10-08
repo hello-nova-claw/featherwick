@@ -303,7 +303,10 @@ while true {
             print("Use: guess <name> hen|roo")
             break
         }
-        guard let bird = findBird(words.dropFirst().dropLast().joined(separator: ""), game.state) else {
+        // Lost birds too, as the engine allows: a guess is about the chick, not where it is.
+        guard
+            let bird = findBird(words.dropFirst().dropLast().joined(separator: ""), game.state, includeLost: true)
+        else {
             print("There is no bird called \(words.dropFirst().dropLast().joined(separator: " ")).")
             break
         }
