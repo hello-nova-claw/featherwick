@@ -68,7 +68,7 @@ public func breedLore(_ breed: Breed) -> BreedLore? {
                 + "and joined the American standard in 1883.")
     case .araucana:
         BreedLore(
-            origin: "From the Araucanía region of Chile, where the breed took shape in the early 20th century "
+            origin: "From the Araucanía region of Chile, where the breed took shape in the 20th century "
                 + "from fowl kept by the Mapuche people.",
             bredFor: "Its blue eggs, which very few breeds lay. Breeders joined two local fowl: one laid blue "
                 + "eggs and had no tail, and the other had ear tufts.",
@@ -105,11 +105,11 @@ public func breedLore(_ breed: Breed) -> BreedLore? {
         BreedLore(
             origin: "From the marshes around the port town of Marans in western France. It took its modern "
                 + "form in the early 20th century.",
-            bredFor: "A farm bird for eggs and the table.",
+            bredFor: "A farm bird for eggs and the table. Breeders crossed the local marsh fowl with Langshans.",
             eggs: "Very dark brown, from mahogany to chocolate.",
-            temperament: "Calm and easy-going. Roosters can be bossy with each other.",
+            temperament: "Calm and easy-going.",
             judge: "A sturdy, active farm bird of good size, and a clean, even colour, such as black.",
-            oddity: "The dark brown is a coat the hen adds last, as the egg passes down to be laid. "
+            oddity: "The hen adds the dark brown last, in the final hours before the egg is laid. "
                 + "The breed nearly died out in the 1940s, and French breeders brought it back.")
     case .leghorn:
         BreedLore(

@@ -1,6 +1,8 @@
-import FeatherwickCore
 import FeatherwickText
+import Foundation
 import Testing
+
+@testable import FeatherwickCore
 
 /// The Breed Book's lore pages: one per breed, short, and with no gene words (rule 8).
 struct BreedLoreTests {
@@ -43,23 +45,25 @@ struct BreedLoreTests {
     /// "Found on day N" is the first day any look of the breed was found. A breed not found, or found
     /// only in an old save with no days, gets no line.
     @Test func foundDayIsTheBreedsFirstLook() {
+        func look(_ breed: Breed, _ variety: ColourVariety) -> BreedBookEntry {
+            BreedBookEntry(
+                Bird(
+                    id: UUID(), name: "", breed: breed, genome: breed.purebred(.hen, variety: variety), hatchDay: 0,
+                    origin: "Speckle & Down", revealed: true))
+        }
         var rng = SeededRNG(seed: 5)
         var s = Engine.newGame(earlyGame: false, using: &rng)
+        let blue = look(.orpington, .blue)
+        let black = look(.orpington, .black)
+        let buff = look(.silkie, .buff)
+        #expect(blue != black)
+        s.breedBook = [blue, black, buff]
+        s.breedBookDays = [blue: 9, black: 5]  // the Silkie look is from an old save: no day
+        #expect(breedFoundText(.orpington, s) == "Found on day 5")
         #expect(breedFoundText(.silkie, s) == nil)
-        _ = Engine.apply(.chooseStarter(index: 0, name: "Fern"), to: &s, using: &rng)
-        s.coins = 500
-        for _ in 0..<4 {
-            _ = Engine.apply(.buy(.pullet), to: &s, using: &rng)
-            _ = Engine.apply(.passNight, to: &s, using: &rng)
-        }
-        for breed in BreedTable.all {
-            let looks = s.breedBook.filter { !$0.isCross && $0.variety == breed.id.rawValue }
-            let first = looks.compactMap { s.breedBookDays[$0] }.min()
-            #expect(breedFoundText(breed.id, s) == first.map { "Found on day \($0)" }, "\(breed.id)")
-        }
-        #expect(s.breedBook.contains { breedFoundText(Breed(rawValue: $0.variety), s) != nil })
-        s.breedBookDays = [:]
-        for breed in BreedTable.all { #expect(breedFoundText(breed.id, s) == nil) }
+        #expect(breedFoundText(.wyandotte, s) == nil)  // not found at all
+        s.breedBookDays = [blue: 9]
+        #expect(breedFoundText(.orpington, s) == "Found on day 9")
     }
 
     @Test func noPageUsesGeneWords() {
