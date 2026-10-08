@@ -116,8 +116,8 @@ public func breedLore(_ breed: Breed) -> BreedLore? {
             origin: "From Tuscany in Italy. Ships took the birds to America from the port of Livorno in the "
                 + "19th century.",
             bredFor: "Eggs. The early Italian birds were small, laid well and needed little feed. White Leghorns "
-                + "became the main breed behind commercial egg layers.",
-            eggs: "Cream, about 280 a year from a good hen.",
+                + "became the main breed behind commercial white-egg layers.",
+            eggs: "White, about 280 a year from a good hen.",
             temperament: "Very active and easily startled.",
             judge: "A slim, upright, streamlined body with the tail held high, and clean white feathers with "
                 + "no cream or yellow tint.",
