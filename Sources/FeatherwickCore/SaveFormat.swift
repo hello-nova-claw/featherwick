@@ -72,10 +72,21 @@ public enum SaveFormat {
             try migrate(&root)
         }
         root["version"] = currentVersion
+        // Read before `fillNewSettings`, which would fill the key with an empty list.
+        let hasLayRecords = (root["state"] as? [String: Any])?["layRecords"] != nil
         fillNewSettings(&root)
         let current = try JSONSerialization.data(withJSONObject: root)
-        guard let envelope = try? JSONDecoder().decode(Envelope.self, from: current) else { throw LoadError.notASave }
+        guard var envelope = try? JSONDecoder().decode(Envelope.self, from: current) else { throw LoadError.notASave }
+        if !hasLayRecords { backFillLayRecords(&envelope.state) }
         return SaveGame(state: envelope.state, rng: envelope.rng)
+    }
+
+    /// A save from before the record book has no `layRecords` key. Its egg history starts from the eggs
+    /// it still holds (see `Records.backFill`). Runs only when the key is missing, so a save's own records
+    /// are never changed. Not in `fillNewSettings`: that copies raw JSON values, and this needs typed eggs.
+    /// Not in `migrations`: no existing data changes shape, so the save version stays the same.
+    static func backFillLayRecords(_ state: inout GameState) {
+        Records.backFill(&state)
     }
 
     /// A save made before a game-state field or a rule existed gets that field's starting value.

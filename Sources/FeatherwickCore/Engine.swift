@@ -1290,6 +1290,7 @@ public enum Engine {
             egg.shell = Judge.shellQuality(of: hen, in: s)
             s.nest.append(egg)
             ev.append(.eggLaid(egg.id, by: hen.id))
+            Records.noteLaid(by: hen.id, onDay: s.day, &s)
             if egg.isFertile, !s.incubatorGiftGiven {
                 s.incubatorGiftGiven = true
                 // Only offered if the player has no incubator yet (they may have bought the big one).
