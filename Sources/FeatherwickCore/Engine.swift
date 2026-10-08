@@ -768,7 +768,9 @@ public enum Engine {
     /// So a clear egg that was not candled first sits the full time and comes back on hatch day
     /// (`hatchDue`). The keeper who candles first saves the space and the wait.
     /// Callers refuse eggs already known to be clear. Incubator eggs join a clutch set earlier the same day.
+    /// Eggs from a penned pair add what the pen's forecast pins to the inheritance page.
     static func setEggs(_ chosen: [Egg], hen: UUID?, hatchDay: Int, _ s: inout GameState) -> [GameEvent] {
+        InheritancePage.recordSetting(chosen, &s)
         let chosenIDs = Set(chosen.map(\.id))
         s.carton.removeAll { chosenIDs.contains($0.id) }
         addToClutch(chosen, hen: hen, hatchDay: hatchDay, &s)
