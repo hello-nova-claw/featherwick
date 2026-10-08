@@ -481,6 +481,9 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
             "The sun's still up. There's time for \(left) more thing\(left == 1 ? "" : "s")."
         case .timeForBed: "The light's gone. Time for bed: sleep"
         case .blankName: "A name needs at least one letter."
+        // Rule 8: about age only, never about which sex the bird is.
+        case .tooLateToGuess: "Too late for a guess: that bird's feathers are in."
+        case .alreadyGuessed: "You've made your guess for that chick. Wait and see."
         }
     case .starterChosen(let id): return "You take \(birdName(id, s)) home and settle them under the heat lamp."
     case .fed: return "You fill the feeder and top up the water."
@@ -733,7 +736,30 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
             : "The sun moves on. Time for \(left) more thing\(left == 1 ? "" : "s") today."
     case .rested(let time): return restedText(time, s)
     case .keeperNamed(let name): return "\(People.neighbour) waves over the fence. \"Welcome, \(name)!\""
+    case .sexGuessed(let id, let guess):
+        return "You look \(birdName(id, s)) over and say \(sexGuessWord(guess)). "
+            + "\(People.neighbour) smiles. \"We'll know when the feathers come in.\""
+    case .sexGuessResolved(let id, let guessed, let actual):
+        return sexGuessResolvedText(id, guessed: guessed, actual: actual, s)
     }
+}
+
+/// The keeper's word for a guess: hen or roo.
+public func sexGuessWord(_ sex: Sex) -> String { sex == .hen ? "hen" : "roo" }
+
+/// The neighbour's words on the morning a guessed chick's sex shows. Said only then, so nothing leaks.
+func sexGuessResolvedText(_ id: UUID, guessed: Sex, actual: Sex, _ s: GameState) -> String {
+    let treats = s.rules.sexGuessTreats
+    let reward = treats == 1 ? "Have a mealworm." : "Have \(treats) mealworms."
+    let said = "You said \(sexGuessWord(guessed))"
+    let words =
+        switch (guessed, actual) {
+        case (.hen, .hen): "\(said), and she is. Well spotted. \(reward)"
+        case (.rooster, .rooster): "\(said), and he is. Well spotted. \(reward)"
+        case (.hen, .rooster): "\(said). He's a cockerel, as it turns out. They fool everyone at that age."
+        case (.rooster, .hen): "\(said). She's a pullet, as it turns out. They fool everyone at that age."
+        }
+    return "\(People.neighbour) leans on the fence to look at \(birdName(id, s)). \"\(words)\""
 }
 
 /// Why an errand must wait for the morning.
@@ -1049,6 +1075,8 @@ public func milestoneText(_ id: String) -> (title: String, hint: String) {
     case "elderHen": ("Grand old lady", "Keep a hen into her beloved retirement.")
     case "chocolateEgg": ("Chocolate egg", "Find a hen that lays very dark chocolate-brown eggs.")
     case "greenEgg": ("Green egg", "Cross an Araucana with a brown-egg breed. Some of the hens lay green eggs.")
+    case "henOrRoo":
+        ("Guessed hen or roo right", "Guess hen or roo for a young chick. You find out when its feathers come in.")
     default: (id, "")
     }
 }

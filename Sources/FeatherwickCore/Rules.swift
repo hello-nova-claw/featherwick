@@ -11,6 +11,8 @@ public struct Rules: Codable, Hashable, Sendable {
     public var homeWaitNights = 3
     /// Nights a new bird waits for a name. Then it takes the suggested name; the player can rename it.
     public var autoNameNights = 2
+    /// Mealworms for a right "hen or roo?" guess, paid the morning the sex shows (see SexGuess.swift).
+    public var sexGuessTreats = 1
     /// Share of birds that gain a third quirk, from their sex's set, once their sex shows (`Quirks`).
     public var quirkSexShare = 0.5
 

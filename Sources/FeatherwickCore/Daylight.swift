@@ -2,7 +2,8 @@ import Foundation
 
 // Daylight: a day has a few slots for errands, so a day is a handful of choices, not a to-do list.
 //
-// Care is always free: feeding, collecting, cuddles, treats, selling at the gate, setting eggs.
+// Care is always free: feeding, collecting, cuddles, treats, a "hen or roo?" guess, selling at the
+// gate, setting eggs.
 // An errand takes a slot: a trip to Speckle & Down, candling, the show desk, a visit to the
 // neighbour, building. The first errand of a kind spends the slot; more of the same kind that day
 // are free, because the keeper is already there. Resting spends a slot and does nothing else.
@@ -66,7 +67,7 @@ extension Engine {
         case .upgradeCoop: .building
         case .chooseStarter, .feed, .feedPremium, .collectEggs, .sellEggs, .sellChosenEggs, .sellClearEggs,
             .closeCoop, .pet, .giveTreat, .rename, .incubate, .incubateEggs, .sit, .sitEggs, .penBird, .unpenBird,
-            .rest, .passNight, .openPlanner, .nameKeeper:
+            .rest, .passNight, .openPlanner, .nameKeeper, .guessSex:
             nil
         }
     }
