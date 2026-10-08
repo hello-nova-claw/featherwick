@@ -350,6 +350,9 @@ final class GameStore {
         case .revealed(let id, let sex, _):
             let name = s.bird(id)?.name ?? "A chick"
             return ("\(name) is a \(sex == .hen ? "pullet" : "cockerel")", "View", .bird(id))
+        case .sexGuessResolved(let id, _, _):
+            // The keeper's "hen or roo?" guess, settled the same morning as the reveal above.
+            return eventText(event, s).map { ($0, "View", .bird(id)) }
         case .newBreedBookEntry(let entry):
             // No "View" until the neighbour has shown the keeper the books (see `FarmView`).
             let view = s.isOpen(.breedBook)

@@ -189,6 +189,11 @@ public struct GameState: Hashable, Codable, Sendable {
     public var plannerKnown = false
     /// True once the keeper has opened the "What might hatch" panel. The pen shows a notice until then.
     public var plannerOpened = false
+    /// "Hen or roo?" guesses for chicks whose sex does not show yet (see SexGuess.swift). Cleared on
+    /// the morning the sex shows, or when the chick leaves.
+    public var sexGuesses: [UUID: Sex] = [:]
+    /// Guesses that turned out right. The goal ladder reads it.
+    public var sexGuessesRight = 0
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

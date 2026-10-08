@@ -38,6 +38,7 @@ struct BirdCardSheet: View {
                 showNotes(bird, s)
                 ribbons(bird, s)
                 handlingButtons(bird, s)
+                henOrRoo(bird, s)
                 moreActions(bird, s)
                 LastWords()
             }
@@ -172,6 +173,27 @@ struct BirdCardSheet: View {
             .buttonStyle(.secondary)
             .disabled(hadTreat || s.treats == 0)
             .sensoryFeedback(.impact(weight: .light), trigger: treats)
+        }
+    }
+
+    /// "Hen or roo?": one free guess while a chick's sex does not show (see SexGuess.swift in Core).
+    /// After the guess, the keeper's own words stay on the card until the morning the sex shows.
+    @ViewBuilder
+    private func henOrRoo(_ bird: Bird, _ s: GameState) -> some View {
+        if let guess = s.sexGuesses[birdID] {
+            Text("You said \(sexGuessWord(guess))").font(Typeface.label).foregroundStyle(palette.inkMuted)
+                .frame(maxWidth: .infinity)
+                .padding(.top, Space.m)
+        } else if Engine.sexGuessRefusal(birdID, in: s) == nil {
+            Fact(label: "Hen or roo?") {
+                HStack(spacing: Space.m) {
+                    Button("Hen") { store.run(.guessSex(birdID, .hen)) }
+                    Button("Roo") { store.run(.guessSex(birdID, .rooster)) }
+                }
+                .buttonStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, Space.m)
         }
     }
 

@@ -41,6 +41,8 @@ public enum Milestones {
         Milestone(id: "elderHen") { s in s.ownedBirds.contains { $0.isRetired(onDay: s.day, rules: s.rules) } },
         Milestone(id: "chocolateEgg") { s in s.eggBook.contains { $0.colour == .chocolate } },
         Milestone(id: "greenEgg") { s in s.eggBook.contains { $0.colour == .green } },
+        // Counted only on the morning the sex shows anyway, so it reveals nothing early.
+        Milestone(id: "henOrRoo") { $0.sexGuessesRight >= 1 },
     ]
 }
 
