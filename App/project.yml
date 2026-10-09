@@ -70,10 +70,10 @@ targets:
       Debug: Config/Signing.xcconfig
       Release: Config/Signing.xcconfig
       Beta: Config/Signing.xcconfig
+    # Only the app: the tests run inside it and find FeatherwickCore through it. Linking the package
+    # product here too would put a second static copy of the core in the test bundle.
     dependencies:
       - target: Featherwick
-      - package: Featherwick
-        product: FeatherwickCore
     settings:
       base:
         SWIFT_VERSION: "6.0"

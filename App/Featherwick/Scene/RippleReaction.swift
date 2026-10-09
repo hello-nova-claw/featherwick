@@ -11,7 +11,7 @@ enum RippleReaction: Hashable, Sendable, CaseIterable {
     case stepAway
     /// Friendly: walks toward the tap and stops a body length short.
     case approach
-    /// Lap chicken: runs to the tap and sits by it for a while.
+    /// Lap chicken: runs to the tap and sits down by it for a while.
     case nestle
 
     init(band: Friendliness) {
@@ -25,6 +25,9 @@ enum RippleReaction: Hashable, Sendable, CaseIterable {
 
     /// A run, not an amble.
     var runs: Bool { self == .flee || self == .nestle }
+
+    /// Sits down where it stops (`ChickenActivity.sitting`), and gets up when the hold ends.
+    var sits: Bool { self == .nestle }
 
     /// Where a bird at `spot` heads after a tap at `tap`. All points and lengths are in points on the
     /// panel. `isWalkable` tests a point in the same space. Away reactions try the straight way out first,
@@ -44,7 +47,7 @@ enum RippleReaction: Hashable, Sendable, CaseIterable {
             let reach: CGFloat =
                 (self == .flee ? SceneConstants.rippleFleeReach : SceneConstants.rippleShyStep) * panelWidth
             let tries: Int = SceneConstants.rippleTries
-            for turn: CGFloat in [0, 0.5, -0.5, 1, -1] {
+            for turn: CGFloat in SceneConstants.rippleSideTurns {
                 for k in 0..<tries {
                     let length: CGFloat = reach * CGFloat(tries - k) / CGFloat(tries)
                     let p = CGPoint(

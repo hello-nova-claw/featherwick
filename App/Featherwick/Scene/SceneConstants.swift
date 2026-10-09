@@ -17,6 +17,11 @@ enum SceneConstants {
     /// With Reduce Motion: one ring, quickly.
     static let rippleReducedRingCount = 1
     static let rippleReducedDuration: Double = 0.2
+    /// Rings start this small and this strong, then spread and fade.
+    static let rippleRingStartScale: CGFloat = 0.15
+    static let rippleRingStartOpacity: Double = 0.9
+    /// The last ring starts this far into the ripple (a fraction of its duration). The others start in between.
+    static let rippleRingStagger: Double = 0.5
     /// The widest ring, in points at full size. Rings are flat on the ground, so they are this much as tall.
     static let rippleRadius: CGFloat = 40
     static let rippleFlatten: CGFloat = 0.4
@@ -32,4 +37,14 @@ enum SceneConstants {
     static let rippleRunTime: ClosedRange<Double> = 0.4...2.5
     /// Steps along a way out before a bird gives up on it, from the full reach down.
     static let rippleTries = 6
+    /// Ways out to try, in radians off straight away from the tap: straight first, then a little to
+    /// each side, then more.
+    static let rippleSideTurns: [CGFloat] = [0, 0.5, -0.5, 1, -1]
+    /// A ripple never sends a bird closer than this to the left or right edge (a fraction of the panel).
+    static let rippleEdge: CGFloat = 0.03
+
+    // MARK: - Walking
+
+    /// A walk cut short (a ripple, a resize) eases to a stop where the bird is drawn over this long, in seconds.
+    static let settleSeconds: Double = 0.15
 }

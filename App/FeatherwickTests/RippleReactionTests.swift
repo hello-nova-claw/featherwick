@@ -1,5 +1,6 @@
 import CoreGraphics
 import FeatherwickCore
+import Foundation
 import Testing
 
 @testable import Featherwick
@@ -24,6 +25,20 @@ import Testing
         #expect(RippleReaction.nestle.runs)
         #expect(!RippleReaction.stepAway.runs)
         #expect(!RippleReaction.approach.runs)
+    }
+
+    @Test func onlyLapChickensSit() {
+        #expect(RippleReaction.allCases.filter(\.sits) == [.nestle])
+    }
+
+    @Test func aWalkCutShortStopsWhereItIsDrawn() {
+        let start = Date(timeIntervalSinceReferenceDate: 0)
+        let leg = WalkLeg(from: CGPoint(x: 0.2, y: 0.6), to: CGPoint(x: 0.6, y: 0.8), start: start, seconds: 2)
+        let half: CGPoint = leg.point(at: start.addingTimeInterval(1))
+        #expect(abs(half.x - 0.4) < 0.0001)
+        #expect(abs(half.y - 0.7) < 0.0001)
+        #expect(leg.point(at: start.addingTimeInterval(-1)) == leg.from)
+        #expect(leg.point(at: start.addingTimeInterval(5)) == leg.to)
     }
 
     @Test func awayReactionsMoveAwayFromTheTap() {
