@@ -66,12 +66,16 @@ extension Engine {
 
     /// Each morning: Hatch-along chicks whose day has come go home, oldest first, while there is room (a
     /// free perch and a brooder place). The rest wait with Hazel, and each says so once.
+    ///
+    /// A perch is free only if no bird already waits for it: every bird in the brooder or with a mother
+    /// hen (each will want a perch when grown) and every bird boarding with Hazel holds one. So a chick
+    /// that came home yesterday still holds its perch today, and no chick is ever rehomed for lack of one.
     static func hatchAlongChickHome(_ s: inout GameState) -> [GameEvent] {
         var ev: [GameEvent] = []
         var waiting: [Int] = []
-        var arrived = 0  // each chick this morning keeps a perch for when it is grown
         for due in s.hatchAlongChickDays.sorted() {
-            let room = s.perchesUsed + arrived < s.perches && brooderRoom(s) > 0
+            let held = s.perchesUsed + s.brooder.count + s.henChicks.count + s.boarding.count
+            let room = held < s.perches && brooderRoom(s) > 0
             guard s.day >= due, waiting.isEmpty, room else {
                 if s.day >= due, s.storyNotices.insert("hatchAlong.\(due).waitingForRoom").inserted {
                     ev.append(.hatchAlongChickWaiting)
@@ -80,7 +84,6 @@ extension Engine {
                 continue
             }
             ev.append(hatchAlongChick(due: due, &s))
-            arrived += 1
         }
         s.hatchAlongChickDays = waiting
         return ev

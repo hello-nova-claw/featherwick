@@ -170,11 +170,47 @@ struct VillageDayTests {
         let one = night(&s, &rng)
         #expect(one.count(where: { if case .hatchAlongChickArrived = $0 { true } else { false } }) == 1)
         #expect(s.hatchAlongChickDays.count == 1 && s.hatchAlongChickDays.first != first.first)
+        let firstChick = one.compactMap { e -> UUID? in
+            if case .hatchAlongChickArrived(let id) = e { id } else { nil }
+        }.first
+        // The first chick still holds the one free perch: the second waits, night after night.
+        for _ in 0..<3 {
+            let wait = night(&s, &rng)
+            #expect(!wait.contains { if case .hatchAlongChickArrived = $0 { true } else { false } })
+        }
+        // Once the first chick is grown and on its perch, a second perch lets the second chick come.
+        while s.coop.allSatisfy({ $0.id != firstChick }) { night(&s, &rng) }
         s.perches = s.perchesUsed + 1
-        s.brooderSize += 1
         let two = night(&s, &rng)
         #expect(two.count(where: { if case .hatchAlongChickArrived = $0 { true } else { false } }) == 1)
         #expect(!s.hatchAlongChickDue)
+    }
+
+    /// Two queued chicks and one free perch: they come one at a time, and neither is ever rehomed for
+    /// want of a perch.
+    @Test func queuedChicksNeverOutnumberTheFreePerches() {
+        var (s, rng) = Self.game()
+        s.day = Self.hatchAlongDay(s) - 1
+        night(&s, &rng)
+        Self.buyFertileEgg(&s, &rng)
+        _ = Engine.apply(.giveHatchAlongEgg(nil), to: &s, using: &rng)
+        s.perches = s.perchesUsed
+        s.day = Self.hatchAlongDay(s, year: 1) - 1
+        night(&s, &rng)
+        Self.buyFertileEgg(&s, &rng)
+        _ = Engine.apply(.giveHatchAlongEgg(nil), to: &s, using: &rng)
+        s.perches = s.perchesUsed + 1
+        var arrived: [UUID] = []
+        var rehomed: [UUID] = []
+        for _ in 0..<80 {
+            for e in night(&s, &rng) {
+                if case .hatchAlongChickArrived(let id) = e { arrived.append(id) }
+                if case .rehomedByNeighbour(let id, _) = e { rehomed.append(id) }
+            }
+        }
+        #expect(arrived.count == 1)  // one perch, one chick; the other waits with Hazel
+        #expect(Set(arrived).isDisjoint(with: rehomed))
+        #expect(s.hatchAlongChickDays.count == 1)
     }
 
     @Test func theHatchAlongChickIsTheSameForTheSameGame() {

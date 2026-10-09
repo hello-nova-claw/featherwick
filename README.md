@@ -878,6 +878,8 @@ Nothing is missable: each day comes round again next year. `GameState.nextVillag
   Hazel. She says so once (`.hatchAlongChickWaiting`). It comes the first morning there is room. It never
   boards and is never rehomed while it waits. A waiting chick does not stop next year's egg: the chicks
   queue (`hatchAlongChickDays`) and come home oldest first, one per free perch and brooder place.
+  A perch counts as free only if no bird waits for it: every bird in the brooder, with a mother hen or
+  boarding holds one. So a chick that came home yesterday still holds its perch, and none is rehomed.
 - The chick is drawn from its own seed (`shopSeed` and its day), never the game RNG. So giving an egg does
   not change the rest of a seeded game.
 - No egg costs nothing. The day comes round next spring.
