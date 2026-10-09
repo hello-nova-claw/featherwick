@@ -1050,8 +1050,8 @@ brings it. The keeper can pin a card of their own to sell young birds. Nothing h
 - **What a card asks** (`MarketWant`): N carton eggs of one colour (speckled or plain), or one bird
   (`MarketBirdAsk`: a sex, a friendliness band or better, a laying hen). An egg card is pinned only when
   the Egg Book has its colour.
-- **Rewards** (`Rules.marketReward`). Eggs pay `marketEggRewardFactor` (1.5) times their fresh farm-gate
-  price, rounded: 3 blue eggs pay 14. A bird pays `marketBirdCoins` (8), plus `marketLayingHenCoins` (4),
+- **Rewards** (`Rules.marketReward`). Eggs pay `marketEggRewardFactor` (2.5) times their fresh farm-gate
+  price, rounded: 3 blue eggs pay 23, and 6 brown eggs pay 30 (as Mr Okafor's window does). A bird pays `marketBirdCoins` (8), plus `marketLayingHenCoins` (4),
   `marketFriendlyCoins` (5) or `marketLapChickenCoins` (12).
 - **Filling a card** (`fillCard(card, bird:)`). An egg card takes eggs not known to be fertile first, then
   the oldest. A bird card takes the named bird, if it fits and can go to a new home (`rehomeBlocker`:

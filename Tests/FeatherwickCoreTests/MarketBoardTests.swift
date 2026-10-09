@@ -161,8 +161,10 @@ struct MarketBoardTests {
 
     @Test func rewardsComeFromTheRules() {
         let r = Rules.standard
-        // "3 blue eggs, 14 coins": half again the farm-gate price (9), rounded.
-        #expect(r.marketReward(for: .eggs(.blue, count: 3)) == 14)
+        // "3 blue eggs, 23 coins": two and a half times the farm-gate price (9), rounded.
+        #expect(r.marketReward(for: .eggs(.blue, count: 3)) == 23)
+        // Six brown eggs pay what Mr Okafor's window pays for them.
+        #expect(r.marketReward(for: .eggs(.brown, count: 6)) == 30)
         #expect(r.marketReward(for: .bird(MarketBirdAsk())) == r.marketBirdCoins)
         #expect(
             r.marketReward(for: .bird(MarketBirdAsk(sex: .hen, friendliness: .friendly)))

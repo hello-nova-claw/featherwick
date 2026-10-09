@@ -256,7 +256,7 @@ public struct Rules: Codable, Hashable, Sendable {
     /// Days a card stays up, the pin day included.
     public var marketCardDays = 7
     /// An egg card pays this many times the eggs' fresh price at the farm gate.
-    public var marketEggRewardFactor = 1.5
+    public var marketEggRewardFactor = 2.5
     /// Bird cards in one week's pin, at most. The rest are egg cards (when the Egg Book has their colours).
     public var marketBirdCardsPerPin = 1
     /// A bird card pays this, plus the extras below. A little more than a new home pays for a plain bird.

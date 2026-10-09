@@ -3,7 +3,7 @@ import Foundation
 // The market board by the bakery: wanted cards from Featherwick's people, and the keeper's own card.
 //
 // Each week (a night step after the early game) the board pins `Rules.marketCardsMin` to `marketCardsMax`
-// wanted cards, at most `marketBirdCardsPerPin` of them for a bird: "3 blue eggs, 14 coins, until day 40",
+// wanted cards, at most `marketBirdCardsPerPin` of them for a bird: "3 blue eggs, 23 coins, until day 40",
 // or "a friendly hen for a child". The keeper fills a
 // card by bringing the eggs or the bird before the card's last day ends. A card that is not filled just
 // comes down. No penalty: another week brings new cards.
