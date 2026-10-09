@@ -386,7 +386,7 @@ struct FarmView: View {
             // Not on the farm any more: its notices show under the coop.
             return []
         case .backFence:
-            let news = Engine.storyAwaitingDelivery(s) != nil || s.tradeOffer != nil
+            let news = Engine.storyAwaitingDelivery(s) != nil || s.tradeOffer != nil || !s.pendingChoices.isEmpty
             return news ? [Notice(kind: .story, text: "has news")] : []
         case .yard:
             if !s.fedToday { return [Notice(kind: .decision, text: "hungry")] }

@@ -157,6 +157,11 @@ public enum Rejection: Hashable, Codable, Sendable {
     case noSuchDebt
     /// The bird is on loan: she cannot be rehomed, penned or renamed (see Loans.swift).
     case onLoan
+    /// A story asks for this many eggs of this colour, and the carton has fewer.
+    case needEggs(EggColour, need: Int, have: Int)
+    /// A story asks for this many eggs of one colour new to the Egg Book (one of these), and the carton
+    /// has at most `have` of any of them.
+    case needEggsOfNewColour([EggColour], need: Int, have: Int)
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -318,6 +323,9 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case villageDayComing(VillageDay, inDays: Int)
     /// Today is a village day.
     case villageDay(VillageDay)
+    /// A person named a newly hatched chick, as a story promised (`StoryReward.namesNextChick`).
+    /// Comes after the chick's `chicksHatched`. The keeper can rename it.
+    case chickNamed(UUID, by: Person)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -867,6 +875,7 @@ public enum Engine {
             }
             var ids: [UUID] = []
             var notes: [GameEvent] = []
+            var named: [GameEvent] = []
             var unhatched = 0
             for egg in clutch.eggs {
                 guard
@@ -881,6 +890,13 @@ public enum Engine {
                 s.chicksHatched += 1
                 chick.inbreeding = Pedigree.kinship(chick.motherID, chick.fatherID, in: s)
                 chick.needsName = true
+                if let namer = s.nextChickNamer {
+                    // A story promised this person the next chick's name. No game randomness used.
+                    chick.name = NameBook.name(by: namer, for: chick, in: s)
+                    chick.needsName = nil
+                    s.nextChickNamer = nil
+                    named.append(.chickNamed(chick.id, by: namer))
+                }
                 if let hen = clutch.henID {
                     chick.raisedBy = hen
                     chick.tameness = s.rules.broodyChickTameness
@@ -896,6 +912,7 @@ public enum Engine {
                 }
             }
             if !ids.isEmpty { ev.append(.chicksHatched(ids, hen: clutch.henID)) }
+            ev += named
             // The first why note opens "What might hatch". No random draw: the same seed hatches the same chicks.
             if !notes.isEmpty, !s.plannerKnown {
                 s.plannerKnown = true

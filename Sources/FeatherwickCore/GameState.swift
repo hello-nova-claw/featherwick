@@ -210,6 +210,9 @@ public struct GameState: Hashable, Codable, Sendable {
     public var debtsPaid: Set<String> = []
     /// Notes already delivered (see Post.swift), by ID. A note never comes twice.
     public var notesSeen: Set<String> = []
+    /// Someone who will name the next chick that hatches (`StoryReward.namesNextChick`). Cleared on that
+    /// hatch. Nil when nobody is waiting, and in older saves.
+    public var nextChickNamer: Person?
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

@@ -64,6 +64,7 @@ public func storyText(_ id: String, step: String?) -> String {
     case ("broodySilkie", nil):
         return """
             Hazel leans over the fence, laughing. "My old Silkie has gone broody again. She's sitting on a golf ball! \
+            My mother hatched her whole lavender line under Silkies, you know. \
             If you could spare 3 eggs you know are fertile, she'd hatch them for you." (Candle your eggs, then: give eggs)
             """
     case ("broodySilkie", "sitting"):
@@ -71,17 +72,20 @@ public func storyText(_ id: String, step: String?) -> String {
     case ("lacedGift", nil):
         return """
             The Wyandotte keeper two doors down stops to admire your flock over the fence. "You've a proper \
-            little henhaven going. Give me a few days — I've a girl who'd be happier with you."
+            little henhaven going. Give me a few days — I've a girl who'd be happier with you." \
+            Hazel smiles. "That's how my mother's lavender line began: one hen, handed over a fence."
             """
     case ("heritageBreed", nil):
         return """
             A travelling keeper is retiring her heritage Australorp line. "They're grand layers, gentle as \
-            anything. Bring me 4 eggs you know are fertile, so I know they'll be in good hands." (candle, then: give eggs)
+            anything. Bring me 4 eggs you know are fertile, so I know they'll be in good hands." \
+            Hazel nods. "My mother found homes for her lavender birds the same way, when she retired." \
+            (candle, then: give eggs)
             """
     case ("heritageBreed", "settling"):
         return "The Australorp hen is settling in. Give her a few days to find her feet."
     default:
-        return "Something is happening in Featherwick. Type: story"
+        return peopleStoryText(id, step: step) ?? "Something is happening in Featherwick. Type: story"
     }
 }
 
@@ -488,6 +492,7 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         case .noSuchChoice: "Nobody is waiting on that choice. Type: people"
         case .noSuchDebt: "You don't owe anything by that name. Type: people"
         case .onLoan: "She's on loan, so that's for her owner to decide."
+        case .needEggs, .needEggsOfNewColour: peopleEventText(e, s) ?? ""
         }
     case .starterChosen(let id): return "You take \(birdName(id, s)) home and settle them under the heat lamp."
     case .fed: return "You fill the feeder and top up the water."
@@ -551,7 +556,7 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         let step: String? = if case .storyStep(_, let st) = e { st } else { nil }
         return storyText(id, step: step)
     case .delivered:
-        return "You hand the eggs over the fence, carefully."
+        return peopleEventText(e, s) ?? "You hand the eggs over the fence, carefully."
     case .storyGiftWaitingForRoom:
         return
             "Hazel has a gift for you, but your coop has no free perch. Make room, and it arrives that night."
@@ -748,6 +753,8 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .chose, .storyCoins, .storyTreats, .storyGiftEgg, .loanArrived, .loanReturned, .loanKept, .debtOwed,
         .debtReminder, .debtPaid, .noteArrived, .villageDayComing, .villageDay:
         return villageEventText(e, s)
+    case .chickNamed:
+        return peopleEventText(e, s)
     }
 }
 
@@ -1152,7 +1159,7 @@ public func bookLines(_ s: GameState) -> [String] {
     for e in s.eggBook.sorted(by: { $0.colour.rawValue < $1.colour.rawValue }) {
         out.append("  \(e.speckled ? "speckled " : "")\(e.colour.rawValue)")
     }
-    return out
+    return out + dotBookLines(s)
 }
 
 public func showsLines(_ s: GameState) -> [String] {
@@ -1218,16 +1225,29 @@ public func storyLines(_ s: GameState) -> [String] {
             continue
         }
         let step = p.step < story.steps.count ? story.steps[p.step] : nil
-        switch step?.goal {
+        switch step?.goal.resolved(p.chosen) {
         case .deliverFertileEggs(let n)?:
             out.append("• \(story.id): bring \(n) eggs you know are fertile, then: give eggs")
+        case .deliverEggs(let colour, let n)?:
+            out.append("• \(story.id): bring \(n) \(colour.rawValue) eggs, then: give eggs \(story.id)")
+        case .deliverEggsOfNewColour(let n)?:
+            let colours = anyOfList((p.wantedColours ?? []).map(\.rawValue))
+            out.append("• \(story.id): bring \(n) eggs of one new colour (\(colours)), then: give eggs \(story.id)")
+        case .choiceOfBreeds(let id)? where p.chosen[id] == nil:
+            let list = (p.options ?? []).map { "\($0) (\(choiceText(story: story.id, option: $0)))" }
+                .joined(separator: ", ")
+            out.append(
+                "• \(story.id): \(People.name(story.person)) asks you to choose: \(list). Type: choose \(story.id) <option>"
+            )
+        case .friendliness?: out.append("• \(story.id): when a bird is a lap chicken")
+        case .birdRehomed?: out.append("• \(story.id): when more birds have new homes")
         case .waitDays?, .onDay?: out.append("• \(story.id): wait a few days")
         case .choice(let id, let options)? where p.chosen[id] == nil:
             let list = options.map { "\($0) (\(choiceText(story: story.id, option: $0)))" }.joined(separator: ", ")
             out.append(
                 "• \(story.id): \(People.name(story.person)) asks you to choose: \(list). Type: choose \(story.id) <option>"
             )
-        case nil, .choice?: out.append("• \(story.id): a gift is waiting for room")
+        case nil, .choice?, .choiceOfBreeds?: out.append("• \(story.id): a gift is waiting for room")
         default: out.append("• \(story.id): in a while")
         }
     }

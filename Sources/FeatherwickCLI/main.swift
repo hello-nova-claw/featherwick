@@ -104,7 +104,7 @@ let help = """
       draw <name>          which art parts and colours make up this bird
       art                  the parts the artist needs to paint
       story                what's happening in Featherwick
-      give eggs            hand over the eggs someone asked for
+      give eggs [story]    hand over the eggs someone asked for
       choose <story> <opt> answer a choice someone asked you
       pay <debt>           pay back what you owe (no hurry)
       people               the people you've met, and what they're waiting on
@@ -431,7 +431,9 @@ while true {
         }
         run(.payDebt(game.state.debts.first { $0.id.lowercased() == id }?.id ?? id))
     case "give":
-        guard let story = Engine.storyAwaitingDelivery(game.state) else {
+        // "give eggs" hands over to the first story waiting; "give eggs <story>" to that one.
+        let named = Engine.storiesAwaitingDelivery(game.state).first { words.dropFirst().contains($0.id.lowercased()) }
+        guard let story = named?.id ?? Engine.storyAwaitingDelivery(game.state) else {
             print("Nobody is waiting for anything from you right now.")
             break
         }

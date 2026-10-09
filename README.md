@@ -770,6 +770,9 @@ too) stay in the state; outside parents, such as those of a bought egg, are kept
 `Names.swift`. Birds you hatch or buy arrive with `needsName`; the UI asks for a name at once,
 with a suggestion (Enter takes it). Birds given by people (gift hen, trade hen, story gifts)
 arrive already named by their keeper. Any bird you own can be renamed any time, even while lost.
+If Teddy is to name the next chick (see "Storylines"), it hatches with a name from his list
+(`NameBook.teddy`) and does not wait for one. His names are neutral and in no other list.
+No list holds a person's name (`NameBook.peopleNames`).
 
 - Names are unique in the flock, ignoring case and spaces; up to 24 letters.
 - Suggestions come from the bird's own ID (no game randomness used). A suggestion is never a name
@@ -800,7 +803,44 @@ words live in the UI.
   Wyandotte hen, so lacing enters your lines.
 - **A heritage breed** (deliver 4 fertile eggs): earns an Australorp hen and adds Australorps to
   Speckle & Down's surprise stock. (Any in-game breed can also be the shop's daily special.)
-- CLI: `story`, `give eggs`.
+- Hazel's three stories each have one line about her mother's lavender line. Lavender is a colour
+  here. No line says that the keeper's birds carry it (rule 8).
+- CLI: `story`, `give eggs`, `give eggs <story>`.
+
+The village has four more people. Each has one first arc of three to five beats. No arc waits for
+another (`after` is empty). Each arc's words are in `VillagePeopleText.swift`.
+
+- **The standard** (Dot, the judge). Starts at the first show entry. Dot notices you, then invites you
+  to see the standard. Then she asks which breed page to read first (`choiceOfBreeds`). She offers two
+  breeds: first the breeds of birds whose breed shows, then breeds in the Breed Book, then breeds the
+  shop sells. A chick whose breed is hidden does not count (rule 8). A flock of one breed gets a second
+  breed, so the choice is never a dead end. The two breeds are fixed when the step starts
+  (`StoryProgress.options`). The pick sends `.note(dot, "standard-<breed>")`. That breed's Breed Book
+  page then shows "What Dot looks for" (`GameState.dotStandardBreed`, `dotStandardText`). The CLI
+  `book` shows the same line.
+- **Teddy helps out** (Teddy, the kid down the lane). Starts at the first ribbon (top 3) or on day 30,
+  whichever is first. He wants to meet your birds. He is not allowed a chicken. He asks to help. Choice:
+  he names your next chick, or you have a drawing day. Both give 3 treats. "Name" sets
+  `GameState.nextChickNamer`: the next chick that hatches takes a name from `NameBook.teddy`
+  (`.chickNamed`). The names are neutral, because the chick's sex is hidden. The keeper can rename it.
+  "Drawing" sends a note with his drawing. The last beat waits for a lap chicken. Then Teddy says
+  "that one's a lap chicken, you know" (a note).
+- **The bakery window** (Mr Okafor, the baker). Starts at the first brown egg in the Egg Book. He wants
+  eggs for his window. Then he talks of a colour you do not have yet. Choice: take him 6 brown eggs now
+  (12 coins), or wait and take him 3 eggs of a new colour (20 coins and a note). The delivery step
+  depends on the choice (`StoryGoal.ifChosen`). "A new colour" means a colour not in the Egg Book when
+  the step starts (`StoryProgress.wantedColours`). If no breed the shop sells lays such a colour, any
+  colour but brown that the shop's breeds lay counts. The Araucana is a starter breed and lays blue,
+  so the step is always possible. The last beat is a note about a market board in the village. The
+  market board is words only for now.
+- **Postcards from the rescue** (Bea, the rescue). Starts at the first bird that goes to a new home.
+  Two days later, a postcard names that bird. Five days later, a second postcard asks you to visit.
+  A third comes when three birds have new homes. No choice. A postcard uses the bird's name, and a
+  pronoun only if its sex showed before it left (rule 8).
+
+Deliveries for the village arcs cost the `.neighbour` errand, as Hazel's do. A refusal says what is
+needed (`.needEggs`, `.needEggsOfNewColour`). In the app, the back fence and Books ▸ People offer each
+choice and each delivery. The People page lists each person met, their about line, and their arcs.
 
 To add one: one `Storyline` in `Storylines.all`, plus its words in the UI.
 
@@ -809,15 +849,19 @@ To add one: one `Storyline` in `Storylines.all`, plus its words in the UI.
 - **Every system has a person** (`Person`): Hazel (genetics and the pen), Wren (the shop and the news),
   Dot (shows), Teddy (friendliness), Mr Okafor (egg colours), Bea (rehoming). Each `Storyline` has a
   `person`. The first three stories are Hazel's. Names and about lines are in `People` (FeatherwickText).
-  A person's name is never suggested for a bird.
+  A person's name is never suggested for a bird (`NameBook.peopleNames`; no name list holds one).
 - **Goals.** A step or trigger can wait for: a day (`onDay`, an absolute day), a choice, the first show
   entry, a placing in the top N, N birds at a friendliness band or better, an Egg Book colour, N birds
-  rehomed, a debt paid, or any one of several goals (`anyOf`).
+  rehomed, a debt paid, or any one of several goals (`anyOf`). A step can also ask for eggs of one
+  colour (`deliverEggs`), eggs of a colour new to the Egg Book (`deliverEggsOfNewColour`), a pick of two
+  of the keeper's breeds (`choiceOfBreeds`), or a goal that depends on an earlier choice (`ifChosen`).
+  What a step offers (the breeds, the new colours) is fixed when the step starts (`Engine.prepare`).
 - **Step rewards.** A step can give rewards when its goal is met. The story's own rewards come after the
   last step. A step whose rewards need room (a perch for a bird, a carton space for an egg) waits for room.
   A delivery step gives no rewards of its own.
 - **Rewards.** A gift bird, a shop breed, a gift egg (candled), coins, treats, a loaned bird, the end of a
-  loan, the offer to keep a loaned bird, a note, and rewards that come only for one option (`ifChosen`).
+  loan, the offer to keep a loaned bird, a note, a person who names the next chick (`namesNextChick`),
+  and rewards that come only for one option (`ifChosen`).
 - **Choices.** A choice step offers two or three options. It waits for `choose(story, option)`. The pick is
   kept in `StoryProgress.chosen`, so later words can remember it ("since you kept Marigold"). No option is
   wrong, and no option locks content: each trades one good thing for another. Choosing costs no daylight.

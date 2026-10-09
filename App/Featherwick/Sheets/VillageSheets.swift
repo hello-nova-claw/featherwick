@@ -522,8 +522,19 @@ struct BackFenceSheet: View {
             Text(speech(s)).font(Typeface.speech)
             VStack(spacing: 0) {
                 StitchDivider()
-                if let story = Engine.storyAwaitingDelivery(s) {
-                    reply("Hand over the eggs") { store.run(.deliver(story: story)) }
+                // Hazel's asks first, then the village's: Hazel passes on what the others are asking.
+                // Books ▸ People offers the same rows.
+                ForEach(Engine.storiesAwaitingDelivery(s)) { story in
+                    let who = story.person == .hazel ? "" : " (\(People.name(story.person)))"
+                    reply(PeopleWords.handOver + who) { store.run(.deliver(story: story.id)) }
+                }
+                ForEach(s.pendingChoices, id: \.story) { choice in
+                    ForEach(choice.options, id: \.self) { option in
+                        let words = sentenceCase(choiceText(story: choice.story, option: option))
+                        reply("\(People.name(choice.person)): \(words)") {
+                            store.run(.choose(story: choice.story, option: option))
+                        }
+                    }
                 }
                 if s.tradeOffer != nil {
                     reply("Yes, let's trade") { store.run(.acceptTrade) }
@@ -562,7 +573,7 @@ struct BackFenceSheet: View {
             return
                 "“My daughter's starting a flock and needs a rooster. I'd swap you a young hen for \(birdName(offer.roosterID, s)).”"
         }
-        for story in Storylines.all.reversed() {
+        for story in Storylines.all.reversed() where story.person == .hazel {
             guard let p = s.stories[story.id], !p.rewarded else { continue }
             let step = p.step < story.steps.count && p.step > 0 ? story.steps[p.step - 1].id : nil
             return storyText(story.id, step: step)

@@ -121,7 +121,7 @@ struct StoryTests {
                         // The option must be one of the story's options for that choice.
                         #expect(story.options(forChoice: choice).contains(option))
                         check(inner)
-                    case .coins, .treats, .endLoan, .offerToKeep, .note: break
+                    case .coins, .treats, .endLoan, .offerToKeep, .note, .namesNextChick: break
                     }
                 }
             }
