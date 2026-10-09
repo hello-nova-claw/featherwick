@@ -64,22 +64,26 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 | Day | Feature | What happens |
 | --- | --- | --- |
 | 1 | `handling` (lesson) | The game starts here. Hazel asks your name and offers a chick, then walks you round the farm. The lesson, day 1's jobs and the season goal come with the chick (`Engine.firstMorning`). |
-| 2 | `treats` | The neighbour gives `welcomeTreats` (3). Speckle & Down sells treats. |
-| 4 | `premiumFeed` | Speckle & Down sells premium feed. |
-| 6 | `coopDoor` (lesson) | The chick moves to the coop tomorrow: the door, the fox, foraging. |
+| 2 | `treats` | The neighbour gives `welcomeTreats` (3). Speckle & Down sells treats. Hazel asks if Marigold may stay (see "The borrowed hen"). |
+| 3 | `coopDoor` (lesson) | Marigold, Hazel's hen, comes to stay. The coop door lesson is about her: the door, the fox, foraging. |
+| 4 | `laying` (lesson) | Marigold lays. Hazel's note: feed, collect, sell. |
+| 5 | `premiumFeed` | Speckle & Down sells premium feed. |
 | 7 | — | The sex shows (`growerAge`). A rooster starter gets the gift hen. |
-| 8 | `breedBook` (lesson) | The neighbour names the starter's breed and colour: the Breed Book. |
+| 8 | `breedBook` (lesson) | The neighbour names the starter's breed and colour: the Breed Book. If Marigold came: "Marigold's chick, of course." |
 | 9 | `daylight` (lesson) | "There's only so much daylight." From now on, errands take a slot of the day. |
-| 10 | `birdShop` | Pullets, cockerels, fertile eggs, the daily special, story breeds. |
+| 10 | `birdShop` | Pullets, cockerels, fertile eggs, the daily special, story breeds. Hazel is home: send Marigold home, or keep her. |
 | 14 | `coopUpgrade` | More perches. |
-| 18 | `laying` (lesson) | Your hen starts to lay soon: feed, collect, sell. |
 | 21 | `shows` | The show opens, a week before the first show. The neighbour's show tip. |
 | 28 | — | The first county show. |
 | 29 | `incubatorShop` | The big incubator. (The neighbour's small one still comes with the first fertile egg, laid or bought.) If the neighbour gave hers, the big one comes at least `incubatorShopAfterGiftDays` (14) after the gift (`GameState.introductionDay(of:)`). |
 | 35 | `breedingPen` | The neighbour helps build the breeding pen. The keeper chooses the sire. |
 
 - The days are in `Rules.featureDays`. The show opens `showNoticeDays` (7) before the first show.
-- No birds, perches, incubators or shows before the sex shows (`EarlyGameTests` checks this).
+- One lesson or opening a day, days 1 to 5. `Feature` cases are in timeline order. Saves keep the raw
+  values only, so the order can change.
+- No bought birds, perches, incubators or shows before the sex shows (`EarlyGameTests` checks this).
+  Marigold is a loan, not a bird the keeper buys.
+- A save keeps its own `featureDays`. A game begun before this table keeps its old days (laying on 18).
 - **The show tip** (`Engine.showTip`). When the show opens, the neighbour names one of your birds and
   one class, by name: "Oh hey, I notice that Basil is a beautiful buff Orpington! … I think you
   should enter her in the Orpington class." She suggests the breed class if the bird places 1st to
@@ -208,8 +212,9 @@ genotypes that cannot be:
 
 1. **Look.** `Phenotype` in reverse (`LookTable`). The table is made once from every combination of
    the single genes. It never reads a real bird.
-2. **Origin.** A bird from outside the flock (no parents on record, not hatched at home) is one of its
-   breed's public recipes (`RecipeTable`) that gives its look.
+2. **Origin.** A bird from outside the flock (not hatched at home) is one of its breed's public
+   recipes (`RecipeTable`) that gives its look. Where it was bred decides this, not its parents: the
+   starter has its mother (Marigold) on record, and is still Hazel's purebred stock.
 3. **Family up.** A chick keeps only genotypes its parents can give it.
 4. **Family down.** A parent keeps a genotype only if every seen chick can come from it.
 5. Steps 3 and 4 repeat until nothing changes.
@@ -804,6 +809,7 @@ words are in FeatherwickText: `storyText` for the steps, `choiceText` for the op
   Wyandotte hen, so lacing enters your lines.
 - **A heritage breed** (deliver 4 fertile eggs): earns an Australorp hen and adds Australorps to
   Speckle & Down's surprise stock. (Any in-game breed can also be the shop's daily special.)
+- **The borrowed hen** (a new keeper's first fortnight; see below).
 - Hazel's three stories each have one line about her mother's lavender line. Lavender is a colour
   here. No line says that the keeper's birds carry it (rule 8).
 - CLI: `story`, `give eggs`, `give eggs <story>`.
@@ -827,7 +833,8 @@ another (`after` is empty). Each arc's words are in `VillagePeopleText.swift`.
   (`.chickNamed`). The names are neutral, because the chick's sex is hidden. The keeper can rename it.
   "Drawing" sends a note with his drawing. The last beat waits for a lap chicken. Then Teddy says
   "that one's a lap chicken, you know" (a note).
-- **The bakery window** (Mr Okafor, the baker). Starts at the first brown egg in the Egg Book. He wants
+- **The bakery window** (Mr Okafor, the baker). Starts at the first brown egg in the Egg Book, on day 14 or later (a new keeper's first
+  fortnight is Marigold's, and she lays brown). He wants
   eggs for his window. Then he talks of a colour you do not have yet. Choice: take him 6 brown eggs now
   (30 coins, well above the egg price), or wait and take him 3 eggs of a new colour (50 coins and a note). The delivery step
   depends on the choice (`StoryGoal.ifChosen`). "A new colour" means a colour not in the Egg Book when
@@ -848,15 +855,66 @@ To add one: append one `Storyline` to `Storylines.all`, with its `person`. Add i
 and the words for each option in `choiceText`. A choice or a delivery is a step goal on its own, never
 inside `anyOf`.
 
+### The borrowed hen
+
+`BorrowedHen.swift`. The first fortnight has a plot. Hazel lends the keeper Marigold, the starter's mother.
+
+- The days come from the game's rules. Marigold comes on the coop door day (`StoryGoal.featureDay`,
+  day 3). Hazel is home `marigoldStayDays` (7) later (day 10). Her age (`marigoldAgeDays`, 112) and her
+  price (`marigoldPrice`, 40) are rules too: the table names them with `StoryNumber.rule`, and the
+  story reads them from `s.rules` when it runs. The words name no fixed day or price.
+- **Day 2.** Hazel asks: she goes to her sister's soon, for a few days. Can Marigold stay?
+- **Day 3.** Marigold comes (`.loanBird`): a grown hen of the starter's breed, named by Hazel, from
+  Hazel's (`origin` "Neighbour"). "Her eggs are yours. Shut the door at night." The coop door lesson is
+  about her. She needs no perch (see Loans below).
+- **Day 4.** She lays. The laying lesson is a note from Hazel in her box. If the fox scared her off,
+  the note says she lays when she is home. It never says "roosters don't lay" to a keeper whose only
+  bird is a chick whose sex does not show yet.
+- **Days 3 to 10.** Hazel is away (`GameState.hazelAway`, `hazelHomeDay`), so her words come as notes
+  and a postcard. The back fence is quiet and says the day she is home.
+  Jobs can name Marigold. A cuddle job that names her counts as done once she has gone home.
+- **Day 8.** The Breed Book lesson adds "Marigold's chick, of course." (only in games where she came).
+- **Day 10.** Hazel is home and asks: `choose marigold return` or `choose marigold keep`. Her words
+  carry no command: the CLI prints the hint (`choiceHintText`) after the night that asks.
+  - **Return:** Marigold goes home (`.endLoan`). Hazel gives a candled, fertile egg of Marigold's
+    breed (`.giftEgg(nil, fertile: true)`: nil means the breed of the bird the story lent, kept in
+    `GameState.lentBreeds`, else the starter's). It does not need the starter to be here. It is the first fertile egg,
+    so the neighbour's 1-egg incubator comes with it. A full carton holds up only the egg.
+  - **Keep:** Marigold is the keeper's (`.offerToKeep`). Her price, `marigoldPrice` (40), is a debt to
+    Hazel: "Pay me when you can. She likes you." A kept bird needs a perch of her own: with none free,
+    the choice is still made, and the keeping waits for a perch (`.storyGiftWaitingForRoom`).
+    Meanwhile the bird card says "Yours once there's a perch for her", and Hazel says so at the fence.
+  - The choice waits. Until it is made, Marigold stays. Nothing is lost by waiting.
+- **She is the starter's mother.** `Breed.motherGenome(of:)` picks one of the breed's colours that
+  holds one of the starter's alleles at every gene. So she is one of the breed's public recipes, and
+  `Knowledge` reads her as it reads any bought bird. The genes behind each quantitative trait share
+  the starter's first allele too. The starter's `motherID` is Marigold. Its `fatherID` is her mate, a
+  family-tree record with no look (he stays at Hazel's). The starter keeps its own breed evidence
+  (`Visible.isFromOutside` reads the origin only), so its parents add to what the keeper knows and
+  never take away from it. The planner's sure lines stay as many as before (`KnowledgeTests`).
+- **Rule 8.** Marigold's look is evidence, like any mother's. It must never tell the starter's sex.
+  Barring is on the Z: a barred hen gives barring to every son, so a barred mother with an unbarred
+  chick would say "a daughter". So her one Z copy is the starter's first Z copy. Her barring always
+  matches the starter's, hen or rooster. `BorrowedHenTests` checks that a hen starter and a rooster
+  starter with the same look give the same events, `Visible`, `Knowledge` and carrier notes until the
+  sex shows.
+- **Old saves get no Marigold.** The story starts on `StoryGoal.newKeeper`, which reads
+  `GameState.earlyGameStories`. Only `Engine.newGame` with the early game sets it. A save from before
+  has it false (`SaveFormat.fillNewSettings`), so no retroactive loan, debt or choice.
+- The sim keeper picks the first option of every choice: Marigold goes home.
+- App: the choice is two buttons in Hazel's note and at the back fence. The bird card says "Hazel's
+  hen, staying 6 more days". Settings has "You owe" with a Pay button.
+
 ### People, choices, loans and debts
 
 - **Every system has a person** (`Person`): Hazel (genetics and the pen), Wren (the shop and the news),
   Dot (shows), Teddy (friendliness), Mr Okafor (egg colours), Bea (rehoming). Each `Storyline` has a
   `person`. The first three stories are Hazel's. Names and about lines are in `People` (FeatherwickText).
   A person's name is never suggested for a bird (`NameBook.peopleNames`; no name list holds one).
-- **Goals.** A step or trigger can wait for: a day (`onDay`, an absolute day), a choice, the first show
+- **Goals.** A step or trigger can wait for: a day (`onDay`, an absolute day), the day the early game
+  introduces a feature (`featureDay`), a choice, the first show
   entry, a placing in the top N, N birds at a friendliness band or better, an Egg Book colour, N birds
-  rehomed, a debt paid, or any one of several goals (`anyOf`). A step can also ask for eggs of one
+  rehomed, a debt paid, any one of several goals (`anyOf`), or all of them (`allOf`). A step can also ask for eggs of one
   colour (`deliverEggs`), eggs of a colour new to the Egg Book (`deliverEggsOfNewColour`), a pick of two
   of the keeper's breeds (`choiceOfBreeds`), or a goal that depends on an earlier choice (`ifChosen`).
   What a step offers (the breeds, the new colours) is fixed when the step starts (`Engine.prepare`).
@@ -878,7 +936,8 @@ inside `anyOf`.
 - A loan ends on its return day, or when a story ends it. A hen sitting on eggs or raising chicks stays
   until she is free. She goes home with `.loanReturned`. Her family-tree record stays, with the look the
   keeper saw. If the keeper keeps her (`offerToKeep`), the loan is cleared, she is the keeper's bird with
-  her pedigree, and her price becomes a debt (`.loanKept`, `.debtOwed`).
+  her pedigree, and her price becomes a debt (`.loanKept`, `.debtOwed`). A kept bird takes a perch, so
+  the step waits for a free one, like a gift bird.
 - **Debts.** `GameState.debts`. `payDebt(id)` pays one in full, when the keeper has the coins (`.debtPaid`).
   No interest, no deadline, and nothing is held back while a debt stands. The owner mentions it kindly at
   most once every `debtReminderDays` (28, a season): `.debtReminder`. Paying costs no daylight.
@@ -1014,7 +1073,8 @@ To add one: append a `Milestone` to `Milestones.all` (list order is the ladder),
   simply go the next morning.
 - **Season goal.** One bigger goal for each season: hatch 3 chicks, a new Breed Book page, a new egg,
   a show ribbon, one more friendly bird, grow the flock by 2, or collect a number of eggs. The game
-  picks only goals the keeper can work on now. Progress shows as "2 of 3".
+  picks only goals the keeper can work on now. Progress shows as "2 of 3". A bird on loan goes home
+  one day, so she never counts for the flock or friend goals (`GameState.ownBirds`).
 - The "new egg" goal asks only for colours a breed in play can make. Chocolate needs an in-game breed
   with shell depth above `Rules.chocolateShellDepth`; none has one yet, so it is left out. A chocolate
   egg found anyway still counts as a new egg.

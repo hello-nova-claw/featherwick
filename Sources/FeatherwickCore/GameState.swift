@@ -210,6 +210,13 @@ public struct GameState: Hashable, Codable, Sendable {
     public var debtsPaid: Set<String> = []
     /// Notes already delivered (see Post.swift), by ID. A note never comes twice.
     public var notesSeen: Set<String> = []
+    /// True in a game begun with the early game, on a version with the early-game stories (Marigold).
+    /// The `newKeeper` story goal reads it. False in older saves (`SaveFormat.fillNewSettings`), so a save
+    /// already past day 3 gets no retroactive loan, debt or choice.
+    public var earlyGameStories = false
+    /// The breed of each bird lent to the keeper, by loan tag. Kept after she goes home, so a story's gift
+    /// egg "of her breed" knows it even if the starter has gone (traded). Empty in older saves.
+    public var lentBreeds: [String: Breed] = [:]
     /// Someone who will name the next chick that hatches (`StoryReward.namesNextChick`). Cleared on that
     /// hatch. Nil when nobody is waiting, and in older saves.
     public var nextChickNamer: Person?

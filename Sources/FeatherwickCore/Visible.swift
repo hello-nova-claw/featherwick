@@ -199,9 +199,11 @@ public struct Visible: Hashable, Codable, Sendable, Identifiable {
             look: r.look)
     }
 
-    /// True for a bird bred outside the flock: no parents on record, and not hatched at home.
-    /// Its genes are then one of its breed's public recipes (`RecipeTable`).
-    public var isFromOutside: Bool { motherID == nil && fatherID == nil && origin != Bird.homeOrigin }
+    /// True for a bird bred outside the flock: not hatched at home. Its genes are then one of its breed's
+    /// public recipes (`RecipeTable`). Where it was bred decides this, not whether its parents are known:
+    /// the starter is Hazel's purebred stock, and its mother (Marigold) and her mate on record do not
+    /// change that. Its family evidence counts as well. Every bird hatched at home has `homeOrigin`.
+    public var isFromOutside: Bool { origin != Bird.homeOrigin }
 
     /// The type band in the judge's notes at the bird's newest show that judged its type. Nil if no judge has.
     public static func typeBand(of bird: UUID, in s: GameState) -> JudgeNote.Band? {

@@ -33,6 +33,39 @@ public enum Person: String, Hashable, Codable, Sendable, CaseIterable {
     case bea
 }
 
+/// A number a story uses: written in the table, or read from the game's own rules when the story runs.
+/// So tuning `Rules` (Marigold's price, her age, the days she stays) changes the story, as rule 3 asks.
+/// An integer literal is a fixed number: `.waitDays(4)`.
+public enum StoryNumber: Hashable, Codable, Sendable, ExpressibleByIntegerLiteral {
+    case fixed(Int)
+    case rule(RulesNumber)
+
+    public init(integerLiteral value: Int) { self = .fixed(value) }
+
+    /// The number in this game.
+    public func value(in rules: Rules) -> Int {
+        switch self {
+        case .fixed(let n): n
+        case .rule(let r): rules.number(r)
+        }
+    }
+}
+
+/// A number in `Rules` that a story table can name.
+public enum RulesNumber: String, Hashable, Codable, Sendable {
+    case marigoldPrice, marigoldAgeDays, marigoldStayDays
+}
+
+extension Rules {
+    public func number(_ n: RulesNumber) -> Int {
+        switch n {
+        case .marigoldPrice: marigoldPrice
+        case .marigoldAgeDays: marigoldAgeDays
+        case .marigoldStayDays: marigoldStayDays
+        }
+    }
+}
+
 public indirect enum StoryGoal: Hashable, Codable, Sendable {
     /// The player has hatched at least this many chicks, ever. Checked each night.
     case chicksHatched(atLeast: Int)
@@ -40,9 +73,12 @@ public indirect enum StoryGoal: Hashable, Codable, Sendable {
     /// Always possible: the shop sells fertile eggs.
     case deliverFertileEggs(Int)
     /// Some days pass after the step starts. Checked each night.
-    case waitDays(Int)
+    case waitDays(StoryNumber)
     /// This game day has come (an absolute day, not days since the step started). The early game uses it.
     case onDay(Int)
+    /// The morning the early game introduces this feature, in this game (`GameState.introductionDay(of:)`).
+    /// So a story step follows the game's own `featureDays`.
+    case featureDay(Feature)
     /// The player picks one option (`Command.choose`). The choice is kept under `id` in `StoryProgress.chosen`.
     /// Two or three options, never four. No option is wrong.
     case choice(id: String, options: [String])
@@ -61,6 +97,12 @@ public indirect enum StoryGoal: Hashable, Codable, Sendable {
     /// Any one of these goals is met. For "whichever comes first". Not for choices or deliveries: those
     /// are step goals on their own, so the player is always offered them (`StoryTests` checks this).
     case anyOf([StoryGoal])
+    /// Every one of these goals is met. For "this, but not before day N". Not for choices or deliveries,
+    /// as for `anyOf`.
+    case allOf([StoryGoal])
+    /// The game began as a new keeper's, with the early game (`GameState.earlyGameStories`). The early-game
+    /// stories start with it. A save from before them never meets it, so it gets no retroactive loan.
+    case newKeeper
     /// The player hands over this many eggs of this colour from the carton. Needs `deliver`.
     case deliverEggs(colour: EggColour, count: Int)
     /// The player hands over this many eggs of a colour new to the Egg Book. Needs `deliver`. The colours
@@ -124,13 +166,16 @@ public struct LoanSpec: Hashable, Codable, Sendable {
     public var breed: Breed?
     public var sex: Sex
     /// Her age on the day she arrives.
-    public var ageDays: Int
+    public var ageDays: StoryNumber
     /// Nights she stays. Nil: she stays until a story ends the loan (`endLoan` or `offerToKeep`).
     public var stayDays: Int?
+    /// True: she is the starter's mother (a hen of the starter's breed). Her genes fit the starter's, and
+    /// the starter's family tree gets her (see BorrowedHen.swift).
+    public var motherOfStarter: Bool
 
     public init(
-        tag: String, owner: Person, name: String, breed: Breed? = nil, sex: Sex, ageDays: Int,
-        stayDays: Int? = nil
+        tag: String, owner: Person, name: String, breed: Breed? = nil, sex: Sex, ageDays: StoryNumber,
+        stayDays: Int? = nil, motherOfStarter: Bool = false
     ) {
         self.tag = tag
         self.owner = owner
@@ -139,6 +184,24 @@ public struct LoanSpec: Hashable, Codable, Sendable {
         self.sex = sex
         self.ageDays = ageDays
         self.stayDays = stayDays
+        self.motherOfStarter = motherOfStarter
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tag, owner, name, breed, sex, ageDays, stayDays, motherOfStarter
+    }
+
+    /// Specs live in the story table, not in saves. Still, one written before `motherOfStarter` reads as false.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        tag = try c.decode(String.self, forKey: .tag)
+        owner = try c.decode(Person.self, forKey: .owner)
+        name = try c.decode(String.self, forKey: .name)
+        breed = try c.decodeIfPresent(Breed.self, forKey: .breed)
+        sex = try c.decode(Sex.self, forKey: .sex)
+        ageDays = try c.decode(StoryNumber.self, forKey: .ageDays)
+        stayDays = try c.decodeIfPresent(Int.self, forKey: .stayDays)
+        motherOfStarter = try c.decodeIfPresent(Bool.self, forKey: .motherOfStarter) ?? false
     }
 }
 
@@ -148,7 +211,8 @@ public indirect enum StoryReward: Hashable, Codable, Sendable {
     /// The breed joins Speckle & Down's surprise stock (`GameState.surpriseBreeds`).
     case unlockShopBreed(Breed)
     /// An egg of this breed, in the carton. Already candled, so the keeper knows if it is fertile.
-    case giftEgg(Breed, fertile: Bool)
+    /// Nil breed: the breed of the bird the story lent (`GameState.lentBreeds`), else the starter's.
+    case giftEgg(Breed?, fertile: Bool)
     case coins(Int)
     /// Mealworms for the bag.
     case treats(Int)
@@ -158,7 +222,7 @@ public indirect enum StoryReward: Hashable, Codable, Sendable {
     case endLoan(birdTag: String)
     /// The keeper keeps the loaned bird. She is the keeper's now, and her price is a debt to her owner,
     /// paid when the keeper can. No price: a gift.
-    case offerToKeep(birdTag: String, price: Int)
+    case offerToKeep(birdTag: String, price: StoryNumber)
     /// A note from this person (see Post.swift). The words come from the note's ID.
     case note(Person, String)
     /// This person names the next chick that hatches (`GameState.nextChickNamer`), from their own list
@@ -224,6 +288,20 @@ public struct Storyline: Hashable, Sendable, Identifiable {
         self.after = after
         self.steps = steps
         self.rewards = rewards
+    }
+
+    /// The tags of the birds this story lends (`loanBird`), in table order.
+    public var loanTags: [String] {
+        func tags(_ rewards: [StoryReward]) -> [String] {
+            rewards.flatMap { reward -> [String] in
+                switch reward {
+                case .loanBird(let spec): [spec.tag]
+                case .ifChosen(_, _, let inner): tags(inner)
+                default: []
+                }
+            }
+        }
+        return tags(steps.flatMap(\.rewards) + rewards)
     }
 
     /// Every option a choice can have, by choice ID. A breed choice can offer any in-game breed;
@@ -372,12 +450,13 @@ public enum Storylines {
     )
 
     /// Mr Okafor, the baker, wants eggs for his shop window: six brown eggs now, or three of a colour the
-    /// keeper has not had yet, for more coins. Both pay well above the egg price, so the window is worth it.
+    /// keeper has not had yet, for more coins. Not before day 14: a new keeper's first fortnight is
+    /// Marigold's, and she lays brown from day 4. Both pay well above the egg price, so the window is worth it.
     /// Then he talks of a market board in the village.
     public static let okaforWindow = Storyline(
         id: "okaforWindow",
         person: .okafor,
-        trigger: .eggBookHas(.brown),
+        trigger: .allOf([.onDay(14), .eggBookHas(.brown)]),
         steps: [
             StoryStep(id: "asking", goal: .waitDays(1)),
             StoryStep(id: "window", goal: .choice(id: "window", options: ["now", "wait"])),
@@ -412,6 +491,7 @@ public enum Storylines {
     /// Append, never insert: the night runs stories in this order.
     public static let all: [Storyline] = [
         broodySilkie, lacedGift, heritageBreed, dotStandard, teddyHelps, okaforWindow, beaPostcards,
+        borrowedHen,
     ]
 
     public static func story(_ id: String) -> Storyline? { all.first { $0.id == id } }
@@ -551,9 +631,10 @@ extension Engine {
     static func goalMet(_ goal: StoryGoal, _ s: GameState, since day: Int, chosen: [String: String] = [:]) -> Bool {
         switch goal {
         case .chicksHatched(let n): s.chicksHatched >= n
-        case .waitDays(let n): s.day - day >= n
+        case .waitDays(let n): s.day - day >= n.value(in: s.rules)
         case .deliverFertileEggs: false
         case .onDay(let n): s.day >= n
+        case .featureDay(let f): s.day >= s.introductionDay(of: f)
         case .choice(let id, _): chosen[id] != nil
         case .showEntered: !s.showEntries.isEmpty || !s.showResults.isEmpty
         case .showPlaced(let top): s.showResults.contains { (1...max(1, top)).contains($0.placing) }
@@ -562,6 +643,8 @@ extension Engine {
         case .birdRehomed(let n): s.rehomed.count >= n
         case .coinsPaid(let id): s.debtsPaid.contains(id)
         case .anyOf(let goals): goals.contains { goalMet($0, s, since: day, chosen: chosen) }
+        case .allOf(let goals): goals.allSatisfy { goalMet($0, s, since: day, chosen: chosen) }
+        case .newKeeper: s.earlyGameStories
         case .deliverEggs, .deliverEggsOfNewColour: false
         case .choiceOfBreeds(let id): chosen[id] != nil
         case .ifChosen: goalMet(goal.resolved(chosen), s, since: day, chosen: chosen)
@@ -615,7 +698,9 @@ extension Engine {
             case .unlockShopBreed(let breed):
                 if s.shopBreeds.insert(breed).inserted { ev.append(.shopUnlocked(breed)) }
             case .giftEgg(let breed, let fertile):
-                ev += giftEgg(breed, fertile: fertile, story: story, &s, &rng)
+                // No breed: the breed of the bird this story lent, else the starter's.
+                let lent = story.loanTags.compactMap { s.lentBreeds[$0] }.first
+                ev += giftEgg(breed ?? lent ?? s.starterBreed, fertile: fertile, story: story, &s, &rng)
             case .coins(let n):
                 s.coins += n
                 ev.append(.storyCoins(story.id, n))
@@ -627,7 +712,7 @@ extension Engine {
             case .endLoan(let tag):
                 ev += endLoan(tag: tag, &s)
             case .offerToKeep(let tag, let price):
-                ev += keepLoan(tag: tag, price: price, &s)
+                ev += keepLoan(tag: tag, price: price.value(in: s.rules), &s)
             case .note(let person, let id):
                 s.notesSeen.insert(id)
                 ev.append(.noteArrived(person, id))

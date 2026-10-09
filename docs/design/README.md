@@ -197,7 +197,7 @@ All screens are 393×852 (iPhone 15/16). Sheets sit over the dimmed farm.
 Top to bottom:
 1. Grabber, then a context line ("In the yard · 1 of 6") and close.
 2. Art area, 240pt tall, art centred (placeholder 200×180).
-3. Name, centred, Caslon Display 54, with a dashed underline that descenders cross. Then the breed line in italic ("a Buff Orpington hen" or, for an unknown breed, "breed still a mystery").
+3. Name, centred, Caslon Display 54, with a dashed underline that descenders cross. Then the breed line in italic ("a Buff Orpington hen" or, for an unknown breed, "breed still a mystery"). A bird on loan gets one more line under it, in italic `inkMuted`: whose she is and how long she stays ("Hazel's hen, staying a week"). A bird on loan has no Rename, Rehome or Pen: she is not the keeper's yet.
 4. A 2×2 fact grid: Friendliness · Age · Feathers · Lays (hen) or Hen or rooster (chick: "Shows in ~6 days").
 5. Ribbons, only after the bird has been to a show: one line per show, newest first ("1st of 8 · Orpington class, day 84, Harvest Show"). The top three get an ink rosette (1st filled, 2nd outlined, 3rd dashed).
 6. Bottom: Cuddle (primary) and Treat (secondary, shows "· 6" remaining) side by side, then Rename and Family tree as text actions. "Enter the show" opens the class choice (see 8a). It shows only once the county show has opened in the early game, and becomes "Entered in the show" (disabled) after entry. Each counts once a day per bird. When done today, the button is disabled and says so: "Cuddled today", "Had a treat today" (like "Fed for today" in the yard).
@@ -224,6 +224,8 @@ Title "Today's eggs", filters (All 7 / Fertile / Clear / Not candled). The carto
 
 ### 6a — Back fence (sheet, top at 420pt)
 See Dialogue. Tapping a reply advances the conversation ("1 of 3"). Gifts are added to the inventory with a toast.
+- A choice the neighbour asked for waits here: one reply row per option ("Send Marigold home", "Keep Marigold"). The same buttons are in her note the morning she asks, with the option's words under each. "Decide later" closes the note. Nothing is lost by waiting.
+- Settings (≡) has a "You owe" list when the keeper owes someone: one line per debt ("Hazel, 40 coins") and a Pay button, disabled until the keeper has the coins. No hurry and no interest.
 
 The Hatch-along: while its week is on and the keeper has an egg they know is fertile, the Back fence label says "has news", and the sheet has the reply row "Bring an egg for the Hatch-along" above "Bye for now". It sends `giveHatchAlongEgg` with the first known-fertile egg. Once the egg is given (or the week ends), the row and the news go.
 

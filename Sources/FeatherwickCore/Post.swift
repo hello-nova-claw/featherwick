@@ -171,10 +171,10 @@ public enum Notes {
         Note("okafor.chocolate", from: .okafor, when: .eggBookHas(.chocolate)),
         Note("okafor.green", from: .okafor, when: .eggBookHas(.green)),
         Note("okafor.white", from: .okafor, when: .eggBookHas(.white)),
-        Note("okafor.brown", from: .okafor, when: .eggBookHas(.brown)),
+        Note("okafor.brown", from: .okafor, when: .all([.eggBookHas(.brown), .dayAtLeast(14)])),
         Note("okafor.window", from: .okafor, when: .all([.hasEggs, .dayAtLeast(30)])),
         Note("okafor.winterOven", from: .okafor, when: .all([.season(.winter), .hasEggs])),
-        Note("okafor.custard", from: .okafor, when: .all([.season(.spring), .hasEggs])),
+        Note("okafor.custard", from: .okafor, when: .all([.season(.spring), .hasEggs, .dayAtLeast(14)])),
     ]
 
     /// Bea: how the rehomed birds are doing, by name.

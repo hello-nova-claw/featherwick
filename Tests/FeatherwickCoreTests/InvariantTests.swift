@@ -101,7 +101,8 @@ struct InvariantTests {
         case 91..<94:
             // A keeper rehomes when the flock is crowded, not their first two birds.
             if !s.boarding.isEmpty { return .rehome(s.boarding[0].id) }
-            return birds.count >= 3 ? .rehome(anyBird) : bedtime(s)
+            // A bird on loan (Marigold) is not the keeper's flock: she does not make it crowded.
+            return birds.count(where: { !$0.isOnLoan }) >= 3 ? .rehome(anyBird) : bedtime(s)
         case 94..<97: return .upgradeCoop
         case 97..<98:
             // Shopping and trades.

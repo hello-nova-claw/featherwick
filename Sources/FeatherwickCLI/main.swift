@@ -160,6 +160,18 @@ let help = """
     let events = step(&state, &rng)
     game = SaveFile(state: state, rng: rng)
     for e in events { if let t = eventText(e, state) { print(t) } }
+    // A choice that has just been asked: say how to answer it (the words themselves carry no command).
+    for c in state.pendingChoices where events.contains(.storyStep(c.story, step: currentStep(c, state))) {
+        print(choiceHintText(c))
+    }
+}
+
+/// The ID of the step a pending choice is on.
+func currentStep(_ c: PendingChoice, _ s: GameState) -> String {
+    guard let story = Storylines.story(c.story), let p = s.stories[c.story], p.step < story.steps.count else {
+        return ""
+    }
+    return story.steps[p.step].id
 }
 
 /// The prompt. Once the daylight lesson is in, it shows the day's slots: a filled sun for each
