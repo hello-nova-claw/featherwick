@@ -810,7 +810,8 @@ words are in FeatherwickText: `storyText` for the steps, `choiceText` for the op
 The village has four more people. Each has one first arc of three to five beats. No arc waits for
 another (`after` is empty). Each arc's words are in `VillagePeopleText.swift`.
 
-- **The standard** (Dot, the judge). Starts at the first show entry. Dot notices you (a keeper with past shows hears no "First show?"), then invites you
+- **The standard** (Dot, the judge). Starts at the first show entry. Dot notices you. A keeper with
+  results from a show held before the arc started hears no "First show?". Then she invites you
   to see the standard. Then she asks which breed page to read first (`choiceOfBreeds`). She offers two
   breeds: first the breeds of birds whose breed shows, then breeds in the Breed Book, then breeds the
   shop sells. A chick whose breed is hidden does not count (rule 8). A flock of one breed gets a second

@@ -167,8 +167,8 @@ func peopleNoteText(_ id: String, _ s: GameState) -> String? {
             + "I'll put the kettle on. No need to write first. Love, Bea."
     case "bea-postcard-3":
         // The newest bird to leave. Its name appears once, with no pronoun, so a hidden sex never shows.
-        let who = s.rehomed.last.map { "\($0.name) is the newest" } ?? "The newest one is"
-        return "Three of your birds have new homes in Featherwick now. \(who), and settled in at once. "
+        let who = s.rehomed.last.map { "\($0.name) is the newest, and" } ?? "The newest one"
+        return "Three of your birds have new homes in Featherwick now. \(who) settled in at once. "
             + "You raise them kind, keeper. Love, Bea."
     default:
         return nil
@@ -182,7 +182,7 @@ func peopleEventText(_ e: GameEvent, _ s: GameState) -> String? {
         let name = birdName(id, s)
         return "\(People.name(person)) is at the gate the minute he hears. \"That one's called \(name)!\" "
             + "(You can rename \(name) any time.)"
-    case .storyStarted("dotStandard") where s.showResults.count > 1:
+    case .storyStarted("dotStandard") where hadShowBeforeDot(s):
         // A keeper who has shown before (an older save meets Dot late): no "first show?".
         return """
             At the entry desk, a woman with reading glasses on a chain looks up from her list. \
@@ -199,6 +199,14 @@ func peopleEventText(_ e: GameEvent, _ s: GameState) -> String? {
     default:
         return nil
     }
+}
+
+/// True when the keeper had results at a show held before Dot's arc started. Stories run before the
+/// night's county show, so results from the show of the night the arc starts do not count: a keeper
+/// who enters two birds on the eve of their first show still hears "First show?".
+func hadShowBeforeDot(_ s: GameState) -> Bool {
+    let started = s.stories["dotStandard"]?.stepStartedDay ?? s.day
+    return s.showResults.contains { $0.day < started }
 }
 
 /// "blue", "blue or green", "blue, green or olive".

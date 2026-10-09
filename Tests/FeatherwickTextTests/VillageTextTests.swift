@@ -120,16 +120,46 @@ struct VillageTextTests {
 
     @Test func dotDoesNotAskAVeteranAboutTheirFirstShow() {
         var s = Self.game()
+        s.day = 40
         let first = eventText(.storyStarted("dotStandard"), s) ?? ""
         #expect(first.contains("First show?"))
-        let result = ShowResult(
-            day: 28, showClass: .pet, entrantName: "Pip", placing: 2, fieldSize: 8, score: 70, prize: 0,
-            birdID: nil, treats: 0, notes: nil, theme: nil, podium: nil)
-        s.showResults = [result, result]
+        // One show held before the arc started is enough.
+        s.showResults = [
+            ShowResult(
+                day: 28, showClass: .pet, entrantName: "Pip", placing: 2, fieldSize: 8, score: 70, prize: 0,
+                birdID: nil, treats: 0, notes: nil, theme: nil, podium: nil)
+        ]
+        s.stories["dotStandard"] = StoryProgress(stepStartedDay: 40)
         let late = eventText(.storyStarted("dotStandard"), s) ?? ""
         #expect(!late.contains("First show") && late.contains("Dot"))
         // Her other steps are the same either way.
         #expect(eventText(.storyStep("dotStandard", step: "invite"), s) == storyText("dotStandard", step: "invite"))
+    }
+
+    /// Stories run before the night's show. Two entries on the eve of the first show give two results the
+    /// same night Dot's arc starts: still a first show.
+    @Test func dotGreetsAFirstTimerWithTwoEntriesAsAFirstTimer() throws {
+        var rng = SeededRNG(seed: 3)
+        var s = Engine.newGame(earlyGame: false, using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        s.day = s.nextShowDay - 1
+        s.coins += 200
+        var hens: [UUID] = []
+        for name in ["Clover", "Maple"] {
+            let hen = Bird(
+                id: UUID(), name: name, breed: .orpington, genome: Breed.orpington.purebred(.hen),
+                hatchDay: s.day - 200, origin: "Test", revealed: true)
+            s.coop.append(hen)
+            hens.append(hen.id)
+        }
+        for id in hens { _ = Engine.apply(.enterShow(id), to: &s, using: &rng) }
+        #expect(s.showEntries.count == 2)
+        Engine.restUntilEvening(&s, using: &rng)
+        let night = Engine.apply(.passNight, to: &s, using: &rng)
+        #expect(night.contains(.storyStarted("dotStandard")))
+        #expect(s.showResults.count >= 2)
+        let words = eventText(.storyStarted("dotStandard"), s) ?? ""
+        #expect(words.contains("First show?"))
     }
 
     @Test func hazelsStoriesRememberHerMothersLavenderLine() {
