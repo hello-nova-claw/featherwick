@@ -81,6 +81,11 @@ public enum Simulation {
         apply(.feed, &s, &rng, &r)
         if !s.nest.isEmpty { apply(.collectEggs, &s, &rng, &r) }
         if s.canCandle, s.carton.contains(where: { !$0.isCandled }) { apply(.candle, &s, &rng, &r) }
+        // A story's choice: always the first option, so the game stays the same for a seed. For Marigold
+        // that is "return": she goes home and Hazel gives an egg of her line.
+        for choice in s.pendingChoices {
+            if let option = choice.options.first { apply(.choose(story: choice.story, option: option), &s, &rng, &r) }
+        }
 
         ensureBreedingPair(&s, &rng, &r)
         if !s.hasIncubator, s.coins >= s.rules.incubatorPrice { apply(.buyIncubator, &s, &rng, &r) }

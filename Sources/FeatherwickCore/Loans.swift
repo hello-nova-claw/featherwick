@@ -62,19 +62,30 @@ extension GameState {
     public func loanedBird(tag: String) -> Bird? { loanedBirds.first { $0.loan?.tag == tag } }
     /// The coins owed in all.
     public var coinsOwed: Int { debts.reduce(0) { $0 + $1.coins } }
+    /// The starter's breed, for a loan or a gift egg that names none. The first starter breed if the
+    /// starter has gone (traded, or a save without one).
+    public var starterBreed: Breed { starterID.flatMap { bird($0)?.breed } ?? Breed.starters[0] }
 }
 
 extension Engine {
     /// A bird comes to stay. Named by her owner, grown, her sex and breed shown. Once per tag at a time.
     static func lend<R: RandomNumberGenerator>(_ spec: LoanSpec, _ s: inout GameState, _ rng: inout R) -> [GameEvent] {
         guard s.loanedBird(tag: spec.tag) == nil else { return [] }
-        let breed = spec.breed ?? s.starterID.flatMap { s.bird($0)?.breed } ?? Breed.starters[0]
-        var bird = Bird(
+        let breed = spec.breed ?? s.starterBreed
+        if spec.motherOfStarter, let ev = lendStartersMother(spec, breed: breed, &s, &rng) { return ev }
+        let bird = Bird(
             id: makeID(using: &rng), name: spec.name, breed: breed,
             genome: breed.purebred(spec.sex, variety: breed.definition.varieties.randomElement(using: &rng)),
-            hatchDay: s.day - spec.ageDays, origin: spec.owner.origin, revealed: true
+            hatchDay: s.day - spec.ageDays.value(in: s.rules), origin: spec.owner.origin, revealed: true
         ).withFounderQuality()
+        return welcome(bird, on: spec, &s)
+    }
+
+    /// The loaned bird settles in: tame as a bought bird, her loan noted, in the coop, in the Breed Book.
+    static func welcome(_ arriving: Bird, on spec: LoanSpec, _ s: inout GameState) -> [GameEvent] {
+        var bird = arriving
         bird.tameness = s.rules.boughtBirdTameness
+        s.lentBreeds[spec.tag] = bird.breed
         bird.loan = Loan(owner: spec.owner, tag: spec.tag, returnDay: spec.stayDays.map { s.day + $0 })
         s.coop.append(bird)
         return [.loanArrived(bird.id, from: spec.owner)] + recordBreed(bird, into: &s.breedBook)

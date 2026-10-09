@@ -389,7 +389,10 @@ struct FarmView: View {
             // Not on the farm any more: its notices show under the coop.
             return []
         case .backFence:
-            let news = Engine.storyAwaitingDelivery(s) != nil || s.tradeOffer != nil
+            // Hazel takes the Hatch-along eggs, so the week is news at the fence too.
+            let news =
+                Engine.storyAwaitingDelivery(s) != nil || s.tradeOffer != nil || !s.pendingChoices.isEmpty
+                || s.hatchAlongRefusal() == nil
             return news ? [Notice(kind: .story, text: "has news")] : []
         case .yard:
             if !s.fedToday { return [Notice(kind: .decision, text: "hungry")] }
@@ -398,6 +401,8 @@ struct FarmView: View {
             var n: [Notice] = []
             // Stock the early game brought in this morning. It goes once the keeper has looked (or bought).
             if store.hasNewStock { n.append(Notice(kind: .story, text: "new in today")) }
+            // A village day this week, today, or the Hatch-along week with an egg to bring.
+            if let village = villageNotice(s) { n.append(Notice(kind: .story, text: village)) }
             if s.marketBoard.keeperCard?.buyerHere(onDay: s.day) == true {
                 n.append(Notice(kind: .decision, text: "a buyer is here"))
             } else if s.isOpen(.marketBoard), s.marketBoard.cards.contains(where: s.canFill) {

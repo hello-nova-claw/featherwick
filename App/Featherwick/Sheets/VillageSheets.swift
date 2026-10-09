@@ -208,6 +208,7 @@ struct ShowPanel: View {
             birdsToEnter(s)
             platesToEnter(s)
             pastResults(s)
+            villageCalendar(s)
         }
         .sheet(item: $choosing) { choice in
             EnterShowSheet(birdID: choice.id).environment(\.palette, palette)
@@ -330,6 +331,16 @@ struct ShowPanel: View {
                     Text(resultLine(r)).font(Typeface.label).foregroundStyle(palette.inkSoft)
                     StitchDivider()
                 }
+            }
+        }
+    }
+
+    /// The next village days, and the Hatch-along while its week is on. Nothing here asks for anything.
+    private func villageCalendar(_ s: GameState) -> some View {
+        VStack(alignment: .leading, spacing: Space.s) {
+            Text("Village calendar").font(Typeface.item)
+            ForEach(villageCalendarLines(s, count: 2) + hatchAlongLines(s), id: \.self) { line in
+                Text(line).font(Typeface.label).foregroundStyle(palette.inkSoft)
             }
         }
     }
@@ -531,11 +542,25 @@ struct BackFenceSheet: View {
             Text(speech(s)).font(Typeface.speech)
             VStack(spacing: 0) {
                 StitchDivider()
-                if let story = Engine.storyAwaitingDelivery(s) {
-                    reply("Hand over the eggs") { store.run(.deliver(story: story)) }
+                // Hazel's asks first, then the village's: Hazel passes on what the others are asking.
+                // Books ▸ People offers the same rows.
+                ForEach(Engine.storiesAwaitingDelivery(s)) { story in
+                    let who = story.person == .hazel ? "" : " (\(People.name(story.person)))"
+                    reply(PeopleWords.handOver + who) { store.run(.deliver(story: story.id)) }
+                }
+                ForEach(s.pendingChoices, id: \.story) { choice in
+                    ForEach(choice.options, id: \.self) { option in
+                        let words = sentenceCase(choiceText(story: choice.story, option: option))
+                        reply("\(People.name(choice.person)): \(words)") {
+                            store.run(.choose(story: choice.story, option: option))
+                        }
+                    }
                 }
                 if s.tradeOffer != nil {
                     reply("Yes, let's trade") { store.run(.acceptTrade) }
+                }
+                if s.hatchAlongRefusal() == nil {
+                    reply("Bring an egg for the Hatch-along") { store.run(.giveHatchAlongEgg(nil)) }
                 }
                 reply("Bye for now") { dismiss() }
             }
@@ -571,9 +596,13 @@ struct BackFenceSheet: View {
             return
                 "“My daughter's starting a flock and needs a rooster. I'd swap you a young hen for \(birdName(offer.roosterID, s)).”"
         }
-        for story in Storylines.all.reversed() {
-            guard let p = s.stories[story.id], !p.rewarded else { continue }
-            let step = p.step < story.steps.count && p.step > 0 ? story.steps[p.step - 1].id : nil
+        // Hazel away (Marigold's week), or a choice waiting for a perch or a busy hen: its own words.
+        if let words = hazelFenceText(s) { return words }
+        for story in Storylines.all.reversed() where story.person == .hazel {
+            guard let p = s.stories[story.id], !p.rewarded, !story.steps.isEmpty else { continue }
+            // The words of the step the story is on: `storyStep` names the step it moves to. The story's
+            // opening words before its first step is done, and its last step's once every step is.
+            let step = p.step == 0 ? nil : story.steps[min(p.step, story.steps.count - 1)].id
             return storyText(story.id, step: step)
         }
         return "“Lovely morning for it. Your hens are looking well.”"

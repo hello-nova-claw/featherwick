@@ -136,11 +136,29 @@ struct EarlyGameTests {
         #expect(s.treats == s.rules.welcomeTreats)
     }
 
-    @Test func theShowOpensAWeekBeforeTheFirstShowWithATipForYourBird() {
-        var (s, rng) = Self.newKeeper()
+    @Test func theShowOpensAWeekBeforeTheFirstShowWithATipForYourBird() throws {
+        // A hen starter (no gift hen), and Marigold sent home on day 10: the starter is the only bird,
+        // so the tip must name it.
+        var seed: UInt64 = 1
+        var rng = SeededRNG(seed: seed)
+        var s = Engine.newGame(using: &rng)
+        // The first seed that offers a hen chick.
+        while case .choosingStarter(let chicks) = s.phase, !chicks.contains(where: { $0.sex == .hen }) {
+            seed += 1
+            rng = SeededRNG(seed: seed)
+            s = Engine.newGame(using: &rng)
+        }
+        let offered: [Bird]? = if case .choosingStarter(let c) = s.phase { c } else { nil }
+        let chicks = try #require(offered)
+        let hen = try #require(chicks.firstIndex { $0.sex == .hen })
+        _ = Engine.apply(.chooseStarter(index: hen, name: "Basil"), to: &s, using: &rng)
+        s.coins = 1000
+        Self.play(until: 10, &s, &rng)
+        _ = Engine.apply(.choose(story: Storylines.marigold, option: "return"), to: &s, using: &rng)
         let ev = Self.play(until: s.rules.showIntervalDays - s.rules.showNoticeDays, &s, &rng)
         #expect(s.isOpen(.shows))
         #expect(s.nextShowDay - s.day == s.rules.showNoticeDays)
+        #expect(s.birdsAtHome.map(\.id) == s.starterID.map { [$0] })
         let tip = s.showTip
         #expect(tip != nil)
         #expect(ev.contains(.showAnnounced(tip)))

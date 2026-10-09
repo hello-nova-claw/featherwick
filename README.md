@@ -37,7 +37,7 @@ errands left. See "Daylight and errands".
 the neighbours, the post, the village, new stock, the show, jobs, the season goal, eggs, other) for the app's morning report.
 Every event lands in exactly one group. IDs and events only; the words come from `eventText`.
 
-Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals ("hen or roo?" guesses settle as the sex shows) → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note, and the first why note opens "What might hatch"; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (loans due go home; a fertile-eggs step teaches candling if needed; debts are mentioned at most once a season) & trade offer → post (maybe one note) → village day (a notice a week ahead, and the day) → county show (on show days) → early game (features whose day has come; the show tip) → market board (old cards come down, the keeper's buyer comes or goes, new cards once a week) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
+Night order: fox (only if the coop is open, and never on the Longest Day's night) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals ("hen or roo?" guesses settle as the sex shows) → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note, and the first why note opens "What might hatch"; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (loans due go home; a fertile-eggs step teaches candling if needed; debts are mentioned at most once a season) & trade offer → post (maybe one note) → village day (a notice a week ahead, the day and its gift, then the Hatch-along chick if it is due) → county show (on show days) → early game (features whose day has come; the show tip) → market board (old cards come down, the keeper's buyer comes or goes, new cards once a week) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
 
 ## The early game (tutorial timeline)
 
@@ -64,15 +64,15 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 | Day | Feature | What happens |
 | --- | --- | --- |
 | 1 | `handling` (lesson) | The game starts here. Hazel asks your name and offers a chick, then walks you round the farm. The lesson, day 1's jobs and the season goal come with the chick (`Engine.firstMorning`). |
-| 2 | `treats` | The neighbour gives `welcomeTreats` (3). Speckle & Down sells treats. |
-| 4 | `premiumFeed` | Speckle & Down sells premium feed. |
-| 6 | `coopDoor` (lesson) | The chick moves to the coop tomorrow: the door, the fox, foraging. |
+| 2 | `treats` | The neighbour gives `welcomeTreats` (3). Speckle & Down sells treats. Hazel asks if Marigold may stay (see "The borrowed hen"). |
+| 3 | `coopDoor` (lesson) | Marigold, Hazel's hen, comes to stay. The coop door lesson is about her: the door, the fox, foraging. |
+| 4 | `laying` (lesson) | Marigold lays. Hazel's note: feed, collect, sell. |
+| 5 | `premiumFeed` | Speckle & Down sells premium feed. |
 | 7 | — | The sex shows (`growerAge`). A rooster starter gets the gift hen. |
-| 8 | `breedBook` (lesson) | The neighbour names the starter's breed and colour: the Breed Book. |
+| 8 | `breedBook` (lesson) | The neighbour names the starter's breed and colour: the Breed Book. If Marigold came: "Marigold's chick, of course." |
 | 9 | `daylight` (lesson) | "There's only so much daylight." From now on, errands take a slot of the day. |
-| 10 | `birdShop` | Pullets, cockerels, fertile eggs, the daily special, story breeds. |
+| 10 | `birdShop` | Pullets, cockerels, fertile eggs, the daily special, story breeds. Hazel is home: send Marigold home, or keep her. |
 | 14 | `coopUpgrade` | More perches. |
-| 18 | `laying` (lesson) | Your hen starts to lay soon: feed, collect, sell. |
 | 21 | `shows` | The show opens, a week before the first show. The neighbour's show tip. |
 | 28 | — | The first county show. |
 | 29 | `incubatorShop` | The big incubator. (The neighbour's small one still comes with the first fertile egg, laid or bought.) If the neighbour gave hers, the big one comes at least `incubatorShopAfterGiftDays` (14) after the gift (`GameState.introductionDay(of:)`). |
@@ -80,7 +80,11 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 | 42 | `marketBoard` | Mr Okafor puts up the market board by the bakery. It opens sooner if his note about the board comes first. |
 
 - The days are in `Rules.featureDays`. The show opens `showNoticeDays` (7) before the first show.
-- No birds, perches, incubators or shows before the sex shows (`EarlyGameTests` checks this).
+- One lesson or opening a day, days 1 to 5. `Feature` cases are in timeline order. Saves keep the raw
+  values only, so the order can change.
+- No bought birds, perches, incubators or shows before the sex shows (`EarlyGameTests` checks this).
+  Marigold is a loan, not a bird the keeper buys.
+- A save keeps its own `featureDays`. A game begun before this table keeps its old days (laying on 18).
 - **The show tip** (`Engine.showTip`). When the show opens, the neighbour names one of your birds and
   one class, by name: "Oh hey, I notice that Basil is a beautiful buff Orpington! … I think you
   should enter her in the Orpington class." She suggests the breed class if the bird places 1st to
@@ -209,8 +213,9 @@ genotypes that cannot be:
 
 1. **Look.** `Phenotype` in reverse (`LookTable`). The table is made once from every combination of
    the single genes. It never reads a real bird.
-2. **Origin.** A bird from outside the flock (no parents on record, not hatched at home) is one of its
-   breed's public recipes (`RecipeTable`) that gives its look.
+2. **Origin.** A bird from outside the flock (not hatched at home) is one of its breed's public
+   recipes (`RecipeTable`) that gives its look. Where it was bred decides this, not its parents: the
+   starter has its mother (Marigold) on record, and is still Hazel's purebred stock.
 3. **Family up.** A chick keeps only genotypes its parents can give it.
 4. **Family down.** A parent keeps a genotype only if every seen chick can come from it.
 5. Steps 3 and 4 repeat until nothing changes.
@@ -694,6 +699,7 @@ Leaving the coop door open is a real risk/reward, not just a fox gamble. If the 
 the night, the free-ranging birds forage: they return fed (no feeding needed that day) and a little
 better off — a small lay bonus (`forageLayBonus`) and show-condition bonus (`forageConditionBonus`).
 So each night you choose: close up safe but feed tomorrow, or leave open to forage and risk the fox.
+On the Longest Day's night the fox stays home, so an open door forages for free (see "The village calendar").
 
 ## Saves, rules and balance
 
@@ -771,6 +777,9 @@ too) stay in the state; outside parents, such as those of a bought egg, are kept
 `Names.swift`. Birds you hatch or buy arrive with `needsName`; the UI asks for a name at once,
 with a suggestion (Enter takes it). Birds given by people (gift hen, trade hen, story gifts)
 arrive already named by their keeper. Any bird you own can be renamed any time, even while lost.
+If Teddy is to name the next chick (see "Storylines"), it hatches with a name from his list
+(`NameBook.teddy`) and does not wait for one. His names are neutral and in no other list.
+No list holds a person's name (`NameBook.peopleNames`).
 
 - Names are unique in the flock, ignoring case and spaces; up to 24 letters.
 - Suggestions come from the bird's own ID (no game randomness used). A suggestion is never a name
@@ -801,26 +810,122 @@ words are in FeatherwickText: `storyText` for the steps, `choiceText` for the op
   Wyandotte hen, so lacing enters your lines.
 - **A heritage breed** (deliver 4 fertile eggs): earns an Australorp hen and adds Australorps to
   Speckle & Down's surprise stock. (Any in-game breed can also be the shop's daily special.)
-- CLI: `story`, `give eggs`.
+- **The borrowed hen** (a new keeper's first fortnight; see below).
+- Hazel's three stories each have one line about her mother's lavender line. Lavender is a colour
+  here. No line says that the keeper's birds carry it (rule 8).
+- CLI: `story`, `give eggs`, `give eggs <story>`.
+
+The village has four more people. Each has one first arc of three to five beats. No arc waits for
+another (`after` is empty). Each arc's words are in `VillagePeopleText.swift`.
+
+- **The standard** (Dot, the judge). Starts at the first show entry. Dot notices you. A keeper with
+  results from a show held before the arc started hears no "First show?". Then she invites you
+  to see the standard. Then she asks which breed page to read first (`choiceOfBreeds`). She offers two
+  breeds: first the breeds of birds whose breed shows, then breeds in the Breed Book, then breeds the
+  shop sells. A chick whose breed is hidden does not count (rule 8). A flock of one breed gets a second
+  breed, so the choice is never a dead end. The two breeds are fixed when the step starts
+  (`StoryProgress.options`). The pick sends `.note(dot, "standard-<breed>")`. That breed's Breed Book
+  page then shows "What Dot looks for" (`GameState.dotStandardBreed`, `dotStandardText`). The CLI
+  `book` shows the same line.
+- **Teddy helps out** (Teddy, the kid down the lane). Starts at the first ribbon (top 3) or on day 30,
+  whichever is first. He wants to meet your birds. He is not allowed a chicken. He asks to help. Choice:
+  he names your next chick, or you have a drawing day. Both give 3 treats. "Name" sets
+  `GameState.nextChickNamer`: the next chick that hatches takes a name from `NameBook.teddy`
+  (`.chickNamed`). The names are neutral, because the chick's sex is hidden. The keeper can rename it.
+  "Drawing" sends a note with his drawing. The last beat waits for a lap chicken. Then Teddy says
+  "that one's a lap chicken, you know" (a note).
+- **The bakery window** (Mr Okafor, the baker). Starts at the first brown egg in the Egg Book, on day 14 or later (a new keeper's first
+  fortnight is Marigold's, and she lays brown). He wants
+  eggs for his window. Then he talks of a colour you do not have yet. Choice: take him 6 brown eggs now
+  (30 coins, well above the egg price), or wait and take him 3 eggs of a new colour (50 coins and a note). The delivery step
+  depends on the choice (`StoryGoal.ifChosen`). "A new colour" means a colour not in the Egg Book when
+  the step starts (`StoryProgress.wantedColours`). If no breed the shop sells lays such a colour, any
+  colour but brown that the shop's breeds lay counts. The Araucana is a starter breed and lays blue,
+  so the step is always possible. The last beat is a note about a market board in the village. The
+  market board is words only for now.
+- **Postcards from the rescue** (Bea, the rescue). Starts at the first bird that goes to a new home.
+  Two days later, a postcard names the first bird that left. The words fit even if it left long ago.
+  Five days later, a second postcard asks you to visit. A third comes when three birds have new homes,
+  and names the newest. No choice. A postcard uses the bird's name and no pronoun (rule 8).
+
+Deliveries for the village arcs cost the `.neighbour` errand, as Hazel's do. A refusal says what is
+needed (`.needEggs`, `.needEggsOfNewColour`). In the app, the back fence and Books ▸ People offer each
+choice and each delivery. The People page lists each person met, their about line, and their arcs.
 
 To add one: append one `Storyline` to `Storylines.all`, with its `person`. Add its words in `storyText`,
 and the words for each option in `choiceText`. A choice or a delivery is a step goal on its own, never
 inside `anyOf`.
+
+### The borrowed hen
+
+`BorrowedHen.swift`. The first fortnight has a plot. Hazel lends the keeper Marigold, the starter's mother.
+
+- The days come from the game's rules. Marigold comes on the coop door day (`StoryGoal.featureDay`,
+  day 3). Hazel is home `marigoldStayDays` (7) later (day 10). Her age (`marigoldAgeDays`, 112) and her
+  price (`marigoldPrice`, 40) are rules too: the table names them with `StoryNumber.rule`, and the
+  story reads them from `s.rules` when it runs. The words name no fixed day or price.
+- **Day 2.** Hazel asks: she goes to her sister's soon, for a few days. Can Marigold stay?
+- **Day 3.** Marigold comes (`.loanBird`): a grown hen of the starter's breed, named by Hazel, from
+  Hazel's (`origin` "Neighbour"). "Her eggs are yours. Shut the door at night." The coop door lesson is
+  about her. She needs no perch (see Loans below).
+- **Day 4.** She lays. The laying lesson is a note from Hazel in her box. If the fox scared her off,
+  the note says she lays when she is home. It never says "roosters don't lay" to a keeper whose only
+  bird is a chick whose sex does not show yet.
+- **Days 3 to 10.** Hazel is away (`GameState.hazelAway`, `hazelHomeDay`), so her words come as notes
+  and a postcard. The back fence is quiet and says the day she is home.
+  Jobs can name Marigold. A cuddle job that names her counts as done once she has gone home.
+- **Day 8.** The Breed Book lesson adds "Marigold's chick, of course." (only in games where she came).
+- **Day 10.** Hazel is home and asks: `choose marigold return` or `choose marigold keep`. Her words
+  carry no command: the CLI prints the hint (`choiceHintText`) after the night that asks.
+  - **Return:** Marigold goes home (`.endLoan`). Hazel gives a candled, fertile egg of Marigold's
+    breed (`.giftEgg(nil, fertile: true)`: nil means the breed of the bird the story lent, kept in
+    `GameState.lentBreeds`, else the starter's). It does not need the starter to be here. It is the first fertile egg,
+    so the neighbour's 1-egg incubator comes with it. A full carton holds up only the egg.
+  - **Keep:** Marigold is the keeper's (`.offerToKeep`). Her price, `marigoldPrice` (40), is a debt to
+    Hazel: "Pay me when you can. She likes you." A kept bird needs a perch of her own: with none free,
+    the choice is still made, and the keeping waits for a perch (`.storyGiftWaitingForRoom`).
+    Meanwhile the bird card says "Yours once there's a perch for her", and Hazel says so at the fence.
+  - The choice waits. Until it is made, Marigold stays. Nothing is lost by waiting.
+- **She is the starter's mother.** `Breed.motherGenome(of:)` picks one of the breed's colours that
+  holds one of the starter's alleles at every gene. So she is one of the breed's public recipes, and
+  `Knowledge` reads her as it reads any bought bird. The genes behind each quantitative trait share
+  the starter's first allele too. The starter's `motherID` is Marigold. Its `fatherID` is her mate, a
+  family-tree record with no look (he stays at Hazel's). The starter keeps its own breed evidence
+  (`Visible.isFromOutside` reads the origin only), so its parents add to what the keeper knows and
+  never take away from it. The planner's sure lines stay as many as before (`KnowledgeTests`).
+- **Rule 8.** Marigold's look is evidence, like any mother's. It must never tell the starter's sex.
+  Barring is on the Z: a barred hen gives barring to every son, so a barred mother with an unbarred
+  chick would say "a daughter". So her one Z copy is the starter's first Z copy. Her barring always
+  matches the starter's, hen or rooster. `BorrowedHenTests` checks that a hen starter and a rooster
+  starter with the same look give the same events, `Visible`, `Knowledge` and carrier notes until the
+  sex shows.
+- **Old saves get no Marigold.** The story starts on `StoryGoal.newKeeper`, which reads
+  `GameState.earlyGameStories`. Only `Engine.newGame` with the early game sets it. A save from before
+  has it false (`SaveFormat.fillNewSettings`), so no retroactive loan, debt or choice.
+- The sim keeper picks the first option of every choice: Marigold goes home.
+- App: the choice is two buttons in Hazel's note and at the back fence. The bird card says "Hazel's
+  hen, staying 6 more days". Settings has "You owe" with a Pay button.
 
 ### People, choices, loans and debts
 
 - **Every system has a person** (`Person`): Hazel (genetics and the pen), Wren (the shop and the news),
   Dot (shows), Teddy (friendliness), Mr Okafor (egg colours), Bea (rehoming). Each `Storyline` has a
   `person`. The first three stories are Hazel's. Names and about lines are in `People` (FeatherwickText).
-  A person's name is never suggested for a bird.
-- **Goals.** A step or trigger can wait for: a day (`onDay`, an absolute day), a choice, the first show
+  A person's name is never suggested for a bird (`NameBook.peopleNames`; no name list holds one).
+- **Goals.** A step or trigger can wait for: a day (`onDay`, an absolute day), the day the early game
+  introduces a feature (`featureDay`), a choice, the first show
   entry, a placing in the top N, N birds at a friendliness band or better, an Egg Book colour, N birds
-  rehomed, a debt paid, or any one of several goals (`anyOf`).
+  rehomed, a debt paid, any one of several goals (`anyOf`), or all of them (`allOf`). A step can also ask for eggs of one
+  colour (`deliverEggs`), eggs of a colour new to the Egg Book (`deliverEggsOfNewColour`), a pick of two
+  of the keeper's breeds (`choiceOfBreeds`), or a goal that depends on an earlier choice (`ifChosen`).
+  What a step offers (the breeds, the new colours) is fixed when the step starts (`Engine.prepare`).
+  It is cleared when the step finishes. The pick stays in `chosen`.
 - **Step rewards.** A step can give rewards when its goal is met. The story's own rewards come after the
   last step. A step whose rewards need room (a perch for a bird, a carton space for an egg) waits for room.
   A delivery step gives no rewards of its own.
 - **Rewards.** A gift bird, a shop breed, a gift egg (candled), coins, treats, a loaned bird, the end of a
-  loan, the offer to keep a loaned bird, a note, and rewards that come only for one option (`ifChosen`).
+  loan, the offer to keep a loaned bird, a note, a person who names the next chick (`namesNextChick`),
+  and rewards that come only for one option (`ifChosen`).
 - **Choices.** A choice step offers two or three options. It waits for `choose(story, option)`. The pick is
   kept in `StoryProgress.chosen`, so later words can remember it ("since you kept Marigold"). No option is
   wrong, and no option locks content: each trades one good thing for another. Choosing costs no daylight.
@@ -832,7 +937,8 @@ inside `anyOf`.
 - A loan ends on its return day, or when a story ends it. A hen sitting on eggs or raising chicks stays
   until she is free. She goes home with `.loanReturned`. Her family-tree record stays, with the look the
   keeper saw. If the keeper keeps her (`offerToKeep`), the loan is cleared, she is the keeper's bird with
-  her pedigree, and her price becomes a debt (`.loanKept`, `.debtOwed`).
+  her pedigree, and her price becomes a debt (`.loanKept`, `.debtOwed`). A kept bird takes a perch, so
+  the step waits for a free one, like a gift bird.
 - **Debts.** `GameState.debts`. `payDebt(id)` pays one in full, when the keeper has the coins (`.debtPaid`).
   No interest, no deadline, and nothing is held back while a debt stands. The owner mentions it kindly at
   most once every `debtReminderDays` (28, a season): `.debtReminder`. Paying costs no daylight.
@@ -848,14 +954,85 @@ pick come from `shopSeed` and the day, never from the game RNG, so the post chan
 Event: `.noteArrived(person, noteID)`. The words come from `postNoteText` by note ID. The morning report
 shows notes under "Post". Conditions read only what the keeper can see (rule 8).
 
+More conditions: a day or later (`dayAtLeast`), a feature is open (`isOpen`), N chicks hatched
+(`chicksHatched`), N Breed Book pages the keeper owns (`breedBookCount`; looks seen at a show do not count),
+N birds rehomed (`rehomedCount`), a show entry judged (`enteredShow`), a ribbon (`placedAtShow`), a
+ribbon in a kind of class (`placedInClass`: pet, eggs or breed), and a loaned bird in the coop now
+(`loanedBirdHome`; a loaned bird lost after a fright does not count).
+
+The pool (`Notes.pool`, 72 notes). Each person writes about their own system:
+
+| Person | Notes | About |
+| --- | --- | --- |
+| Wren | 14 | Village news, shop stock, the weather. A stock note comes only when that stock is open. |
+| Hazel | 14 | Chicken lore. The early-game lessons, recalled. One look from the Breed Book. |
+| Dot | 12 | Show hints. What she noticed at a show: the bird or plate that placed, by name. |
+| Teddy | 12 | Drawings and questions. The tamest bird at home (a loaned bird too), by name. |
+| Mr Okafor | 11 | Eggs and bread. One note for each egg colour in the Egg Book. |
+| Bea | 9 | How the rehomed birds are doing, by name. |
+
+- The first days are quiet. No note can come before day 6. Most wait for a feature, a season or a later day.
+- A note never comes twice. A note that names a thing reads it when the words show
+  (`poolNoteText` in `NotesText.swift`). If the thing has gone, the note says a general line.
+- Tone: short, plain, one idea, in the sender's voice. No nagging and no loss. Only Teddy uses exclamation marks.
+- Rule 8. A note names only what the keeper has seen. A bird whose sex is hidden gets no "she" or "he",
+  and no word that tells its sex or breed. Bea names a rehomed chick by its name only.
+- Append, never insert: the seeded pick reads the pool in list order. Put a new note at the end of the
+  `added` list (the last list in `pool`), not in a person's list.
+
 ### The village calendar
 
 `VillageDay.swift`. Four village days a year: the Hatch-along (spring), the Longest Day (summer), Moult Week
 (autumn) and Midwinter Lights (winter). Each falls on a day of its season (`Rules.villageDays`), every year.
 `villageDayNoticeDays` (7) mornings before, `.villageDayComing(day, inDays:)`. On the morning,
-`.villageDay(day)`. The morning report shows both under "In the village". Nothing is missable: each day
-comes round again next year. `GameState.nextVillageDay` and `upcomingVillageDays(n)` give the dates.
-CLI: `calendar` lists the next four.
+`.villageDay(day)`, then `.villageDayScene(day, year:)`. The morning report shows them under "In the village".
+Nothing is missable: each day comes round again next year. `GameState.nextVillageDay` and
+`upcomingVillageDays(n)` give the dates. No day draws from the game RNG, except that the Longest Day skips one.
+
+| Day | When | What happens |
+| --- | --- | --- |
+| Hatch-along | spring, day 10 | Bring one known-fertile egg in its week. A surprise chick comes back 3 nights later. |
+| Longest Day | summer, day 14 | The fox stays home that night. An open door forages for free. |
+| Moult Week | autumn, day 1 | Hazel's lesson on the moult, and `moultWeekTreats` (4) mealworms. |
+| Midwinter Lights | winter, day 14 | The village gives `midwinterCoins` (15), and Teddy sends a note with a drawing. |
+
+- **The Hatch-along** (`HatchAlong.swift`). The week is the day itself and the days after it:
+  `hatchAlongWeekDays` (7) in all. The notice a week before gives time to find an egg. In the week the keeper
+  may bring Hazel one egg they KNOW is fertile (candled): `giveHatchAlongEgg(egg)`, or `nil` for the first
+  known-fertile egg in the carton. It is the `.neighbour` errand. One egg a year (`hatchAlongYears`).
+  Refusals: `.hatchAlong(.notThisWeek)`, `.hatchAlong(.alreadyGiven)`, `.hatchAlong(.noFertileEgg)`.
+  Event: `.hatchAlongEggGiven(returnsOnDay:)`.
+- `hatchAlongReturnNights` (3) nights after the egg, a chick comes back (`hatchAlongChickDays`). It is not the
+  keeper's own egg: it is a surprise starter breed from the village hatch. It is a new chick in the brooder,
+  with a name to give. Its breed and sex show at grower age, like any chick (rule 8).
+  Event: `.hatchAlongChickArrived(id)`. It does not count as a chick the keeper hatched.
+- The chick needs room, like a gift bird: a free perch, and a brooder place. With no room it waits with
+  Hazel. She says so once (`.hatchAlongChickWaiting`). It comes the first morning there is room. It never
+  boards and is never rehomed while it waits. A waiting chick does not stop next year's egg: the chicks
+  queue (`hatchAlongChickDays`) and come home oldest first, one per free perch and brooder place.
+  A perch counts as free only if no bird waits for it: every bird in the brooder, with a mother hen or
+  boarding holds one. So a chick that came home yesterday still holds its perch, and none is rehomed.
+- The chick is drawn from its own seed (`shopSeed` and its day), never the game RNG. So giving an egg does
+  not change the rest of a seeded game.
+- No egg costs nothing. The day comes round next spring.
+- **The Longest Day.** On the night that starts on its date, `passNight` skips the fox roll (`foxStaysHome`).
+  `foxChance` does not change. The door is still the keeper's choice, and an open door forages as usual.
+  That night draws one number fewer from the game RNG. So every later draw in that game moves, and a seeded
+  game plays differently after its first Longest Day. Nights before it are unchanged.
+- **Moult Week.** Hazel's lesson on the moult and `moultWeekTreats` (4) mealworms, each year:
+  `.villageDayGift(.moultWeek, coins: 0, treats: 4)`. There is nothing to do and nothing to miss. The moult
+  costs no show marks.
+- **Midwinter Lights.** The village gives `midwinterCoins` (15) each year: `.villageDayGift`. Teddy sends a
+  note with a drawing: `.noteArrived(.teddy, "teddyMidwinterDrawing.y<year>")`, also in `notesSeen`. The
+  ID holds the year it came, so the note keeps that year's words. It is a gift, not a task.
+- **Words** (`CalendarText.swift`). Each day's scene has two versions: year 0 explains, and every later year
+  remembers. Teddy's note changes the same way. Shared words hold no CLI commands: the CLI prints its own
+  hint, and the app has a button. `villageNotice` gives the farm gate notice ("Longest Day in 3
+  days", "Hatch-along: bring an egg"). The words never name the Hatch-along chick's sex or breed.
+- CLI: `calendar` lists the next four, each with what it does (`villageCalendarLines`), and the Hatch-along
+  line in its week, then the hint `give egg`. `give egg` brings the egg. `hasMet` counts Teddy as met once his Midwinter note came.
+- App: the farm gate notice, a "Village calendar" block on the Show tab, and "Bring an egg for the
+  Hatch-along" at the back fence (which then "has news").
 
 ## Market board
 
@@ -940,7 +1117,8 @@ To add one: append a `Milestone` to `Milestones.all` (list order is the ladder),
   simply go the next morning.
 - **Season goal.** One bigger goal for each season: hatch 3 chicks, a new Breed Book page, a new egg,
   a show ribbon, one more friendly bird, grow the flock by 2, or collect a number of eggs. The game
-  picks only goals the keeper can work on now. Progress shows as "2 of 3".
+  picks only goals the keeper can work on now. Progress shows as "2 of 3". A bird on loan goes home
+  one day, so she never counts for the flock or friend goals (`GameState.ownBirds`).
 - The "new egg" goal asks only for colours a breed in play can make. Chocolate needs an in-game breed
   with shell depth above `Rules.chocolateShellDepth`; none has one yet, so it is left out. A chocolate
   egg found anyway still counts as a new egg.
@@ -1001,7 +1179,7 @@ Sleep waits until every slot is spent, and nothing is ever lost: a refused erran
 | One slot | `buy`, `buySpecial`, `buyIncubator` | `.village` (Speckle & Down) |
 | One slot | `candle`, `candleEgg` | `.candling` |
 | One slot | `enterShow`, `enterShowIn`, `enterEggs`, `enterEggPlate` | `.showDesk` |
-| One slot | `deliver`, `acceptTrade`, `rehome` | `.neighbour` |
+| One slot | `deliver`, `acceptTrade`, `rehome`, `giveHatchAlongEgg` | `.neighbour` |
 | One slot | `upgradeCoop` | `.building` |
 | One slot | `fillCard`, `postCard`, `sellToBuyer` | `.market` (the board by the bakery) |
 | One slot, no effect | `rest` | none |

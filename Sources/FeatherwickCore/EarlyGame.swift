@@ -15,16 +15,18 @@ import Foundation
 /// One step of the early game. Each is introduced once, on its day, with the neighbour's words.
 /// Steps that are only lessons (`handling`, `coopDoor`, `breedBook`, `laying`) lock nothing.
 /// `daylight` locks only `rest`; once it is introduced, errands take daylight (see Daylight.swift).
-/// Cases are in timeline order.
+/// Cases are in timeline order. Saves keep the raw values only, never the order, so a reorder is safe.
 public enum Feature: String, Hashable, Codable, Sendable, CaseOrdered {
     /// Lesson: pick the chick up every day. Chicks learn trust fastest.
     case handling
     /// The neighbour gives a few mealworms, and Speckle & Down sells treats.
     case treats
+    /// Lesson: shut the coop door at night, or let the flock forage. Comes with Marigold, the first coop hen.
+    case coopDoor
+    /// Lesson: hens lay when they were fed the day before. Collect the eggs, sell them.
+    case laying
     /// Speckle & Down sells premium feed.
     case premiumFeed
-    /// Lesson: the chick moves to the coop soon. Shut the door at night, or let the flock forage.
-    case coopDoor
     /// Lesson: the sex shows, and the bird goes in the Breed Book. Every breed and colour you keep does.
     case breedBook
     /// Lesson: there is only so much daylight. Errands take a slot of the day; care is always free.
@@ -33,8 +35,6 @@ public enum Feature: String, Hashable, Codable, Sendable, CaseOrdered {
     case birdShop
     /// More perches for the coop.
     case coopUpgrade
-    /// Lesson: hens start to lay soon. Feed every day, collect the eggs, sell them.
-    case laying
     /// The county show: entering, and the show screens. Opens a week before the first show.
     case shows
     /// The big incubator at Speckle & Down. (The neighbour's small one comes with the first fertile egg,
