@@ -212,9 +212,9 @@ public struct GameState: Hashable, Codable, Sendable {
     public var notesSeen: Set<String> = []
     /// The years the keeper brought an egg to the Hatch-along (see HatchAlong.swift). One egg a year.
     public var hatchAlongYears: Set<Int> = []
-    /// The morning the Hatch-along chick comes back. Set from the egg's day until the chick is home:
-    /// with no room, the chick waits with Hazel and this stays set.
-    public var hatchAlongChickDay: Int?
+    /// The mornings Hatch-along chicks come back, soonest first. A day stays here from the egg until its
+    /// chick is home: with no room, the chick waits with Hazel. One a year, so the list stays short.
+    public var hatchAlongChickDays: [Int] = []
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

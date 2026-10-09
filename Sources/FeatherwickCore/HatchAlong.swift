@@ -10,7 +10,9 @@ import Foundation
 //
 // Room: like a gift bird, the chick needs a free perch, and as a chick it needs a brooder place too. With
 // no room, it waits with Hazel (`.hatchAlongChickWaiting`, once) and comes the first morning there is room.
-// It never boards and is never rehomed while it waits. No egg costs nothing: the day comes round next year.
+// It never boards and is never rehomed while it waits. A waiting chick does not stop next year's egg: the
+// chicks queue (`hatchAlongChickDays`) and come home one by one, oldest first, as room is made.
+// No egg costs nothing: the day comes round next year.
 //
 // The chick is drawn from its own seed (the shop seed and the day), never the game RNG, so giving an egg
 // changes no seeded game.
@@ -19,7 +21,7 @@ import Foundation
 public enum HatchAlongRefusal: String, Hashable, Codable, Sendable {
     /// It is not the Hatch-along week.
     case notThisWeek
-    /// An egg was brought this year already, or last year's chick is still waiting with Hazel.
+    /// An egg was brought this year already.
     case alreadyGiven
     /// No egg in the carton is known to be fertile (or the chosen one is not).
     case noFertileEgg
@@ -37,7 +39,7 @@ extension GameState {
     /// when this is not nil. A chosen egg must be in the carton and known to be fertile.
     public func hatchAlongRefusal(egg id: UUID? = nil) -> HatchAlongRefusal? {
         guard let start = hatchAlongWeekStart else { return .notThisWeek }
-        if hatchAlongYears.contains(year(onDay: start)) || hatchAlongChickDay != nil { return .alreadyGiven }
+        if hatchAlongYears.contains(year(onDay: start)) { return .alreadyGiven }
         return hatchAlongEgg(id) == nil ? .noFertileEgg : nil
     }
 
@@ -46,8 +48,8 @@ extension GameState {
         carton.first { $0.isCandled && $0.isFertile && (id == nil || $0.id == id) }
     }
 
-    /// True while the Hatch-along chick is due or waiting with Hazel.
-    public var hatchAlongChickDue: Bool { hatchAlongChickDay != nil }
+    /// True while a Hatch-along chick is due or waiting with Hazel.
+    public var hatchAlongChickDue: Bool { !hatchAlongChickDays.isEmpty }
 }
 
 extension Engine {
@@ -58,17 +60,34 @@ extension Engine {
         s.carton.removeAll { $0.id == egg.id }
         s.hatchAlongYears.insert(s.year(onDay: start))
         let returns = s.day + max(1, s.rules.hatchAlongReturnNights)
-        s.hatchAlongChickDay = returns
+        s.hatchAlongChickDays.append(returns)
         return [.hatchAlongEggGiven(returnsOnDay: returns)]
     }
 
-    /// Each morning: the Hatch-along chick comes home if its day has come and there is room (a free
-    /// perch and a brooder place). Otherwise it waits with Hazel, and says so once.
+    /// Each morning: Hatch-along chicks whose day has come go home, oldest first, while there is room (a
+    /// free perch and a brooder place). The rest wait with Hazel, and each says so once.
     static func hatchAlongChickHome(_ s: inout GameState) -> [GameEvent] {
-        guard let due = s.hatchAlongChickDay, s.day >= due else { return [] }
-        guard s.hasFreePerch, brooderRoom(s) > 0 else {
-            return s.storyNotices.insert("hatchAlong.\(due).waitingForRoom").inserted ? [.hatchAlongChickWaiting] : []
+        var ev: [GameEvent] = []
+        var waiting: [Int] = []
+        var arrived = 0  // each chick this morning keeps a perch for when it is grown
+        for due in s.hatchAlongChickDays.sorted() {
+            let room = s.perchesUsed + arrived < s.perches && brooderRoom(s) > 0
+            guard s.day >= due, waiting.isEmpty, room else {
+                if s.day >= due, s.storyNotices.insert("hatchAlong.\(due).waitingForRoom").inserted {
+                    ev.append(.hatchAlongChickWaiting)
+                }
+                waiting.append(due)
+                continue
+            }
+            ev.append(hatchAlongChick(due: due, &s))
+            arrived += 1
         }
+        s.hatchAlongChickDays = waiting
+        return ev
+    }
+
+    /// One Hatch-along chick comes home to the brooder.
+    static func hatchAlongChick(due: Int, _ s: inout GameState) -> GameEvent {
         // Its own seed: the shop seed and the day the chick was due. No game RNG.
         var rng = SeededRNG(seed: s.shopSeed ^ 0x4843_4841 ^ UInt64(truncatingIfNeeded: due))  // "HCHA"
         let breed = Breed.starters.randomElement(using: &rng)!
@@ -81,7 +100,6 @@ extension Engine {
         ).withFounderQuality().withTameness(s.rules.brooderChickTameness)
         chick.needsName = true
         s.brooder.append(chick)
-        s.hatchAlongChickDay = nil
-        return [.hatchAlongChickArrived(chick.id)]
+        return .hatchAlongChickArrived(chick.id)
     }
 }

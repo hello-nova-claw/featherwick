@@ -22,8 +22,8 @@ struct RecordsTests {
     /// `forget` clears the record book after every command, as if the game kept no records.
     static func play(days: Int, seed: UInt64 = 5, forget: Bool = false) -> (GameState, SeededRNG, Tally, [GameEvent]) {
         var rules = Rules.standard
-        // No post: a note may wait for a laid egg (`NoteCondition.hasEggs` reads the records), so a game
-        // that forgets its records would get different notes. The records themselves change nothing.
+        // No post, for when the note pool fills: `NoteCondition.hasEggs` reads `layRecords`, which the
+        // forget game clears, so the two games could get different notes. Recording itself changes nothing.
         rules.noteChance = 0
         var (s, rng) = startedGame(sex: .hen, rules: rules, seed: seed)
         s.coins = 500

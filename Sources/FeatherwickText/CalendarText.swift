@@ -40,11 +40,10 @@ public func villageDaySceneText(_ v: VillageDay, year: Int, _ s: GameState) -> S
         return first
             ? "\(People.neighbour) has her big incubator set up in the village hall. \"Everyone brings one egg "
                 + "they know is fertile, and everyone gets a chick back in \(nights) nights. Not your own egg's "
-                + "chick, mind: whichever the hatch sends you. That's the fun of it. You've all week.\" "
-                + "To bring one: give egg"
+                + "chick, mind: whichever the hatch sends you. That's the fun of it. You've all week.\""
             : "The Hatch-along again. \(People.neighbour)'s incubator hums in the village hall, and the "
                 + "children have drawn name cards for the trays. One known-fertile egg this week, and a "
-                + "surprise chick comes home \(nights) nights later. To bring one: give egg"
+                + "surprise chick comes home \(nights) nights later."
     case .longestDay:
         return first
             ? "The longest day of the year. The whole village is out on the green until the light goes. "
@@ -101,7 +100,7 @@ func calendarEventText(_ e: GameEvent, _ s: GameState) -> String? {
 func hatchAlongRefusalText(_ why: HatchAlongRefusal) -> String {
     switch why {
     case .notThisWeek:
-        "The Hatch-along is in spring. Bring an egg in its week. See: calendar"
+        "The Hatch-along is in spring. Bring an egg in its week: the village calendar says when."
     case .alreadyGiven:
         "You've brought your Hatch-along egg this year. One each, \(People.neighbour) says. There's next spring."
     case .noFertileEgg:
@@ -112,29 +111,35 @@ func hatchAlongRefusalText(_ why: HatchAlongRefusal) -> String {
 
 /// The words for the notes the calendar sends (not from the post's pool). Nil for any other ID.
 func calendarNoteText(_ id: String, _ s: GameState) -> String? {
-    switch id {
-    case VillageDay.midwinterNote:
-        // Words by year: the note comes every Midwinter. Rule 8: the drawing shows no bird in particular.
-        s.year(onDay: s.day) == 0
+    // Words by the year the note came (it is in the ID). Rule 8: the drawing shows no bird in particular.
+    switch VillageDay.midwinterNoteYear(id) {
+    case .some(let year):
+        year == 0
             ? "\"Mum says I can't have a chicken but I can draw one. This is yours. The yellow bit is the "
                 + "lights.\" A crayon drawing of a very round bird under a very big moon."
             : "\"I drew all of them this year. The one in the hat is you.\" A crayon drawing of a lot of "
                 + "birds, a coop, and someone in a hat."
-    default: nil
+    case .none: nil
     }
 }
 
-/// The Hatch-along line for the calendar, while its week is on or its chick is due. Empty otherwise.
+/// The Hatch-along lines for the calendar: a chick on its way, and the week while an egg can still go.
+/// Empty otherwise. No CLI commands: each front end offers its own way to bring the egg.
 public func hatchAlongLines(_ s: GameState) -> [String] {
-    if s.hatchAlongChickDue {
-        return ["Your Hatch-along chick is coming from \(People.neighbour)'s."]
+    var out: [String] = []
+    let due = s.hatchAlongChickDays.count
+    if due > 0 {
+        out.append(
+            due == 1
+                ? "Your Hatch-along chick is coming from \(People.neighbour)'s."
+                : "\(due) Hatch-along chicks are coming from \(People.neighbour)'s, one as each finds room.")
     }
-    guard let refusal = s.hatchAlongRefusal() else {
-        return ["It's Hatch-along week. Bring \(People.neighbour) an egg you know is fertile: give egg"]
+    switch s.hatchAlongRefusal() {
+    case nil: out.append("It's Hatch-along week. Bring \(People.neighbour) an egg you know is fertile.")
+    case .noFertileEgg: out.append("It's Hatch-along week. You need an egg you know is fertile to bring one.")
+    case .notThisWeek, .alreadyGiven: break
     }
-    return refusal == .noFertileEgg
-        ? ["It's Hatch-along week. You need an egg you know is fertile to bring one."]
-        : []
+    return out
 }
 
 /// A short notice for the farm gate: a village day coming soon, today, or the Hatch-along week. Nil

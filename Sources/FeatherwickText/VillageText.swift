@@ -145,7 +145,7 @@ public func hasMet(_ p: Person, _ s: GameState) -> Bool {
     if p == .hazel || p == .wren { return true }
     if Storylines.all.contains(where: { $0.person == p && s.stories[$0.id] != nil }) { return true }
     if s.debts.contains(where: { $0.to == p }) || s.loanedBirds.contains(where: { $0.loan?.owner == p }) { return true }
-    if p == .teddy && s.notesSeen.contains(VillageDay.midwinterNote) { return true }  // his Midwinter drawing
+    if p == .teddy && s.notesSeen.contains(where: { VillageDay.midwinterNoteYear($0) != nil }) { return true }
     return Notes.pool.contains { $0.from == p && s.notesSeen.contains($0.id) }
 }
 

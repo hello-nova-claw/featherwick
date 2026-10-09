@@ -870,31 +870,33 @@ Nothing is missable: each day comes round again next year. `GameState.nextVillag
   known-fertile egg in the carton. It is the `.neighbour` errand. One egg a year (`hatchAlongYears`).
   Refusals: `.hatchAlong(.notThisWeek)`, `.hatchAlong(.alreadyGiven)`, `.hatchAlong(.noFertileEgg)`.
   Event: `.hatchAlongEggGiven(returnsOnDay:)`.
-- `hatchAlongReturnNights` (3) nights after the egg, a chick comes back (`hatchAlongChickDay`). It is not the
+- `hatchAlongReturnNights` (3) nights after the egg, a chick comes back (`hatchAlongChickDays`). It is not the
   keeper's own egg: it is a surprise starter breed from the village hatch. It is a new chick in the brooder,
   with a name to give. Its breed and sex show at grower age, like any chick (rule 8).
   Event: `.hatchAlongChickArrived(id)`. It does not count as a chick the keeper hatched.
 - The chick needs room, like a gift bird: a free perch, and a brooder place. With no room it waits with
   Hazel. She says so once (`.hatchAlongChickWaiting`). It comes the first morning there is room. It never
-  boards and is never rehomed while it waits. While it waits, no new egg is taken.
+  boards and is never rehomed while it waits. A waiting chick does not stop next year's egg: the chicks
+  queue (`hatchAlongChickDays`) and come home oldest first, one per free perch and brooder place.
 - The chick is drawn from its own seed (`shopSeed` and its day), never the game RNG. So giving an egg does
   not change the rest of a seeded game.
 - No egg costs nothing. The day comes round next spring.
 - **The Longest Day.** On the night that starts on its date, `passNight` skips the fox roll (`foxStaysHome`).
   `foxChance` does not change. The door is still the keeper's choice, and an open door forages as usual.
-  That one night draws one number fewer from the game RNG, so later draws in that game move. Other nights
-  are unchanged.
+  That night draws one number fewer from the game RNG. So every later draw in that game moves, and a seeded
+  game plays differently after its first Longest Day. Nights before it are unchanged.
 - **Moult Week.** Hazel's lesson on the moult and `moultWeekTreats` (4) mealworms, each year:
   `.villageDayGift(.moultWeek, coins: 0, treats: 4)`. There is nothing to do and nothing to miss. The moult
   costs no show marks.
 - **Midwinter Lights.** The village gives `midwinterCoins` (15) each year: `.villageDayGift`. Teddy sends a
-  note with a drawing: `.noteArrived(.teddy, "teddyMidwinterDrawing")`, also in `notesSeen`. It is a gift,
-  not a task.
+  note with a drawing: `.noteArrived(.teddy, "teddyMidwinterDrawing.y<year>")`, also in `notesSeen`. The
+  ID holds the year it came, so the note keeps that year's words. It is a gift, not a task.
 - **Words** (`CalendarText.swift`). Each day's scene has two versions: year 0 explains, and every later year
-  remembers. Teddy's note changes the same way. `villageNotice` gives the farm gate notice ("Longest Day in 3
+  remembers. Teddy's note changes the same way. Shared words hold no CLI commands: the CLI prints its own
+  hint, and the app has a button. `villageNotice` gives the farm gate notice ("Longest Day in 3
   days", "Hatch-along: bring an egg"). The words never name the Hatch-along chick's sex or breed.
 - CLI: `calendar` lists the next four, each with what it does (`villageCalendarLines`), and the Hatch-along
-  line in its week. `give egg` brings the egg. `hasMet` counts Teddy as met once his Midwinter note came.
+  line in its week, then the hint `give egg`. `give egg` brings the egg. `hasMet` counts Teddy as met once his Midwinter note came.
 - App: the farm gate notice, a "Village calendar" block on the Show tab, and "Bring an egg for the
   Hatch-along" at the back fence (which then "has news").
 

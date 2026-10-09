@@ -112,20 +112,30 @@ extension Engine {
             let coins = s.rules.midwinterCoins
             s.coins += coins
             ev.append(.villageDayGift(.midwinterLights, coins: coins, treats: 0))
-            s.notesSeen.insert(VillageDay.midwinterNote)
-            ev.append(.noteArrived(.teddy, VillageDay.midwinterNote))
+            let note = VillageDay.midwinterNote(year: s.year(onDay: s.day))
+            s.notesSeen.insert(note)
+            ev.append(.noteArrived(.teddy, note))
         }
         return ev
     }
 }
 
 extension VillageDay {
-    /// Teddy's Midwinter Lights note, with a drawing. It comes every year; its words change with the year.
-    public static let midwinterNote = "teddyMidwinterDrawing"
+    /// Teddy's Midwinter Lights notes, with a drawing, one a year. The ID holds the year it came, so its
+    /// words stay that year's words whenever they are read.
+    public static let midwinterNotePrefix = "teddyMidwinterDrawing.y"
+
+    public static func midwinterNote(year: Int) -> String { "\(midwinterNotePrefix)\(year)" }
+
+    /// The year in a Midwinter note ID, or nil for any other note.
+    public static func midwinterNoteYear(_ id: String) -> Int? {
+        id.hasPrefix(midwinterNotePrefix) ? Int(id.dropFirst(midwinterNotePrefix.count)) : nil
+    }
 }
 
 extension GameState {
     /// True on the Longest Day: that night the fox stays home. `passNight` skips the fox roll, so that
-    /// one night draws one number fewer from the game RNG. Every other night is unchanged.
+    /// night draws one number fewer from the game RNG. Every draw after it in that game moves too. Nights
+    /// before the first Longest Day are unchanged.
     public var foxStaysHome: Bool { villageDay(onDay: day) == .longestDay }
 }

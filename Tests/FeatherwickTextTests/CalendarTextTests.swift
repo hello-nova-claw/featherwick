@@ -22,12 +22,17 @@ struct CalendarTextTests {
             #expect(first != later, "\(v)")
             #expect(later == villageDaySceneText(v, year: 3, s))
         }
-        s.day = s.rules.date(of: .midwinterLights, inYear: 0)
-        let note = postNoteText(VillageDay.midwinterNote, s)
-        s.day = s.rules.date(of: .midwinterLights, inYear: 1)
-        let nextNote = postNoteText(VillageDay.midwinterNote, s)
+        let note = postNoteText(VillageDay.midwinterNote(year: 0), s)
+        let nextNote = postNoteText(VillageDay.midwinterNote(year: 1), s)
         #expect(note != nil && nextNote != nil && note != nextNote)
-        #expect(eventText(.noteArrived(.teddy, VillageDay.midwinterNote), s)?.contains("Teddy") == true)
+        // The words are the year the note came, whenever they are read.
+        s.day = s.rules.date(of: .midwinterLights, inYear: 2)
+        #expect(postNoteText(VillageDay.midwinterNote(year: 0), s) == note)
+        #expect(eventText(.noteArrived(.teddy, VillageDay.midwinterNote(year: 0)), s)?.contains("Teddy") == true)
+        // Shared words hold no CLI commands.
+        for v in VillageDay.allCases {
+            #expect(!villageDaySceneText(v, year: 0, s).contains("give egg"))
+        }
     }
 
     @Test func everyCalendarEventAndRefusalHasWords() {
@@ -73,7 +78,7 @@ struct CalendarTextTests {
             #expect(line.hasSuffix(villageDayEffectText(next.day)))
         }
         #expect(!hasMet(.teddy, s))
-        s.notesSeen.insert(VillageDay.midwinterNote)
+        s.notesSeen.insert(VillageDay.midwinterNote(year: 0))
         #expect(hasMet(.teddy, s))
     }
 
@@ -92,6 +97,6 @@ struct CalendarTextTests {
         s.coins = 100
         _ = Engine.apply(.buy(.fertileEgg), to: &s, using: &rng)
         #expect(villageNotice(s) == "Hatch-along: bring an egg")
-        #expect(hatchAlongLines(s).first?.contains("give egg") == true)
+        #expect(hatchAlongLines(s) == ["It's Hatch-along week. Bring \(People.neighbour) an egg you know is fertile."])
     }
 }

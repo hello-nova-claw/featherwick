@@ -422,7 +422,9 @@ while true {
         for key in keys { print("  \(key): \(key.masks.map(\.rawValue).joined(separator: ", "))") }
     case "story": storyLines(game.state).forEach { print($0) }
     case "people": peopleLines(game.state).forEach { print($0) }
-    case "calendar": (villageCalendarLines(game.state) + hatchAlongLines(game.state)).forEach { print($0) }
+    case "calendar":
+        (villageCalendarLines(game.state) + hatchAlongLines(game.state)).forEach { print($0) }
+        if game.state.hatchAlongRefusal() == nil { print("To bring your Hatch-along egg: give egg") }
     case "pay":
         guard words.count > 1 || game.state.debts.count == 1,
             let id = words.dropFirst().first ?? game.state.debts.first?.id

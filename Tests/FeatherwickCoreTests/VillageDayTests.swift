@@ -139,6 +139,44 @@ struct VillageDayTests {
         #expect(!s.hatchAlongChickDue)
     }
 
+    /// A chick still waiting from last year does not stop this year's egg: the chicks queue, and come
+    /// home oldest first as room is made.
+    @Test func aWaitingChickDoesNotBlockNextYearsEgg() {
+        var (s, rng) = Self.game()
+        s.day = Self.hatchAlongDay(s) - 1
+        night(&s, &rng)
+        Self.buyFertileEgg(&s, &rng)
+        _ = Engine.apply(.giveHatchAlongEgg(nil), to: &s, using: &rng)
+        let first = s.hatchAlongChickDays
+        s.perches = s.perchesUsed  // no room all year
+        s.day = Self.hatchAlongDay(s, year: 1) - 1
+        night(&s, &rng)
+        #expect(s.hatchAlongChickDays == first)
+        s.perches = s.perchesUsed
+        Self.buyFertileEgg(&s, &rng)
+        #expect(s.hatchAlongRefusal() == nil)
+        let ev = Engine.apply(.giveHatchAlongEgg(nil), to: &s, using: &rng)
+        #expect(ev.contains { if case .hatchAlongEggGiven = $0 { true } else { false } })
+        #expect(s.hatchAlongChickDays.count == 2 && s.hatchAlongChickDays.first == first.first)
+        var waits = 0
+        for _ in 0..<s.rules.hatchAlongReturnNights {
+            let night = night(&s, &rng)
+            waits += night.count(where: { $0 == .hatchAlongChickWaiting })
+            #expect(!night.contains { if case .hatchAlongChickArrived = $0 { true } else { false } })
+        }
+        #expect(waits == 1)  // only the new chick's notice: last year's was said last year
+        // Room for one: the older chick comes first, the newer one keeps waiting.
+        s.perches += 1
+        let one = night(&s, &rng)
+        #expect(one.count(where: { if case .hatchAlongChickArrived = $0 { true } else { false } }) == 1)
+        #expect(s.hatchAlongChickDays.count == 1 && s.hatchAlongChickDays.first != first.first)
+        s.perches = s.perchesUsed + 1
+        s.brooderSize += 1
+        let two = night(&s, &rng)
+        #expect(two.count(where: { if case .hatchAlongChickArrived = $0 { true } else { false } }) == 1)
+        #expect(!s.hatchAlongChickDue)
+    }
+
     @Test func theHatchAlongChickIsTheSameForTheSameGame() {
         func chick() -> Bird? {
             var (s, rng) = Self.game(seed: 8)
@@ -194,8 +232,9 @@ struct VillageDayTests {
                     #expect(t == 0 && c == s.rules.midwinterCoins)
                     #expect(s.coins == coinsBefore + c)
                     coins[year, default: 0] += 1
-                case .noteArrived(.teddy, VillageDay.midwinterNote):
+                case .noteArrived(.teddy, let id):
                     #expect(s.villageDay(onDay: s.day) == .midwinterLights)
+                    #expect(id == VillageDay.midwinterNote(year: year))
                     notes[year, default: 0] += 1
                 default: break
                 }
@@ -204,7 +243,7 @@ struct VillageDayTests {
         #expect(treats == [0: 1, 1: 1])
         #expect(coins == [0: 1, 1: 1])
         #expect(notes == [0: 1, 1: 1])
-        #expect(s.notesSeen.contains(VillageDay.midwinterNote))
+        #expect(s.notesSeen.isSuperset(of: [VillageDay.midwinterNote(year: 0), VillageDay.midwinterNote(year: 1)]))
     }
 
     @Test func everyVillageDayHasItsSceneWithTheYear() {
@@ -222,7 +261,7 @@ struct VillageDayTests {
 
     @Test func anOldSaveLoadsAndHearsOfTheNextVillageDay() throws {
         var game = try SaveFormat.decode(SaveFormatTests.fixture("save-v0"))
-        #expect(game.state.hatchAlongYears.isEmpty && game.state.hatchAlongChickDay == nil)
+        #expect(game.state.hatchAlongYears.isEmpty && game.state.hatchAlongChickDays.isEmpty)
         #expect(game.state.rules.hatchAlongWeekDays == Rules.standard.hatchAlongWeekDays)
         #expect(game.state.rules.hatchAlongReturnNights == Rules.standard.hatchAlongReturnNights)
         #expect(game.state.rules.moultWeekTreats == Rules.standard.moultWeekTreats)
@@ -247,7 +286,7 @@ struct VillageDayTests {
         Self.buyFertileEgg(&s, &rng)
         _ = Engine.apply(.giveHatchAlongEgg(nil), to: &s, using: &rng)
         let loaded = try SaveFormat.decode(SaveFormat.encode(SaveGame(state: s, rng: rng)))
-        #expect(loaded.state.hatchAlongChickDay == s.hatchAlongChickDay)
+        #expect(loaded.state.hatchAlongChickDays == s.hatchAlongChickDays)
         #expect(loaded.state.hatchAlongYears == [0])
     }
 }
