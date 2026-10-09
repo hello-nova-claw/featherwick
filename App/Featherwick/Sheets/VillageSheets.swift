@@ -330,7 +330,7 @@ struct ShowPanel: View {
     private func villageCalendar(_ s: GameState) -> some View {
         VStack(alignment: .leading, spacing: Space.s) {
             Text("Village calendar").font(Typeface.item)
-            ForEach(calendarLines(s, count: 2) + hatchAlongLines(s), id: \.self) { line in
+            ForEach(villageCalendarLines(s, count: 2) + hatchAlongLines(s), id: \.self) { line in
                 Text(line).font(Typeface.label).foregroundStyle(palette.inkSoft)
             }
         }

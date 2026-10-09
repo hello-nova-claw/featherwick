@@ -16,6 +16,21 @@ public func villageDayShortName(_ v: VillageDay) -> String {
     }
 }
 
+/// What a village day does for the keeper, in one line. Each line is a rule the engine keeps.
+public func villageDayEffectText(_ v: VillageDay) -> String {
+    switch v {
+    case .hatchAlong: "Bring an egg you know is fertile in its week, and a surprise chick comes back."
+    case .longestDay: "The fox stays home that night."
+    case .moultWeek: "\(People.neighbour) brings mealworms for the moult."
+    case .midwinterLights: "The village gives its keepers a gift."
+    }
+}
+
+/// The next village days with what each one does, one line each. For the CLI `calendar` and the app.
+public func villageCalendarLines(_ s: GameState, count: Int = 4) -> [String] {
+    zip(calendarLines(s, count: count), s.upcomingVillageDays(count)).map { "\($0) \(villageDayEffectText($1.day))" }
+}
+
 /// What a village day brings, in its year's words: year 0 explains, later years remember.
 public func villageDaySceneText(_ v: VillageDay, year: Int, _ s: GameState) -> String {
     let first = year == 0

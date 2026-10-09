@@ -49,7 +49,7 @@ public func choiceText(story: String, option: String) -> String {
 }
 
 /// The words for a note in the post, by note ID (see `Notes.pool` and story `.note` rewards).
-/// Nil for an unknown ID: `NotesTests` checks every note has words.
+/// Nil for an unknown ID. A note in `Notes.pool` or in a story's `.note` reward must have words.
 public func postNoteText(_ id: String, _ s: GameState) -> String? {
     switch id {
     default: calendarNoteText(id, s)
@@ -70,9 +70,9 @@ public func villageDayName(_ v: VillageDay) -> String {
 public func villageDayAbout(_ v: VillageDay) -> String {
     switch v {
     case .hatchAlong: "The village hatches eggs together."
-    case .longestDay: "The longest day of the year. The fox stays home."
+    case .longestDay: "The longest day of the year."
     case .moultWeek: "The flock drops its old feathers and grows new ones."
-    case .midwinterLights: "Lanterns in every window, and a gift from the village."
+    case .midwinterLights: "Lanterns in every window of the village."
     }
 }
 
@@ -88,11 +88,15 @@ func villageEventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .storyGiftEgg(_, let breed):
         return "A \(breed.definition.displayName) egg goes into your carton, already candled."
     case .loanArrived(let id, let owner):
-        return "\(birdName(id, s)) comes to stay. She's \(People.name(owner))'s, and she brings her own box."
+        let bird = s.bird(id)
+        let they = bird.map { subjectPronoun($0) } ?? "she"
+        return "\(birdName(id, s)) comes to stay. \(they.capitalizedFirst) belongs to \(People.name(owner)), "
+            + "and comes with a box of \(bird?.revealed == true && bird?.sex == .rooster ? "his" : "her") own."
     case .loanReturned(let id, let owner):
         return "\(birdName(id, s)) goes home to \(People.name(owner))."
     case .loanKept(let id, let owner):
-        return "\(birdName(id, s)) is yours now. \(People.name(owner)) is glad she's staying."
+        let they = s.bird(id).map { subjectPronoun($0) } ?? "she"
+        return "\(birdName(id, s)) is yours now. \(People.name(owner)) is glad \(they)'s staying."
     case .debtOwed(_, let owner, let coins):
         return "You owe \(People.name(owner)) \(coins) coins. Pay when you can: there's no hurry."
     case .debtReminder(_, let owner):
@@ -141,6 +145,7 @@ public func hasMet(_ p: Person, _ s: GameState) -> Bool {
     if p == .hazel || p == .wren { return true }
     if Storylines.all.contains(where: { $0.person == p && s.stories[$0.id] != nil }) { return true }
     if s.debts.contains(where: { $0.to == p }) || s.loanedBirds.contains(where: { $0.loan?.owner == p }) { return true }
+    if p == .teddy && s.notesSeen.contains(VillageDay.midwinterNote) { return true }  // his Midwinter drawing
     return Notes.pool.contains { $0.from == p && s.notesSeen.contains($0.id) }
 }
 

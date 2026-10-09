@@ -58,7 +58,8 @@ public indirect enum StoryGoal: Hashable, Codable, Sendable {
     case birdRehomed(atLeast: Int)
     /// The player has paid this debt.
     case coinsPaid(debtID: String)
-    /// Any one of these goals is met. For "whichever comes first".
+    /// Any one of these goals is met. For "whichever comes first". Not for choices or deliveries: those
+    /// are step goals on their own, so the player is always offered them (`StoryTests` checks this).
     case anyOf([StoryGoal])
 
     /// True when the player must act to finish the step: the night never finishes it.
@@ -125,10 +126,11 @@ public indirect enum StoryReward: Hashable, Codable, Sendable {
     /// These rewards only if the player chose `optionID` in the choice `choiceID` of this story.
     case ifChosen(String, String, [StoryReward])
 
-    /// Gift birds in these rewards, for the free-perch check. Conditional rewards count only when chosen.
+    /// Birds these rewards add to the keeper's perches, for the free-perch check: gift birds, and a loaned
+    /// bird the keeper keeps (she needs a perch of her own then). Conditional rewards count only when chosen.
     func giftBirds(chosen: [String: String]) -> Int {
         switch self {
-        case .giftBird: 1
+        case .giftBird, .offerToKeep: 1
         case .ifChosen(let choice, let option, let inner):
             chosen[choice] == option ? inner.reduce(0) { $0 + $1.giftBirds(chosen: chosen) } : 0
         default: 0

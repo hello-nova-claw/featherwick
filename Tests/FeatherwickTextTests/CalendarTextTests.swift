@@ -65,6 +65,18 @@ struct CalendarTextTests {
         }
     }
 
+    @Test func theCalendarSaysWhatEachDayDoesAndTeddyIsMetByHisDrawing() {
+        var s = Self.game()
+        let lines = villageCalendarLines(s)
+        #expect(lines.count == 4)
+        for (line, next) in zip(lines, s.upcomingVillageDays(4)) {
+            #expect(line.hasSuffix(villageDayEffectText(next.day)))
+        }
+        #expect(!hasMet(.teddy, s))
+        s.notesSeen.insert(VillageDay.midwinterNote)
+        #expect(hasMet(.teddy, s))
+    }
+
     @Test func theFarmGateNoticeFollowsTheCalendar() {
         var s = Self.game()
         let date = s.rules.date(of: .longestDay, inYear: 0)

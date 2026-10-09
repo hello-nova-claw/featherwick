@@ -34,7 +34,7 @@ errands left. See "Daylight and errands".
 `Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. Command in, events out. All tunable numbers live in `Rules`.
 
 `MorningReport.from(events:state:)` sorts one night's events into groups (hatched, the fox, came home,
-the neighbour, new stock, the show, jobs, the season goal, eggs, other) for the app's morning report.
+the neighbours, the post, the village, new stock, the show, jobs, the season goal, eggs, other) for the app's morning report.
 Every event lands in exactly one group. IDs and events only; the words come from `eventText`.
 
 Night order: fox (only if the coop is open, and never on the Longest Day's night) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals ("hen or roo?" guesses settle as the sex shows) → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note, and the first why note opens "What might hatch"; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (loans due go home; a fertile-eggs step teaches candling if needed; debts are mentioned at most once a season) & trade offer → post (maybe one note) → village day (a notice a week ahead, the day and its gift, then the Hatch-along chick if it is due) → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
@@ -791,8 +791,8 @@ arrive already named by their keeper. Any bird you own can be renamed any time, 
 `Story.swift`. Small puzzles told through Featherwick's people, which lead to gifts and unlocks.
 A storyline has a trigger, steps with goals, and rewards. Night goals (hatch chicks, wait days)
 are checked in `passNight`; delivery goals need the player (`deliver`). Rewards are given once;
-a gift bird waits for a free perch, so the coop never overfills. The engine holds IDs only; the
-words live in the UI.
+a gift bird waits for a free perch, so the coop never overfills. The engine holds IDs only. The
+words are in FeatherwickText: `storyText` for the steps, `choiceText` for the options.
 
 - **The broody Silkie** (first hatch): a neighbour's Silkie is sitting on a golf ball. Bring 3
   eggs you know are fertile (candled). 4 days later she thanks you with a Silkie pullet, and
@@ -803,7 +803,9 @@ words live in the UI.
   Speckle & Down's surprise stock. (Any in-game breed can also be the shop's daily special.)
 - CLI: `story`, `give eggs`.
 
-To add one: one `Storyline` in `Storylines.all`, plus its words in the UI.
+To add one: append one `Storyline` to `Storylines.all`, with its `person`. Add its words in `storyText`,
+and the words for each option in `choiceText`. A choice or a delivery is a step goal on its own, never
+inside `anyOf`.
 
 ### People, choices, loans and debts
 
@@ -891,7 +893,8 @@ Nothing is missable: each day comes round again next year. `GameState.nextVillag
 - **Words** (`CalendarText.swift`). Each day's scene has two versions: year 0 explains, and every later year
   remembers. Teddy's note changes the same way. `villageNotice` gives the farm gate notice ("Longest Day in 3
   days", "Hatch-along: bring an egg"). The words never name the Hatch-along chick's sex or breed.
-- CLI: `calendar` lists the next four, and the Hatch-along line in its week. `give egg` brings the egg.
+- CLI: `calendar` lists the next four, each with what it does (`villageCalendarLines`), and the Hatch-along
+  line in its week. `give egg` brings the egg. `hasMet` counts Teddy as met once his Midwinter note came.
 - App: the farm gate notice, a "Village calendar" block on the Show tab, and "Bring an egg for the
   Hatch-along" at the back fence (which then "has news").
 

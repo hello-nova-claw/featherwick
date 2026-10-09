@@ -5,7 +5,9 @@ import Foundation
 //
 // A loaned bird lives in the coop but needs no perch: she comes with her own box. She can be fed,
 // cuddled, given treats, shown in the pet class, scared by the fox, and she always comes home. She
-// cannot be rehomed, penned or renamed: she is not the keeper's yet. Her eggs are the keeper's.
+// cannot be rehomed, penned, renamed or set on eggs: she is not the keeper's yet. Her eggs are the keeper's.
+// She does not count toward the keeper's own flock (milestones, jobs, goals, the last-bird rule).
+// Her look goes in the Breed Book: the keeper has seen her.
 // When the loan ends she goes home to her owner (`.loanReturned`), and her family-tree record stays.
 // If the keeper keeps her, the loan is cleared and she is the keeper's bird, pedigree intact.
 //
@@ -149,6 +151,10 @@ extension Engine {
         guard let bird, let owner = bird.loan?.owner else { return [] }
         s.pedigree[bird.id] = PedigreeRecord(bird, look: bird.lastSeenLook)
         s.pen.removeAll { $0 == id }
+        // An entry in the next show goes with her, and the fee comes back: nothing is lost.
+        let entries = s.showEntries.count(where: { $0.birdID == id })
+        s.showEntries.removeAll { $0.birdID == id }
+        s.coins += entries * s.rules.showEntryFee
         if s.starterID == id { s.starterID = nil }
         return [.loanReturned(bird.id, to: owner)]
     }
