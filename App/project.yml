@@ -58,6 +58,29 @@ targets:
       configs:
         Beta:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BETA"
+  # Unit tests for app-only logic (Swift Testing). Hosted in the app, so `@testable import Featherwick`
+  # reaches its types. Run them with the Featherwick scheme's test action (Cmd-U).
+  FeatherwickTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: FeatherwickTests
+    # The same team as the app. The bundle ID below overrides the app's.
+    configFiles:
+      Debug: Config/Signing.xcconfig
+      Release: Config/Signing.xcconfig
+      Beta: Config/Signing.xcconfig
+    dependencies:
+      - target: Featherwick
+      - package: Featherwick
+        product: FeatherwickCore
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: dev.featherwick.app.tests
 # Shared schemes for the app. Without them, Xcode lists only the package's schemes (the
 # `featherwick` CLI among them), and running that on an iPhone fails with "not codesigned".
 # Each config is named here, because with two release-type configs XcodeGen could pick Beta for an archive.
@@ -71,6 +94,8 @@ schemes:
       config: Debug
     test:
       config: Debug
+      targets:
+        - FeatherwickTests
     profile:
       config: Release
     analyze:

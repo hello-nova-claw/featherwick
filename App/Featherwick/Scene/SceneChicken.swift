@@ -19,6 +19,8 @@ struct YardScene: View {
     let open: (UUID) -> Void
     /// Where each chicken in this scene is heading, so a hen's chicks can follow her.
     @State private var leads = SceneLeads()
+    /// The last tap on the ground here, so the birds can answer it. Nil until the first tap.
+    @State private var ripple: SceneRipple?
 
     var body: some View {
         if reduceMotion {
@@ -41,12 +43,85 @@ struct YardScene: View {
         let birds: [Bird] = FarmFlock.birds(at: spot, in: s, inside: inside, now: now)
         let follows: [UUID: ChickFollow] = FarmFlock.following(in: s)
         return FarmScene(panel: panel, season: s.season) { (depth: SceneDepth, size: CGSize) in
+            groundTaps(size: size)
+            if let ripple {
+                RippleMark(scale: depth.scale(atGroundY: ripple.spot.y * size.height))
+                    .position(x: ripple.spot.x * size.width, y: ripple.spot.y * size.height)
+                    .id(ripple.id)
+                    .zIndex(-1)
+            }
             ForEach(birds) { (bird: Bird) in
                 SceneChicken(
                     bird: bird, height: FarmFlock.sceneHeight(of: bird, in: s), panel: panel, depth: depth,
-                    size: size, now: now, follow: follows[bird.id], leads: leads, open: open)
+                    size: size, now: now, follow: follows[bird.id], leads: leads, ripple: ripple, open: open)
             }
         }
+    }
+
+    /// The whole panel under the birds and the trees: a tap on walkable ground starts a ripple. A bird or
+    /// a tree on top takes the touch first, so tapping a bird still opens its card.
+    private func groundTaps(size: CGSize) -> some View {
+        Color.clear
+            .frame(width: size.width, height: size.height)
+            .contentShape(Rectangle())
+            .onTapGesture { (location: CGPoint) in tapped(at: location, size: size) }
+            .zIndex(-2)
+            .accessibilityHidden(true)
+    }
+
+    /// A ripple and a light tap in the hand. Sky, hill and pond do nothing. No command: nothing is saved.
+    private func tapped(at location: CGPoint, size: CGSize) {
+        guard size.width > 0, size.height > 0 else { return }
+        let unit = CGPoint(x: location.x / size.width, y: location.y / size.height)
+        let ground: Bool = SceneArt.walkMask(for: panel)?.isWalkable(unit) ?? SceneFlock.band.contains(unit)
+        guard ground else { return }
+        Haptics.ripple()
+        ripple = SceneRipple(id: (ripple?.id ?? 0) + 1, spot: unit, at: .now)
+    }
+}
+
+/// One tap on the ground of a yard scene: where, in unit coordinates, and when. `id` goes up with each tap.
+struct SceneRipple: Equatable, Sendable {
+    let id: Int
+    let spot: CGPoint
+    let at: Date
+}
+
+/// The ripple mark: dashed rings in ink that spread from a tap and fade. The rings lie flat on the ground,
+/// so they are wide ellipses, and smaller far up the yard. With Reduce Motion: one quick ring.
+struct RippleMark: View {
+    @Environment(\.palette) private var palette
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The tap's depth scale (`SceneDepth`).
+    let scale: CGFloat
+    @State private var spread = false
+
+    var body: some View {
+        let rings: Int = reduceMotion ? SceneConstants.rippleReducedRingCount : SceneConstants.rippleRingCount
+        let duration: Double = reduceMotion ? SceneConstants.rippleReducedDuration : SceneConstants.rippleDuration
+        let width: CGFloat = SceneConstants.rippleRadius * 2 * scale
+        let height: CGFloat = width * SceneConstants.rippleFlatten
+        ZStack {
+            ForEach(0..<rings, id: \.self) { (i: Int) in
+                ring(i, of: rings, duration: duration, width: width, height: height)
+            }
+        }
+        .frame(width: width, height: height)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onAppear { spread = true }
+    }
+
+    /// Each ring starts a little later and ends a little smaller. All of them are gone at `duration`.
+    private func ring(_ i: Int, of rings: Int, duration: Double, width: CGFloat, height: CGFloat) -> some View {
+        let delay: Double = duration / 2 * Double(i) / Double(rings)
+        let reach: CGFloat = 1 - CGFloat(i) / CGFloat(rings + 1)
+        return Ellipse()
+            .stroke(palette.ink, style: Stitch.underline)
+            .frame(width: width, height: height)
+            .scaleEffect(spread ? reach : 0.15)
+            .opacity(spread ? 0 : 0.9)
+            .animation(.easeOut(duration: duration - delay).delay(delay), value: spread)
     }
 }
 
@@ -178,6 +253,8 @@ struct SceneChicken: View {
     let follow: ChickFollow?
     /// Where each chicken in this scene is heading. A hen writes; her chicks read.
     let leads: SceneLeads
+    /// The last tap on the ground of this scene. A fresh one gets an answer (`RippleReaction`).
+    let ripple: SceneRipple?
     let open: (UUID) -> Void
     /// Where its feet are (or are walking to), in unit coordinates. x below 0 or above 1 is off the panel.
     @State private var spot: CGPoint
@@ -187,10 +264,12 @@ struct SceneChicken: View {
     @State private var activity: ChickenActivity = .idle
     /// A finger is on the bird: it waits, and does not walk away mid-pet.
     @State private var held = false
+    /// The last ripple it answered, so it answers each tap once.
+    @State private var answered = 0
 
     init(
         bird: Bird, height: CGFloat, panel: FarmPanel, depth: SceneDepth, size: CGSize, now: Date?,
-        follow: ChickFollow?, leads: SceneLeads, open: @escaping (UUID) -> Void
+        follow: ChickFollow?, leads: SceneLeads, ripple: SceneRipple?, open: @escaping (UUID) -> Void
     ) {
         self.bird = bird
         self.height = height
@@ -199,6 +278,7 @@ struct SceneChicken: View {
         self.size = size
         self.follow = follow
         self.leads = leads
+        self.ripple = ripple
         self.open = open
         // A hen chick keeps its mother's stroll and starts from her start, so they move as one.
         let leader: UUID = follow?.mother ?? bird.id
@@ -235,7 +315,7 @@ struct SceneChicken: View {
         // position animates in step with the scale.
         .frame(width: box.width, height: box.height, alignment: .bottom)
         .position(x: spot.x * size.width, y: groundY - box.height / 2)
-        .task(id: Cue(reduceMotion: reduceMotion, size: size, follow: follow)) { await wander() }
+        .task(id: Cue(reduceMotion: reduceMotion, size: size, follow: follow, ripple: ripple?.id)) { await wander() }
         .zIndex(depth.zIndex(forGroundY: sortY * size.height))
     }
 
@@ -245,6 +325,8 @@ struct SceneChicken: View {
         let size: CGSize
         /// A weaned chick keeps its view but stops following: the loop restarts with its own stroll.
         let follow: ChickFollow?
+        /// A tap on the ground: a bird answers it, then wanders again. A chick reads it to keep up.
+        let ripple: Int?
     }
 
     /// Big enough for the bird at full size and for a 44 pt touch.
@@ -287,7 +369,12 @@ struct SceneChicken: View {
             return
         }
         announce(spot)
-        if spot.x < 0 || spot.x > 1 { await walkIn() }
+        // Restarted (by a ripple) after it set off: it keeps going, and does not walk back in.
+        if let left = secondsUntilSettingOff(), left <= 0 {
+            walkOff()
+            return
+        }
+        if spot.x < 0 || spot.x > 1 { await walkIn() } else { await answerRipple() }
         while !Task.isCancelled {
             let pause: Double = Double.random(in: 2...4)
             let setOff: Double = secondsUntilSettingOff() ?? pause
@@ -339,7 +426,7 @@ struct SceneChicken: View {
             let dx: CGFloat = (target.x - spot.x) * size.width
             let dy: CGFloat = (target.y - spot.y) * size.height
             if (dx * dx + dy * dy).squareRoot() > FarmFlock.chickSlack {
-                let seconds: Double = walkSeconds(to: target)
+                let seconds: Double = motherRuns(follow) ? runSeconds(to: target) : walkSeconds(to: target)
                 // Never still walking when it is time to set off for the other yard.
                 if let left = secondsUntilSettingOff(), left < seconds { continue }
                 await walk(to: target, seconds: seconds)
@@ -400,12 +487,23 @@ struct SceneChicken: View {
 
     /// How long a walk from here takes. Far up the yard the bird is smaller, so it covers fewer points.
     private func walkSeconds(to target: CGPoint) -> Double {
+        travelSeconds(to: target, speed: SceneFlock.speed, within: SceneFlock.walkTime)
+    }
+
+    /// How long a run from here takes: as a walk, but faster.
+    private func runSeconds(to target: CGPoint) -> Double {
+        travelSeconds(
+            to: target, speed: SceneFlock.speed * SceneConstants.rippleRunFactor, within: SceneConstants.rippleRunTime)
+    }
+
+    /// `speed` is in points a second at full size. Far up the yard the bird is smaller and covers fewer points.
+    private func travelSeconds(to target: CGPoint, speed: CGFloat, within limits: ClosedRange<Double>) -> Double {
         let dx: CGFloat = (target.x - spot.x) * size.width
         let dy: CGFloat = (target.y - spot.y) * size.height
         let midY: CGFloat = (target.y + spot.y) / 2 * size.height
-        let pace: CGFloat = SceneFlock.speed * depth.scale(atGroundY: midY)
+        let pace: CGFloat = speed * depth.scale(atGroundY: midY)
         let seconds = Double((dx * dx + dy * dy).squareRoot() / pace)
-        return min(SceneFlock.walkTime.upperBound, max(SceneFlock.walkTime.lowerBound, seconds))
+        return min(limits.upperBound, max(limits.lowerBound, seconds))
     }
 
     /// Faces the way it is about to walk. The flip animates, so it reads as a turn.
@@ -421,6 +519,64 @@ struct SceneChicken: View {
         activity = .pecking
         _ = await nap(ChickenRigMetrics.peckDuration + 0.1)
         activity = .idle
+    }
+
+    // MARK: - Answering a ripple
+
+    /// Answers a fresh tap on the ground, once: it walks or runs by its friendliness band, then stays a
+    /// while before it wanders again. View only: no command, nothing saved, friendliness unchanged.
+    private func answerRipple() async {
+        guard let ripple, ripple.id != answered,
+            Date.now.timeIntervalSince(ripple.at) < SceneConstants.rippleFreshSeconds
+        else { return }
+        answered = ripple.id
+        // A moment to look up, so the flock does not move as one.
+        var dice = SystemRandomNumberGenerator()
+        guard await nap(Double.random(in: SceneConstants.rippleStartle, using: &dice)), !held else { return }
+        let reaction = RippleReaction(band: bird.friendliness)
+        let target: CGPoint = rippleTarget(reaction, tap: ripple.spot)
+        let seconds: Double = reaction.runs ? runSeconds(to: target) : walkSeconds(to: target)
+        // Never still answering when it is time to set off for the other yard.
+        if let left = secondsUntilSettingOff(), left < seconds + SceneConstants.rippleHoldSeconds { return }
+        let dx: CGFloat = (target.x - spot.x) * size.width
+        let dy: CGFloat = (target.y - spot.y) * size.height
+        if (dx * dx + dy * dy).squareRoot() > 2 {
+            announce(target)
+            await walk(to: target, seconds: seconds)
+        }
+        // A bird that came to the tap looks at it while it waits.
+        if reaction == .approach || reaction == .nestle { turn(toward: ripple.spot.x) }
+        _ = await nap(SceneConstants.rippleHoldSeconds)
+    }
+
+    /// Where it goes for this reaction, on walkable ground, in unit coordinates. The reaction works in
+    /// points, so a body length is the same on screen both ways.
+    private func rippleTarget(_ reaction: RippleReaction, tap: CGPoint) -> CGPoint {
+        let width: CGFloat = size.width
+        let height: CGFloat = size.height
+        let mask: WalkMask? = self.mask
+        let tapPoint = CGPoint(x: tap.x * width, y: tap.y * height)
+        let body: CGFloat = self.height * ChickenRigMetrics.widthRatio * depth.scale(atGroundY: tapPoint.y)
+        let wish: CGPoint = reaction.target(
+            from: CGPoint(x: spot.x * width, y: spot.y * height), tap: tapPoint, bodyLength: body,
+            panelWidth: width
+        ) { (p: CGPoint) -> Bool in
+            let point = CGPoint(x: p.x / width, y: p.y / height)
+            // Not up against the edge: a ripple never sends a bird off the panel.
+            guard point.x >= 0.03, point.x <= 0.97 else { return false }
+            return mask?.isWalkable(point) ?? SceneFlock.band.contains(point)
+        }
+        var unit = CGPoint(x: wish.x / width, y: wish.y / height)
+        if let mask, !mask.isWalkable(unit) { unit = SceneFlock.nearestWalkable(to: unit, in: mask) ?? spot }
+        return CGPoint(x: min(0.97, max(0.03, unit.x)), y: unit.y)
+    }
+
+    /// True while a chick's mother runs from (or to) a tap: the chick runs too, to keep up with her.
+    private func motherRuns(_ follow: ChickFollow) -> Bool {
+        guard let ripple, Date.now.timeIntervalSince(ripple.at) < SceneConstants.rippleHoldSeconds,
+            let mother = store.state.coop.first(where: { $0.id == follow.mother })
+        else { return false }
+        return RippleReaction(band: mother.friendliness).runs
     }
 
     // MARK: - Strolling between the yards
