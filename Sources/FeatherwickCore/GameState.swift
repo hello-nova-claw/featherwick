@@ -210,6 +210,9 @@ public struct GameState: Hashable, Codable, Sendable {
     public var debtsPaid: Set<String> = []
     /// Notes already delivered (see Post.swift), by ID. A note never comes twice.
     public var notesSeen: Set<String> = []
+    /// Someone who will name the next chick that hatches (`StoryReward.namesNextChick`). Cleared on that
+    /// hatch. Nil when nobody is waiting, and in older saves.
+    public var nextChickNamer: Person?
     /// The years the keeper brought an egg to the Hatch-along (see HatchAlong.swift). One egg a year.
     public var hatchAlongYears: Set<Int> = []
     /// The mornings Hatch-along chicks come back, soonest first. A day stays here from the egg until its

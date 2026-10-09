@@ -44,7 +44,7 @@ extension People {
 /// The words for an option at a story's choice step. Every option of every story has words.
 public func choiceText(story: String, option: String) -> String {
     switch (story, option) {
-    default: option
+    default: peopleChoiceText(story: story, option: option) ?? option
     }
 }
 
@@ -52,7 +52,7 @@ public func choiceText(story: String, option: String) -> String {
 /// Nil for an unknown ID. A note in `Notes.pool` or in a story's `.note` reward must have words.
 public func postNoteText(_ id: String, _ s: GameState) -> String? {
     switch id {
-    default: poolNoteText(id, s) ?? calendarNoteText(id, s)
+    default: peopleNoteText(id, s) ?? poolNoteText(id, s) ?? calendarNoteText(id, s)
     }
 }
 

@@ -387,7 +387,9 @@ struct FarmView: View {
             return []
         case .backFence:
             // Hazel takes the Hatch-along eggs, so the week is news at the fence too.
-            let news = Engine.storyAwaitingDelivery(s) != nil || s.tradeOffer != nil || s.hatchAlongRefusal() == nil
+            let news =
+                Engine.storyAwaitingDelivery(s) != nil || s.tradeOffer != nil || !s.pendingChoices.isEmpty
+                || s.hatchAlongRefusal() == nil
             return news ? [Notice(kind: .story, text: "has news")] : []
         case .yard:
             if !s.fedToday { return [Notice(kind: .decision, text: "hungry")] }

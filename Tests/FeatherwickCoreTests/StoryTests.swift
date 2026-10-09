@@ -121,7 +121,7 @@ struct StoryTests {
                         // The option must be one of the story's options for that choice.
                         #expect(story.options(forChoice: choice).contains(option))
                         check(inner)
-                    case .coins, .treats, .endLoan, .offerToKeep, .note: break
+                    case .coins, .treats, .endLoan, .offerToKeep, .note, .namesNextChick: break
                     }
                 }
             }
@@ -129,6 +129,8 @@ struct StoryTests {
             // A choice or a delivery inside `anyOf` (or as a trigger) would never be offered to the player.
             func hidesPlayerGoal(_ goal: StoryGoal) -> Bool {
                 if case .anyOf(let goals) = goal { return goals.contains { $0.needsPlayer || hidesPlayerGoal($0) } }
+                // A goal that depends on a choice hides nothing itself, but either branch might.
+                if case .ifChosen(_, _, let a, let b) = goal { return hidesPlayerGoal(a) || hidesPlayerGoal(b) }
                 return false
             }
             #expect(!story.trigger.needsPlayer && !hidesPlayerGoal(story.trigger))

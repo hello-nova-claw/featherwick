@@ -19,7 +19,7 @@ public struct MorningReport: Hashable, Sendable {
         case neighbour
         /// Notes in the post from Featherwick's people (see Post.swift).
         case post
-        /// The village calendar: a village day coming, or today.
+        /// The village: a village day coming or today, and the stories of Dot, Teddy, Mr Okafor and Bea.
         case village
         /// Stock new at Speckle & Down this morning.
         case newStock
@@ -68,13 +68,26 @@ public struct MorningReport: Hashable, Sendable {
     /// Early-game steps that bring new stock to Speckle & Down. The app uses the same list for "new in today".
     public static let newStockFeatures: [Feature] = [.treats, .premiumFeed, .birdShop, .coopUpgrade, .incubatorShop]
 
+    /// The story a story event is about, or nil for any other event.
+    static func storyID(of event: GameEvent) -> String? {
+        switch event {
+        case .storyStarted(let id), .storyStep(let id, _), .delivered(let id), .storyGiftWaitingForRoom(let id),
+            .storyGift(let id, _), .storyFinished(let id), .storyCoins(let id, _), .storyTreats(let id, _),
+            .storyGiftEgg(let id, _):
+            id
+        default: nil
+        }
+    }
+
     /// The one group an event belongs to. Player actions do not happen at night; they go in `.other` so the
     /// switch stays total.
     public static func group(of event: GameEvent) -> Group {
+        // A story of someone other than Hazel (Dot, Teddy, Mr Okafor, Bea) is village news.
+        if let id = storyID(of: event), let story = Storylines.story(id), story.person != .hazel { return .village }
         switch event {
         case .dayStarted, .seasonChanged, .quietNight:
             return .morning
-        case .chicksHatched, .eggsDidNotHatch, .hatchSurprise, .plannerIntroduced:
+        case .chicksHatched, .eggsDidNotHatch, .hatchSurprise, .plannerIntroduced, .chickNamed:
             return .hatched
         case .foxVisited, .birdWaitingForPerch:
             return .fox

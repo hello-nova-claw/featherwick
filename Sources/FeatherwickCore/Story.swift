@@ -61,17 +61,55 @@ public indirect enum StoryGoal: Hashable, Codable, Sendable {
     /// Any one of these goals is met. For "whichever comes first". Not for choices or deliveries: those
     /// are step goals on their own, so the player is always offered them (`StoryTests` checks this).
     case anyOf([StoryGoal])
+    /// The player hands over this many eggs of this colour from the carton. Needs `deliver`.
+    case deliverEggs(colour: EggColour, count: Int)
+    /// The player hands over this many eggs of a colour new to the Egg Book. Needs `deliver`. The colours
+    /// that count are fixed when the step starts (`StoryProgress.wantedColours`, see `Engine.prepare`).
+    /// Always possible: at least one counting colour is laid by a breed Speckle & Down sells.
+    case deliverEggsOfNewColour(count: Int)
+    /// The player picks one of two breeds, as `choice` does. The breeds come from what the keeper can
+    /// see (birds whose breed shows, then the Breed Book), fixed when the step starts and kept in
+    /// `StoryProgress.options` as breed raw values. A flock of one breed is offered a second breed.
+    case choiceOfBreeds(id: String)
+    /// `then` if the player picked `option` in the choice `choice` of this story, else `otherwise`.
+    /// For a step that depends on an earlier choice ("bring them now" or "wait for a new colour").
+    case ifChosen(String, String, then: StoryGoal, otherwise: StoryGoal)
 
     /// True when the player must act to finish the step: the night never finishes it.
     public var needsPlayer: Bool {
         switch self {
-        case .deliverFertileEggs, .choice: true
+        case .deliverFertileEggs, .choice, .deliverEggs, .deliverEggsOfNewColour, .choiceOfBreeds: true
+        case .ifChosen(_, _, let a, let b): a.needsPlayer || b.needsPlayer
         default: false
         }
     }
 
+    /// True when the step waits for `deliver`. For `ifChosen`, true if either branch does
+    /// (`resolved(_:)` gives the branch that applies).
     public var needsDelivery: Bool {
-        if case .deliverFertileEggs = self { true } else { false }
+        switch self {
+        case .deliverFertileEggs, .deliverEggs, .deliverEggsOfNewColour: true
+        case .ifChosen(_, _, let a, let b): a.needsDelivery || b.needsDelivery
+        default: false
+        }
+    }
+
+    /// The goal that applies, given the story's choices: `ifChosen` picks its branch. Other goals are
+    /// themselves. A choice not made yet takes the `otherwise` branch.
+    public func resolved(_ chosen: [String: String]) -> StoryGoal {
+        if case .ifChosen(let choice, let option, let a, let b) = self {
+            return (chosen[choice] == option ? a : b).resolved(chosen)
+        }
+        return self
+    }
+
+    /// The choice ID and the options offered now, for a choice goal. Nil for other goals.
+    func choiceOptions(_ p: StoryProgress) -> (String, [String])? {
+        switch self {
+        case .choice(let id, let options): (id, options)
+        case .choiceOfBreeds(let id): (id, p.options ?? [])
+        default: nil
+        }
     }
 }
 
@@ -123,6 +161,9 @@ public indirect enum StoryReward: Hashable, Codable, Sendable {
     case offerToKeep(birdTag: String, price: Int)
     /// A note from this person (see Post.swift). The words come from the note's ID.
     case note(Person, String)
+    /// This person names the next chick that hatches (`GameState.nextChickNamer`), from their own list
+    /// (`NameBook.name(by:for:in:)`). The keeper can rename it.
+    case namesNextChick(Person)
     /// These rewards only if the player chose `optionID` in the choice `choiceID` of this story.
     case ifChosen(String, String, [StoryReward])
 
@@ -185,10 +226,14 @@ public struct Storyline: Hashable, Sendable, Identifiable {
         self.rewards = rewards
     }
 
-    /// The choice step's options, by choice ID, for front ends.
+    /// Every option a choice can have, by choice ID. A breed choice can offer any in-game breed;
+    /// `GameState.pendingChoices` gives the options offered now.
     public func options(forChoice choiceID: String) -> [String] {
         for step in steps {
             if case .choice(let id, let options) = step.goal, id == choiceID { return options }
+            if case .choiceOfBreeds(let id) = step.goal, id == choiceID {
+                return BreedTable.inGame.map(\.id.rawValue)
+            }
         }
         return []
     }
@@ -203,12 +248,30 @@ public struct StoryProgress: Hashable, Codable, Sendable {
     /// The option picked at each choice step, by choice ID. Remembered for words ("since you kept her").
     /// Empty in saves from before choices (`SaveFormat.fillNewSettings`).
     public var chosen: [String: String]
+    /// The options a breed choice offers (`StoryGoal.choiceOfBreeds`), fixed when the step started.
+    /// Nil for other steps (cleared when the step finishes), and in older saves. The pick itself is kept
+    /// in `chosen`, which is all the words need later.
+    public var options: [String]?
+    /// The egg colours that count as new for `StoryGoal.deliverEggsOfNewColour`, fixed when the step
+    /// started. Nil for other steps (cleared when the step finishes), and in older saves.
+    public var wantedColours: [EggColour]?
 
     public init(step: Int = 0, stepStartedDay: Int, rewarded: Bool = false, chosen: [String: String] = [:]) {
         self.step = step
         self.stepStartedDay = stepStartedDay
         self.rewarded = rewarded
         self.chosen = chosen
+    }
+}
+
+extension StoryProgress {
+    /// Moves on to the next step, which starts today. What the finished step offered is cleared:
+    /// the next step fixes its own (`Engine.prepare`).
+    mutating func nextStep(onDay day: Int) {
+        step += 1
+        stepStartedDay = day
+        options = nil
+        wantedColours = nil
     }
 }
 
@@ -263,7 +326,93 @@ public enum Storylines {
         rewards: [.giftBird(.australorp, .hen), .unlockShopBreed(.australorp)]
     )
 
-    public static let all: [Storyline] = [broodySilkie, lacedGift, heritageBreed]
+    /// Dot, the show judge, notices a new keeper at the entry desk and shows them a breed standard: the
+    /// page of one of two breeds from the keeper's own flock. Her notes join that breed's Breed Book page
+    /// ("What Dot looks for", `GameState.dotStandardBreed`).
+    public static let dotStandard = Storyline(
+        id: "dotStandard",
+        person: .dot,
+        trigger: .showEntered,
+        steps: [
+            StoryStep(id: "noticed", goal: .waitDays(2)),
+            StoryStep(id: "invite", goal: .waitDays(2)),
+            StoryStep(
+                id: "standard", goal: .choiceOfBreeds(id: dotStandardChoice),
+                rewards: BreedTable.inGame.map { breed in
+                    .ifChosen(dotStandardChoice, breed.id.rawValue, [.note(.dot, dotStandardNote(breed.id))])
+                }),
+        ]
+    )
+    /// The choice ID of Dot's breed choice.
+    public static let dotStandardChoice = "standard"
+    /// The note ID of Dot's standard page for this breed: "standard-orpington".
+    public static func dotStandardNote(_ breed: Breed) -> String { "standard-\(breed.rawValue)" }
+
+    /// Teddy, the kid down the lane, comes to meet the keeper's birds once one wins a ribbon (or on
+    /// day 30). He isn't allowed a chicken, so he asks to help. He names the next chick, or has a
+    /// drawing day. Later, when a bird is a lap chicken, he is the first to say so.
+    public static let teddyHelps = Storyline(
+        id: "teddyHelps",
+        person: .teddy,
+        trigger: .anyOf([.showPlaced(top: 3), .onDay(30)]),
+        steps: [
+            StoryStep(id: "meeting", goal: .waitDays(2)),
+            StoryStep(id: "notAllowed", goal: .waitDays(2)),
+            StoryStep(
+                id: "help", goal: .choice(id: "help", options: ["name", "drawing"]),
+                rewards: [
+                    .treats(3),
+                    .ifChosen("help", "name", [.namesNextChick(.teddy)]),
+                    .ifChosen("help", "drawing", [.note(.teddy, "teddy-drawing")]),
+                ]),
+            StoryStep(
+                id: "lap", goal: .friendliness(band: .lapChicken, count: 1),
+                rewards: [.note(.teddy, "teddy-lapChicken")]),
+        ]
+    )
+
+    /// Mr Okafor, the baker, wants eggs for his shop window: six brown eggs now, or three of a colour the
+    /// keeper has not had yet, for more coins. Both pay well above the egg price, so the window is worth it.
+    /// Then he talks of a market board in the village.
+    public static let okaforWindow = Storyline(
+        id: "okaforWindow",
+        person: .okafor,
+        trigger: .eggBookHas(.brown),
+        steps: [
+            StoryStep(id: "asking", goal: .waitDays(1)),
+            StoryStep(id: "window", goal: .choice(id: "window", options: ["now", "wait"])),
+            StoryStep(
+                id: "bring",
+                goal: .ifChosen(
+                    "window", "now", then: .deliverEggs(colour: .brown, count: 6),
+                    otherwise: .deliverEggsOfNewColour(count: 3))),
+            StoryStep(
+                id: "thanks", goal: .waitDays(0),
+                rewards: [
+                    .ifChosen("window", "now", [.coins(30)]),
+                    .ifChosen("window", "wait", [.coins(50), .note(.okafor, "okafor-window")]),
+                ]),
+            StoryStep(id: "board", goal: .waitDays(3), rewards: [.note(.okafor, "okafor-marketBoard")]),
+        ]
+    )
+
+    /// Bea, from the hen rescue, writes about a bird the keeper sent to a new home, by name. Then she asks
+    /// the keeper to visit. A third postcard comes once three birds have new homes. No choice.
+    public static let beaPostcards = Storyline(
+        id: "beaPostcards",
+        person: .bea,
+        trigger: .birdRehomed(atLeast: 1),
+        steps: [
+            StoryStep(id: "postcard", goal: .waitDays(2), rewards: [.note(.bea, "bea-postcard")]),
+            StoryStep(id: "invite", goal: .waitDays(5), rewards: [.note(.bea, "bea-invite")]),
+            StoryStep(id: "third", goal: .birdRehomed(atLeast: 3), rewards: [.note(.bea, "bea-postcard-3")]),
+        ]
+    )
+
+    /// Append, never insert: the night runs stories in this order.
+    public static let all: [Storyline] = [
+        broodySilkie, lacedGift, heritageBreed, dotStandard, teddyHelps, okaforWindow, beaPostcards,
+    ]
 
     public static func story(_ id: String) -> Storyline? { all.first { $0.id == id } }
 }
@@ -275,10 +424,48 @@ extension GameState {
     func pendingChoices(in stories: [Storyline]) -> [PendingChoice] {
         stories.compactMap { story in
             guard let p = self.stories[story.id], !p.rewarded, p.step < story.steps.count,
-                case .choice(let id, let options) = story.steps[p.step].goal, p.chosen[id] == nil
+                let (id, options) = story.steps[p.step].goal.resolved(p.chosen).choiceOptions(p),
+                p.chosen[id] == nil
             else { return nil }
             return PendingChoice(story: story.id, person: story.person, choice: id, options: options)
         }
+    }
+
+    /// Breeds for a breed choice (`StoryGoal.choiceOfBreeds`): first the breeds of birds the keeper owns
+    /// whose breed shows, then breeds in the Breed Book, then breeds Speckle & Down sells, then any other
+    /// in-game breed, each in breed-table order. Always `count` breeds, so a flock of one breed is never
+    /// a dead end. Rule 8: a chick whose breed has not shown yet does not count, so the offer never
+    /// depends on a hidden breed.
+    func breedsToChooseFrom(_ count: Int = 2) -> [Breed] {
+        let inGame = BreedTable.inGame.map(\.id)
+        let shown = Set(ownedBirds.filter { $0.revealed && $0.isPurebred && !$0.isOnLoan }.map(\.breed))
+        let booked = Set(breedBook.filter { !$0.isCross }.map(\.variety))
+        let flock = inGame.filter { shown.contains($0) }
+        let book = inGame.filter { booked.contains($0.rawValue) && !shown.contains($0) }
+        let rest = inGame.filter { !shown.contains($0) && !booked.contains($0.rawValue) }
+        let shop = Set(surpriseBreeds)
+        return Array(
+            (flock + book + rest.filter { shop.contains($0) } + rest.filter { !shop.contains($0) })
+                .prefix(count))
+    }
+
+    /// The colours that count for a "new colour" delivery (`StoryGoal.deliverEggsOfNewColour`): colours not
+    /// in the Egg Book now. If no breed Speckle & Down sells lays one of them, any colour but brown that
+    /// the shop's breeds lay counts instead, so the step can always be done (the Araucana, a starter
+    /// breed, lays blue).
+    func newEggColoursWanted() -> [EggColour] {
+        let have = Set(eggBook.map(\.colour))
+        let shop = Set(surpriseBreeds.map(\.definition.eggColour))
+        let new = EggColour.allCases.filter { !have.contains($0) }
+        if new.contains(where: { shop.contains($0) }) { return new }
+        return EggColour.allCases.filter { shop.contains($0) && $0 != .brown }
+    }
+
+    /// The breed whose standard Dot showed the keeper, once chosen. Its Breed Book page shows
+    /// "What Dot looks for".
+    public var dotStandardBreed: Breed? {
+        let option = chosen(Storylines.dotStandardChoice, in: Storylines.dotStandard.id)
+        return BreedTable.inGame.first { $0.id.rawValue == option }?.id
     }
 
     /// The option picked in a story's choice, or nil if it has not been made.
@@ -315,8 +502,9 @@ extension Engine {
         var ev: [GameEvent] = []
         while progress.step < story.steps.count {
             let step = story.steps[progress.step]
-            guard !step.goal.needsDelivery,
-                goalMet(step.goal, s, since: progress.stepStartedDay, chosen: progress.chosen)
+            let goal = step.goal.resolved(progress.chosen)
+            prepare(goal, &progress, s)
+            guard !goal.needsDelivery, goalMet(goal, s, since: progress.stepStartedDay, chosen: progress.chosen)
             else { break }
             if !step.rewards.isEmpty {
                 guard hasRoom(for: step.rewards, chosen: progress.chosen, s) else {
@@ -325,8 +513,7 @@ extension Engine {
                 }
                 ev += grant(step.rewards, story: story, chosen: progress.chosen, &s, &rng)
             }
-            progress.step += 1
-            progress.stepStartedDay = s.day
+            progress.nextStep(onDay: s.day)
             if progress.step < story.steps.count {
                 ev.append(.storyStep(story.id, step: story.steps[progress.step].id))
             }
@@ -336,13 +523,26 @@ extension Engine {
         return ev
     }
 
+    /// Fixes what a step offers when it starts, from what the keeper can see then: the breeds of a breed
+    /// choice, and the colours a "new colour" delivery wants. Set once, so the offer does not change
+    /// while the step waits.
+    static func prepare(_ goal: StoryGoal, _ progress: inout StoryProgress, _ s: GameState) {
+        switch goal {
+        case .choiceOfBreeds where progress.options == nil:
+            progress.options = s.breedsToChooseFrom().map(\.rawValue)
+        case .deliverEggsOfNewColour where progress.wantedColours == nil:
+            progress.wantedColours = s.newEggColoursWanted()
+        default: break
+        }
+    }
+
     /// A story that asks for eggs known to be fertile needs a keeper who can candle. If the keeper
     /// can't yet, the neighbour teaches candling now, so the step is never stuck.
     static func storyCandlingLesson(_ s: inout GameState, stories: [Storyline] = Storylines.all) -> [GameEvent] {
         guard !s.canCandle, let id = storyAwaitingDelivery(s, in: stories),
             let story = stories.first(where: { $0.id == id }),
-            let step = s.stories[id]?.step, story.steps.indices.contains(step),
-            case .deliverFertileEggs = story.steps[step].goal
+            let p = s.stories[id], story.steps.indices.contains(p.step),
+            case .deliverFertileEggs = story.steps[p.step].goal.resolved(p.chosen)
         else { return [] }
         s.canCandle = true
         return [.learnedCandling]
@@ -362,6 +562,9 @@ extension Engine {
         case .birdRehomed(let n): s.rehomed.count >= n
         case .coinsPaid(let id): s.debtsPaid.contains(id)
         case .anyOf(let goals): goals.contains { goalMet($0, s, since: day, chosen: chosen) }
+        case .deliverEggs, .deliverEggsOfNewColour: false
+        case .choiceOfBreeds(let id): chosen[id] != nil
+        case .ifChosen: goalMet(goal.resolved(chosen), s, since: day, chosen: chosen)
         }
     }
 
@@ -428,6 +631,8 @@ extension Engine {
             case .note(let person, let id):
                 s.notesSeen.insert(id)
                 ev.append(.noteArrived(person, id))
+            case .namesNextChick(let person):
+                s.nextChickNamer = person
             case .ifChosen(let choice, let option, let inner):
                 if chosen[choice] == option { ev += grant(inner, story: story, chosen: chosen, &s, &rng) }
             }
@@ -459,7 +664,7 @@ extension Engine {
     ) -> [GameEvent] {
         guard let story = stories.first(where: { $0.id == storyID }), var progress = s.stories[storyID],
             !progress.rewarded, progress.step < story.steps.count,
-            case .choice(let id, let options) = story.steps[progress.step].goal,
+            let (id, options) = story.steps[progress.step].goal.resolved(progress.chosen).choiceOptions(progress),
             progress.chosen[id] == nil, options.contains(option)
         else { return [.rejected(.noSuchChoice)] }
         progress.chosen[id] = option
@@ -469,25 +674,59 @@ extension Engine {
 
     /// The player hands over what a story step asks for.
     /// A delivery step gives no rewards of its own: the next step, or the story, gives them.
-    static func deliver(_ storyID: String, _ s: inout GameState) -> [GameEvent] {
-        guard let story = Storylines.story(storyID), var progress = s.stories[storyID],
-            progress.step < story.steps.count, story.steps[progress.step].goal.needsDelivery
+    static func deliver(
+        _ storyID: String, _ s: inout GameState, stories: [Storyline] = Storylines.all
+    )
+        -> [GameEvent]
+    {
+        guard let story = stories.first(where: { $0.id == storyID }), var progress = s.stories[storyID],
+            progress.step < story.steps.count
         else { return [.rejected(.nothingToDeliver)] }
-        switch story.steps[progress.step].goal {
+        let goal = story.steps[progress.step].goal.resolved(progress.chosen)
+        switch goal {
         case .deliverFertileEggs(let n):
             let known = s.carton.filter { $0.isCandled && $0.isFertile }
             guard known.count >= n else { return [.rejected(.needFertileEggs(need: n, have: known.count))] }
             let given = Set(known.prefix(n).map(\.id))
             s.carton.removeAll { given.contains($0.id) }
+        case .deliverEggs(let colour, let n):
+            guard handOver(n, from: [colour], &s) else {
+                return [.rejected(.needEggs(colour, need: n, have: s.carton.count(where: { $0.colour == colour })))]
+            }
+        case .deliverEggsOfNewColour(let n):
+            prepare(goal, &progress, s)
+            let wanted = progress.wantedColours ?? []
+            guard handOver(n, from: Set(wanted), &s) else {
+                let best = wanted.map { c in s.carton.count(where: { $0.colour == c }) }.max() ?? 0
+                return [.rejected(.needEggsOfNewColour(wanted, need: n, have: best))]
+            }
         default:
             return [.rejected(.nothingToDeliver)]
         }
-        progress.step += 1
-        progress.stepStartedDay = s.day
+        progress.nextStep(onDay: s.day)
+        if progress.step < story.steps.count {
+            prepare(story.steps[progress.step].goal.resolved(progress.chosen), &progress, s)
+        }
         s.stories[storyID] = progress
         var ev: [GameEvent] = [.delivered(storyID)]
         if progress.step < story.steps.count { ev.append(.storyStep(storyID, step: story.steps[progress.step].id)) }
-        return ev + storyCandlingLesson(&s)
+        return ev + storyCandlingLesson(&s, stories: stories)
+    }
+
+    /// Takes `n` eggs of one of these colours from the carton, all of one colour. Eggs the keeper knows
+    /// are fertile go last, so a hatching egg stays if it can. False, and nothing taken, if no colour
+    /// has enough.
+    static func handOver(_ n: Int, from colours: Set<EggColour>, _ s: inout GameState) -> Bool {
+        let order = EggColour.allCases.filter { colours.contains($0) }
+        guard let colour = order.first(where: { c in s.carton.count(where: { $0.colour == c }) >= n }) else {
+            return false
+        }
+        let eggs = s.carton.filter { $0.colour == colour }.sorted {
+            !($0.isCandled && $0.isFertile) && ($1.isCandled && $1.isFertile)
+        }
+        let given = Set(eggs.prefix(n).map(\.id))
+        s.carton.removeAll { given.contains($0.id) }
+        return true
     }
 
     /// The story waiting for the player to hand something over, if any.
@@ -495,10 +734,19 @@ extension Engine {
         storyAwaitingDelivery(s, in: Storylines.all)
     }
 
+    /// Every story waiting for the player to hand something over, in story-table order. Front ends offer
+    /// each at its person's place (Hazel's at the back fence).
+    public static func storiesAwaitingDelivery(_ s: GameState) -> [Storyline] {
+        Storylines.all.filter { story in
+            guard let p = s.stories[story.id], p.step < story.steps.count else { return false }
+            return story.steps[p.step].goal.resolved(p.chosen).needsDelivery
+        }
+    }
+
     static func storyAwaitingDelivery(_ s: GameState, in stories: [Storyline]) -> String? {
         stories.first { story in
             guard let p = s.stories[story.id], p.step < story.steps.count else { return false }
-            return story.steps[p.step].goal.needsDelivery
+            return story.steps[p.step].goal.resolved(p.chosen).needsDelivery
         }?.id
     }
 }
