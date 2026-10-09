@@ -845,6 +845,31 @@ pick come from `shopSeed` and the day, never from the game RNG, so the post chan
 Event: `.noteArrived(person, noteID)`. The words come from `postNoteText` by note ID. The morning report
 shows notes under "Post". Conditions read only what the keeper can see (rule 8).
 
+More conditions: a day or later (`dayAtLeast`), a feature is open (`isOpen`), N chicks hatched
+(`chicksHatched`), N Breed Book pages the keeper owns (`breedBookCount`; looks seen at a show do not count),
+N birds rehomed (`rehomedCount`), a show entry judged (`enteredShow`), a ribbon (`placedAtShow`), and a
+ribbon in a kind of class (`placedInClass`: pet, eggs or breed).
+
+The pool (`Notes.pool`, 71 notes). Each person writes about their own system:
+
+| Person | Notes | About |
+| --- | --- | --- |
+| Wren | 14 | Village news, shop stock, the weather. A stock note comes only when that stock is open. |
+| Hazel | 14 | Chicken lore. The early-game lessons, recalled. One look from the Breed Book. |
+| Dot | 12 | Show hints. What she noticed at a show: the bird or plate that placed, by name. |
+| Teddy | 12 | Drawings and questions. The tamest bird, by name. |
+| Mr Okafor | 10 | Eggs and bread. One note for each egg colour in the Egg Book. |
+| Bea | 9 | How the rehomed birds are doing, by name. |
+
+- The first days are quiet. No note can come before day 6. Most wait for a feature, a season or a later day.
+- A note never comes twice. A note that names a thing reads it when the words show
+  (`poolNoteText` in `NotesText.swift`). If the thing has gone, the note says a general line.
+- Tone: short, plain, one idea, in the sender's voice. No nagging and no loss. Only Teddy uses exclamation marks.
+- Rule 8. A note names only what the keeper has seen. A bird whose sex is hidden gets no "she" or "he",
+  and no word that tells its sex or breed. Bea names a rehomed chick by its name only.
+- Append, never insert: the seeded pick reads the pool in list order. Put a new note in a new list at the
+  end of `pool`, not in a person's list.
+
 ### The village calendar
 
 `VillageDay.swift`. Four village days a year: the Hatch-along (spring), the Longest Day (summer), Moult Week
