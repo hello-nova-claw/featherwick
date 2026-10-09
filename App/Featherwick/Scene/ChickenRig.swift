@@ -227,10 +227,13 @@ struct ChickenRig: View {
         // Small helpers with explicit types keep the type checker fast (see `BirdSwatch`).
         let build: ChickenBuild = colours.isChick ? ChickenRigMetrics.chick : ChickenRigMetrics.adult
         let space = ChickenSpace(height: height)
+        // Sitting: the body drops and the legs fold to the hip's new height, so the joints still meet.
+        let drop: CGFloat = CGFloat(min(1, max(0, pose.sit)) * ChickenRigMetrics.sitDrop)
         ZStack {
-            leg(build.backHip, angle: pose.legBack, far: true, build, space)
+            leg(build.backHip, angle: pose.legBack, far: true, fold: drop, build, space)
             torso(build, space)
-            leg(build.frontHip, angle: pose.legFront, far: false, build, space)
+                .offset(y: space.length(drop * build.hip.y))
+            leg(build.frontHip, angle: pose.legFront, far: false, fold: drop, build, space)
         }
         .frame(width: height * ChickenRigMetrics.widthRatio, height: height)
         .scaleEffect(x: facingRight ? 1 : -1, y: 1)
@@ -246,9 +249,14 @@ struct ChickenRig: View {
 
     // MARK: - Legs
 
-    /// The far leg is a little darker, so the two legs read apart when they cross.
-    private func leg(_ hip: CGPoint, angle: Angle, far: Bool, _ b: ChickenBuild, _ s: ChickenSpace) -> some View {
+    /// The far leg is a little darker, so the two legs read apart when they cross. `fold` (0...1) squashes
+    /// the leg down to the ground, for sitting.
+    private func leg(
+        _ hip: CGPoint, angle: Angle, far: Bool, fold: CGFloat, _ b: ChickenBuild, _ s: ChickenSpace
+    ) -> some View {
         let path: Path = ChickenPaths.leg(at: hip, b, s)
+        // Never exactly 0: a flat scale has no inverse.
+        let squash: CGFloat = max(0.01, 1 - fold)
         return ZStack {
             part(path, colours.legs)
             if far {
@@ -256,6 +264,7 @@ struct ChickenRig: View {
             }
         }
         .rotationEffect(angle, anchor: ChickenSpace.anchor(hip))
+        .scaleEffect(x: 1, y: squash, anchor: ChickenSpace.anchor(CGPoint(x: hip.x, y: 0)))
     }
 
     // MARK: - Body (tilts at the hip)

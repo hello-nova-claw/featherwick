@@ -63,6 +63,7 @@ components, screens 1a–8a). The painted farm and bird art come later; dashed b
 - `Farm/FarmBirds.swift`: where each bird is drawn, blobs (`BirdSwatch`) on the Barn, and `PettableBird`
   (tap opens the bird card; press and rub sends `.pet`). In the yards the coop birds are rigged chickens
   inside the scene (`Scene/SceneChicken.swift`: `YardScene`, `SceneChicken`).
+  A tap on yard ground makes a ripple. The birds react by friendliness band (`Scene/RippleReaction.swift`). It is view only: no command, no save. Scene presentation numbers go in `Scene/SceneConstants.swift`, not `Rules`. App unit tests are in `App/FeatherwickTests/` (Swift Testing, the `FeatherwickTests` target).
   `Feedback/`: `Haptics` and `Sound` (bundled `Sounds/*.caf`, silent if missing), with on/off switches in Settings. `GameStore.run` plays event feedback through `GameFeedback`.
 - Market board (`Sheets/MarketBoardSheet.swift`): opened from the farm gate sheet. Wanted cards, the keeper's own card, the buyer.
 - What might hatch (`Sheets/WhatMightHatchSection.swift`): the forecast in the breeding pen sheet, and carrier lines on the bird card.

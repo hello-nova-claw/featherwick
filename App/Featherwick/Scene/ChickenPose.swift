@@ -130,6 +130,13 @@ enum ChickenRigMetrics {
     static let peckDown: Double = 0.4
     static let peckHold: Double = 0.15
 
+    // Sitting.
+    /// How far the hip drops to sit, as a part of its standing height. The body then rests on the ground
+    /// and the legs fold under it.
+    static let sitDrop: Double = 0.85
+    /// Seconds to sit down, or to get up.
+    static let sitDuration: Double = 0.3
+
     // Looking. The face (beak, eye, comb) narrows as the head turns to the viewer.
     /// Face width when the bird looks straight at the viewer.
     static let frontFaceScale: Double = 0.45
@@ -159,9 +166,14 @@ struct ChickenPose: Equatable, Sendable {
     /// Leg swings at the hip. Positive swings the foot back.
     var legBack: Angle = .zero
     var legFront: Angle = .zero
+    /// 0 stands, 1 sits: the body drops by `sitDrop` of the hip height and the legs fold under it.
+    var sit: Double = 0
 
     /// Standing still, looking ahead, eyes open.
     static let rest = ChickenPose()
+
+    /// Sitting on the ground, looking ahead.
+    static let sitting = ChickenPose(sit: 1)
 
     private typealias M = ChickenRigMetrics
 
@@ -212,7 +224,7 @@ struct ChickenPose: Equatable, Sendable {
         return ChickenPose(
             bodyTilt: angle(a.bodyTilt, b.bodyTilt), neckSwing: angle(a.neckSwing, b.neckSwing),
             headTurn: number(a.headTurn, b.headTurn), blink: number(a.blink, b.blink),
-            legBack: angle(a.legBack, b.legBack), legFront: angle(a.legFront, b.legFront))
+            legBack: angle(a.legBack, b.legBack), legFront: angle(a.legFront, b.legFront), sit: number(a.sit, b.sit))
     }
 
     /// How wide the face is drawn for `headTurn`: 1 in profile, narrower towards the viewer, and
