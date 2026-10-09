@@ -305,10 +305,12 @@ struct NotesTests {
         var notes: [String] = []
         func run(_ c: Command) {
             for case .noteArrived(_, let id) in Engine.apply(c, to: &s, using: &rng) {
+                #expect(postNoteText(id, s)?.isEmpty == false)
+                // Only the pool's notes: a village day or a story sends its own notes, by its own rules.
+                guard let note = Notes.note(id) else { continue }
                 notes.append(id)
                 // When it came, it fitted.
-                #expect(Notes.note(id)?.condition.holds(in: s) == true, "\(id)")
-                #expect(postNoteText(id, s)?.isEmpty == false)
+                #expect(note.condition.holds(in: s), "\(id)")
             }
         }
         run(.chooseStarter(index: Int(seed % 3), name: "Pip"))
@@ -345,7 +347,7 @@ struct NotesTests {
     @Test func thePostNeverRepeatsInALongGameAndIsTheSameForTheSameSeed() {
         let a = Self.play(seed: 7, days: 400, noteChance: 1)
         #expect(Set(a.notes).count == a.notes.count)
-        #expect(Set(a.notes) == a.end.notesSeen)
+        #expect(Set(a.notes) == a.end.notesSeen.filter { Notes.note($0) != nil })
         #expect(a.notes.count >= 30, "\(a.notes.count) notes")
         for person in Person.allCases {
             #expect(a.notes.contains { Notes.note($0)?.from == person }, "\(person)")
