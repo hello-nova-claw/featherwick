@@ -38,7 +38,7 @@ Key Core files:
 - `BreedTable.swift`, `Breed.swift`: breeds and colour varieties (data tables).
 - `SaveFormat.swift` (versions, migrations), `SaveStore.swift` (slots, atomic writes, backups).
 - One file per feature: `EarlyGame`, `BreedingPen`, `Shows`, `ShowEvent`, `Friendliness`, `SexGuess` ("hen or roo?"), `Pedigree`, `Names`, `Quirks`, `Story`
-  (people, choices), `Loans` (loaned birds, debts), `Post` (notes), `VillageDay` (the calendar),
+  (people, choices), `Loans` (loaned birds, debts), `BorrowedHen` (Marigold, days 2 to 10), `Post` (notes), `VillageDay` (the calendar),
   `Milestone`, `Jobs` (daily jobs, season goals), `Records` (the flock record book), `Daylight` (day slots, errands, the sleep gate), `Look`, `Simulation`, `HatchWhy` (hatch-day "why" note).
 - What might hatch: `Visible` (what the keeper sees, no genes), `Knowledge` + `KnowledgeTables` (genes worked
   out by elimination), `Planner` + `PlannerTables` (the pen forecast, carrier notes), `Inheritance`

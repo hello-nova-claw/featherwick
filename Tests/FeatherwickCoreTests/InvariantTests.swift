@@ -8,7 +8,8 @@ import Testing
 struct InvariantTests {
     static func problems(in s: GameState) -> [String] {
         var p: [String] = []
-        if s.coop.count > s.perches { p.append("coop \(s.coop.count) > perches \(s.perches)") }
+        // A bird on loan brings her own box (see Loans.swift): only the keeper's own birds take perches.
+        if s.perchesUsed > s.perches { p.append("coop \(s.perchesUsed) > perches \(s.perches)") }
         if s.brooder.count > s.brooderSize { p.append("brooder \(s.brooder.count) > size \(s.brooderSize)") }
         if s.carton.count > s.cartonCapacity { p.append("carton over capacity") }
         if s.coins < 0 { p.append("negative coins") }
@@ -100,7 +101,8 @@ struct InvariantTests {
         case 91..<94:
             // A keeper rehomes when the flock is crowded, not their first two birds.
             if !s.boarding.isEmpty { return .rehome(s.boarding[0].id) }
-            return birds.count >= 3 ? .rehome(anyBird) : bedtime(s)
+            // A bird on loan (Marigold) is not the keeper's flock: she does not make it crowded.
+            return birds.count(where: { !$0.isOnLoan }) >= 3 ? .rehome(anyBird) : bedtime(s)
         case 94..<97: return .upgradeCoop
         case 97..<98:
             // Shopping and trades.

@@ -210,6 +210,10 @@ public struct GameState: Hashable, Codable, Sendable {
     public var debtsPaid: Set<String> = []
     /// Notes already delivered (see Post.swift), by ID. A note never comes twice.
     public var notesSeen: Set<String> = []
+    /// True in a game begun with the early game, on a version with the early-game stories (Marigold).
+    /// The `newKeeper` story goal reads it. False in older saves (`SaveFormat.fillNewSettings`), so a save
+    /// already past day 3 gets no retroactive loan, debt or choice.
+    public var earlyGameStories = false
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

@@ -44,8 +44,58 @@ extension People {
 /// The words for an option at a story's choice step. Every option of every story has words.
 public func choiceText(story: String, option: String) -> String {
     switch (story, option) {
+    case ("marigold", "return"): "send Marigold home, with an egg for you"
+    case ("marigold", "keep"): "keep Marigold, and pay Hazel \(Rules.standard.marigoldPrice) coins when you can"
     default: option
     }
+}
+
+/// A short label for an option's button: "Send her home", "Keep her".
+public func choiceButtonText(story: String, option: String) -> String {
+    switch (story, option) {
+    case ("marigold", "return"): "Send Marigold home"
+    case ("marigold", "keep"): "Keep Marigold"
+    default: choiceText(story: story, option: option).capitalizedFirst
+    }
+}
+
+/// The option's words as a sentence, under its button: "Send Marigold home, with an egg for you."
+public func choiceDetailText(story: String, option: String) -> String {
+    choiceText(story: story, option: option).capitalizedFirst + "."
+}
+
+/// What the person says when the keeper picks an option, or nil. Every option is a good one.
+public func choiceReplyText(story: String, option: String) -> String? {
+    switch (story, option) {
+    case ("marigold", "return"):
+        "Hazel tucks Marigold under her arm. \"Thank you, love. She's had a lovely holiday. Here's an egg from "
+            + "my flock, same breed as your chick, already candled.\""
+    case ("marigold", "keep"):
+        "Hazel smiles. \"Pay me when you can. She likes you.\""
+    default: nil
+    }
+}
+
+/// One debt, for the "You owe" list: "Hazel, 40 coins".
+public func debtLineText(_ d: Debt) -> String { "\(People.name(d.to)), \(d.coins) coin\(d.coins == 1 ? "" : "s")" }
+
+/// Under the "You owe" list.
+public let debtsNoteText = "No hurry and no interest. Pay when you can."
+
+/// One line about a bird on loan, for its card: whose she is and how long she stays. Nil for the keeper's own.
+public func loanLineText(_ b: Bird, _ s: GameState) -> String? {
+    guard let loan = b.loan else { return nil }
+    let owner = People.name(loan.owner)
+    let kind = kindWord(b, s)
+    if loan.tag == Storylines.marigold {
+        let asked = s.pendingChoices.contains { $0.story == Storylines.marigold }
+        return asked ? "\(owner)'s \(kind). \(owner) is home: keep her, or send her home?" : "\(owner)'s \(kind), staying a week"
+    }
+    if let day = loan.returnDay {
+        let left = max(0, day - s.day)
+        return "\(owner)'s \(kind), staying \(left <= 1 ? "until tomorrow" : "\(left) more days")"
+    }
+    return "\(owner)'s \(kind), on loan"
 }
 
 /// The words for a note in the post, by note ID (see `Notes.pool` and story `.note` rewards).
@@ -80,7 +130,8 @@ public func villageDayAbout(_ v: VillageDay) -> String {
 func villageEventText(_ e: GameEvent, _ s: GameState) -> String? {
     switch e {
     case .chose(let story, let option):
-        return "You've decided: \(choiceText(story: story, option: option))."
+        let decided = "You've decided: \(choiceText(story: story, option: option))."
+        return choiceReplyText(story: story, option: option).map { "\(decided) \($0)" } ?? decided
     case .storyCoins(_, let n):
         return "You're given \(n) coin\(n == 1 ? "" : "s")."
     case .storyTreats(_, let n):

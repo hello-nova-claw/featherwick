@@ -528,6 +528,14 @@ struct BackFenceSheet: View {
                 if s.tradeOffer != nil {
                     reply("Yes, let's trade") { store.run(.acceptTrade) }
                 }
+                // A choice the neighbour asked for (Marigold on day 10) waits here until it is made.
+                ForEach(s.pendingChoices, id: \.choice) { choice in
+                    ForEach(choice.options, id: \.self) { option in
+                        reply(choiceButtonText(story: choice.story, option: option)) {
+                            store.run(.choose(story: choice.story, option: option))
+                        }
+                    }
+                }
                 reply("Bye for now") { dismiss() }
             }
             LastWords()
@@ -563,8 +571,10 @@ struct BackFenceSheet: View {
                 "“My daughter's starting a flock and needs a rooster. I'd swap you a young hen for \(birdName(offer.roosterID, s)).”"
         }
         for story in Storylines.all.reversed() {
-            guard let p = s.stories[story.id], !p.rewarded else { continue }
-            let step = p.step < story.steps.count && p.step > 0 ? story.steps[p.step - 1].id : nil
+            guard let p = s.stories[story.id], !p.rewarded, !story.steps.isEmpty else { continue }
+            // The words of the step the story is on: `storyStep` names the step it moves to. The story's
+            // opening words before its first step is done, and its last step's once every step is.
+            let step = p.step == 0 ? nil : story.steps[min(p.step, story.steps.count - 1)].id
             return storyText(story.id, step: step)
         }
         return "“Lovely morning for it. Your hens are looking well.”"

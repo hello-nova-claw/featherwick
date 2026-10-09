@@ -169,10 +169,11 @@ public struct Rules: Codable, Hashable, Sendable {
     public var shopRarePremium = 15  // added to the price of a rare-colour special
 
     // Early game (see EarlyGame.swift): the morning each feature is introduced. A new keeper starts with
-    // one chick (sex shows on day `growerAge`) and learns one thing at a time.
+    // one chick (sex shows on day `growerAge`) and learns one thing at a time. The coop door comes on day 3
+    // with Marigold, Hazel's hen on loan, and laying on day 4, because she lays (see BorrowedHen.swift).
     public var featureDays: [Feature: Int] = [
-        .handling: 1, .treats: 2, .premiumFeed: 4, .coopDoor: 6, .breedBook: 8, .daylight: 9, .birdShop: 10,
-        .coopUpgrade: 14, .laying: 18, .incubatorShop: 29, .breedingPen: 35,
+        .handling: 1, .treats: 2, .coopDoor: 3, .laying: 4, .premiumFeed: 5, .breedBook: 8, .daylight: 9,
+        .birdShop: 10, .coopUpgrade: 14, .incubatorShop: 29, .breedingPen: 35,
     ]
     /// The county show opens this many days before the first show (`.shows` has no entry above).
     public var showNoticeDays = 7
@@ -222,6 +223,12 @@ public struct Rules: Codable, Hashable, Sendable {
     public var debtReminderDays = 28
     /// The chance of a note in the post on any morning.
     public var noteChance = 0.4
+
+    // The borrowed hen (see BorrowedHen.swift): Marigold, the starter's mother, on loan from Hazel.
+    /// Coins Hazel asks for Marigold if the keeper keeps her. A debt, paid when the keeper can.
+    public var marigoldPrice = 40
+    /// Marigold's age when she comes to stay: a hen in her first year of laying.
+    public var marigoldAgeDays = 112
 
     // The village calendar (see VillageDay.swift): the day of its season each village day falls on.
     public var villageDays: [VillageDay: Int] = [.hatchAlong: 10, .longestDay: 14, .moultWeek: 1, .midwinterLights: 14]

@@ -114,8 +114,9 @@ struct StoryTests {
             func check(_ rewards: [StoryReward]) {
                 for reward in rewards {
                     switch reward {
-                    case .giftBird(let b, _), .unlockShopBreed(let b), .giftEgg(let b, _):
+                    case .giftBird(let b, _), .unlockShopBreed(let b):
                         #expect(b.definition.isInGame)
+                    case .giftEgg(let b, _): #expect(b?.definition.isInGame ?? true)  // nil: the starter's breed
                     case .loanBird(let spec): #expect(spec.breed?.definition.isInGame ?? true)
                     case .ifChosen(let choice, let option, let inner):
                         // The option must be one of the story's options for that choice.

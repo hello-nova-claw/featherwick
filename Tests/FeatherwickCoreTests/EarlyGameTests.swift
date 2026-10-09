@@ -144,7 +144,8 @@ struct EarlyGameTests {
         let tip = s.showTip
         #expect(tip != nil)
         #expect(ev.contains(.showAnnounced(tip)))
-        #expect(tip?.birdID == s.starterID)  // the only bird
+        // One of the birds at home: this rooster starter, his gift hen, or Marigold (no choice made yet).
+        #expect(s.birdsAtHome.contains { $0.id == tip?.birdID })
         #expect(tip?.showDay == s.nextShowDay)
         // The tip is cleared once the show is over.
         Self.play(until: s.nextShowDay, &s, &rng)

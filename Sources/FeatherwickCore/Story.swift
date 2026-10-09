@@ -60,6 +60,9 @@ public indirect enum StoryGoal: Hashable, Codable, Sendable {
     case coinsPaid(debtID: String)
     /// Any one of these goals is met. For "whichever comes first".
     case anyOf([StoryGoal])
+    /// The game began as a new keeper's, with the early game (`GameState.earlyGameStories`). The early-game
+    /// stories start with it. A save from before them never meets it, so it gets no retroactive loan.
+    case newKeeper
 
     /// True when the player must act to finish the step: the night never finishes it.
     public var needsPlayer: Bool {
@@ -88,10 +91,13 @@ public struct LoanSpec: Hashable, Codable, Sendable {
     public var ageDays: Int
     /// Nights she stays. Nil: she stays until a story ends the loan (`endLoan` or `offerToKeep`).
     public var stayDays: Int?
+    /// True: she is the starter's mother (a hen of the starter's breed). Her genes fit the starter's, and
+    /// the starter's family tree gets her (see BorrowedHen.swift).
+    public var motherOfStarter: Bool
 
     public init(
         tag: String, owner: Person, name: String, breed: Breed? = nil, sex: Sex, ageDays: Int,
-        stayDays: Int? = nil
+        stayDays: Int? = nil, motherOfStarter: Bool = false
     ) {
         self.tag = tag
         self.owner = owner
@@ -100,6 +106,24 @@ public struct LoanSpec: Hashable, Codable, Sendable {
         self.sex = sex
         self.ageDays = ageDays
         self.stayDays = stayDays
+        self.motherOfStarter = motherOfStarter
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tag, owner, name, breed, sex, ageDays, stayDays, motherOfStarter
+    }
+
+    /// Specs live in the story table, not in saves. Still, one written before `motherOfStarter` reads as false.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        tag = try c.decode(String.self, forKey: .tag)
+        owner = try c.decode(Person.self, forKey: .owner)
+        name = try c.decode(String.self, forKey: .name)
+        breed = try c.decodeIfPresent(Breed.self, forKey: .breed)
+        sex = try c.decode(Sex.self, forKey: .sex)
+        ageDays = try c.decode(Int.self, forKey: .ageDays)
+        stayDays = try c.decodeIfPresent(Int.self, forKey: .stayDays)
+        motherOfStarter = try c.decodeIfPresent(Bool.self, forKey: .motherOfStarter) ?? false
     }
 }
 
@@ -109,7 +133,8 @@ public indirect enum StoryReward: Hashable, Codable, Sendable {
     /// The breed joins Speckle & Down's surprise stock (`GameState.surpriseBreeds`).
     case unlockShopBreed(Breed)
     /// An egg of this breed, in the carton. Already candled, so the keeper knows if it is fertile.
-    case giftEgg(Breed, fertile: Bool)
+    /// Nil breed: the starter's breed.
+    case giftEgg(Breed?, fertile: Bool)
     case coins(Int)
     /// Mealworms for the bag.
     case treats(Int)
@@ -261,7 +286,7 @@ public enum Storylines {
         rewards: [.giftBird(.australorp, .hen), .unlockShopBreed(.australorp)]
     )
 
-    public static let all: [Storyline] = [broodySilkie, lacedGift, heritageBreed]
+    public static let all: [Storyline] = [broodySilkie, lacedGift, heritageBreed, borrowedHen]
 
     public static func story(_ id: String) -> Storyline? { all.first { $0.id == id } }
 }
@@ -360,6 +385,7 @@ extension Engine {
         case .birdRehomed(let n): s.rehomed.count >= n
         case .coinsPaid(let id): s.debtsPaid.contains(id)
         case .anyOf(let goals): goals.contains { goalMet($0, s, since: day, chosen: chosen) }
+        case .newKeeper: s.earlyGameStories
         }
     }
 
@@ -410,7 +436,7 @@ extension Engine {
             case .unlockShopBreed(let breed):
                 if s.shopBreeds.insert(breed).inserted { ev.append(.shopUnlocked(breed)) }
             case .giftEgg(let breed, let fertile):
-                ev += giftEgg(breed, fertile: fertile, story: story, &s, &rng)
+                ev += giftEgg(breed ?? s.starterBreed, fertile: fertile, story: story, &s, &rng)
             case .coins(let n):
                 s.coins += n
                 ev.append(.storyCoins(story.id, n))
@@ -460,9 +486,27 @@ extension Engine {
             case .choice(let id, let options) = story.steps[progress.step].goal,
             progress.chosen[id] == nil, options.contains(option)
         else { return [.rejected(.noSuchChoice)] }
+        // A kept bird is the keeper's own and needs a perch: with none free, the choice waits for room.
+        let picked = [id: option]
+        let keeps = keptLoans(in: story.steps[progress.step].rewards, chosen: picked)
+        if keeps.contains(where: { s.loanedBird(tag: $0) != nil }), !s.hasFreePerch {
+            return [.rejected(.noFreePerch)]
+        }
         progress.chosen[id] = option
         s.stories[storyID] = progress
         return [.chose(storyID, option)] + advance(story, &s, &rng)
+    }
+
+    /// The loan tags these rewards keep (`offerToKeep`), counting conditional rewards only when chosen.
+    static func keptLoans(in rewards: [StoryReward], chosen: [String: String]) -> [String] {
+        rewards.flatMap { reward -> [String] in
+            switch reward {
+            case .offerToKeep(let tag, _): [tag]
+            case .ifChosen(let choice, let option, let inner):
+                chosen[choice] == option ? keptLoans(in: inner, chosen: chosen) : []
+            default: []
+            }
+        }
     }
 
     /// The player hands over what a story step asks for.

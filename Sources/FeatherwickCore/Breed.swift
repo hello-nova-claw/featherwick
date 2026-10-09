@@ -34,8 +34,10 @@ public struct Bird: Identifiable, Hashable, Codable, Sendable {
     public let breed: Breed
     public internal(set) var genome: Genome
     public let hatchDay: Int
-    public let motherID: UUID?
-    public let fatherID: UUID?
+    /// Set at hatch. Core sets them later only when a bird's parents come to light: the starter's
+    /// mother, Marigold, and her mate (see BorrowedHen.swift).
+    public internal(set) var motherID: UUID?
+    public internal(set) var fatherID: UUID?
     /// Who bred it: "Neighbour", a shop, or (later) another player's ID.
     public let origin: String
 

@@ -449,6 +449,7 @@ struct SettingsSheet: View {
         SheetPage(context: "Settings") {
             Text("Henhaven").font(Typeface.title)
             KeeperNameField()
+            DebtsSection()
             Button("Open test tools") { testTools = true }.buttonStyle(.secondary)
             Text("The plain lists from the test build: every action, the full log, the simulator.")
                 .font(Typeface.caption).foregroundStyle(palette.inkMuted)
@@ -527,6 +528,34 @@ struct FeedbackToggles: View {
                 .font(Typeface.caption).foregroundStyle(palette.inkMuted)
         }
         .tint(palette.ink)
+    }
+}
+
+/// Settings: "You owe", one line for each debt with a Pay button. Hidden when the keeper owes nothing.
+/// No interest and no deadline: the button waits until the keeper has the coins.
+struct DebtsSection: View {
+    @Environment(GameStore.self) private var store
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        let s = store.state
+        if !s.debts.isEmpty {
+            VStack(alignment: .leading, spacing: Space.s) {
+                Text("You owe").font(Typeface.item)
+                ForEach(s.debts) { debt in
+                    HStack(spacing: Space.m) {
+                        Text(debtLineText(debt)).font(Typeface.body)
+                        Spacer(minLength: Space.s)
+                        Button("Pay") { store.run(.payDebt(debt.id)) }
+                            .buttonStyle(.secondary)
+                            .disabled(s.coins < debt.coins)
+                    }
+                    .frame(minHeight: 44)
+                }
+                Text(debtsNoteText).font(Typeface.caption).foregroundStyle(palette.inkMuted)
+            }
+            StitchDivider()
+        }
     }
 }
 

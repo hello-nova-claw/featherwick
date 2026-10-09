@@ -375,8 +375,9 @@ extension Engine {
         case .breedBookPage: s.breedBook.count
         case .newEgg: s.eggBook.count
         case .showRibbon: s.showResults.count(where: { (1...3).contains($0.placing) })
-        case .newFriend: s.ownedBirds.count(where: { $0.friendliness >= .friendly })
-        case .growFlock: s.ownedBirds.count
+        // A bird on loan goes home one day: she is not the keeper's flock, so she never counts here.
+        case .newFriend: s.ownBirds.count(where: { $0.friendliness >= .friendly })
+        case .growFlock: s.ownBirds.count
         case .collectEggs: 0
         }
     }
@@ -391,7 +392,7 @@ extension Engine {
     /// The goals the keeper can work on before `endDay`, with their targets, in table order.
     static func availableGoals(_ s: GameState, endDay: Int) -> [(kind: GoalKind, target: Int)] {
         let r = s.rules
-        let owned = s.ownedBirds
+        let owned = s.ownBirds  // not a bird on loan: she goes home
         let pair =
             owned.contains { $0.revealed && $0.sex == .hen } && owned.contains { $0.revealed && $0.sex == .rooster }
         var goals: [(kind: GoalKind, target: Int)] = []

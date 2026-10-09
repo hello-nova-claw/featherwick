@@ -344,7 +344,10 @@ public enum Engine {
         // they were when games started on day 0: only the empty first night is gone.
         s.day = 1
         s.canCandle = false  // learned from the neighbour after the first hatch, or for a story
-        if earlyGame { s.introduced = [] }  // introduced one thing at a time (EarlyGame.swift)
+        if earlyGame {
+            s.introduced = []  // introduced one thing at a time (EarlyGame.swift)
+            s.earlyGameStories = true  // and Marigold comes on day 3 (BorrowedHen.swift)
+        }
         s.shopSeed = chicks.first.map { ShopSpecial.seed(from: $0.id) } ?? 0  // no extra RNG draw
         return s
     }
