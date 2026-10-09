@@ -54,8 +54,10 @@ struct SimulationTests {
     /// more coins, but not wildly more than a keeper with no board. Much of the gap is spare adults: the
     /// sim keeper gives them to bird cards, and keeps them (for no coins) when there is no board.
     @Test func theMarketBoardTopsUpCoinsWithoutTakingOver() {
+        // No wanted cards. (Moving the board's day is not enough: Mr Okafor's note opens it early.)
         var off = Rules.standard
-        off.featureDays[.marketBoard] = 100_000
+        off.marketCardsMin = 0
+        off.marketCardsMax = 0
         func mean(_ rules: Rules, _ f: (Simulation.Report) -> Int) -> Double {
             let xs = Simulation.runMany(seeds: 1...6, days: 180, rules: rules).map { Double(f($0)) }
             return xs.reduce(0, +) / Double(xs.count)

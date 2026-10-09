@@ -1069,7 +1069,7 @@ brings it. The keeper can pin a card of their own to sell young birds. Nothing h
   card, and its refusal (`.tooYoungForCard`) is about age, never sex.
 - **Morning report.** Pins, cards that came down and the buyer go under "In the village".
 - **Balance.** The sim keeper fills every card it can. Over 20 games × 224 days the board adds a mean of
-  237 coins (final coins: 504 without the board, 677 with it). Much of that is spare adults, which the
+  217 coins (final coins: 606 without wanted cards, 754 with them). Much of that is spare adults, which the
   sim keeper keeps for no coins when there is no board. `SimulationTests` guards it.
 - Saves: `GameState.marketBoard` and the `market*` rules fill in with their starting values
   (`SaveFormat.fillNewSettings`).

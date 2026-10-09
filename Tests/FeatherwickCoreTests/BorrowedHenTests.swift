@@ -76,7 +76,7 @@ struct BorrowedHenTests {
     @Test func theNewTimelineHasALessonADay() {
         let r = Rules.standard
         let days = Feature.allCases.filter { $0 != .shows }.map { r.introductionDay(of: $0) }
-        #expect(days == [1, 2, 3, 4, 5, 8, 9, 10, 14, 29, 35])
+        #expect(days == [1, 2, 3, 4, 5, 8, 9, 10, 14, 29, 35, 42])
         // The cases are in timeline order.
         #expect(
             Feature.allCases.map { r.introductionDay(of: $0) }
