@@ -805,6 +805,7 @@ public enum Engine {
 
     static func sitBlocker(_ henID: UUID, _ s: GameState) -> Rejection? {
         guard let hen = s.coop.first(where: { $0.id == henID }) else { return .noSuchBird }
+        if hen.isOnLoan { return .onLoan }  // her owner's to decide, and she would stay past her day
         if !s.boarding.isEmpty { return .birdsBoarding }
         // Her chicks may need the brooder when grown, so a full brooder blocks hatching here too.
         if brooderRoom(s) <= 0 { return .brooderFull(room: 0) }

@@ -168,6 +168,59 @@ struct StoryEngineTests {
         #expect(s.coop.contains { $0.id == goldie.id })
     }
 
+    @Test func keepingWaitsForAFreePerch() throws {
+        var (s, rng) = Self.game()
+        _ = Self.nights(6, &s, &rng)
+        s.perches = s.perchesUsed  // every perch of the keeper's own is taken
+        let ev = Engine.choose("testLoan", "keep", &s, &rng, stories: [Self.lending])
+        #expect(ev.contains(.storyGiftWaitingForRoom("testLoan")))
+        #expect(Self.goldie(s) != nil && s.debts.isEmpty)
+        #expect(InvariantTests.problems(in: s).isEmpty)
+        s.perches += 1
+        _ = Self.night(&s, &rng)
+        #expect(Self.goldie(s) == nil && s.debts.count == 1)
+        #expect(InvariantTests.problems(in: s).isEmpty)
+    }
+
+    @Test func aLoanedBirdsShowEntryGoesHomeWithHerAndTheFeeComesBack() throws {
+        var (s, rng) = Self.game()
+        let short = Storyline(
+            id: "shortLoan", person: .bea, trigger: .onDay(2),
+            steps: [
+                StoryStep(
+                    id: "lent", goal: .waitDays(0),
+                    rewards: [
+                        .loanBird(
+                            LoanSpec(tag: "tilly", owner: .bea, name: "Tilly", sex: .hen, ageDays: 40, stayDays: 1))
+                    ])
+            ])
+        while s.loanedBird(tag: "tilly") == nil { _ = Self.night(&s, &rng, stories: [short]) }
+        let tilly = try #require(s.loanedBird(tag: "tilly"))
+        s.coins = 100
+        _ = Engine.apply(.enterShowIn(tilly.id, .pet), to: &s, using: &rng)
+        #expect(s.showEntries.contains { $0.birdID == tilly.id })
+        let paid = s.coins
+        _ = sleepTonight(&s, &rng)
+        #expect(s.bird(tilly.id) == nil)
+        #expect(!s.showEntries.contains { $0.birdID == tilly.id })
+        #expect(s.coins == paid + s.rules.showEntryFee)
+    }
+
+    @Test func aLoanedHenCannotBeSetOnEggs() throws {
+        var (s, rng) = Self.game()
+        _ = Self.nights(2, &s, &rng)
+        let goldie = try #require(Self.goldie(s))
+        if let i = s.coop.firstIndex(where: { $0.id == goldie.id }) { s.coop[i].broodyUntilDay = s.day + 10 }
+        #expect(Engine.sitBlocker(goldie.id, s) == .onLoan)
+    }
+
+    @Test func aLoanedBirdIsNotPartOfTheKeepersOwnFlock() throws {
+        var (s, rng) = Self.game()
+        _ = Self.nights(2, &s, &rng)
+        #expect(s.ownedBirds.count == s.ownBirds.count + 1)
+        #expect(Engine.goalMeasure(.growFlock, in: s) == s.ownBirds.count)
+    }
+
     // MARK: - Debts
 
     @Test func aDebtPaysOnceAndIsMentionedAtMostOnceASeason() throws {

@@ -173,7 +173,7 @@ struct CoopSheet: View {
     @ViewBuilder
     private func nightActions(_ s: GameState) -> some View {
         Text("The coop").font(Typeface.item)
-        Text("\(s.coop.count) of \(s.perches) perches taken · door \(s.coopDoorOpen ? "open" : "closed")")
+        Text("\(s.perchesUsed) of \(s.perches) perches taken · door \(s.coopDoorOpen ? "open" : "closed")")
             .font(Typeface.label).foregroundStyle(palette.inkMuted)
         if s.unnamedBirds.contains(where: { b in s.coop.contains { $0.id == b.id } }) {
             Button("Name the new birds") { open(.naming) }.buttonStyle(.primary)
