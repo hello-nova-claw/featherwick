@@ -57,7 +57,8 @@ struct NotesTests {
                     next += 1
                     s.rehomed.append(bird("Rehomed\(next)", revealed: true, id: next))
                 }
-            case .hasLoan:
+            case .hasLoan, .loanedBirdHome:
+                guard !part.holds(in: s) else { break }
                 var b = bird("Goldie", revealed: true, id: 99)
                 b.loan = Loan(owner: .hazel, tag: "goldie")
                 s.coop.append(b)
@@ -197,6 +198,53 @@ struct NotesTests {
         #expect(NoteCondition.placedInClass(.eggs).holds(in: s))
         #expect(!NoteCondition.placedInClass(.pet).holds(in: s))
         #expect(!NoteCondition.placedInClass(.breed).holds(in: s))
+
+        // A loaned bird lost after a fright is still on loan, but not at home.
+        var goldie = Self.bird("Goldie", revealed: true, id: 9)
+        goldie.loan = Loan(owner: .hazel, tag: "goldie")
+        #expect(!NoteCondition.loanedBirdHome.holds(in: s))
+        s.lost = [LostBird(bird: goldie, returnsOnDay: s.day + 2)]
+        #expect(NoteCondition.hasLoan.holds(in: s))
+        #expect(!NoteCondition.loanedBirdHome.holds(in: s))
+        #expect(postNoteText("teddy.visitor", s)?.contains("Goldie") == false)
+        s.lost = []
+        s.coop.append(goldie)
+        #expect(NoteCondition.loanedBirdHome.holds(in: s))
+        #expect(postNoteText("teddy.visitor", s)?.contains("Goldie") == true)
+    }
+
+    /// Teddy's friendliness notes name the tamest bird at home, a loaned bird too, so the bird he names
+    /// is as tame as the note says.
+    @Test func teddyNamesABirdAsTameAsTheNoteSays() throws {
+        var s = Self.freshGame().0
+        s.day = 30
+        var goldie = Self.bird("Goldie", revealed: true, id: 9)
+        goldie.loan = Loan(owner: .hazel, tag: "goldie")
+        goldie.tameness = 1
+        s.coop.append(goldie)
+        let handFed = try #require(Notes.note("teddy.handFed"))
+        #expect(handFed.condition.holds(in: s))
+        #expect(postNoteText("teddy.handFed", s)?.contains("Goldie") == true)
+        let lap = try #require(Notes.note("teddy.lap"))
+        if lap.condition.holds(in: s) { #expect(postNoteText("teddy.lap", s)?.contains("Goldie") == true) }
+    }
+
+    /// Story notes (`StoryReward.note`) and pool notes share `notesSeen`, so no ID may be in both.
+    @Test func noStoryNoteSharesAnIDWithThePool() {
+        func noteIDs(_ rewards: [StoryReward]) -> [String] {
+            rewards.flatMap { r -> [String] in
+                switch r {
+                case .note(_, let id): [id]
+                case .ifChosen(_, _, let inner): noteIDs(inner)
+                default: []
+                }
+            }
+        }
+        let pool = Set(Notes.pool.map(\.id))
+        for story in Storylines.all {
+            let ids = noteIDs(story.rewards) + story.steps.flatMap { noteIDs($0.rewards) }
+            for id in ids { #expect(!pool.contains(id), "\(story.id): \(id)") }
+        }
     }
 
     /// The first days of a new game stay quiet: no note can come before day 6.

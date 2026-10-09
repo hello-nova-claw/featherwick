@@ -29,6 +29,8 @@ public indirect enum NoteCondition: Hashable, Sendable {
     case season(Season)
     /// This storyline is finished.
     case afterStory(String)
+    /// A bird on loan is in the coop now: not lost after a fright.
+    case loanedBirdHome
     /// It is this day or later. Keeps the first days of a new game quiet.
     case dayAtLeast(Int)
     /// The keeper has met this feature (see EarlyGame.swift). A shop note names only stock that is open.
@@ -59,6 +61,7 @@ public indirect enum NoteCondition: Hashable, Sendable {
         case .bandCount(let band, let n): s.birdsAtHome.count(where: { $0.friendliness >= band }) >= n
         case .season(let season): s.season == season
         case .afterStory(let id): s.stories[id]?.rewarded == true
+        case .loanedBirdHome: s.coop.contains(where: \.isOnLoan)
         case .dayAtLeast(let n): s.day >= n
         case .isOpen(let feature): s.isOpen(feature)
         case .chicksHatched(let n): s.chicksHatched >= n
@@ -87,9 +90,10 @@ public struct Note: Hashable, Sendable, Identifiable {
 
 public enum Notes {
     /// Every note that can come in the post. Append, never insert: the seeded pick reads list order. So a new
-    /// note goes in a new list at the end of `pool`, not in a person's list. Each person's notes follow their system. Every note waits a few days at least, so the first days
-    /// of a new game stay quiet (`NotesTests`). The words are in FeatherwickText (`poolNoteText`).
-    public static let pool: [Note] = wren + hazel + dot + teddy + okafor + bea
+    /// note goes at the end of `added`, not in a person's list. Each person's notes follow their system.
+    /// Every note waits a few days at least, so the first days of a new game stay quiet (`NotesTests`).
+    /// The words are in FeatherwickText (`poolNoteText`).
+    public static let pool: [Note] = wren + hazel + dot + teddy + okafor + bea + added
 
     /// Wren: village news, the shop's stock (only stock that is open) and the weather.
     static let wren: [Note] = [
@@ -156,7 +160,7 @@ public enum Notes {
         Note("teddy.ribbon", from: .teddy, when: .placedInClass(.pet)),
         Note("teddy.feather", from: .teddy, when: .all([.isOpen(.coopDoor), .dayAtLeast(15)])),
         Note("teddy.dustBath", from: .teddy, when: .dayAtLeast(20)),
-        Note("teddy.visitor", from: .teddy, when: .all([.hasLoan, .dayAtLeast(6)])),
+        Note("teddy.visitor", from: .teddy, when: .all([.loanedBirdHome, .dayAtLeast(6)])),
     ]
 
     /// Mr Okafor: eggs, egg colours and bread.
@@ -184,6 +188,11 @@ public enum Notes {
         Note("bea.winterCheck", from: .bea, when: .all([.season(.winter), .hasRehomed])),
         Note("bea.fence", from: .bea, when: .rehomedCount(2)),
         Note("bea.quietWeek", from: .bea, when: .all([.hasRehomed, .dayAtLeast(40)])),
+    ]
+
+    /// Notes added after the first pool, in the order they were added. New notes go here, at the end.
+    static let added: [Note] = [
+        Note("okafor.cream", from: .okafor, when: .eggBookHas(.cream))
     ]
 
     public static func note(_ id: String) -> Note? { pool.first { $0.id == id } }

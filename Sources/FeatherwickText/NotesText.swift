@@ -136,7 +136,9 @@ public func poolNoteText(_ id: String, _ s: GameState) -> String? {
     case "teddy.dustBath":
         return "Your chickens were rolling in the dirt! I thought they were broken! Gran says it's a bath."
     case "teddy.visitor":
-        guard let b = s.loanedBirds.first else { return "You had a visitor chicken! Can I say hello next time?" }
+        guard let b = s.coop.first(where: \.isOnLoan) else {
+            return "You had a visitor chicken! Can I say hello next time?"
+        }
         return "\(b.name) is visiting! Can I say hello to \(b.name)? I'll be very quiet!"
 
     // MARK: Mr Okafor
@@ -178,7 +180,7 @@ public func poolNoteText(_ id: String, _ s: GameState) -> String? {
         guard let b = rehomedBird(s, 4) else { return "I have a photo of your birds on my fridge." }
         return "I have a photo of \(b.name) on my fridge. \(they(b)) looks very pleased in it."
     case "bea.thanks":
-        return "\(s.rehomed.count) of your birds have found homes through the rescue now. Every one is loved."
+        return "\(s.rehomed.count) of your birds have found new homes now. Every one is loved."
     case "bea.winterCheck":
         guard let b = rehomedBird(s, 6) else { return "Winter check on your birds: warm coops and deep straw." }
         return "Winter check on \(b.name): a warm coop, deep straw and a family who fusses."
@@ -187,6 +189,10 @@ public func poolNoteText(_ id: String, _ s: GameState) -> String? {
         return "I visited \(b.name) today. \(they(b)) came straight to the fence to see me."
     case "bea.quietWeek":
         return "The rescue is quiet this week. I sit with the old birds and drink my tea."
+
+    // MARK: Added later
+    case "okafor.cream":
+        return "Cream eggs, the colour of good butter. They sell first in my window, every time."
 
     default:
         return nil
@@ -205,14 +211,16 @@ private func rehomedBird(_ s: GameState, _ index: Int) -> Bird? {
     return named[index % named.count]
 }
 
-/// The tamest named bird at home. Ties go to the oldest, then by ID, so the pick is stable.
+/// The tamest bird at home, loaned birds too (they are cuddled in the coop). So it is a bird that meets the
+/// note's friendliness condition. Ties go to the oldest, then by ID, so the pick is stable. Nil while that
+/// bird still waits for a name: the note then says a general line.
 private func tamestBird(_ s: GameState) -> Bird? {
-    s.birdsAtHome.filter { $0.needsName != true && $0.loan == nil }
-        .max {
-            ($0.friendlinessScore, -$0.hatchDay, $1.id.uuidString) < (
-                $1.friendlinessScore, -$1.hatchDay, $0.id.uuidString
-            )
-        }
+    let tamest = s.birdsAtHome.max {
+        ($0.friendlinessScore, -$0.hatchDay, $1.id.uuidString) < (
+            $1.friendlinessScore, -$1.hatchDay, $0.id.uuidString
+        )
+    }
+    return tamest?.needsName == true ? nil : tamest
 }
 
 /// The keeper's newest ribbon, in this kind of class (or any).
