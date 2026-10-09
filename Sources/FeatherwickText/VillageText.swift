@@ -52,7 +52,7 @@ public func choiceText(story: String, option: String) -> String {
 /// Nil for an unknown ID. A note in `Notes.pool` or in a story's `.note` reward must have words.
 public func postNoteText(_ id: String, _ s: GameState) -> String? {
     switch id {
-    default: nil
+    default: poolNoteText(id, s)
     }
 }
 

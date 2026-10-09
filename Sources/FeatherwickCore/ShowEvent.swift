@@ -97,6 +97,9 @@ public struct ShowResult: Hashable, Codable, Sendable {
     public let theme: ShowTheme?
     /// The top three in this entry's class, rivals included, best first. Nil in older saves.
     public let podium: [PodiumPlace]?
+
+    /// Placed 1st, 2nd or 3rd: a ribbon.
+    public var isRibbon: Bool { (1...3).contains(placing) }
 }
 
 /// One place on a class's podium (1st to 3rd): who stood there, the score and why.
