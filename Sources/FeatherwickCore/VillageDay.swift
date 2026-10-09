@@ -1,0 +1,107 @@
+import Foundation
+
+// The village calendar: a few small days a year that come round every year.
+//
+// Each village day falls in one season, on a day of that season set in `Rules.villageDays`. Seven
+// mornings before (`Rules.villageDayNoticeDays`) the village says it is coming (`.villageDayComing`),
+// and on the morning itself it happens (`.villageDay`). Nothing is missable: next year it comes again.
+// The night step is "village day", after the post. Dates come from the day number only: no randomness.
+
+public enum VillageDay: String, Hashable, Codable, Sendable, CaseIterable {
+    /// Spring: bring a fertile egg to the village hatch.
+    case hatchAlong
+    /// Summer: the fox stays home on the longest night.
+    case longestDay
+    /// Autumn: the flock moults, and Hazel tells you about it.
+    case moultWeek
+    /// Winter: lights in the village, and a gift.
+    case midwinterLights
+
+    public var season: Season {
+        switch self {
+        case .hatchAlong: .spring
+        case .longestDay: .summer
+        case .moultWeek: .autumn
+        case .midwinterLights: .winter
+        }
+    }
+}
+
+extension Rules {
+    /// The day of its season a village day falls on, 1 to `daysPerSeason`.
+    public func dayInSeason(_ v: VillageDay) -> Int {
+        min(max(1, villageDays[v] ?? Rules.standard.villageDays[v] ?? 1), max(1, daysPerSeason))
+    }
+
+    /// The game day a village day falls on in a year (year 0 is the first).
+    public func date(of v: VillageDay, inYear year: Int) -> Int {
+        let seasons = Season.allCases
+        let seasonIndex = seasons.firstIndex(of: v.season) ?? 0
+        let perSeason = max(1, daysPerSeason)
+        return (year * seasons.count + seasonIndex) * perSeason + dayInSeason(v) - 1
+    }
+}
+
+extension GameState {
+    /// The year a game day is in (year 0 is the first).
+    public func year(onDay day: Int) -> Int { max(0, day) / (max(1, rules.daysPerSeason) * Season.allCases.count) }
+
+    /// The next village day on or after `from` (today by default), and its day.
+    public func nextVillageDay(from start: Int? = nil) -> (day: VillageDay, date: Int) {
+        let from = start ?? day
+        let year = year(onDay: from)
+        return [year, year + 1].flatMap { y in
+            VillageDay.allCases.map { (day: $0, date: rules.date(of: $0, inYear: y)) }
+        }
+        .filter { $0.date >= from }
+        .min { ($0.date, $0.day.rawValue) < ($1.date, $1.day.rawValue) }!
+    }
+
+    /// The next village day from today.
+    public var nextVillageDay: (day: VillageDay, date: Int) { nextVillageDay() }
+
+    /// The next `count` village days from today, soonest first.
+    public func upcomingVillageDays(_ count: Int) -> [(day: VillageDay, date: Int)] {
+        var out: [(day: VillageDay, date: Int)] = []
+        var from = day
+        while out.count < count {
+            let next = nextVillageDay(from: from)
+            out.append(next)
+            from = next.date + 1
+        }
+        return out
+    }
+
+    /// The village day on this game day, if one falls on it.
+    public func villageDay(onDay d: Int) -> VillageDay? {
+        VillageDay.allCases.first { rules.date(of: $0, inYear: year(onDay: d)) == d }
+    }
+}
+
+extension Engine {
+    /// Each morning: a notice a week before a village day, and the day itself.
+    static func villageCalendar<R: RandomNumberGenerator>(_ s: inout GameState, _ rng: inout R) -> [GameEvent] {
+        var ev: [GameEvent] = []
+        let notice = s.rules.villageDayNoticeDays
+        if notice > 0, let coming = s.villageDay(onDay: s.day + notice) {
+            ev.append(.villageDayComing(coming, inDays: notice))
+        }
+        if let today = s.villageDay(onDay: s.day) {
+            ev.append(.villageDay(today))
+            ev += villageDayEffects(today, &s, &rng)
+        }
+        return ev
+    }
+
+    /// What a village day does. Each day's effect is its own small rule (see README "The village calendar").
+    static func villageDayEffects<R: RandomNumberGenerator>(
+        _ v: VillageDay, _ s: inout GameState, _ rng: inout R
+    ) -> [GameEvent] {
+        switch v {
+        case .hatchAlong: []
+        case .longestDay: []
+        case .moultWeek: []
+        case .midwinterLights: []
+        }
+    }
+}

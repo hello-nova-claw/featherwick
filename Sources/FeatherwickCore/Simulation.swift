@@ -142,8 +142,8 @@ public enum Simulation {
     /// A flock needs both sexes to breed: a lone hen buys a cockerel, a lone rooster a hen.
     /// (A rooster starter is given a hen by the neighbour, so this mainly rescues a hen starter.)
     private static func ensureBreedingPair(_ s: inout GameState, _ rng: inout SeededRNG, _ r: inout Report) {
-        guard s.coop.count < s.perches else { return }
-        let owned = s.ownedBirds
+        guard s.hasFreePerch else { return }
+        let owned = s.ownBirds
         if !owned.contains(where: { $0.sex == .rooster }), s.coins >= s.rules.cockerelPrice {
             apply(.buy(.cockerel), &s, &rng, &r)
         } else if !owned.contains(where: { $0.sex == .hen }), s.coins >= s.rules.pulletPrice {
@@ -154,7 +154,7 @@ public enum Simulation {
     /// Grow the coop when it is full and affordable; rehome a spare adult only if birds are boarding
     /// (which blocks hatching) or the coop has hit its maximum size.
     private static func makeRoom(_ s: inout GameState, _ rng: inout SeededRNG, _ r: inout Report) {
-        if s.coop.count >= s.perches, s.perches < s.rules.maxPerches, s.coins >= s.rules.coopUpgradePrice {
+        if !s.hasFreePerch, s.perches < s.rules.maxPerches, s.coins >= s.rules.coopUpgradePrice {
             apply(.upgradeCoop, &s, &rng, &r)
         }
         if !s.boarding.isEmpty || s.perches >= s.rules.maxPerches, let spare = spareBird(s) {
@@ -164,7 +164,9 @@ public enum Simulation {
 
     /// An adult that can be rehomed while still leaving at least one hen and one rooster to breed with.
     private static func spareBird(_ s: GameState) -> UUID? {
-        let adults = s.coop.filter { $0.stage(onDay: s.day, rules: s.rules) == .adult && !$0.isBroody(onDay: s.day) }
+        let adults = s.coop.filter {
+            $0.stage(onDay: s.day, rules: s.rules) == .adult && !$0.isBroody(onDay: s.day) && !$0.isOnLoan
+        }
         let roosters = adults.filter { $0.sex == .rooster }
         let hens = adults.filter { $0.sex == .hen }
         if roosters.count > 1 { return roosters.last?.id }

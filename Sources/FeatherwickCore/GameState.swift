@@ -204,6 +204,12 @@ public struct GameState: Hashable, Codable, Sendable {
     public var sexGuesses: [UUID: Sex] = [:]
     /// Guesses that turned out right. The goal ladder reads it.
     public var sexGuessesRight = 0
+    /// Coins the keeper owes Featherwick's people (see Loans.swift). No interest, no deadline.
+    public var debts: [Debt] = []
+    /// Debts paid, by ID. A story can wait for one (`StoryGoal.coinsPaid`).
+    public var debtsPaid: Set<String> = []
+    /// Notes already delivered (see Post.swift), by ID. A note never comes twice.
+    public var notesSeen: Set<String> = []
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

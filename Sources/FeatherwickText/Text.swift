@@ -344,7 +344,8 @@ public func hatchReasonText(_ r: HatchReason) -> String {
     }
 }
 
-public func birdName(_ id: UUID, _ s: GameState) -> String { s.bird(id)?.name ?? "a bird" }
+/// A bird's name. A bird that left the keeper's care (a loan gone home) keeps its family-tree name.
+public func birdName(_ id: UUID, _ s: GameState) -> String { s.bird(id)?.name ?? s.pedigree[id]?.name ?? "a bird" }
 
 /// "gold laced", "barred blue", "lavender"...
 public func colourText(_ p: Phenotype) -> String {
@@ -484,6 +485,9 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         // Rule 8: about age only, never about which sex the bird is.
         case .tooLateToGuess: "Too late for a guess: that bird's feathers are in."
         case .alreadyGuessed: "You've made your guess for that chick. Wait and see."
+        case .noSuchChoice: "Nobody is waiting on that choice. Type: people"
+        case .noSuchDebt: "You don't owe anything by that name. Type: people"
+        case .onLoan: "She's on loan, so that's for her owner to decide."
         }
     case .starterChosen(let id): return "You take \(birdName(id, s)) home and settle them under the heat lamp."
     case .fed: return "You fill the feeder and top up the water."
@@ -741,6 +745,9 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
             + "\(People.neighbour) smiles. \"We'll know when the feathers come in.\""
     case .sexGuessResolved(let id, let guessed, let actual):
         return sexGuessResolvedText(id, guessed: guessed, actual: actual, s)
+    case .chose, .storyCoins, .storyTreats, .storyGiftEgg, .loanArrived, .loanReturned, .loanKept, .debtOwed,
+        .debtReminder, .debtPaid, .noteArrived, .villageDayComing, .villageDay:
+        return villageEventText(e, s)
     }
 }
 
@@ -1214,8 +1221,14 @@ public func storyLines(_ s: GameState) -> [String] {
         switch step?.goal {
         case .deliverFertileEggs(let n)?:
             out.append("• \(story.id): bring \(n) eggs you know are fertile, then: give eggs")
-        case .waitDays?: out.append("• \(story.id): wait a few days")
-        default: out.append("• \(story.id): a gift is waiting for a free perch")
+        case .waitDays?, .onDay?: out.append("• \(story.id): wait a few days")
+        case .choice(let id, let options)? where p.chosen[id] == nil:
+            let list = options.map { "\($0) (\(choiceText(story: story.id, option: $0)))" }.joined(separator: ", ")
+            out.append(
+                "• \(story.id): \(People.name(story.person)) asks you to choose: \(list). Type: choose \(story.id) <option>"
+            )
+        case nil, .choice?: out.append("• \(story.id): a gift is waiting for room")
+        default: out.append("• \(story.id): in a while")
         }
     }
     return out

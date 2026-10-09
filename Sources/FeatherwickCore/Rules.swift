@@ -217,6 +217,17 @@ public struct Rules: Codable, Hashable, Sendable {
     /// Days behind the "last N days" egg count.
     public var recordWindowDays = 14
 
+    // People, loans and the post (see Story.swift, Loans.swift, Post.swift).
+    /// An owner mentions a debt at most once in this many days: once a season. A kind line, never a nag.
+    public var debtReminderDays = 28
+    /// The chance of a note in the post on any morning.
+    public var noteChance = 0.4
+
+    // The village calendar (see VillageDay.swift): the day of its season each village day falls on.
+    public var villageDays: [VillageDay: Int] = [.hatchAlong: 10, .longestDay: 14, .moultWeek: 1, .midwinterLights: 14]
+    /// The village says a village day is coming this many mornings before.
+    public var villageDayNoticeDays = 7
+
     public init() {}
 
     /// How an adult hen's laying falls with age: full until `layDeclineStartDays`, then down to

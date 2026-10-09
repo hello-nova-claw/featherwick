@@ -62,6 +62,10 @@ public enum Command: Hashable, Codable, Sendable {
     case nameKeeper(String)
     /// "Hen or roo?": guess a chick's sex before it shows (see SexGuess.swift). Once per chick, free.
     case guessSex(UUID, Sex)
+    /// Pick an option at a story's choice step (see Story.swift). Free: it is a word over the fence.
+    case choose(story: String, option: String)
+    /// Pay a debt in full (see Loans.swift). Any time the keeper has the coins. Free.
+    case payDebt(String)
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -147,6 +151,12 @@ public enum Rejection: Hashable, Codable, Sendable {
     case tooLateToGuess
     /// The keeper has already guessed hen or roo for this chick.
     case alreadyGuessed
+    /// No story is waiting for that choice, or that option is not one of its options.
+    case noSuchChoice
+    /// The keeper owes no debt by that ID.
+    case noSuchDebt
+    /// The bird is on loan: she cannot be rehomed, penned or renamed (see Loans.swift).
+    case onLoan
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -283,6 +293,31 @@ public enum GameEvent: Hashable, Codable, Sendable {
     /// The morning the chick's sex showed: the keeper's guess and the truth. A right guess paid
     /// `Rules.sexGuessTreats`. Comes after the chick's `revealed`.
     case sexGuessResolved(UUID, guessed: Sex, actual: Sex)
+    /// The keeper picked an option at a story's choice step (see Story.swift).
+    case chose(String, String)
+    /// A story gave coins.
+    case storyCoins(String, Int)
+    /// A story gave mealworms.
+    case storyTreats(String, Int)
+    /// A story gave an egg of this breed. It is in the carton, candled.
+    case storyGiftEgg(String, Breed)
+    /// A bird came to stay on loan (see Loans.swift).
+    case loanArrived(UUID, from: Person)
+    /// A loaned bird went home to her owner. Her family-tree record stays.
+    case loanReturned(UUID, to: Person)
+    /// The keeper kept a loaned bird. She is the keeper's now.
+    case loanKept(UUID, from: Person)
+    /// The keeper owes a debt now. No interest, no deadline.
+    case debtOwed(String, to: Person, coins: Int)
+    /// The owner mentions a debt, kindly. At most once a season.
+    case debtReminder(String, to: Person)
+    case debtPaid(String, to: Person, coins: Int)
+    /// A note came in the post (see Post.swift). The words come from the note's ID.
+    case noteArrived(Person, String)
+    /// A village day is this many days away (see VillageDay.swift).
+    case villageDayComing(VillageDay, inDays: Int)
+    /// Today is a village day.
+    case villageDay(VillageDay)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -468,6 +503,7 @@ public enum Engine {
             guard !trimmed.isEmpty else { return [.rejected(.invalidAmount)] }
             guard trimmed.count <= NameBook.maxLength else { return [.rejected(.nameTooLong(max: NameBook.maxLength))] }
             guard NameBook.flock(s).contains(where: { $0.id == id }) else { return [.rejected(.noSuchBird)] }
+            if s.bird(id)?.isOnLoan == true { return [.rejected(.onLoan)] }  // her owner named her
             guard !NameBook.isTaken(trimmed, exceptID: id, in: s) else { return [.rejected(.nameTaken)] }
             if let (keyPath, i) = locate(id, in: s, groups: [\.brooder, \.henChicks, \.coop, \.boarding]) {
                 s[keyPath: keyPath][i].name = trimmed
@@ -551,14 +587,20 @@ public enum Engine {
             return []
         case .guessSex(let id, let sex):
             return guessSex(id, sex, &s)
+        case .choose(let story, let option):
+            return choose(story, option, &s, &rng)
+        case .payDebt(let id):
+            return payDebt(id, &s)
         }
     }
 
     /// Why this bird can't go to a new home now, or nil if it can. Front ends hide "Rehome" when
     /// this is not nil, so the keeper never taps a button that does nothing.
     public static func rehomeBlocker(_ id: UUID, in s: GameState) -> Rejection? {
+        if s.bird(id)?.isOnLoan == true { return .onLoan }
         if s.clutch(under: id) != nil || s.henChicks.contains(where: { $0.raisedBy == id }) { return .birdIsBusy }
-        let owned = s.birdsAtHome.count + s.lost.count + s.boarding.count
+        // A loaned bird goes home one day, so she does not count: the keeper keeps one bird of their own.
+        let owned = s.ownBirds.count
         if owned <= 1, s.bird(id) != nil, !s.rehomed.contains(where: { $0.id == id }) { return .lastBird }
         let rehomable = s.birdsAtHome.contains { $0.id == id } || s.boarding.contains { $0.id == id }
         return rehomable ? nil : .noSuchBird
@@ -593,7 +635,7 @@ public enum Engine {
         if s.coins < cost { return [.rejected(.notEnoughCoins(needed: cost, have: s.coins))] }
         switch item {
         case .pullet, .cockerel:
-            if s.coop.count >= s.perches { return [.rejected(.noFreePerch)] }
+            if !s.hasFreePerch { return [.rejected(.noFreePerch)] }
             let breed = s.surpriseBreeds.randomElement(using: &rng)!
             let sex: Sex = item == .pullet ? .hen : .rooster
             let bird = youngBird(sex, origin: Bird.shopOrigin, s, &rng, breed: breed).waitingForName()
@@ -677,7 +719,7 @@ public enum Engine {
     }
 
     static func updateTradeOffer<R: RandomNumberGenerator>(_ s: inout GameState, _ rng: inout R) -> [GameEvent] {
-        let owned = s.ownedBirds
+        let owned = s.ownBirds  // a loaned hen goes home, so she does not end the keeper's need
         let stuck = !owned.contains { $0.sex == .hen } && s.coins < s.rules.pulletPrice
         guard stuck else {
             s.tradeOffer = nil
@@ -687,7 +729,8 @@ public enum Engine {
         if let offer = s.tradeOffer, (s.coop + s.brooder).contains(where: { $0.id == offer.roosterID }) { return [] }
         // Only a rooster the player already knows is a rooster. Offering an unrevealed chick would
         // tell the player its sex early. An unrevealed rooster is revealed as it grows; the offer comes then.
-        guard let rooster = (s.coop + s.brooder).first(where: { $0.sex == .rooster && $0.revealed }) else {
+        guard let rooster = (s.coop + s.brooder).first(where: { $0.sex == .rooster && $0.revealed && !$0.isOnLoan })
+        else {
             s.tradeOffer = nil  // every known rooster is out; they come home, and the offer comes then
             return []
         }
@@ -973,7 +1016,8 @@ public enum Engine {
                 stillLost.append(lb)
                 continue
             }
-            if s.coop.count < s.perches {
+            // A loaned bird needs no perch: she has her own box.
+            if lb.bird.isOnLoan || s.hasFreePerch {
                 var b = lb.bird
                 b.noLayUntilDay = s.day + r.scaredNoLayDays
                 b.lastSeenLook = nil  // home again: the keeper sees it as it is now
@@ -1033,9 +1077,18 @@ public enum Engine {
             ev.append(.birdRetired(b.id))
         }
 
-        // 9. Safety net: a rooster-only flock that can't afford a pullet gets a trade offer.
+        // 9. Stories: loans whose day has come go home, stories move on, and debts are mentioned
+        //    kindly (once a season at most). Then the safety net: a rooster-only flock that can't
+        //    afford a pullet gets a trade offer.
+        ev += returnLoans(&s)
         ev += advanceStories(&s, &rng)
+        ev += mentionDebts(&s)
         ev += updateTradeOffer(&s, &rng)
+
+        // 9a. The post: maybe a note (see Post.swift). Then the village calendar (see VillageDay.swift).
+        //     The post is seeded from the shop seed and the day, not the game RNG.
+        ev += deliverPost(&s)
+        ev += villageCalendar(&s, &rng)
 
         // 9b. County show, on show days: entries are judged against a field and placed (see ShowEvent.swift).
         ev += runShowIfToday(&s, &rng)
@@ -1077,7 +1130,7 @@ public enum Engine {
 
         var stillBoarding: [Bird] = []
         for b in s.boarding {
-            if s.coop.count < s.perches {
+            if s.hasFreePerch {
                 perch(b)
                 ev.append(.cameHomeFromBoarding(b.id))
             } else {
@@ -1089,7 +1142,7 @@ public enum Engine {
         var inBrooder: [Bird] = []
         var waiting: Set<UUID> = []
         for b in s.brooder {
-            if grown(b) && s.coop.count < s.perches {
+            if grown(b) && s.hasFreePerch {
                 perch(b)
                 ev.append(.movedToCoop(b.id))
             } else {
@@ -1105,7 +1158,7 @@ public enum Engine {
                 withMother.append(b)
                 continue
             }
-            if s.coop.count < s.perches {
+            if s.hasFreePerch {
                 perch(b)
                 ev.append(.movedToCoop(b.id))
             } else if brooderRoom(s) > 0 {  // leaves room for the chicks still in the incubator
@@ -1224,7 +1277,7 @@ public enum Engine {
         // just like any grown bird with nowhere to go (see findHomes). Eggs in the incubator keep their places.
         if brooderRoom(s) > 0 {
             s.brooder.append(hen)
-        } else if s.coop.count < s.perches {
+        } else if s.hasFreePerch {
             s.coop.append(hen)
         } else {
             s.boarding.append(hen.leavingSight(in: s, onDay: s.day - 1))  // the keeper has not seen her yet

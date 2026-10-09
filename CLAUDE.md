@@ -24,7 +24,7 @@ The CLI writes `featherwick-save*.json` in the current folder (git-ignored). Do 
 | Path | What |
 | --- | --- |
 | `Sources/FeatherwickCore` | Pure game logic. All rules live here. |
-| `Sources/FeatherwickText` | The words players read (events, screens, milestones). Shared by CLI and app. `People.swift`: Hazel (neighbour), Wren (shop), the day-1 welcome and tour. |
+| `Sources/FeatherwickText` | The words players read (events, screens, milestones). Shared by CLI and app. `People.swift`: Hazel (neighbour), Wren (shop), the day-1 welcome and tour. `VillageText.swift`: every person's name and about line, choices, loans, debts, the post, the calendar. |
 | `Sources/FeatherwickCLI/main.swift` | Thin text front end. Parses input, prints text. No rules, no words. |
 | `App/` | iOS test app (SwiftUI, no art yet). `project.yml` is the XcodeGen spec. |
 | `Tests/FeatherwickCoreTests` | One suite per system. `Fixtures/save-v0.json` is a real old save. |
@@ -37,7 +37,8 @@ Key Core files:
 - `GameState.swift`, `Genome.swift`, `Locus.swift`, `Alleles.swift`, `Phenotype.swift`: state and genetics.
 - `BreedTable.swift`, `Breed.swift`: breeds and colour varieties (data tables).
 - `SaveFormat.swift` (versions, migrations), `SaveStore.swift` (slots, atomic writes, backups).
-- One file per feature: `EarlyGame`, `BreedingPen`, `Shows`, `ShowEvent`, `Friendliness`, `SexGuess` ("hen or roo?"), `Pedigree`, `Names`, `Quirks`, `Story`,
+- One file per feature: `EarlyGame`, `BreedingPen`, `Shows`, `ShowEvent`, `Friendliness`, `SexGuess` ("hen or roo?"), `Pedigree`, `Names`, `Quirks`, `Story`
+  (people, choices), `Loans` (loaned birds, debts), `Post` (notes), `VillageDay` (the calendar),
   `Milestone`, `Jobs` (daily jobs, season goals), `Records` (the flock record book), `Daylight` (day slots, errands, the sleep gate), `Look`, `Simulation`, `HatchWhy` (hatch-day "why" note).
 - What might hatch: `Visible` (what the keeper sees, no genes), `Knowledge` + `KnowledgeTables` (genes worked
   out by elimination), `Planner` + `PlannerTables` (the pen forecast, carrier notes), `Inheritance`
@@ -117,7 +118,9 @@ Most new content is a table entry. See README "Data layer" and the feature secti
   `ChickLookTable.eggGenes`. A new look also needs a `Trait` and its line in `Trait.showing`.
   Knowledge and the planner pick it up from `Loci`; check `KnowledgeTests`. Its carrier words go in
   `carrierText` (`PlannerTextTests` checks every allele).
-- Storyline: a `Storyline` in `Storylines.all` + its words in `storyText`.
+- Storyline: a `Storyline` in `Storylines.all` (with its `person`) + its words in `storyText`, and each
+  choice option's words in `choiceText` (`VillageText.swift`).
+- Note: a `Note` in `Notes.pool` (with its `NoteCondition`) + its words in `postNoteText`.
 - Milestone: a `Milestone` in `Milestones.all` (order = ladder) + its words in `milestoneText`.
 - Night step: add it to `passNight` in order and update the "Night order" line in README.
 - Early-game step: a `Feature` case (timeline order), its day in `Rules.featureDays`, its gate in

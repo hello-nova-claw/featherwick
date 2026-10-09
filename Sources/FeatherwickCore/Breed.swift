@@ -67,6 +67,8 @@ public struct Bird: Identifiable, Hashable, Codable, Sendable {
     /// the neighbour, or lost. Nil while it is home. A bird out of sight keeps growing, but the keeper
     /// does not see it lay, so `Knowledge` reads this look, not today's (see `SeenLook(of:in:)`).
     public var lastSeenLook: SeenLook?
+    /// Set while the bird is on loan from one of Featherwick's people (see Loans.swift). Nil: the keeper's own.
+    public var loan: Loan?
 
     public var isPurebred: Bool { purebredFlag ?? true }
 

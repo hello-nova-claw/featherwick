@@ -70,6 +70,8 @@ struct MorningReportSheet: View {
         case .fox: "The fox"
         case .cameHome: "Came home"
         case .neighbour: "From Hazel"
+        case .post: "Post"
+        case .village: "In the village"
         case .newStock: "New at Speckle & Down"
         case .shows: "The county show"
         case .jobs: "Today's jobs"
