@@ -810,7 +810,7 @@ words are in FeatherwickText: `storyText` for the steps, `choiceText` for the op
 The village has four more people. Each has one first arc of three to five beats. No arc waits for
 another (`after` is empty). Each arc's words are in `VillagePeopleText.swift`.
 
-- **The standard** (Dot, the judge). Starts at the first show entry. Dot notices you, then invites you
+- **The standard** (Dot, the judge). Starts at the first show entry. Dot notices you (a keeper with past shows hears no "First show?"), then invites you
   to see the standard. Then she asks which breed page to read first (`choiceOfBreeds`). She offers two
   breeds: first the breeds of birds whose breed shows, then breeds in the Breed Book, then breeds the
   shop sells. A chick whose breed is hidden does not count (rule 8). A flock of one breed gets a second
@@ -834,9 +834,9 @@ another (`after` is empty). Each arc's words are in `VillagePeopleText.swift`.
   so the step is always possible. The last beat is a note about a market board in the village. The
   market board is words only for now.
 - **Postcards from the rescue** (Bea, the rescue). Starts at the first bird that goes to a new home.
-  Two days later, a postcard names that bird. Five days later, a second postcard asks you to visit.
-  A third comes when three birds have new homes. No choice. A postcard uses the bird's name, and a
-  pronoun only if its sex showed before it left (rule 8).
+  Two days later, a postcard names the first bird that left. The words fit even if it left long ago.
+  Five days later, a second postcard asks you to visit. A third comes when three birds have new homes,
+  and names the newest. No choice. A postcard uses the bird's name and no pronoun (rule 8).
 
 Deliveries for the village arcs cost the `.neighbour` errand, as Hazel's do. A refusal says what is
 needed (`.needEggs`, `.needEggsOfNewColour`). In the app, the back fence and Books ▸ People offer each
@@ -858,6 +858,7 @@ inside `anyOf`.
   colour (`deliverEggs`), eggs of a colour new to the Egg Book (`deliverEggsOfNewColour`), a pick of two
   of the keeper's breeds (`choiceOfBreeds`), or a goal that depends on an earlier choice (`ifChosen`).
   What a step offers (the breeds, the new colours) is fixed when the step starts (`Engine.prepare`).
+  It is cleared when the step finishes. The pick stays in `chosen`.
 - **Step rewards.** A step can give rewards when its goal is met. The story's own rewards come after the
   last step. A step whose rewards need room (a perch for a bird, a carton space for an egg) waits for room.
   A delivery step gives no rewards of its own.

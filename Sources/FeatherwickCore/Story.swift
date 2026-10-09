@@ -249,10 +249,11 @@ public struct StoryProgress: Hashable, Codable, Sendable {
     /// Empty in saves from before choices (`SaveFormat.fillNewSettings`).
     public var chosen: [String: String]
     /// The options a breed choice offers (`StoryGoal.choiceOfBreeds`), fixed when the step started.
-    /// Nil for other steps, and in older saves.
+    /// Nil for other steps (cleared when the step finishes), and in older saves. The pick itself is kept
+    /// in `chosen`, which is all the words need later.
     public var options: [String]?
     /// The egg colours that count as new for `StoryGoal.deliverEggsOfNewColour`, fixed when the step
-    /// started. Nil for other steps, and in older saves.
+    /// started. Nil for other steps (cleared when the step finishes), and in older saves.
     public var wantedColours: [EggColour]?
 
     public init(step: Int = 0, stepStartedDay: Int, rewarded: Bool = false, chosen: [String: String] = [:]) {
@@ -260,6 +261,17 @@ public struct StoryProgress: Hashable, Codable, Sendable {
         self.stepStartedDay = stepStartedDay
         self.rewarded = rewarded
         self.chosen = chosen
+    }
+}
+
+extension StoryProgress {
+    /// Moves on to the next step, which starts today. What the finished step offered is cleared:
+    /// the next step fixes its own (`Engine.prepare`).
+    mutating func nextStep(onDay day: Int) {
+        step += 1
+        stepStartedDay = day
+        options = nil
+        wantedColours = nil
     }
 }
 
@@ -500,8 +512,7 @@ extension Engine {
                 }
                 ev += grant(step.rewards, story: story, chosen: progress.chosen, &s, &rng)
             }
-            progress.step += 1
-            progress.stepStartedDay = s.day
+            progress.nextStep(onDay: s.day)
             if progress.step < story.steps.count {
                 ev.append(.storyStep(story.id, step: story.steps[progress.step].id))
             }
@@ -691,8 +702,7 @@ extension Engine {
         default:
             return [.rejected(.nothingToDeliver)]
         }
-        progress.step += 1
-        progress.stepStartedDay = s.day
+        progress.nextStep(onDay: s.day)
         if progress.step < story.steps.count {
             prepare(story.steps[progress.step].goal.resolved(progress.chosen), &progress, s)
         }

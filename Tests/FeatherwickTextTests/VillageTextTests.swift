@@ -1,7 +1,8 @@
-import FeatherwickCore
 import FeatherwickText
 import Foundation
 import Testing
+
+@testable import FeatherwickCore
 
 /// The words for the village's four people: every story step, option and note has its own words (not the
 /// fallback), Dot's page has words for every in-game breed, and Bea's postcards name the bird without a
@@ -89,10 +90,14 @@ struct VillageTextTests {
         #expect(words.isDisjoint(with: ["he", "she", "him", "her", "his", "rooster", "hen", "cockerel", "pullet"]))
         #expect(postNoteText("bea-invite", s)?.contains("Biscuit") == true)
 
-        s.rehomed = [hen, chick, hen]
+        s.rehomed = [hen, hen, chick]
         #expect(postNoteText("bea-postcard", s)?.contains("Clover") == true)
-        #expect(postNoteText("bea-postcard", s)?.contains("She already has") == true)
-        #expect(postNoteText("bea-postcard-3", s)?.contains("Clover is the newest") == true)
+        // The third postcard names the newest bird, once, with no pronoun: here a chick whose sex is hidden.
+        let third = postNoteText("bea-postcard-3", s) ?? ""
+        #expect(third.contains("Biscuit is the newest, and settled in at once."))
+        #expect(third.components(separatedBy: "Biscuit").count == 2)
+        let thirdWords = Set(third.lowercased().split { !$0.isLetter }.map(String.init))
+        #expect(thirdWords.isDisjoint(with: ["he", "she", "him", "her", "his"]))
     }
 
     @Test func theNewEventsAndRefusalsHaveWords() {
@@ -111,6 +116,20 @@ struct VillageTextTests {
         #expect(rememberedText("teddyHelps", s) != nil)
         s.stories["okaforWindow"] = StoryProgress(stepStartedDay: 1, chosen: ["window": "wait"])
         #expect(rememberedText("okaforWindow", s) != nil)
+    }
+
+    @Test func dotDoesNotAskAVeteranAboutTheirFirstShow() {
+        var s = Self.game()
+        let first = eventText(.storyStarted("dotStandard"), s) ?? ""
+        #expect(first.contains("First show?"))
+        let result = ShowResult(
+            day: 28, showClass: .pet, entrantName: "Pip", placing: 2, fieldSize: 8, score: 70, prize: 0,
+            birdID: nil, treats: 0, notes: nil, theme: nil, podium: nil)
+        s.showResults = [result, result]
+        let late = eventText(.storyStarted("dotStandard"), s) ?? ""
+        #expect(!late.contains("First show") && late.contains("Dot"))
+        // Her other steps are the same either way.
+        #expect(eventText(.storyStep("dotStandard", step: "invite"), s) == storyText("dotStandard", step: "invite"))
     }
 
     @Test func hazelsStoriesRememberHerMothersLavenderLine() {

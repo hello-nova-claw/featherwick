@@ -554,7 +554,7 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return "\(birdName(rooster, s)) goes to his new flock, and \(birdName(hen, s)) moves into Henhaven."
     case .storyStarted(let id), .storyStep(let id, _):
         let step: String? = if case .storyStep(_, let st) = e { st } else { nil }
-        return storyText(id, step: step)
+        return peopleEventText(e, s) ?? storyText(id, step: step)
     case .delivered:
         return peopleEventText(e, s) ?? "You hand the eggs over the fence, carefully."
     case .storyGiftWaitingForRoom(let id):

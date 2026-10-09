@@ -181,6 +181,27 @@ struct VillageTests {
         #expect(ev == [.rejected(.noSuchChoice)])
     }
 
+    @Test func whatAStepOfferedIsClearedWhenItFinishes() throws {
+        var (s, rng) = Self.game()
+        s.coop.append(Self.bird(.araucana, name: "Bluebell", &rng))
+        s.showEntries.append(ShowEntry(birdID: s.starterID, eggs: [], showClass: .pet))
+        _ = Self.untilStep("dotStandard", "standard", &s, &rng)
+        let offered = try #require(s.stories["dotStandard"]?.options)
+        _ = Engine.apply(.choose(story: "dotStandard", option: offered[0]), to: &s, using: &rng)
+        // The pick stays in `chosen`; the offer is gone.
+        #expect(s.stories["dotStandard"]?.options == nil)
+        #expect(s.stories["dotStandard"]?.chosen == [Storylines.dotStandardChoice: offered[0]])
+
+        Self.okaforAtWindow(&s, &rng)
+        _ = Engine.apply(.choose(story: "okaforWindow", option: "wait"), to: &s, using: &rng)
+        #expect(s.stories["okaforWindow"]?.wantedColours != nil)
+        s.carton = []
+        Self.eggs(.blue, 3, &s)
+        _ = Engine.apply(.deliver(story: "okaforWindow"), to: &s, using: &rng)
+        #expect(s.stories["okaforWindow"]?.wantedColours == nil)
+        #expect(s.stories["okaforWindow"]?.chosen == ["window": "wait"])
+    }
+
     // MARK: - Teddy
 
     static func teddyAtHelp(_ s: inout GameState, _ rng: inout SeededRNG) {

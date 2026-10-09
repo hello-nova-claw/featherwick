@@ -155,27 +155,24 @@ func peopleNoteText(_ id: String, _ s: GameState) -> String? {
         return "There's talk of a market board by the bakery, where keepers can say what they have. "
             + "I've put your name down first, if you'll have it."
     case "bea-postcard":
-        let bird = rehomedBird(0, s)
-        return "Dear keeper, \(bird.map(\.name) ?? "your bird") is settling in beautifully at the new home. "
-            + "\(bird.map { subjectPronoun($0).capitalizedFirst } ?? "Your bird") already has a favourite corner of the run, "
+        // The first bird that left Henhaven. If that was long ago (an older save meets Bea late), the
+        // words still fit: Bea has been to see how the bird is getting on.
+        let name = s.rehomed.first?.name ?? "your bird"
+        return "Dear keeper, I've been to see \(name), who went to a new home from Henhaven. "
+            + "Happy as anything, with a favourite corner of the run, "
             + "and the children say good morning every day. Love, Bea."
     case "bea-invite":
-        let name = rehomedBird(0, s)?.name ?? "your bird"
+        let name = s.rehomed.first?.name ?? "your bird"
         return "Come up to the rescue one afternoon and see \(name) for yourself. "
             + "I'll put the kettle on. No need to write first. Love, Bea."
     case "bea-postcard-3":
-        let bird = rehomedBird(2, s)
-        let who = bird.map { "\($0.name) is the newest, and \(subjectPronoun($0))" } ?? "The newest one"
-        return "Three of your birds have new homes in Featherwick now. \(who) took to the place at once. "
+        // The newest bird to leave. Its name appears once, with no pronoun, so a hidden sex never shows.
+        let who = s.rehomed.last.map { "\($0.name) is the newest" } ?? "The newest one is"
+        return "Three of your birds have new homes in Featherwick now. \(who), and settled in at once. "
             + "You raise them kind, keeper. Love, Bea."
     default:
         return nil
     }
-}
-
-/// The bird that went to a new home in this place in line (0 is the first), or the latest one.
-func rehomedBird(_ index: Int, _ s: GameState) -> Bird? {
-    s.rehomed.indices.contains(index) ? s.rehomed[index] : s.rehomed.last
 }
 
 /// The words for the village people's events and refusals. Nil for any other event.
@@ -185,6 +182,12 @@ func peopleEventText(_ e: GameEvent, _ s: GameState) -> String? {
         let name = birdName(id, s)
         return "\(People.name(person)) is at the gate the minute he hears. \"That one's called \(name)!\" "
             + "(You can rename \(name) any time.)"
+    case .storyStarted("dotStandard") where s.showResults.count > 1:
+        // A keeper who has shown before (an older save meets Dot late): no "first show?".
+        return """
+            At the entry desk, a woman with reading glasses on a chain looks up from her list. \
+            "I've seen your birds at a show or two. I'm Dot. I judge. We should talk properly some time."
+            """
     case .delivered("okaforWindow"):
         return "You carry the eggs down to the bakery, carefully."
     case .rejected(.needEggs(let colour, let need, let have)):
