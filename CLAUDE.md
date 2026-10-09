@@ -120,7 +120,7 @@ Most new content is a table entry. See README "Data layer" and the feature secti
   `carrierText` (`PlannerTextTests` checks every allele).
 - Storyline: a `Storyline` in `Storylines.all` (with its `person`) + its words in `storyText`, and each
   choice option's words in `choiceText` (`VillageText.swift`).
-- Note: a `Note` in `Notes.pool` (with its `NoteCondition`) + its words in `postNoteText`.
+- Note: a `Note` at the end of `Notes.pool` (with its `NoteCondition`) + its words in `poolNoteText` (`NotesText.swift`).
 - Milestone: a `Milestone` in `Milestones.all` (order = ladder) + its words in `milestoneText`.
 - Night step: add it to `passNight` in order and update the "Night order" line in README.
 - Early-game step: a `Feature` case (timeline order), its day in `Rules.featureDays`, its gate in
