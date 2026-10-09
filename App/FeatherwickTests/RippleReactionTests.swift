@@ -31,6 +31,10 @@ import Testing
         #expect(RippleReaction.allCases.filter(\.sits) == [.nestle])
     }
 
+    @Test func tameBirdsFaceTheTapShyOnesTurnAway() {
+        #expect(RippleReaction.allCases.filter(\.facesTap) == [.approach, .nestle])
+    }
+
     @Test func aWalkCutShortStopsWhereItIsDrawn() {
         let start = Date(timeIntervalSinceReferenceDate: 0)
         let leg = WalkLeg(from: CGPoint(x: 0.2, y: 0.6), to: CGPoint(x: 0.6, y: 0.8), start: start, seconds: 2)

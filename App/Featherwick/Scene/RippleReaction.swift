@@ -29,6 +29,10 @@ enum RippleReaction: Hashable, Sendable, CaseIterable {
     /// Sits down where it stops (`ChickenActivity.sitting`), and gets up when the hold ends.
     var sits: Bool { self == .nestle }
 
+    /// Turns to look at the tap. The others turn their back on it. With Reduce Motion this turn (and a lap
+    /// chicken's sit) is the whole answer.
+    var facesTap: Bool { self == .approach || self == .nestle }
+
     /// Where a bird at `spot` heads after a tap at `tap`. All points and lengths are in points on the
     /// panel. `isWalkable` tests a point in the same space. Away reactions try the straight way out first,
     /// then a little to each side, from the full reach down. With no ground that way, the bird stays.

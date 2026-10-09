@@ -17,6 +17,8 @@ enum SceneConstants {
     /// With Reduce Motion: one ring, quickly.
     static let rippleReducedRingCount = 1
     static let rippleReducedDuration: Double = 0.2
+    /// With Reduce Motion a bird answers in place: it turns, or sits, over this long, in seconds.
+    static let rippleReducedPoseSeconds: Double = 0.2
     /// Rings start this small and this strong, then spread and fade.
     static let rippleRingStartScale: CGFloat = 0.15
     static let rippleRingStartOpacity: Double = 0.9

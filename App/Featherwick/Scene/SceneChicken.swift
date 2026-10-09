@@ -356,7 +356,9 @@ struct SceneChicken: View {
         let colours = ChickenColours(bird: bird, state: store.state)
         // While the keeper rests, a bird standing about stops to peck: the yard moves on with the day.
         let resting: Bool = store.restSeconds != nil && activity == .idle
-        let acting: ChickenActivity = reduceMotion ? .idle : (resting ? .pecking : activity)
+        // Reduce Motion: no walk cycle or peck. A lap chicken's sit by a ripple is a pose, so it stays.
+        let still: ChickenActivity = activity == .sitting ? .sitting : .idle
+        let acting: ChickenActivity = reduceMotion ? still : (resting ? .pecking : activity)
         return AnimatedChicken(colours: colours, height: height, facingRight: facingRight, activity: acting)
             .scaleEffect(scale, anchor: .bottom)
             .frame(width: drawn.width, height: drawn.height, alignment: .bottom)
@@ -378,6 +380,7 @@ struct SceneChicken: View {
             spot = standingSpot()
             sortY = spot.y
             activity = .idle
+            await answerRippleInPlace()
             return
         }
         guard size.width > 0, size.height > 0 else { return }
@@ -602,6 +605,33 @@ struct SceneChicken: View {
         withAnimation(.easeInOut(duration: sit)) { activity = .idle }
         guard stayed else { return false }
         return await nap(sit)
+    }
+
+    /// Reduce Motion: it answers a fresh tap where it stands, with a pose and no walk. A friendly bird or a
+    /// lap chicken turns to the tap, and a lap chicken sits too. A wild or skittish bird turns its back on
+    /// it. The change fades in, and after the hold the bird stands as before.
+    private func answerRippleInPlace() async {
+        guard let ripple, ripple.id != answered,
+            Date.now.timeIntervalSince(ripple.at) < SceneConstants.rippleFreshSeconds
+        else { return }
+        answered = ripple.id
+        let reaction = RippleReaction(band: bird.friendliness)
+        let before: Bool = facingRight
+        let fade: Animation = .easeInOut(duration: SceneConstants.rippleReducedPoseSeconds)
+        withAnimation(fade) {
+            if abs(ripple.spot.x - spot.x) * size.width > 2 {
+                let tapIsRight: Bool = ripple.spot.x > spot.x
+                facingRight = reaction.facesTap ? tapIsRight : !tapIsRight
+            }
+            if reaction.sits { activity = .sitting }
+        }
+        _ = await nap(SceneConstants.rippleHoldSeconds)
+        // A newer tap has taken over: its answer sets the pose now.
+        guard answered == ripple.id else { return }
+        withAnimation(fade) {
+            facingRight = before
+            activity = .idle
+        }
     }
 
     /// Where it goes for this reaction, on walkable ground, in unit coordinates. The reaction works in
