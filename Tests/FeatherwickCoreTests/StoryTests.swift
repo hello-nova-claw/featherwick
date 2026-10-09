@@ -130,6 +130,7 @@ struct StoryTests {
             // A choice or a delivery inside `anyOf` (or as a trigger) would never be offered to the player.
             func hidesPlayerGoal(_ goal: StoryGoal) -> Bool {
                 if case .anyOf(let goals) = goal { return goals.contains { $0.needsPlayer || hidesPlayerGoal($0) } }
+                if case .allOf(let goals) = goal { return goals.contains { $0.needsPlayer || hidesPlayerGoal($0) } }
                 // A goal that depends on a choice hides nothing itself, but either branch might.
                 if case .ifChosen(_, _, let a, let b) = goal { return hidesPlayerGoal(a) || hidesPlayerGoal(b) }
                 return false

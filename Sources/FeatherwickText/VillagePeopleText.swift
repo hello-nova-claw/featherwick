@@ -18,6 +18,7 @@ public func storyTitle(_ id: String) -> String {
     case "teddyHelps": "Teddy helps out"
     case "okaforWindow": "The bakery window"
     case "beaPostcards": "Postcards from the rescue"
+    case "marigold": "The borrowed hen"
     default: id
     }
 }

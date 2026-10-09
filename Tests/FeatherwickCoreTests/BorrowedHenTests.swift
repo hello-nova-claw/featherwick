@@ -187,7 +187,7 @@ struct BorrowedHenTests {
         #expect(!s.hazelAway)
         // Nothing is lost by waiting: she stays, and the choice stays.
         Self.play(until: 20, &s, &rng)
-        #expect(Self.marigold(s) != nil && s.pendingChoices.count == 1)
+        #expect(Self.marigold(s) != nil && s.pendingChoices.count(where: { $0.story == Self.tag }) == 1)
     }
 
     @Test func sendingHerHomeGivesACandledFertileEggOfTheStartersBreed() throws {
@@ -383,7 +383,9 @@ struct BorrowedHenTests {
             _ = sleepTonight(&game.state, &game.rng)
         }
         #expect(game.state.stories[Self.tag] == nil)
-        #expect(game.state.loanedBirds.isEmpty && game.state.debts.isEmpty && game.state.pendingChoices.isEmpty)
+        // Other people's arcs may start in an old save; Marigold's never does.
+        #expect(game.state.loanedBirds.isEmpty && game.state.debts.isEmpty)
+        #expect(!game.state.pendingChoices.contains { $0.story == Self.tag })
     }
 
     @Test func aSaveFromBeforeThisVersionGetsNoLoanEither() throws {

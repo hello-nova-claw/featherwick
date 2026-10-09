@@ -97,6 +97,9 @@ public indirect enum StoryGoal: Hashable, Codable, Sendable {
     /// Any one of these goals is met. For "whichever comes first". Not for choices or deliveries: those
     /// are step goals on their own, so the player is always offered them (`StoryTests` checks this).
     case anyOf([StoryGoal])
+    /// Every one of these goals is met. For "this, but not before day N". Not for choices or deliveries,
+    /// as for `anyOf`.
+    case allOf([StoryGoal])
     /// The game began as a new keeper's, with the early game (`GameState.earlyGameStories`). The early-game
     /// stories start with it. A save from before them never meets it, so it gets no retroactive loan.
     case newKeeper
@@ -447,12 +450,13 @@ public enum Storylines {
     )
 
     /// Mr Okafor, the baker, wants eggs for his shop window: six brown eggs now, or three of a colour the
-    /// keeper has not had yet, for more coins. Both pay well above the egg price, so the window is worth it.
+    /// keeper has not had yet, for more coins. Not before day 14: a new keeper's first fortnight is
+    /// Marigold's, and she lays brown from day 4. Both pay well above the egg price, so the window is worth it.
     /// Then he talks of a market board in the village.
     public static let okaforWindow = Storyline(
         id: "okaforWindow",
         person: .okafor,
-        trigger: .eggBookHas(.brown),
+        trigger: .allOf([.onDay(14), .eggBookHas(.brown)]),
         steps: [
             StoryStep(id: "asking", goal: .waitDays(1)),
             StoryStep(id: "window", goal: .choice(id: "window", options: ["now", "wait"])),
@@ -639,6 +643,7 @@ extension Engine {
         case .birdRehomed(let n): s.rehomed.count >= n
         case .coinsPaid(let id): s.debtsPaid.contains(id)
         case .anyOf(let goals): goals.contains { goalMet($0, s, since: day, chosen: chosen) }
+        case .allOf(let goals): goals.allSatisfy { goalMet($0, s, since: day, chosen: chosen) }
         case .newKeeper: s.earlyGameStories
         case .deliverEggs, .deliverEggsOfNewColour: false
         case .choiceOfBreeds(let id): chosen[id] != nil

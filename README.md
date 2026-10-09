@@ -833,7 +833,8 @@ another (`after` is empty). Each arc's words are in `VillagePeopleText.swift`.
   (`.chickNamed`). The names are neutral, because the chick's sex is hidden. The keeper can rename it.
   "Drawing" sends a note with his drawing. The last beat waits for a lap chicken. Then Teddy says
   "that one's a lap chicken, you know" (a note).
-- **The bakery window** (Mr Okafor, the baker). Starts at the first brown egg in the Egg Book. He wants
+- **The bakery window** (Mr Okafor, the baker). Starts at the first brown egg in the Egg Book, on day 14 or later (a new keeper's first
+  fortnight is Marigold's, and she lays brown). He wants
   eggs for his window. Then he talks of a colour you do not have yet. Choice: take him 6 brown eggs now
   (30 coins, well above the egg price), or wait and take him 3 eggs of a new colour (50 coins and a note). The delivery step
   depends on the choice (`StoryGoal.ifChosen`). "A new colour" means a colour not in the Egg Book when
@@ -913,7 +914,7 @@ inside `anyOf`.
 - **Goals.** A step or trigger can wait for: a day (`onDay`, an absolute day), the day the early game
   introduces a feature (`featureDay`), a choice, the first show
   entry, a placing in the top N, N birds at a friendliness band or better, an Egg Book colour, N birds
-  rehomed, a debt paid, or any one of several goals (`anyOf`). A step can also ask for eggs of one
+  rehomed, a debt paid, any one of several goals (`anyOf`), or all of them (`allOf`). A step can also ask for eggs of one
   colour (`deliverEggs`), eggs of a colour new to the Egg Book (`deliverEggsOfNewColour`), a pick of two
   of the keeper's breeds (`choiceOfBreeds`), or a goal that depends on an earlier choice (`ifChosen`).
   What a step offers (the breeds, the new colours) is fixed when the step starts (`Engine.prepare`).

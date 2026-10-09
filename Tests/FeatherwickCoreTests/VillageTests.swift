@@ -65,6 +65,10 @@ struct VillageTests {
 
         s.eggBook.insert(EggBookEntry(colour: .brown, speckled: false))
         var ev = night(&s, &rng)
+        // Not in a new keeper's first fortnight: Marigold lays brown from day 4.
+        #expect(!ev.contains(.storyStarted("okaforWindow")))
+        s.day = 14
+        ev = night(&s, &rng)
         #expect(ev.contains(.storyStarted("okaforWindow")))
         #expect(s.stories["dotStandard"] == nil && s.stories["teddyHelps"] == nil && s.stories["beaPostcards"] == nil)
 
@@ -103,8 +107,8 @@ struct VillageTests {
     @Test func noArcWaitsOnAnotherAndAllRunAtOnce() {
         for id in Self.arcs { #expect(Storylines.story(id)?.after == []) }
         // Append, never insert: Hazel's three stories keep their places.
-        #expect(Storylines.all.map(\.id) == ["broodySilkie", "lacedGift", "heritageBreed"] + Self.arcs)
-        #expect(Storylines.all.map(\.person) == [.hazel, .hazel, .hazel, .dot, .teddy, .okafor, .bea])
+        #expect(Storylines.all.map(\.id) == ["broodySilkie", "lacedGift", "heritageBreed"] + Self.arcs + ["marigold"])
+        #expect(Storylines.all.map(\.person) == [.hazel, .hazel, .hazel, .dot, .teddy, .okafor, .bea, .hazel])
 
         var (s, rng) = Self.game()
         s.day = 29
