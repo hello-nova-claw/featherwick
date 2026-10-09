@@ -37,7 +37,7 @@ errands left. See "Daylight and errands".
 the neighbour, new stock, the show, jobs, the season goal, eggs, other) for the app's morning report.
 Every event lands in exactly one group. IDs and events only; the words come from `eventText`.
 
-Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals ("hen or roo?" guesses settle as the sex shows) → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note, and the first why note opens "What might hatch"; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (loans due go home; a fertile-eggs step teaches candling if needed; debts are mentioned at most once a season) & trade offer → post (maybe one note) → village day (a notice a week ahead, and the day) → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
+Night order: fox (only if the coop is open, and never on the Longest Day's night) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals ("hen or roo?" guesses settle as the sex shows) → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note, and the first why note opens "What might hatch"; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (loans due go home; a fertile-eggs step teaches candling if needed; debts are mentioned at most once a season) & trade offer → post (maybe one note) → village day (a notice a week ahead, the day and its gift, then the Hatch-along chick if it is due) → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
 
 ## The early game (tutorial timeline)
 
@@ -693,6 +693,7 @@ Leaving the coop door open is a real risk/reward, not just a fox gamble. If the 
 the night, the free-ranging birds forage: they return fed (no feeding needed that day) and a little
 better off — a small lay bonus (`forageLayBonus`) and show-condition bonus (`forageConditionBonus`).
 So each night you choose: close up safe but feed tomorrow, or leave open to forage and risk the fox.
+On the Longest Day's night the fox stays home, so an open door forages for free (see "The village calendar").
 
 ## Saves, rules and balance
 
@@ -850,9 +851,49 @@ shows notes under "Post". Conditions read only what the keeper can see (rule 8).
 `VillageDay.swift`. Four village days a year: the Hatch-along (spring), the Longest Day (summer), Moult Week
 (autumn) and Midwinter Lights (winter). Each falls on a day of its season (`Rules.villageDays`), every year.
 `villageDayNoticeDays` (7) mornings before, `.villageDayComing(day, inDays:)`. On the morning,
-`.villageDay(day)`. The morning report shows both under "In the village". Nothing is missable: each day
-comes round again next year. `GameState.nextVillageDay` and `upcomingVillageDays(n)` give the dates.
-CLI: `calendar` lists the next four.
+`.villageDay(day)`, then `.villageDayScene(day, year:)`. The morning report shows them under "In the village".
+Nothing is missable: each day comes round again next year. `GameState.nextVillageDay` and
+`upcomingVillageDays(n)` give the dates. No day draws from the game RNG, except that the Longest Day skips one.
+
+| Day | When | What happens |
+| --- | --- | --- |
+| Hatch-along | spring, day 10 | Bring one known-fertile egg in its week. A surprise chick comes back 3 nights later. |
+| Longest Day | summer, day 14 | The fox stays home that night. An open door forages for free. |
+| Moult Week | autumn, day 1 | Hazel's lesson on the moult, and `moultWeekTreats` (4) mealworms. |
+| Midwinter Lights | winter, day 14 | The village gives `midwinterCoins` (15), and Teddy sends a note with a drawing. |
+
+- **The Hatch-along** (`HatchAlong.swift`). The week is the day itself and the days after it:
+  `hatchAlongWeekDays` (7) in all. The notice a week before gives time to find an egg. In the week the keeper
+  may bring Hazel one egg they KNOW is fertile (candled): `giveHatchAlongEgg(egg)`, or `nil` for the first
+  known-fertile egg in the carton. It is the `.neighbour` errand. One egg a year (`hatchAlongYears`).
+  Refusals: `.hatchAlong(.notThisWeek)`, `.hatchAlong(.alreadyGiven)`, `.hatchAlong(.noFertileEgg)`.
+  Event: `.hatchAlongEggGiven(returnsOnDay:)`.
+- `hatchAlongReturnNights` (3) nights after the egg, a chick comes back (`hatchAlongChickDay`). It is not the
+  keeper's own egg: it is a surprise starter breed from the village hatch. It is a new chick in the brooder,
+  with a name to give. Its breed and sex show at grower age, like any chick (rule 8).
+  Event: `.hatchAlongChickArrived(id)`. It does not count as a chick the keeper hatched.
+- The chick needs room, like a gift bird: a free perch, and a brooder place. With no room it waits with
+  Hazel. She says so once (`.hatchAlongChickWaiting`). It comes the first morning there is room. It never
+  boards and is never rehomed while it waits. While it waits, no new egg is taken.
+- The chick is drawn from its own seed (`shopSeed` and its day), never the game RNG. So giving an egg does
+  not change the rest of a seeded game.
+- No egg costs nothing. The day comes round next spring.
+- **The Longest Day.** On the night that starts on its date, `passNight` skips the fox roll (`foxStaysHome`).
+  `foxChance` does not change. The door is still the keeper's choice, and an open door forages as usual.
+  That one night draws one number fewer from the game RNG, so later draws in that game move. Other nights
+  are unchanged.
+- **Moult Week.** Hazel's lesson on the moult and `moultWeekTreats` (4) mealworms, each year:
+  `.villageDayGift(.moultWeek, coins: 0, treats: 4)`. There is nothing to do and nothing to miss. The moult
+  costs no show marks.
+- **Midwinter Lights.** The village gives `midwinterCoins` (15) each year: `.villageDayGift`. Teddy sends a
+  note with a drawing: `.noteArrived(.teddy, "teddyMidwinterDrawing")`, also in `notesSeen`. It is a gift,
+  not a task.
+- **Words** (`CalendarText.swift`). Each day's scene has two versions: year 0 explains, and every later year
+  remembers. Teddy's note changes the same way. `villageNotice` gives the farm gate notice ("Longest Day in 3
+  days", "Hatch-along: bring an egg"). The words never name the Hatch-along chick's sex or breed.
+- CLI: `calendar` lists the next four, and the Hatch-along line in its week. `give egg` brings the egg.
+- App: the farm gate notice, a "Village calendar" block on the Show tab, and "Bring an egg for the
+  Hatch-along" at the back fence (which then "has news").
 
 ## Goal ladder
 
@@ -955,7 +996,7 @@ Sleep waits until every slot is spent, and nothing is ever lost: a refused erran
 | One slot | `buy`, `buySpecial`, `buyIncubator` | `.village` (Speckle & Down) |
 | One slot | `candle`, `candleEgg` | `.candling` |
 | One slot | `enterShow`, `enterShowIn`, `enterEggs`, `enterEggPlate` | `.showDesk` |
-| One slot | `deliver`, `acceptTrade`, `rehome` | `.neighbour` |
+| One slot | `deliver`, `acceptTrade`, `rehome`, `giveHatchAlongEgg` | `.neighbour` |
 | One slot | `upgradeCoop` | `.building` |
 | One slot, no effect | `rest` | none |
 | Waits for evening | `passNight` | none |

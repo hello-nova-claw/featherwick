@@ -488,6 +488,7 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         case .noSuchChoice: "Nobody is waiting on that choice. Type: people"
         case .noSuchDebt: "You don't owe anything by that name. Type: people"
         case .onLoan: "She's on loan, so that's for her owner to decide."
+        case .hatchAlong(let why): hatchAlongRefusalText(why)
         }
     case .starterChosen(let id): return "You take \(birdName(id, s)) home and settle them under the heat lamp."
     case .fed: return "You fill the feeder and top up the water."
@@ -748,6 +749,8 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .chose, .storyCoins, .storyTreats, .storyGiftEgg, .loanArrived, .loanReturned, .loanKept, .debtOwed,
         .debtReminder, .debtPaid, .noteArrived, .villageDayComing, .villageDay:
         return villageEventText(e, s)
+    case .villageDayScene, .villageDayGift, .hatchAlongEggGiven, .hatchAlongChickWaiting, .hatchAlongChickArrived:
+        return calendarEventText(e, s)
     }
 }
 

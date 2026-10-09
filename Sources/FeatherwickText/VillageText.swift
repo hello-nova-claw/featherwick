@@ -52,7 +52,7 @@ public func choiceText(story: String, option: String) -> String {
 /// Nil for an unknown ID: `NotesTests` checks every note has words.
 public func postNoteText(_ id: String, _ s: GameState) -> String? {
     switch id {
-    default: nil
+    default: calendarNoteText(id, s)
     }
 }
 

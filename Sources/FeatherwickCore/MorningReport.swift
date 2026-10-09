@@ -91,7 +91,8 @@ public struct MorningReport: Hashable, Sendable {
             return .neighbour
         case .noteArrived:
             return .post
-        case .villageDayComing, .villageDay:
+        case .villageDayComing, .villageDay, .villageDayScene, .villageDayGift, .hatchAlongEggGiven,
+            .hatchAlongChickWaiting, .hatchAlongChickArrived:
             return .village
         case .showAnnounced, .showDay, .showNoEntries, .showPodium, .showPlacing, .breedBookEntrySeen,
             .showPrizesWon, .showTreatsWon, .enteredInShow:
