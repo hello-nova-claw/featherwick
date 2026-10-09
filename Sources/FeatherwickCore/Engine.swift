@@ -66,6 +66,12 @@ public enum Command: Hashable, Codable, Sendable {
     case choose(story: String, option: String)
     /// Pay a debt in full (see Loans.swift). Any time the keeper has the coins. Free.
     case payDebt(String)
+    /// Fill a wanted card on the market board (see MarketBoard.swift). A bird card needs the bird.
+    case fillCard(String, bird: UUID?)
+    /// Pin the keeper's own card on the market board: "I have young <breed>s".
+    case postCard(Breed)
+    /// Sell a young bird to the buyer who came for the keeper's card.
+    case sellToBuyer(UUID)
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -157,6 +163,20 @@ public enum Rejection: Hashable, Codable, Sendable {
     case noSuchDebt
     /// The bird is on loan: she cannot be rehomed, penned or renamed (see Loans.swift).
     case onLoan
+    /// No card by that ID on the market board (see MarketBoard.swift).
+    case noSuchCard
+    /// The carton holds too few eggs of the card's colour.
+    case notEnoughEggsForCard(EggColour, need: Int, have: Int)
+    /// That bird is not what the card asks for.
+    case birdDoesNotFitCard
+    /// The bird's feathers are not in yet, so no card can take it. Fires on age, never on sex.
+    case tooYoungForCard
+    /// The keeper's own card is already on the board. One at a time.
+    case keeperCardAlreadyUp
+    /// No young purebred bird of that breed is free to go.
+    case noYoungBirdsForCard
+    /// No buyer has come for the keeper's card yet (or no card is up).
+    case noBuyerYet
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -318,6 +338,20 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case villageDayComing(VillageDay, inDays: Int)
     /// Today is a village day.
     case villageDay(VillageDay)
+    /// New wanted cards on the market board this morning (see MarketBoard.swift).
+    case marketCardsPinned([MarketCard])
+    /// A wanted card's day passed, so it came down. No penalty.
+    case marketCardDown(MarketCard)
+    /// The keeper filled a wanted card and was paid.
+    case marketCardFilled(MarketCard, coins: Int)
+    /// The keeper pinned their own card for young birds of this breed.
+    case marketCardPosted(Breed)
+    /// A buyer came for the keeper's card this morning.
+    case marketBuyerCame(Breed)
+    /// Nothing suited the buyer in time, so they went home and the keeper's card came down.
+    case marketBuyerLeft(Breed)
+    /// The buyer took this bird and paid.
+    case soldToBuyer(UUID, coins: Int)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -591,6 +625,12 @@ public enum Engine {
             return choose(story, option, &s, &rng)
         case .payDebt(let id):
             return payDebt(id, &s)
+        case .fillCard(let id, let bird):
+            return fillCard(id, bird: bird, &s)
+        case .postCard(let breed):
+            return postCard(breed, &s)
+        case .sellToBuyer(let id):
+            return sellToBuyer(id, &s)
         }
     }
 
@@ -1097,6 +1137,10 @@ public enum Engine {
         // 9c. Early game: introduce the features whose day has come (and the neighbour's show tip).
         ev += introduceFeatures(&s)
 
+        // 9c2. The market board (see MarketBoard.swift): old cards come down, the keeper's buyer comes or
+        //      goes, and new cards go up once a week. Seeded from the shop seed, not the game RNG.
+        ev += marketBoardMorning(&s)
+
         // 9d. Goal ladder: award any milestone reached once the day's events have settled.
         ev += advanceMilestones(&s)
 
@@ -1209,11 +1253,12 @@ public enum Engine {
     /// A bird leaves the flock for a good home in Featherwick. The keeper is paid what it is worth.
     /// The caller has already taken it out of its group.
     static func sendToNewHome(
-        _ bird: Bird, _ s: inout GameState, lastSeenOnDay: Int? = nil, wasAway: Bool = false
+        _ bird: Bird, _ s: inout GameState, lastSeenOnDay: Int? = nil, wasAway: Bool = false, coins price: Int? = nil
     )
         -> Int
     {
-        let coins = s.rehomeValue(of: bird)
+        // A market card or buyer sets its own price; a neighbour pays the rehome value.
+        let coins = price ?? s.rehomeValue(of: bird)
         s.coins += coins
         var bird = bird
         bird.waitingSinceDay = nil

@@ -50,6 +50,24 @@ struct SimulationTests {
         #expect(meanEggs(high) > meanEggs(low))
     }
 
+    /// The market board is a top-up, not the economy: a keeper who fills every card it can ends with
+    /// more coins, but not wildly more than a keeper with no board. Much of the gap is spare adults: the
+    /// sim keeper gives them to bird cards, and keeps them (for no coins) when there is no board.
+    @Test func theMarketBoardTopsUpCoinsWithoutTakingOver() {
+        var off = Rules.standard
+        off.featureDays[.marketBoard] = 100_000
+        func mean(_ rules: Rules, _ f: (Simulation.Report) -> Int) -> Double {
+            let xs = Simulation.runMany(seeds: 1...6, days: 180, rules: rules).map { Double(f($0)) }
+            return xs.reduce(0, +) / Double(xs.count)
+        }
+        let without = mean(off, \.finalCoins)
+        let with = mean(.standard, \.finalCoins)
+        #expect(mean(off, \.coinsFromMarket) == 0)
+        #expect(mean(.standard, \.coinsFromMarket) > 0)
+        #expect(with > without)
+        #expect(with < without * 1.75)
+    }
+
     @Test func textReportRuns() {
         let report = Simulation.textReport(days: 60, games: 5)
         #expect(report.contains("Balance report"))

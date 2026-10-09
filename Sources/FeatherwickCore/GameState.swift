@@ -210,6 +210,8 @@ public struct GameState: Hashable, Codable, Sendable {
     public var debtsPaid: Set<String> = []
     /// Notes already delivered (see Post.swift), by ID. A note never comes twice.
     public var notesSeen: Set<String> = []
+    /// The market board by the bakery (see MarketBoard.swift). Empty in saves from before the board.
+    public var marketBoard = MarketBoard()
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

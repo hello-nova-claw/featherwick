@@ -7,6 +7,7 @@ import SwiftUI
 struct FarmGateSheet: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
+    let open: (FarmSheet) -> Void
     @State private var tab = ShopTab.feed
 
     enum ShopTab: Hashable { case feed, treats, hatching, show }
@@ -34,6 +35,14 @@ struct FarmGateSheet: View {
             case .treats: treatItems(s)
             case .hatching: hatchingItems(s)
             case .show: ShowPanel()
+            }
+            // The market board is by the bakery, next door (MarketBoardSheet).
+            if s.isOpen(.marketBoard) {
+                let cards = s.marketBoard.cards.count
+                Button(cards == 0 ? "Market board" : "Market board · \(cards) card\(cards == 1 ? "" : "s")") {
+                    open(.marketBoard)
+                }
+                .buttonStyle(.textAction)
             }
             LastWords()
         }

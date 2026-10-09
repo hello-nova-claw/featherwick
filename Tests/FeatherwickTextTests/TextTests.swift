@@ -482,6 +482,7 @@ struct BreedingPenTextTests {
             .showDesk: "The show desk has packed up for the day.",
             .neighbour: "Hazel's lights are off. Pop round tomorrow.",
             .building: "Not enough light left to build. Tomorrow.",
+            .market: "The bakery's shut and the board's in shadow. Tomorrow.",
         ]
         for errand in Errand.allCases {
             #expect(eventText(.rejected(.noTimeLeft(errand)), s) == expected[errand])

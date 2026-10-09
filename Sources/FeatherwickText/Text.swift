@@ -488,6 +488,9 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         case .noSuchChoice: "Nobody is waiting on that choice. Type: people"
         case .noSuchDebt: "You don't owe anything by that name. Type: people"
         case .onLoan: "That bird is on loan, so that's for the owner to decide."
+        case .noSuchCard, .notEnoughEggsForCard, .birdDoesNotFitCard, .tooYoungForCard, .keeperCardAlreadyUp,
+            .noYoungBirdsForCard, .noBuyerYet:
+            marketRejectionText(r, s) ?? ""
         }
     case .starterChosen(let id): return "You take \(birdName(id, s)) home and settle them under the heat lamp."
     case .fed: return "You fill the feeder and top up the water."
@@ -749,6 +752,9 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .chose, .storyCoins, .storyTreats, .storyGiftEgg, .loanArrived, .loanReturned, .loanKept, .debtOwed,
         .debtReminder, .debtPaid, .noteArrived, .villageDayComing, .villageDay:
         return villageEventText(e, s)
+    case .marketCardsPinned, .marketCardDown, .marketCardFilled, .marketCardPosted, .marketBuyerCame,
+        .marketBuyerLeft, .soldToBuyer:
+        return marketEventText(e, s)
     }
 }
 
@@ -778,6 +784,7 @@ func noTimeLeftText(_ errand: Errand) -> String {
     case .showDesk: "The show desk has packed up for the day."
     case .neighbour: "Hazel's lights are off. Pop round tomorrow."
     case .building: "Not enough light left to build. Tomorrow."
+    case .market: "The bakery's shut and the board's in shadow. Tomorrow."
     }
 }
 
@@ -1328,6 +1335,12 @@ public func introducedText(_ f: Feature, _ s: GameState) -> String? {
             \(r.penHens) hens. Then you know who fathered every egg they lay. They keep their perches, so it costs \
             you no room." (pen <name>, unpen <name>, pen)
             """
+    case .marketBoard:
+        return """
+            Mr Okafor has put up a board by the bakery door. "A market board! People pin what they want, \
+            and you bring it. Eggs, a bird, whatever's on the cards. Pin your own card too, if you have \
+            young birds to sell. New cards every week." (board)
+            """
     }
 }
 
@@ -1344,6 +1357,7 @@ public func notYetText(_ f: Feature, _ s: GameState) -> String {
     case .incubatorShop: return "Speckle & Down has no incubators in yet. They come \(when)."
     case .breedingPen: return "There is no breeding pen yet. Hazel comes to help build one \(when)."
     case .daylight: return "No need to rest yet. There's plenty of daylight."
+    case .marketBoard: return "There's talk of a market board by the bakery. It goes up \(when)."
     case .handling, .coopDoor, .breedBook, .laying: return "Not yet."
     }
 }

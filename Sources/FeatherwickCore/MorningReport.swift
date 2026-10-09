@@ -19,7 +19,7 @@ public struct MorningReport: Hashable, Sendable {
         case neighbour
         /// Notes in the post from Featherwick's people (see Post.swift).
         case post
-        /// The village calendar: a village day coming, or today.
+        /// The village calendar (a village day coming, or today) and the market board.
         case village
         /// Stock new at Speckle & Down this morning.
         case newStock
@@ -92,7 +92,7 @@ public struct MorningReport: Hashable, Sendable {
             return .neighbour
         case .noteArrived:
             return .post
-        case .villageDayComing, .villageDay:
+        case .villageDayComing, .villageDay, .marketCardsPinned, .marketCardDown, .marketBuyerCame, .marketBuyerLeft:
             return .village
         case .showAnnounced, .showDay, .showNoEntries, .showPodium, .showPlacing, .breedBookEntrySeen,
             .showPrizesWon, .showTreatsWon, .enteredInShow:
@@ -111,7 +111,7 @@ public struct MorningReport: Hashable, Sendable {
             .rejected, .starterChosen, .fed, .eggsCollected, .eggsSold, .coopClosed, .incubatorBought,
             .candled, .eggsSet, .renamed, .rehomed, .coopUpgraded, .boughtBird, .boughtEgg, .tradeAccepted,
             .boughtTreats, .boughtPremiumFeed, .fedPremium, .boughtSpecial, .birdPenned, .birdUnpenned, .slotSpent,
-            .rested, .keeperNamed, .sexGuessed, .chose, .debtPaid:
+            .rested, .keeperNamed, .sexGuessed, .chose, .debtPaid, .marketCardFilled, .marketCardPosted, .soldToBuyer:
             return .other
         }
     }

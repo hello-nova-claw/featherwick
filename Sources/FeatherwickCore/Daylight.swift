@@ -25,6 +25,8 @@ public enum Errand: String, Hashable, Codable, Sendable, CaseIterable {
     case neighbour
     /// The carpenter adds perches.
     case building
+    /// The market board by the bakery: filling a card, pinning one, or meeting a buyer.
+    case market
 }
 
 /// The time of day, worked out from the slots spent and never stored, so it can never drift.
@@ -65,6 +67,7 @@ extension Engine {
         case .enterShow, .enterShowIn, .enterEggs, .enterEggPlate: .showDesk
         case .deliver, .acceptTrade, .rehome: .neighbour
         case .upgradeCoop: .building
+        case .fillCard, .postCard, .sellToBuyer: .market
         case .chooseStarter, .feed, .feedPremium, .collectEggs, .sellEggs, .sellChosenEggs, .sellClearEggs,
             .closeCoop, .pet, .giveTreat, .rename, .incubate, .incubateEggs, .sit, .sitEggs, .penBird, .unpenBird,
             .rest, .passNight, .openPlanner, .nameKeeper, .guessSex, .choose, .payDebt:

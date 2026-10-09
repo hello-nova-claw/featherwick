@@ -92,7 +92,7 @@ struct EarlyGameTests {
 
     @Test func featuresArriveOnTheTimelineOnceEachAndInOrder() {
         var (s, rng) = Self.newKeeper()
-        let ev = Self.play(until: 40, &s, &rng)
+        let ev = Self.play(until: Rules.standard.introductionDay(of: .marketBoard) + 1, &s, &rng)
         let order = ev.compactMap { e -> Feature? in
             if case .introduced(let f) = e { return f }
             return nil

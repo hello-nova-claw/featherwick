@@ -37,7 +37,7 @@ errands left. See "Daylight and errands".
 the neighbours, the post, the village, new stock, the show, jobs, the season goal, eggs, other) for the app's morning report.
 Every event lands in exactly one group. IDs and events only; the words come from `eventText`.
 
-Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals ("hen or roo?" guesses settle as the sex shows) → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note, and the first why note opens "What might hatch"; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (loans due go home; a fertile-eggs step teaches candling if needed; debts are mentioned at most once a season) & trade offer → post (maybe one note) → village day (a notice a week ahead, and the day) → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
+Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals ("hen or roo?" guesses settle as the sex shows) → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note, and the first why note opens "What might hatch"; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (loans due go home; a fertile-eggs step teaches candling if needed; debts are mentioned at most once a season) & trade offer → post (maybe one note) → village day (a notice a week ahead, and the day) → county show (on show days) → early game (features whose day has come; the show tip) → market board (old cards come down, the keeper's buyer comes or goes, new cards once a week) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
 
 ## The early game (tutorial timeline)
 
@@ -77,6 +77,7 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 | 28 | — | The first county show. |
 | 29 | `incubatorShop` | The big incubator. (The neighbour's small one still comes with the first fertile egg, laid or bought.) If the neighbour gave hers, the big one comes at least `incubatorShopAfterGiftDays` (14) after the gift (`GameState.introductionDay(of:)`). |
 | 35 | `breedingPen` | The neighbour helps build the breeding pen. The keeper chooses the sire. |
+| 42 | `marketBoard` | Mr Okafor puts up the market board by the bakery. It opens sooner if his note about the board comes first. |
 
 - The days are in `Rules.featureDays`. The show opens `showNoticeDays` (7) before the first show.
 - No birds, perches, incubators or shows before the sex shows (`EarlyGameTests` checks this).
@@ -856,6 +857,49 @@ shows notes under "Post". Conditions read only what the keeper can see (rule 8).
 comes round again next year. `GameState.nextVillageDay` and `upcomingVillageDays(n)` give the dates.
 CLI: `calendar` lists the next four.
 
+## Market board
+
+`MarketBoard.swift`. A board by Mr Okafor's bakery. People pin cards for what they want, and the keeper
+brings it. The keeper can pin a card of their own to sell young birds. Nothing here can be failed.
+
+- **It opens** with `Feature.marketBoard`, on day 42 (`Rules.featureDays`). It opens sooner on the morning
+  Mr Okafor's note `okafor-marketBoard` comes (`MarketBoard.openingNoteID`), if a story sends it.
+- **Wanted cards.** Once a week (`marketPinIntervalDays`, 7) the night pins `marketCardsMin` to
+  `marketCardsMax` (1 to 2) cards. At most `marketBirdCardsPerPin` (1) card asks for a bird. A card stays
+  up for `marketCardDays` (7), the pin day included. Then it comes down (`.marketCardDown`). No penalty.
+- **The table** is `MarketCards.pool` (`MarketCardKind`: an ID, a person, a want and a `NoteCondition`).
+  Append, never insert: the seeded pick reads list order. Each pinned `MarketCard` keeps its own copy of
+  the want and the coins, so a table change never changes a card in a save.
+- **What a card asks** (`MarketWant`): N carton eggs of one colour (speckled or plain), or one bird
+  (`MarketBirdAsk`: a sex, a friendliness band or better, a laying hen). An egg card is pinned only when
+  the Egg Book has its colour.
+- **Rewards** (`Rules.marketReward`). Eggs pay `marketEggRewardFactor` (1.5) times their fresh farm-gate
+  price, rounded: 3 blue eggs pay 14. A bird pays `marketBirdCoins` (8), plus `marketLayingHenCoins` (4),
+  `marketFriendlyCoins` (5) or `marketLapChickenCoins` (12).
+- **Filling a card** (`fillCard(card, bird:)`). An egg card takes eggs not known to be fertile first, then
+  the oldest. A bird card takes the named bird, if it fits and can go to a new home (`rehomeBlocker`:
+  not on loan, not busy, not the last bird). The bird goes to the rehomed list. Events: `.marketCardFilled`.
+- **The keeper's card** (`postCard(breed)`). One at a time. The keeper needs a young purebred of the
+  breed: feathers in, not adult yet, free to go (`youngBirdsForSale`). A buyer comes `marketBuyerMinDays`
+  to `marketBuyerMaxDays` (1 to 3) later (`.marketBuyerCame`) and stays `marketBuyerWaitDays` (2).
+  `sellToBuyer(bird)` sells one bird for `marketBuyerPrice`: the rehome value times `marketBuyerFactor`
+  (1.5, rounded up), plus `marketBuyerBonus` (4). That is always more than a new home pays. If nothing
+  suits, the buyer goes home and the card comes down (`.marketBuyerLeft`). No penalty.
+- **Errands.** Filling, pinning and selling are the `.market` errand: the first one each day takes a slot.
+- **No game RNG.** The pins and the buyer's day come from `shopSeed` and the day. The board changes no
+  seeded game.
+- **Rule 8.** A card asks only for what the keeper can see. A bird whose feathers are not in never fits any
+  card, and its refusal (`.tooYoungForCard`) is about age, never sex.
+- **Morning report.** Pins, cards that came down and the buyer go under "In the village".
+- **Balance.** The sim keeper fills every card it can. Over 20 games × 224 days the board adds a mean of
+  237 coins (final coins: 504 without the board, 677 with it). Much of that is spare adults, which the
+  sim keeper keeps for no coins when there is no board. `SimulationTests` guards it.
+- Saves: `GameState.marketBoard` and the `market*` rules fill in with their starting values
+  (`SaveFormat.fillNewSettings`).
+- CLI: `board`, `fill <n> [bird name]`, `post <breed>`, `sell <name>`. App: "Market board" on the farm
+  gate sheet opens `MarketBoardSheet`. The farm gate says "a card you can fill" or "a buyer is here".
+  Words: `MarketText.swift`.
+
 ## Goal ladder
 
 `Milestone.swift`. Small, always-visible goals that give the no-loss sandbox a direction: first
@@ -959,6 +1003,7 @@ Sleep waits until every slot is spent, and nothing is ever lost: a refused erran
 | One slot | `enterShow`, `enterShowIn`, `enterEggs`, `enterEggPlate` | `.showDesk` |
 | One slot | `deliver`, `acceptTrade`, `rehome` | `.neighbour` |
 | One slot | `upgradeCoop` | `.building` |
+| One slot | `fillCard`, `postCard`, `sellToBuyer` | `.market` (the board by the bakery) |
 | One slot, no effect | `rest` | none |
 | Waits for evening | `passNight` | none |
 

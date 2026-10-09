@@ -70,6 +70,8 @@ enum FarmSheet: Identifiable, Hashable {
     case jobs
     /// The breeding pen, opened from the coop sheet.
     case breedingPen
+    /// The market board by the bakery, opened from the farm gate sheet.
+    case marketBoard
     #if DEBUG || BETA
         /// A TestFlight question (`Beta/`). Never in an App Store build.
         case betaPrompt(BetaMoment)
@@ -318,7 +320,7 @@ struct FarmView: View {
         case .place(.yard): YardSheet(open: open)
         // The old potting shed is part of the coop sheet now (`BrooderSection`).
         case .place(.pottingShed): CoopSheet(open: open)
-        case .place(.farmGate): FarmGateSheet()
+        case .place(.farmGate): FarmGateSheet(open: open)
         case .place(.backFence): BackFenceSheet()
         case .bird(let id): BirdCardSheet(birdID: id, context: "In the flock")
         case .naming: NamingSheet()
@@ -327,6 +329,7 @@ struct FarmView: View {
         case .neighbourNote: NeighbourNoteSheet()
         case .jobs: JobsSheet()
         case .breedingPen: BreedingPenSheet(open: open)
+        case .marketBoard: MarketBoardSheet(open: open)
         #if DEBUG || BETA
             case .betaPrompt(let moment): BetaPromptSheet(moment: moment)
         #endif
@@ -395,6 +398,11 @@ struct FarmView: View {
             var n: [Notice] = []
             // Stock the early game brought in this morning. It goes once the keeper has looked (or bought).
             if store.hasNewStock { n.append(Notice(kind: .story, text: "new in today")) }
+            if s.marketBoard.keeperCard?.buyerHere(onDay: s.day) == true {
+                n.append(Notice(kind: .decision, text: "a buyer is here"))
+            } else if s.isOpen(.marketBoard), s.marketBoard.cards.contains(where: s.canFill) {
+                n.append(Notice(kind: .collect, text: "a card you can fill"))
+            }
             guard s.isOpen(.shows) else { return n }
             if let tip = s.showTip, let bird = s.bird(tip.birdID),
                 !s.showEntries.contains(where: { $0.birdID == bird.id })
