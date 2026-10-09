@@ -66,6 +66,9 @@ public enum Command: Hashable, Codable, Sendable {
     case choose(story: String, option: String)
     /// Pay a debt in full (see Loans.swift). Any time the keeper has the coins. Free.
     case payDebt(String)
+    /// Bring a known-fertile egg to the Hatch-along (see HatchAlong.swift). Nil: the first known-fertile
+    /// egg in the carton. A chick comes back `Rules.hatchAlongReturnNights` later.
+    case giveHatchAlongEgg(UUID?)
 }
 
 public enum Rejection: Hashable, Codable, Sendable {
@@ -157,6 +160,8 @@ public enum Rejection: Hashable, Codable, Sendable {
     case noSuchDebt
     /// The bird is on loan: she cannot be rehomed, penned or renamed (see Loans.swift).
     case onLoan
+    /// The Hatch-along can't take an egg now (see HatchAlong.swift).
+    case hatchAlong(HatchAlongRefusal)
 }
 
 public enum GameEvent: Hashable, Codable, Sendable {
@@ -318,6 +323,16 @@ public enum GameEvent: Hashable, Codable, Sendable {
     case villageDayComing(VillageDay, inDays: Int)
     /// Today is a village day.
     case villageDay(VillageDay)
+    /// What a village day brings, in that year's words (year 0 is the first). After `.villageDay`.
+    case villageDayScene(VillageDay, year: Int)
+    /// A village day's gift, in the purse and the bag now: Moult Week treats, Midwinter Lights coins.
+    case villageDayGift(VillageDay, coins: Int, treats: Int)
+    /// The keeper brought an egg to the Hatch-along. A chick comes back on `returnsOnDay`.
+    case hatchAlongEggGiven(returnsOnDay: Int)
+    /// The Hatch-along chick is ready, but there is no room yet: it waits with Hazel. Once per wait.
+    case hatchAlongChickWaiting
+    /// The Hatch-along chick came home to the brooder. Its breed and sex show as it grows.
+    case hatchAlongChickArrived(UUID)
 }
 
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
@@ -591,6 +606,8 @@ public enum Engine {
             return choose(story, option, &s, &rng)
         case .payDebt(let id):
             return payDebt(id, &s)
+        case .giveHatchAlongEgg(let id):
+            return giveHatchAlongEgg(id, &s)
         }
     }
 
@@ -961,8 +978,9 @@ public enum Engine {
 
         // 1. Night: the fox visits only if the coop is open. It never kills; it scares birds away.
         //    Broody and mothering hens hold their ground, and their chicks stay hidden under them.
+        //    On the Longest Day's night the fox stays home: no roll at all (see VillageDay.swift).
         let canFlee = s.coop.filter { !$0.isBroody(onDay: s.day) }
-        if s.coopDoorOpen, !canFlee.isEmpty, Double.roll(r.foxChance, using: &rng) {
+        if s.coopDoorOpen, !canFlee.isEmpty, !s.foxStaysHome, Double.roll(r.foxChance, using: &rng) {
             var stay = s.coop.filter { $0.isBroody(onDay: s.day) }
             var calm: [Bird] = []
             var scared: [Bird] = []

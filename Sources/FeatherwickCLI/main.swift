@@ -105,6 +105,7 @@ let help = """
       art                  the parts the artist needs to paint
       story                what's happening in Featherwick
       give eggs            hand over the eggs someone asked for
+      give egg             bring a known-fertile egg to the Hatch-along (in its week)
       choose <story> <opt> answer a choice someone asked you
       pay <debt>           pay back what you owe (no hurry)
       people               the people you've met, and what they're waiting on
@@ -421,7 +422,9 @@ while true {
         for key in keys { print("  \(key): \(key.masks.map(\.rawValue).joined(separator: ", "))") }
     case "story": storyLines(game.state).forEach { print($0) }
     case "people": peopleLines(game.state).forEach { print($0) }
-    case "calendar": calendarLines(game.state).forEach { print($0) }
+    case "calendar":
+        (villageCalendarLines(game.state) + hatchAlongLines(game.state)).forEach { print($0) }
+        if game.state.hatchAlongRefusal() == nil { print("To bring your Hatch-along egg: give egg") }
     case "pay":
         guard words.count > 1 || game.state.debts.count == 1,
             let id = words.dropFirst().first ?? game.state.debts.first?.id
@@ -430,6 +433,8 @@ while true {
             break
         }
         run(.payDebt(game.state.debts.first { $0.id.lowercased() == id }?.id ?? id))
+    case "give" where words.count > 1 && words[1] == "egg":
+        run(.giveHatchAlongEgg(nil))
     case "give":
         guard let story = Engine.storyAwaitingDelivery(game.state) else {
             print("Nobody is waiting for anything from you right now.")

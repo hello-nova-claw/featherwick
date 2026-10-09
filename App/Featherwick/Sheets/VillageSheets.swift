@@ -199,6 +199,7 @@ struct ShowPanel: View {
             birdsToEnter(s)
             platesToEnter(s)
             pastResults(s)
+            villageCalendar(s)
         }
         .sheet(item: $choosing) { choice in
             EnterShowSheet(birdID: choice.id).environment(\.palette, palette)
@@ -321,6 +322,16 @@ struct ShowPanel: View {
                     Text(resultLine(r)).font(Typeface.label).foregroundStyle(palette.inkSoft)
                     StitchDivider()
                 }
+            }
+        }
+    }
+
+    /// The next village days, and the Hatch-along while its week is on. Nothing here asks for anything.
+    private func villageCalendar(_ s: GameState) -> some View {
+        VStack(alignment: .leading, spacing: Space.s) {
+            Text("Village calendar").font(Typeface.item)
+            ForEach(villageCalendarLines(s, count: 2) + hatchAlongLines(s), id: \.self) { line in
+                Text(line).font(Typeface.label).foregroundStyle(palette.inkSoft)
             }
         }
     }
@@ -527,6 +538,9 @@ struct BackFenceSheet: View {
                 }
                 if s.tradeOffer != nil {
                     reply("Yes, let's trade") { store.run(.acceptTrade) }
+                }
+                if s.hatchAlongRefusal() == nil {
+                    reply("Bring an egg for the Hatch-along") { store.run(.giveHatchAlongEgg(nil)) }
                 }
                 reply("Bye for now") { dismiss() }
             }
