@@ -23,6 +23,9 @@ struct RecordsTests {
     static func play(days: Int, seed: UInt64 = 5, forget: Bool = false) -> (GameState, SeededRNG, Tally, [GameEvent]) {
         var (s, rng) = startedGame(sex: .hen, seed: seed)
         s.coins = 500
+        // The post reads the records (a note can wait for the first egg), so a game that forgets them gets
+        // other notes. The post draws no game randomness (`NotesTests`); no post here keeps the logs comparable.
+        s.rules.noteChance = 0
         var tally = Tally()
         var log: [GameEvent] = []
         func run(_ c: Command) {
