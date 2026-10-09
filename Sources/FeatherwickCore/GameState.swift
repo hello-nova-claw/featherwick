@@ -204,6 +204,27 @@ public struct GameState: Hashable, Codable, Sendable {
     public var sexGuesses: [UUID: Sex] = [:]
     /// Guesses that turned out right. The goal ladder reads it.
     public var sexGuessesRight = 0
+    /// Coins the keeper owes Featherwick's people (see Loans.swift). No interest, no deadline.
+    public var debts: [Debt] = []
+    /// Debts paid, by ID. A story can wait for one (`StoryGoal.coinsPaid`).
+    public var debtsPaid: Set<String> = []
+    /// Notes already delivered (see Post.swift), by ID. A note never comes twice.
+    public var notesSeen: Set<String> = []
+    /// True in a game begun with the early game, on a version with the early-game stories (Marigold).
+    /// The `newKeeper` story goal reads it. False in older saves (`SaveFormat.fillNewSettings`), so a save
+    /// already past day 3 gets no retroactive loan, debt or choice.
+    public var earlyGameStories = false
+    /// The breed of each bird lent to the keeper, by loan tag. Kept after she goes home, so a story's gift
+    /// egg "of her breed" knows it even if the starter has gone (traded). Empty in older saves.
+    public var lentBreeds: [String: Breed] = [:]
+    /// Someone who will name the next chick that hatches (`StoryReward.namesNextChick`). Cleared on that
+    /// hatch. Nil when nobody is waiting, and in older saves.
+    public var nextChickNamer: Person?
+    /// The years the keeper brought an egg to the Hatch-along (see HatchAlong.swift). One egg a year.
+    public var hatchAlongYears: Set<Int> = []
+    /// The mornings Hatch-along chicks come back, soonest first. A day stays here from the egg until its
+    /// chick is home: with no room, the chick waits with Hazel. One a year, so the list stays short.
+    public var hatchAlongChickDays: [Int] = []
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

@@ -100,7 +100,7 @@ extension Engine {
         guard let special = s.todaysSpecial else { return [.rejected(.specialSoldOut)] }
         let cost = special.price
         if s.coins < cost { return [.rejected(.notEnoughCoins(needed: cost, have: s.coins))] }
-        if s.coop.count >= s.perches { return [.rejected(.noFreePerch)] }
+        if !s.hasFreePerch { return [.rejected(.noFreePerch)] }
         let variety = ShopSpecial.variety(for: special.colour, on: special.breed)
         let bird = Bird(
             id: makeID(using: &rng), name: special.sex == .hen ? "New pullet" : "New cockerel",

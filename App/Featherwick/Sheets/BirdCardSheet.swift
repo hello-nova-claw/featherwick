@@ -30,6 +30,11 @@ struct BirdCardSheet: View {
                         .minimumScaleFactor(0.6)
                         .lineLimit(1)
                     Text(epithet(bird, s)).font(Typeface.epithet).foregroundStyle(palette.inkSoft)
+                    // A bird on loan: whose she is, and how long she stays ("Hazel's hen, staying a week").
+                    if let loan = loanLineText(bird, s) {
+                        Text(loan).font(Typeface.note).foregroundStyle(palette.inkMuted)
+                            .multilineTextAlignment(.center)
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 facts(bird, s)
@@ -217,9 +222,13 @@ struct BirdCardSheet: View {
     private func moreActions(_ bird: Bird, _ s: GameState) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: Space.l) {
-                Button("Rename") {
-                    newName = bird.name
-                    renaming = true
+                // Her owner named a bird on loan: she keeps her name. Rehome and Pen hide on their own
+                // (`rehomeBlocker`, `canOfferPen` say `.onLoan`).
+                if !bird.isOnLoan {
+                    Button("Rename") {
+                        newName = bird.name
+                        renaming = true
+                    }
                 }
                 Button("Family tree") { showTree = true }
             }

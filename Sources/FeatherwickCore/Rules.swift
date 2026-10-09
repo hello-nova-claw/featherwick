@@ -169,10 +169,11 @@ public struct Rules: Codable, Hashable, Sendable {
     public var shopRarePremium = 15  // added to the price of a rare-colour special
 
     // Early game (see EarlyGame.swift): the morning each feature is introduced. A new keeper starts with
-    // one chick (sex shows on day `growerAge`) and learns one thing at a time.
+    // one chick (sex shows on day `growerAge`) and learns one thing at a time. The coop door comes on day 3
+    // with Marigold, Hazel's hen on loan, and laying on day 4, because she lays (see BorrowedHen.swift).
     public var featureDays: [Feature: Int] = [
-        .handling: 1, .treats: 2, .premiumFeed: 4, .coopDoor: 6, .breedBook: 8, .daylight: 9, .birdShop: 10,
-        .coopUpgrade: 14, .laying: 18, .incubatorShop: 29, .breedingPen: 35,
+        .handling: 1, .treats: 2, .coopDoor: 3, .laying: 4, .premiumFeed: 5, .breedBook: 8, .daylight: 9,
+        .birdShop: 10, .coopUpgrade: 14, .incubatorShop: 29, .breedingPen: 35,
     ]
     /// The county show opens this many days before the first show (`.shows` has no entry above).
     public var showNoticeDays = 7
@@ -216,6 +217,34 @@ public struct Rules: Codable, Hashable, Sendable {
     // Flock record book (see Records.swift).
     /// Days behind the "last N days" egg count.
     public var recordWindowDays = 14
+
+    // People, loans and the post (see Story.swift, Loans.swift, Post.swift).
+    /// An owner mentions a debt at most once in this many days: once a season. A kind line, never a nag.
+    public var debtReminderDays = 28
+    /// The chance of a note in the post on any morning.
+    public var noteChance = 0.4
+
+    // The borrowed hen (see BorrowedHen.swift): Marigold, the starter's mother, on loan from Hazel.
+    /// Coins Hazel asks for Marigold if the keeper keeps her. A debt, paid when the keeper can.
+    public var marigoldPrice = 40
+    /// Marigold's age when she comes to stay: a hen in her first year of laying.
+    public var marigoldAgeDays = 112
+    /// Days Marigold stays before Hazel is home and asks: a week. She comes on the coop door day.
+    public var marigoldStayDays = 7
+
+    // The village calendar (see VillageDay.swift): the day of its season each village day falls on.
+    public var villageDays: [VillageDay: Int] = [.hatchAlong: 10, .longestDay: 14, .moultWeek: 1, .midwinterLights: 14]
+    /// The village says a village day is coming this many mornings before.
+    public var villageDayNoticeDays = 7
+    /// The Hatch-along week: the day itself and the days after it, this many in all. The keeper may bring
+    /// one known-fertile egg in that time.
+    public var hatchAlongWeekDays = 7
+    /// Nights after the egg is handed over before the village hatch sends a chick back.
+    public var hatchAlongReturnNights = 3
+    /// Mealworms Hazel gives with her Moult Week lesson, each year.
+    public var moultWeekTreats = 4
+    /// Coins the village gives at Midwinter Lights, each year.
+    public var midwinterCoins = 15
 
     public init() {}
 

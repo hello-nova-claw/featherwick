@@ -104,7 +104,12 @@ let help = """
       draw <name>          which art parts and colours make up this bird
       art                  the parts the artist needs to paint
       story                what's happening in Featherwick
-      give eggs            hand over the eggs someone asked for
+      give eggs [story]    hand over the eggs someone asked for
+      give egg             bring a known-fertile egg to the Hatch-along (in its week)
+      choose <story> <opt> answer a choice someone asked you
+      pay <debt>           pay back what you owe (no hurry)
+      people               the people you've met, and what they're waiting on
+      calendar             the next village days
       judge <name>         practice judging: breed class (purebred adults) and pet class
       judge eggs           practice judging: your best plate of 3 matched eggs
       shows                the county show: schedule, your entries, and the trophy case
@@ -155,6 +160,18 @@ let help = """
     let events = step(&state, &rng)
     game = SaveFile(state: state, rng: rng)
     for e in events { if let t = eventText(e, state) { print(t) } }
+    // A choice that has just been asked: say how to answer it (the words themselves carry no command).
+    for c in state.pendingChoices where events.contains(.storyStep(c.story, step: currentStep(c, state))) {
+        print(choiceHintText(c))
+    }
+}
+
+/// The ID of the step a pending choice is on.
+func currentStep(_ c: PendingChoice, _ s: GameState) -> String {
+    guard let story = Storylines.story(c.story), let p = s.stories[c.story], p.step < story.steps.count else {
+        return ""
+    }
+    return story.steps[p.step].id
 }
 
 /// The prompt. Once the daylight lesson is in, it shows the day's slots: a filled sun for each
@@ -201,6 +218,12 @@ while true {
     case "look", "l": look(game.state)
     case "iam":
         run(.nameKeeper(line.split(separator: " ").dropFirst().joined(separator: " ")))
+    case "choose" where words.count == 3 && Int(words[1]) == nil:
+        // A story's choice. Input is lower-cased, so match the story and option without case.
+        let story = Storylines.all.first { $0.id.lowercased() == words[1] }
+        let option = game.state.pendingChoices.first { $0.story == story?.id }?.options
+            .first { $0.lowercased() == words[2] }
+        run(.choose(story: story?.id ?? words[1], option: option ?? words[2]))
     case "choose":
         let index = (words.count > 1 ? Int(words[1]) : nil) ?? 0
         let original = line.split(separator: " ").dropFirst(2).joined(separator: " ")
@@ -410,8 +433,24 @@ while true {
         print("Parts to paint (\(keys.count)), each greyscale with flat mask layers:")
         for key in keys { print("  \(key): \(key.masks.map(\.rawValue).joined(separator: ", "))") }
     case "story": storyLines(game.state).forEach { print($0) }
+    case "people": peopleLines(game.state).forEach { print($0) }
+    case "calendar":
+        (villageCalendarLines(game.state) + hatchAlongLines(game.state)).forEach { print($0) }
+        if game.state.hatchAlongRefusal() == nil { print("To bring your Hatch-along egg: give egg") }
+    case "pay":
+        guard words.count > 1 || game.state.debts.count == 1,
+            let id = words.dropFirst().first ?? game.state.debts.first?.id
+        else {
+            print(game.state.debts.isEmpty ? "You don't owe anyone anything." : "Use: pay <debt>. Type: people")
+            break
+        }
+        run(.payDebt(game.state.debts.first { $0.id.lowercased() == id }?.id ?? id))
+    case "give" where words.count > 1 && words[1] == "egg":
+        run(.giveHatchAlongEgg(nil))
     case "give":
-        guard let story = Engine.storyAwaitingDelivery(game.state) else {
+        // "give eggs" hands over to the first story waiting; "give eggs <story>" to that one.
+        let named = Engine.storiesAwaitingDelivery(game.state).first { words.dropFirst().contains($0.id.lowercased()) }
+        guard let story = named?.id ?? Engine.storyAwaitingDelivery(game.state) else {
             print("Nobody is waiting for anything from you right now.")
             break
         }

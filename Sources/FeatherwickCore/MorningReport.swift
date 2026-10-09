@@ -14,8 +14,13 @@ public struct MorningReport: Hashable, Sendable {
         case fox
         /// Lost birds back on a perch, and birds back from boarding with the neighbour.
         case cameHome
-        /// What the neighbour said or brought: lessons, gifts, stories, trade offers.
+        /// What the neighbours said or brought: lessons, gifts, stories, trade offers, loans and debts.
+        /// Mostly Hazel; a story's words name its person.
         case neighbour
+        /// Notes in the post from Featherwick's people (see Post.swift).
+        case post
+        /// The village: a village day coming or today, and the stories of Dot, Teddy, Mr Okafor and Bea.
+        case village
         /// Stock new at Speckle & Down this morning.
         case newStock
         /// The county show: the news, the podiums, the placings and the prizes.
@@ -63,13 +68,26 @@ public struct MorningReport: Hashable, Sendable {
     /// Early-game steps that bring new stock to Speckle & Down. The app uses the same list for "new in today".
     public static let newStockFeatures: [Feature] = [.treats, .premiumFeed, .birdShop, .coopUpgrade, .incubatorShop]
 
+    /// The story a story event is about, or nil for any other event.
+    static func storyID(of event: GameEvent) -> String? {
+        switch event {
+        case .storyStarted(let id), .storyStep(let id, _), .delivered(let id), .storyGiftWaitingForRoom(let id),
+            .storyGift(let id, _), .storyFinished(let id), .storyCoins(let id, _), .storyTreats(let id, _),
+            .storyGiftEgg(let id, _):
+            id
+        default: nil
+        }
+    }
+
     /// The one group an event belongs to. Player actions do not happen at night; they go in `.other` so the
     /// switch stays total.
     public static func group(of event: GameEvent) -> Group {
+        // A story of someone other than Hazel (Dot, Teddy, Mr Okafor, Bea) is village news.
+        if let id = storyID(of: event), let story = Storylines.story(id), story.person != .hazel { return .village }
         switch event {
         case .dayStarted, .seasonChanged, .quietNight:
             return .morning
-        case .chicksHatched, .eggsDidNotHatch, .hatchSurprise, .plannerIntroduced:
+        case .chicksHatched, .eggsDidNotHatch, .hatchSurprise, .plannerIntroduced, .chickNamed:
             return .hatched
         case .foxVisited, .birdWaitingForPerch:
             return .fox
@@ -82,8 +100,14 @@ public struct MorningReport: Hashable, Sendable {
         case .introduced, .plannerShownAtPen, .neighbourGaveHen, .neighbourGaveIncubator, .learnedCandling,
             .roosterAdvice,
             .tradeOffered, .storyStarted, .storyStep, .delivered, .storyGiftWaitingForRoom, .storyGift,
-            .storyFinished:
+            .storyFinished, .storyCoins, .storyTreats, .storyGiftEgg, .loanArrived, .loanReturned, .loanKept,
+            .debtOwed, .debtReminder:
             return .neighbour
+        case .noteArrived:
+            return .post
+        case .villageDayComing, .villageDay, .villageDayScene, .villageDayGift, .hatchAlongEggGiven,
+            .hatchAlongChickWaiting, .hatchAlongChickArrived:
+            return .village
         case .showAnnounced, .showDay, .showNoEntries, .showPodium, .showPlacing, .breedBookEntrySeen,
             .showPrizesWon, .showTreatsWon, .enteredInShow:
             return .shows
@@ -101,7 +125,7 @@ public struct MorningReport: Hashable, Sendable {
             .rejected, .starterChosen, .fed, .eggsCollected, .eggsSold, .coopClosed, .incubatorBought,
             .candled, .eggsSet, .renamed, .rehomed, .coopUpgraded, .boughtBird, .boughtEgg, .tradeAccepted,
             .boughtTreats, .boughtPremiumFeed, .fedPremium, .boughtSpecial, .birdPenned, .birdUnpenned, .slotSpent,
-            .rested, .keeperNamed, .sexGuessed:
+            .rested, .keeperNamed, .sexGuessed, .chose, .debtPaid:
             return .other
         }
     }

@@ -24,7 +24,7 @@ The CLI writes `featherwick-save*.json` in the current folder (git-ignored). Do 
 | Path | What |
 | --- | --- |
 | `Sources/FeatherwickCore` | Pure game logic. All rules live here. |
-| `Sources/FeatherwickText` | The words players read (events, screens, milestones). Shared by CLI and app. `People.swift`: Hazel (neighbour), Wren (shop), the day-1 welcome and tour. |
+| `Sources/FeatherwickText` | The words players read (events, screens, milestones). Shared by CLI and app. `People.swift`: Hazel (neighbour), Wren (shop), the day-1 welcome and tour. `VillageText.swift`: every person's name and about line, choices, loans, debts, the post, the calendar. `VillagePeopleText.swift`: the arcs of Dot, Teddy, Mr Okafor and Bea. |
 | `Sources/FeatherwickCLI/main.swift` | Thin text front end. Parses input, prints text. No rules, no words. |
 | `App/` | iOS test app (SwiftUI, no art yet). `project.yml` is the XcodeGen spec. |
 | `Tests/FeatherwickCoreTests` | One suite per system. `Fixtures/save-v0.json` is a real old save. |
@@ -37,7 +37,8 @@ Key Core files:
 - `GameState.swift`, `Genome.swift`, `Locus.swift`, `Alleles.swift`, `Phenotype.swift`: state and genetics.
 - `BreedTable.swift`, `Breed.swift`: breeds and colour varieties (data tables).
 - `SaveFormat.swift` (versions, migrations), `SaveStore.swift` (slots, atomic writes, backups).
-- One file per feature: `EarlyGame`, `BreedingPen`, `Shows`, `ShowEvent`, `Friendliness`, `SexGuess` ("hen or roo?"), `Pedigree`, `Names`, `Quirks`, `Story`,
+- One file per feature: `EarlyGame`, `BreedingPen`, `Shows`, `ShowEvent`, `Friendliness`, `SexGuess` ("hen or roo?"), `Pedigree`, `Names`, `Quirks`, `Story`
+  (people, choices), `Loans` (loaned birds, debts), `BorrowedHen` (Marigold, days 2 to 10), `Post` (notes), `VillageDay` (the calendar), `HatchAlong` (the spring egg swap),
   `Milestone`, `Jobs` (daily jobs, season goals), `Records` (the flock record book), `Daylight` (day slots, errands, the sleep gate), `Look`, `Simulation`, `HatchWhy` (hatch-day "why" note).
 - What might hatch: `Visible` (what the keeper sees, no genes), `Knowledge` + `KnowledgeTables` (genes worked
   out by elimination), `Planner` + `PlannerTables` (the pen forecast, carrier notes), `Inheritance`
@@ -65,6 +66,7 @@ components, screens 1a–8a). The painted farm and bird art come later; dashed b
   A tap on yard ground makes a ripple. The birds react by friendliness band (`Scene/RippleReaction.swift`). It is view only: no command, no save. Scene presentation numbers go in `Scene/SceneConstants.swift`, not `Rules`. App unit tests are in `App/FeatherwickTests/` (Swift Testing, the `FeatherwickTests` target).
   `Feedback/`: `Haptics` and `Sound` (bundled `Sounds/*.caf`, silent if missing), with on/off switches in Settings. `GameStore.run` plays event feedback through `GameFeedback`.
 - What might hatch (`Sheets/WhatMightHatchSection.swift`): the forecast in the breeding pen sheet, and carrier lines on the bird card.
+- Books ▸ People (`Sheets/PeopleBook.swift`): each person met, their arcs, and their choices and deliveries. The back fence offers the same choices and deliveries.
 - Day 1 (`RootView.swift`, `Sheets/TourSheet.swift`): Hazel asks the keeper's name (`.nameKeeper`), offers a chick, then
   walks the keeper round the four places. The game starts on day 1.
 - Morning report (`Sheets/MorningReportSheet.swift`): after Sleep, one page of the night, before the farm.
@@ -118,7 +120,9 @@ Most new content is a table entry. See README "Data layer" and the feature secti
   `ChickLookTable.eggGenes`. A new look also needs a `Trait` and its line in `Trait.showing`.
   Knowledge and the planner pick it up from `Loci`; check `KnowledgeTests`. Its carrier words go in
   `carrierText` (`PlannerTextTests` checks every allele).
-- Storyline: a `Storyline` in `Storylines.all` + its words in `storyText`.
+- Storyline: a `Storyline` in `Storylines.all` (with its `person`) + its words in `storyText`, and each
+  choice option's words in `choiceText` (`VillageText.swift`).
+- Note: a `Note` at the end of `Notes.pool` (with its `NoteCondition`) + its words in `poolNoteText` (`NotesText.swift`).
 - Milestone: a `Milestone` in `Milestones.all` (order = ladder) + its words in `milestoneText`.
 - Night step: add it to `passNight` in order and update the "Night order" line in README.
 - Early-game step: a `Feature` case (timeline order), its day in `Rules.featureDays`, its gate in

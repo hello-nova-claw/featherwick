@@ -97,6 +97,15 @@ public enum SaveFormat {
                 with: JSONEncoder().encode(GameState(rules: .standard, phase: .playing))) as? [String: Any]
         else { return }
         for (key, value) in fresh where state[key] == nil { state[key] = value }
+        // Story progress from before choices has no `chosen`: no choice made yet.
+        if var stories = state["stories"] as? [String: Any] {
+            for (id, value) in stories {
+                guard var progress = value as? [String: Any], progress["chosen"] == nil else { continue }
+                progress["chosen"] = [String: Any]()
+                stories[id] = progress
+            }
+            state["stories"] = stories
+        }
         if var rules = state["rules"] as? [String: Any], let freshRules = fresh["rules"] as? [String: Any] {
             for (key, value) in freshRules where rules[key] == nil { rules[key] = value }
             state["rules"] = rules

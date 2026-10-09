@@ -48,6 +48,7 @@ extension Engine {
             return away ? .birdNotHome : .noSuchBird
         }
         guard bird.revealed else { return .tooYoungForPen }
+        if bird.isOnLoan { return .onLoan }  // her line is her owner's to plan
         switch bird.sex {
         case .rooster: return s.penRooster == nil ? nil : .penHasRooster
         case .hen: return s.pennedHens.count < s.rules.penHens ? nil : .penFull(hens: s.rules.penHens)
