@@ -8,7 +8,8 @@ import Testing
 struct InvariantTests {
     static func problems(in s: GameState) -> [String] {
         var p: [String] = []
-        if s.coop.count > s.perches { p.append("coop \(s.coop.count) > perches \(s.perches)") }
+        // A loaned bird brings her own box, so only the keeper's own birds take perches.
+        if s.perchesUsed > s.perches { p.append("coop \(s.perchesUsed) > perches \(s.perches)") }
         if s.brooder.count > s.brooderSize { p.append("brooder \(s.brooder.count) > size \(s.brooderSize)") }
         if s.carton.count > s.cartonCapacity { p.append("carton over capacity") }
         if s.coins < 0 { p.append("negative coins") }

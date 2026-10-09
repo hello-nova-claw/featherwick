@@ -14,7 +14,8 @@ public struct MorningReport: Hashable, Sendable {
         case fox
         /// Lost birds back on a perch, and birds back from boarding with the neighbour.
         case cameHome
-        /// What the neighbour said or brought: lessons, gifts, stories, trade offers.
+        /// What the neighbours said or brought: lessons, gifts, stories, trade offers, loans and debts.
+        /// Mostly Hazel; a story's words name its person.
         case neighbour
         /// Notes in the post from Featherwick's people (see Post.swift).
         case post
