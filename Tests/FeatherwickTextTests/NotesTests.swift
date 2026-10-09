@@ -221,12 +221,15 @@ struct NotesTests {
         var goldie = Self.bird("Goldie", revealed: true, id: 9)
         goldie.loan = Loan(owner: .hazel, tag: "goldie")
         goldie.tameness = 1
+        QuantitativeTrait.calm.setShare(1, in: &goldie.genome)  // all calm genes: score 1, a lap chicken
+        try #require(goldie.friendliness == .lapChicken)
         s.coop.append(goldie)
         let handFed = try #require(Notes.note("teddy.handFed"))
         #expect(handFed.condition.holds(in: s))
         #expect(postNoteText("teddy.handFed", s)?.contains("Goldie") == true)
         let lap = try #require(Notes.note("teddy.lap"))
-        if lap.condition.holds(in: s) { #expect(postNoteText("teddy.lap", s)?.contains("Goldie") == true) }
+        #expect(lap.condition.holds(in: s))
+        #expect(postNoteText("teddy.lap", s)?.contains("Goldie") == true)
     }
 
     /// Story notes (`StoryReward.note`) and pool notes share `notesSeen`, so no ID may be in both.
