@@ -82,19 +82,18 @@ public func storyText(_ id: String, step: String?) -> String {
         return "The Australorp hen is settling in. Give her a few days to find her feet."
     case ("marigold", nil):
         return """
-            Hazel leans over the fence. "I'm off to my sister's tomorrow, for a week. Could Marigold stay \
+            Hazel leans over the fence. "I'm off to my sister's soon, for a few days. Could Marigold stay \
             with you while I'm gone? She's your chick's mother, and a good layer. She brings her own box."
             """
     case ("marigold", "staying"):
         return """
             Hazel lifts Marigold over the fence, box and all. "Her eggs are yours. Shut the door at night. \
-            Back in a week!"
+            I'll be back before you know it!"
             """
     case ("marigold", "decide"):
         return """
             Hazel is home, and at the fence first thing. "Has Marigold been good? She can come home with me, \
-            and I'll give you an egg from my flock to hatch. Or keep her, if you like. Pay me when you can." \
-            (choose marigold return, or choose marigold keep)
+            and I'll give you an egg from my flock to hatch. Or keep her, if you like. Pay me when you can."
             """
     default:
         return "Something is happening in Featherwick. Type: story"
@@ -627,7 +626,9 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
                 "\"I see your rooster has been busy. Some of your eggs will be fertile now. "
                 + "Here, take my old incubator. \(fits) "
                 + "You can't tell which eggs are fertile yet, so try a few. The clear ones just won't hatch.\""
-        } else if s.chosen(Storylines.marigold, in: Storylines.marigold) == "return", s.incubatorGiftDay == s.day {
+        } else if s.chosen(Storylines.marigold, in: Storylines.marigold) == "return", s.incubatorGiftDay == s.day,
+            hasHazelsEgg(s)
+        {
             // Hazel's thank-you egg for sending Marigold home: it brings the incubator with it.
             note =
                 "\"That egg needs keeping warm to hatch. Here, take my old incubator. \(fits) "
@@ -1249,7 +1250,7 @@ public func storyLines(_ s: GameState) -> [String] {
         switch step?.goal {
         case .deliverFertileEggs(let n)?:
             out.append("• \(story.id): bring \(n) eggs you know are fertile, then: give eggs")
-        case .waitDays?, .onDay?: out.append("• \(story.id): wait a few days")
+        case .waitDays?, .onDay?, .featureDay?: out.append("• \(story.id): wait a few days")
         case .choice(let id, let options)? where p.chosen[id] == nil:
             let list = options.map { "\($0) (\(choiceText(story: story.id, option: $0)))" }.joined(separator: ", ")
             out.append(
@@ -1287,6 +1288,12 @@ func article(_ next: String) -> String { "aeiou".contains(next.lowercased().firs
 
 /// The starter's name, or "your chick" if the starter has gone.
 func starterName(_ s: GameState) -> String { s.starterID.flatMap { s.bird($0)?.name } ?? "your chick" }
+
+/// True when the carton holds a fertile egg from a story gift (its mother is a village record), not one
+/// bought at Speckle & Down (a local flock's). For the incubator note on the day Marigold goes home.
+func hasHazelsEgg(_ s: GameState) -> Bool {
+    s.carton.contains { $0.isCandled && $0.isFertile && s.pedigree[$0.motherID]?.origin == Bird.villageOrigin }
+}
 
 /// What the neighbour says when the early game reaches a feature. The show is announced by `showTipText`.
 public func introducedText(_ f: Feature, _ s: GameState) -> String? {
@@ -1347,16 +1354,27 @@ public func introducedText(_ f: Feature, _ s: GameState) -> String? {
             \(article(what)) \(what)! \(book)" (book)
             """
     case .laying:
-        let hens = s.birdsAtHome.filter { $0.revealed && $0.sex == .hen }
-        guard let hen = hens.min(by: { $0.hatchDay < $1.hatchDay }) else {
-            return "Hazel's hens are laying well. \"Roosters don't lay, mind. A pullet from Speckle & Down "
-                + "would.\" (shop)"
-        }
-        let n = hen.name
         let lesson = """
             Hens lay when they were fed the day before. Collect the eggs every day: full nest boxes mean \
             broken eggs, and old eggs sell for less.
             """
+        let hens = s.birdsAtHome.filter { $0.revealed && $0.sex == .hen }
+        guard let hen = hens.min(by: { $0.hatchDay < $1.hatchDay }) else {
+            // Marigold is on loan but not home (the fox scared her off): she lays once she is back.
+            if let away = s.loanedBird(tag: Storylines.marigold) {
+                return """
+                    A note from Hazel is tucked in \(away.name)'s empty box: "\(away.name) will lay when she's \
+                    home. A fright puts a hen off laying for a few days. \(lesson)" (collect, sell)
+                    """
+            }
+            // A chick whose sex does not show yet: say nothing about roosters, so nothing hints at it.
+            if s.ownBirds.contains(where: { !$0.revealed }) {
+                return "Hazel's hens are laying well. \"\(lesson)\" (collect, sell)"
+            }
+            return "Hazel's hens are laying well. \"Roosters don't lay, mind. A pullet from Speckle & Down "
+                + "would.\" (shop)"
+        }
+        let n = hen.name
         // Day 4: Hazel is away, and Marigold is laying. Hazel left the lesson in her box.
         if hen.loan?.tag == Storylines.marigold {
             return """

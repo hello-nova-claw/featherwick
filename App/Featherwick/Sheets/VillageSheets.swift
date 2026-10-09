@@ -570,6 +570,8 @@ struct BackFenceSheet: View {
             return
                 "“My daughter's starting a flock and needs a rooster. I'd swap you a young hen for \(birdName(offer.roosterID, s)).”"
         }
+        // Hazel away (Marigold's week), or a choice waiting for a perch or a busy hen: its own words.
+        if let words = hazelFenceText(s) { return words }
         for story in Storylines.all.reversed() {
             guard let p = s.stories[story.id], !p.rewarded, !story.steps.isEmpty else { continue }
             // The words of the step the story is on: `storyStep` names the step it moves to. The story's

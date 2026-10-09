@@ -229,6 +229,8 @@ public struct Rules: Codable, Hashable, Sendable {
     public var marigoldPrice = 40
     /// Marigold's age when she comes to stay: a hen in her first year of laying.
     public var marigoldAgeDays = 112
+    /// Days Marigold stays before Hazel is home and asks: a week. She comes on the coop door day.
+    public var marigoldStayDays = 7
 
     // The village calendar (see VillageDay.swift): the day of its season each village day falls on.
     public var villageDays: [VillageDay: Int] = [.hatchAlong: 10, .longestDay: 14, .moultWeek: 1, .midwinterLights: 14]

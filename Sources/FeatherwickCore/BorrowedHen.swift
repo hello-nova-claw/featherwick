@@ -24,23 +24,25 @@ extension Storylines {
 
     /// Marigold, Hazel's hen: the starter's mother, on loan from day 3.
     public static let marigoldSpec = LoanSpec(
-        tag: marigold, owner: .hazel, name: "Marigold", sex: .hen, ageDays: Rules.standard.marigoldAgeDays,
+        tag: marigold, owner: .hazel, name: "Marigold", sex: .hen, ageDays: .rule(.marigoldAgeDays),
         motherOfStarter: true)
 
-    /// The borrowed hen. Day 2: Hazel asks if Marigold may stay. Day 3: she comes. Day 10: Hazel is home,
+    /// The borrowed hen. Day 2: Hazel asks if Marigold may stay. Day 3 (the coop door lesson): she comes.
+    /// Day 10 (`marigoldStayDays` later): Hazel is home,
     /// and the keeper chooses: send her home with an egg of her line, or keep her and owe Hazel.
     public static let borrowedHen = Storyline(
         id: marigold,
         person: .hazel,
         trigger: .newKeeper,
         steps: [
-            StoryStep(id: "arrives", goal: .onDay(3), rewards: [.loanBird(marigoldSpec)]),
-            StoryStep(id: "staying", goal: .onDay(10)),
+            // She comes the morning of the coop door lesson (day 3), and Hazel is home a week later (day 10).
+            StoryStep(id: "arrives", goal: .featureDay(.coopDoor), rewards: [.loanBird(marigoldSpec)]),
+            StoryStep(id: "staying", goal: .waitDays(.rule(.marigoldStayDays))),
             StoryStep(
                 id: "decide", goal: .choice(id: marigold, options: ["return", "keep"]),
                 rewards: [
                     .ifChosen(marigold, "return", [.endLoan(birdTag: marigold)]),
-                    .ifChosen(marigold, "keep", [.offerToKeep(birdTag: marigold, price: Rules.standard.marigoldPrice)]),
+                    .ifChosen(marigold, "keep", [.offerToKeep(birdTag: marigold, price: .rule(.marigoldPrice))]),
                 ]),
         ],
         // Hazel's thank-you for sending her home: an egg of the starter's breed, from Marigold's line. Its own
@@ -54,7 +56,12 @@ extension GameState {
     public var marigoldCame: Bool { (stories[Storylines.marigold]?.step ?? 0) >= 1 }
     /// True while Hazel is at her sister's: from the morning Marigold comes until Hazel is home (day 10).
     /// The words use it: in this week Hazel writes, she does not lean over the fence.
-    public var hazelAway: Bool { stories[Storylines.marigold].map { !$0.rewarded && $0.step == 1 } ?? false }
+    public var hazelAway: Bool { hazelHomeDay != nil }
+    /// The morning Hazel is home again, while she is away; nil otherwise. `marigoldStayDays` after Marigold came.
+    public var hazelHomeDay: Int? {
+        guard let p = stories[Storylines.marigold], !p.rewarded, p.step == 1 else { return nil }
+        return p.stepStartedDay + rules.marigoldStayDays
+    }
 }
 
 extension Breed {
@@ -105,7 +112,7 @@ extension Engine {
         else { return nil }
         var mother = Bird(
             id: makeID(using: &rng), name: spec.name, breed: breed, genome: genome,
-            hatchDay: s.day - spec.ageDays, origin: spec.owner.origin, revealed: true
+            hatchDay: s.day - spec.ageDays.value(in: s.rules), origin: spec.owner.origin, revealed: true
         ).withFounderQuality()
         mother.genome.shareQuantitativeAlleles(with: starter.genome)
         // Her mate: a purebred rooster of the breed at his owner's. The keeper never sees him, so his

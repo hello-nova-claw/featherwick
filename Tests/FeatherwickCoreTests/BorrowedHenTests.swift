@@ -251,6 +251,48 @@ struct BorrowedHenTests {
         #expect(s.stories[Self.tag]?.rewarded == true)
     }
 
+    // MARK: - Tuning
+
+    /// Rule 3: her day, her stay, her age and her price come from the game's own rules.
+    @Test func theGamesRulesTuneHerStory() throws {
+        var rules = calmRules()
+        rules.jobsPerDay = 0
+        rules.seasonGoals = false
+        rules.featureDays[.coopDoor] = 5
+        rules.marigoldStayDays = 3
+        rules.marigoldAgeDays = 200
+        rules.marigoldPrice = 25
+        var rng = SeededRNG(seed: 1)
+        var s = Engine.newGame(rules: rules, using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Basil"), to: &s, using: &rng)
+        Self.play(until: 4, &s, &rng)
+        #expect(Self.marigold(s) == nil)
+        let day5 = Self.play(until: 5, &s, &rng)
+        let hen = try #require(Self.marigold(s))
+        #expect(day5.contains(.loanArrived(hen.id, from: .hazel)) && day5.contains(.introduced(.coopDoor)))
+        #expect(hen.age(onDay: s.day) == 200)
+        #expect(s.hazelHomeDay == 8)
+        Self.play(until: 7, &s, &rng)
+        #expect(s.pendingChoices.isEmpty)
+        Self.play(until: 8, &s, &rng)
+        #expect(s.pendingChoices.map(\.choice) == [Self.tag])
+        let ev = Engine.apply(.choose(story: Self.tag, option: "keep"), to: &s, using: &rng)
+        #expect(ev.contains(.debtOwed(Self.tag, to: .hazel, coins: 25)))
+    }
+
+    /// Hazel's egg is of Marigold's breed, even when the starter has gone (traded away).
+    @Test func theGiftEggIsMarigoldsBreedEvenWithoutTheStarter() throws {
+        for index in 0..<3 {
+            var (s, rng) = Self.newKeeper(index: index)
+            Self.play(until: 10, &s, &rng)
+            let hen = try #require(Self.marigold(s))
+            s.starterID = nil  // as after a trade
+            _ = Engine.apply(.choose(story: Self.tag, option: "return"), to: &s, using: &rng)
+            let egg = try #require(s.carton.last)
+            #expect(egg.motherBreed == hen.breed && s.lentBreeds[Self.tag] == hen.breed)
+        }
+    }
+
     // MARK: - The fox
 
     @Test func aScaredMarigoldComesHomeAndStillGoesHomeToHazel() throws {

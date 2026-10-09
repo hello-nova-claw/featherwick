@@ -71,7 +71,7 @@ struct BorrowedHenTextTests {
     @Test func theBirdCardSaysWhoseSheIs() throws {
         let (s, _, _) = Self.play(until: 4)
         let hen = try #require(s.loanedBird(tag: Self.tag))
-        #expect(loanLineText(hen, s) == "Hazel's hen, staying a week")
+        #expect(loanLineText(hen, s) == "Hazel's hen, staying 6 more days")  // home on day 10
         let starter = try #require(s.starterID.flatMap { s.bird($0) })
         #expect(loanLineText(starter, s) == nil)
         var (t, trng, _) = Self.play(until: 10)
@@ -81,6 +81,49 @@ struct BorrowedHenTextTests {
         let words = chose.compactMap { eventText($0, t) }.joined(separator: " ")
         #expect(words.contains("You've decided: keep Marigold"))
         #expect(words.contains("You owe Hazel 40 coins"))
+    }
+
+    @Test func theFenceIsQuietWhileHazelIsAwayAndSaysWhatAKeepWaitsFor() throws {
+        let (s, _, _) = Self.play(until: 5)
+        #expect(hazelFenceText(s)?.contains("on day 10") == true)
+        var (t, rng, _) = Self.play(until: 10)
+        #expect(hazelFenceText(t) == nil)  // she is home: the "decide" words
+        #expect(!storyText(Self.tag, step: "decide").contains("choose"))  // no command hint in app words
+        // Keep, with every perch taken: the choice is made, and the keeping waits for a perch.
+        t.perches = t.perchesUsed
+        _ = Engine.apply(.choose(story: Self.tag, option: "keep"), to: &t, using: &rng)
+        let hen = try #require(t.loanedBird(tag: Self.tag))
+        #expect(loanLineText(hen, t) == "Yours once there's a perch for her")
+        #expect(hazelFenceText(t)?.contains("perch") == true)
+    }
+
+    /// The fox scared Marigold off on night 3: the day-4 laying lesson still teaches laying, and says
+    /// nothing about roosters to a keeper whose only bird at home is a chick of hidden sex.
+    @Test func theLayingLessonWaitsForAScaredMarigold() throws {
+        var (s, rng, _) = Self.play(until: 3)
+        s.rules.foxChance = 1
+        s.rules.fleeChance = 1
+        _ = Engine.apply(.feed, to: &s, using: &rng)
+        let ev = Engine.apply(.passNight, to: &s, using: &rng)
+        #expect(ev.contains(.introduced(.laying)))
+        #expect(s.lost.contains { $0.bird.loan?.tag == Self.tag })
+        let words = try #require(introducedText(.laying, s))
+        #expect(words.contains("Marigold will lay when she's home"))
+        #expect(!words.lowercased().contains("rooster"))
+    }
+
+    /// A fertile egg bought the day Hazel's gift egg waits for carton space brings the incubator: the note
+    /// is about the bought egg, not Hazel's.
+    @Test func theIncubatorNoteCreditsTheRightEgg() throws {
+        var (s, rng, _) = Self.play(until: 10)
+        let filler = try #require(s.nest.first)
+        s.carton = Array(repeating: filler, count: s.cartonCapacity)
+        _ = Engine.apply(.choose(story: Self.tag, option: "return"), to: &s, using: &rng)
+        s.carton.removeAll()
+        s.coins = 100
+        let bought = Engine.apply(.buy(.fertileEgg), to: &s, using: &rng)
+        let gift = try #require(bought.first { if case .neighbourGaveIncubator = $0 { true } else { false } })
+        #expect(eventText(gift, s)?.contains("brought home a fertile egg") == true)
     }
 }
 

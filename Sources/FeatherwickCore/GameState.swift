@@ -214,6 +214,9 @@ public struct GameState: Hashable, Codable, Sendable {
     /// The `newKeeper` story goal reads it. False in older saves (`SaveFormat.fillNewSettings`), so a save
     /// already past day 3 gets no retroactive loan, debt or choice.
     public var earlyGameStories = false
+    /// The breed of each bird lent to the keeper, by loan tag. Kept after she goes home, so a story's gift
+    /// egg "of her breed" knows it even if the starter has gone (traded). Empty in older saves.
+    public var lentBreeds: [String: Breed] = [:]
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

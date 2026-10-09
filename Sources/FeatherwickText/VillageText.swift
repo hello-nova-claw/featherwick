@@ -45,8 +45,33 @@ extension People {
 public func choiceText(story: String, option: String) -> String {
     switch (story, option) {
     case ("marigold", "return"): "send Marigold home, with an egg for you"
-    case ("marigold", "keep"): "keep Marigold, and pay Hazel \(Rules.standard.marigoldPrice) coins when you can"
+    case ("marigold", "keep"): "keep Marigold, and pay Hazel for her when you can"
     default: option
+    }
+}
+
+/// For the CLI: how to answer a choice that waits. App words never carry command hints.
+public func choiceHintText(_ c: PendingChoice) -> String {
+    let options = c.options.map { "choose \(c.story) \($0)" }.joined(separator: ", or ")
+    return "\(People.name(c.person)) asks you to choose. Type: \(options)"
+}
+
+/// What Hazel says at the back fence while the borrowed hen's story needs its own words, or nil.
+/// While she is away, the fence is quiet. After a choice that waits (a perch to keep Marigold, or a hen
+/// busy with eggs), she says what it waits for. Never a command hint: the app shows these words.
+public func hazelFenceText(_ s: GameState) -> String? {
+    if let home = s.hazelHomeDay {
+        let when = home - s.day <= 1 ? "tomorrow" : "on day \(home)"
+        return "Hazel's house is quiet. She's at her sister's, and home \(when)."
+    }
+    guard s.loanedBird(tag: Storylines.marigold) != nil else { return nil }
+    switch s.chosen(Storylines.marigold, in: Storylines.marigold) {
+    case "keep"?:
+        return "“She's yours as soon as there's a perch for her. Make room when you can, love.”"
+    case "return"?:
+        return "“Let her finish what she's busy with. I'll fetch her when she's free.”"
+    default:
+        return nil
     }
 }
 
@@ -88,9 +113,15 @@ public func loanLineText(_ b: Bird, _ s: GameState) -> String? {
     let owner = People.name(loan.owner)
     let kind = kindWord(b, s)
     if loan.tag == Storylines.marigold {
-        let asked = s.pendingChoices.contains { $0.story == Storylines.marigold }
-        return asked
-            ? "\(owner)'s \(kind). \(owner) is home: keep her, or send her home?" : "\(owner)'s \(kind), staying a week"
+        if let home = s.hazelHomeDay {
+            let left = max(0, home - s.day)
+            return "\(owner)'s \(kind), staying \(left <= 1 ? "until tomorrow" : "\(left) more days")"
+        }
+        switch s.chosen(Storylines.marigold, in: Storylines.marigold) {
+        case "keep"?: return "Yours once there's a perch for her"
+        case "return"?: return "\(owner)'s \(kind), going home once she's free"
+        default: return "\(owner)'s \(kind). \(owner) is home: keep her, or send her home?"
+        }
     }
     if let day = loan.returnDay {
         let left = max(0, day - s.day)

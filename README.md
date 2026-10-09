@@ -815,21 +815,31 @@ inside `anyOf`.
 
 `BorrowedHen.swift`. The first fortnight has a plot. Hazel lends the keeper Marigold, the starter's mother.
 
-- **Day 2.** Hazel asks: she goes to her sister's tomorrow, for a week. Can Marigold stay?
+- The days come from the game's rules. Marigold comes on the coop door day (`StoryGoal.featureDay`,
+  day 3). Hazel is home `marigoldStayDays` (7) later (day 10). Her age (`marigoldAgeDays`, 112) and her
+  price (`marigoldPrice`, 40) are rules too: the table names them with `StoryNumber.rule`, and the
+  story reads them from `s.rules` when it runs. The words name no fixed day or price.
+- **Day 2.** Hazel asks: she goes to her sister's soon, for a few days. Can Marigold stay?
 - **Day 3.** Marigold comes (`.loanBird`): a grown hen of the starter's breed, named by Hazel, from
   Hazel's (`origin` "Neighbour"). "Her eggs are yours. Shut the door at night." The coop door lesson is
   about her. She needs no perch (see Loans below).
-- **Day 4.** She lays. The laying lesson is a note from Hazel in her box.
-- **Days 3 to 10.** Hazel is away (`GameState.hazelAway`), so her words come as notes and a postcard.
+- **Day 4.** She lays. The laying lesson is a note from Hazel in her box. If the fox scared her off,
+  the note says she lays when she is home. It never says "roosters don't lay" to a keeper whose only
+  bird is a chick whose sex does not show yet.
+- **Days 3 to 10.** Hazel is away (`GameState.hazelAway`, `hazelHomeDay`), so her words come as notes
+  and a postcard. The back fence is quiet and says the day she is home.
   Jobs can name Marigold. A cuddle job that names her counts as done once she has gone home.
 - **Day 8.** The Breed Book lesson adds "Marigold's chick, of course." (only in games where she came).
-- **Day 10.** Hazel is home and asks: `choose marigold return` or `choose marigold keep`.
-  - **Return:** Marigold goes home (`.endLoan`). Hazel gives a candled, fertile egg of the starter's
-    breed (`.giftEgg(nil, fertile: true)`: nil means the starter's breed). It is the first fertile egg,
+- **Day 10.** Hazel is home and asks: `choose marigold return` or `choose marigold keep`. Her words
+  carry no command: the CLI prints the hint (`choiceHintText`) after the night that asks.
+  - **Return:** Marigold goes home (`.endLoan`). Hazel gives a candled, fertile egg of Marigold's
+    breed (`.giftEgg(nil, fertile: true)`: nil means the breed of the bird the story lent, kept in
+    `GameState.lentBreeds`, else the starter's). It does not need the starter to be here. It is the first fertile egg,
     so the neighbour's 1-egg incubator comes with it. A full carton holds up only the egg.
   - **Keep:** Marigold is the keeper's (`.offerToKeep`). Her price, `marigoldPrice` (40), is a debt to
     Hazel: "Pay me when you can. She likes you." A kept bird needs a perch of her own: with none free,
     the choice is still made, and the keeping waits for a perch (`.storyGiftWaitingForRoom`).
+    Meanwhile the bird card says "Yours once there's a perch for her", and Hazel says so at the fence.
   - The choice waits. Until it is made, Marigold stays. Nothing is lost by waiting.
 - **She is the starter's mother.** `Breed.motherGenome(of:)` picks one of the breed's colours that
   holds one of the starter's alleles at every gene. So she is one of the breed's public recipes, and
@@ -847,7 +857,7 @@ inside `anyOf`.
   has it false (`SaveFormat.fillNewSettings`), so no retroactive loan, debt or choice.
 - The sim keeper picks the first option of every choice: Marigold goes home.
 - App: the choice is two buttons in Hazel's note and at the back fence. The bird card says "Hazel's
-  hen, staying a week". Settings has "You owe" with a Pay button.
+  hen, staying 6 more days". Settings has "You owe" with a Pay button.
 
 ### People, choices, loans and debts
 
@@ -855,7 +865,8 @@ inside `anyOf`.
   Dot (shows), Teddy (friendliness), Mr Okafor (egg colours), Bea (rehoming). Each `Storyline` has a
   `person`. The first three stories are Hazel's. Names and about lines are in `People` (FeatherwickText).
   A person's name is never suggested for a bird.
-- **Goals.** A step or trigger can wait for: a day (`onDay`, an absolute day), a choice, the first show
+- **Goals.** A step or trigger can wait for: a day (`onDay`, an absolute day), the day the early game
+  introduces a feature (`featureDay`), a choice, the first show
   entry, a placing in the top N, N birds at a friendliness band or better, an Egg Book colour, N birds
   rehomed, a debt paid, or any one of several goals (`anyOf`).
 - **Step rewards.** A step can give rewards when its goal is met. The story's own rewards come after the

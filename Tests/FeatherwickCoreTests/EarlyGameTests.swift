@@ -148,7 +148,8 @@ struct EarlyGameTests {
             rng = SeededRNG(seed: seed)
             s = Engine.newGame(using: &rng)
         }
-        guard case .choosingStarter(let chicks) = s.phase else { return }
+        let offered: [Bird]? = if case .choosingStarter(let c) = s.phase { c } else { nil }
+        let chicks = try #require(offered)
         let hen = try #require(chicks.firstIndex { $0.sex == .hen })
         _ = Engine.apply(.chooseStarter(index: hen, name: "Basil"), to: &s, using: &rng)
         s.coins = 1000

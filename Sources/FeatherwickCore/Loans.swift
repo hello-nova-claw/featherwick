@@ -76,7 +76,7 @@ extension Engine {
         let bird = Bird(
             id: makeID(using: &rng), name: spec.name, breed: breed,
             genome: breed.purebred(spec.sex, variety: breed.definition.varieties.randomElement(using: &rng)),
-            hatchDay: s.day - spec.ageDays, origin: spec.owner.origin, revealed: true
+            hatchDay: s.day - spec.ageDays.value(in: s.rules), origin: spec.owner.origin, revealed: true
         ).withFounderQuality()
         return welcome(bird, on: spec, &s)
     }
@@ -85,6 +85,7 @@ extension Engine {
     static func welcome(_ arriving: Bird, on spec: LoanSpec, _ s: inout GameState) -> [GameEvent] {
         var bird = arriving
         bird.tameness = s.rules.boughtBirdTameness
+        s.lentBreeds[spec.tag] = bird.breed
         bird.loan = Loan(owner: spec.owner, tag: spec.tag, returnDay: spec.stayDays.map { s.day + $0 })
         s.coop.append(bird)
         return [.loanArrived(bird.id, from: spec.owner)] + recordBreed(bird, into: &s.breedBook)
