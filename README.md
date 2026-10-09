@@ -34,7 +34,7 @@ errands left. See "Daylight and errands".
 `Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. Command in, events out. All tunable numbers live in `Rules`.
 
 `MorningReport.from(events:state:)` sorts one night's events into groups (hatched, the fox, came home,
-the neighbour, new stock, the show, jobs, the season goal, eggs, other) for the app's morning report.
+the neighbours, the post, the village, new stock, the show, jobs, the season goal, eggs, other) for the app's morning report.
 Every event lands in exactly one group. IDs and events only; the words come from `eventText`.
 
 Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals ("hen or roo?" guesses settle as the sex shows) → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note, and the first why note opens "What might hatch"; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (loans due go home; a fertile-eggs step teaches candling if needed; debts are mentioned at most once a season) & trade offer → post (maybe one note) → village day (a notice a week ahead, and the day) → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
@@ -794,8 +794,8 @@ arrive already named by their keeper. Any bird you own can be renamed any time, 
 `Story.swift`. Small puzzles told through Featherwick's people, which lead to gifts and unlocks.
 A storyline has a trigger, steps with goals, and rewards. Night goals (hatch chicks, wait days)
 are checked in `passNight`; delivery goals need the player (`deliver`). Rewards are given once;
-a gift bird waits for a free perch, so the coop never overfills. The engine holds IDs only; the
-words live in the UI.
+a gift bird waits for a free perch, so the coop never overfills. The engine holds IDs only. The
+words are in FeatherwickText: `storyText` for the steps, `choiceText` for the options.
 
 - **The broody Silkie** (first hatch): a neighbour's Silkie is sitting on a golf ball. Bring 3
   eggs you know are fertile (candled). 4 days later she thanks you with a Silkie pullet, and
@@ -807,7 +807,9 @@ words live in the UI.
 - **The borrowed hen** (a new keeper's first fortnight; see below).
 - CLI: `story`, `give eggs`.
 
-To add one: one `Storyline` in `Storylines.all`, plus its words in the UI.
+To add one: append one `Storyline` to `Storylines.all`, with its `person`. Add its words in `storyText`,
+and the words for each option in `choiceText`. A choice or a delivery is a step goal on its own, never
+inside `anyOf`.
 
 ### The borrowed hen
 
@@ -827,7 +829,7 @@ To add one: one `Storyline` in `Storylines.all`, plus its words in the UI.
     so the neighbour's 1-egg incubator comes with it. A full carton holds up only the egg.
   - **Keep:** Marigold is the keeper's (`.offerToKeep`). Her price, `marigoldPrice` (40), is a debt to
     Hazel: "Pay me when you can. She likes you." A kept bird needs a perch of her own: with none free,
-    `choose` says `.noFreePerch` and the choice waits.
+    the choice is still made, and the keeping waits for a perch (`.storyGiftWaitingForRoom`).
   - The choice waits. Until it is made, Marigold stays. Nothing is lost by waiting.
 - **She is the starter's mother.** `Breed.motherGenome(of:)` picks one of the breed's colours that
   holds one of the starter's alleles at every gene. So she is one of the breed's public recipes, and
@@ -872,8 +874,8 @@ To add one: one `Storyline` in `Storylines.all`, plus its words in the UI.
 - A loan ends on its return day, or when a story ends it. A hen sitting on eggs or raising chicks stays
   until she is free. She goes home with `.loanReturned`. Her family-tree record stays, with the look the
   keeper saw. If the keeper keeps her (`offerToKeep`), the loan is cleared, she is the keeper's bird with
-  her pedigree, and her price becomes a debt (`.loanKept`, `.debtOwed`). A kept bird takes a perch: a
-  choice that keeps her waits for a free one (`.noFreePerch`).
+  her pedigree, and her price becomes a debt (`.loanKept`, `.debtOwed`). A kept bird takes a perch, so
+  the step waits for a free one, like a gift bird.
 - **Debts.** `GameState.debts`. `payDebt(id)` pays one in full, when the keeper has the coins (`.debtPaid`).
   No interest, no deadline, and nothing is held back while a debt stands. The owner mentions it kindly at
   most once every `debtReminderDays` (28, a season): `.debtReminder`. Paying costs no daylight.

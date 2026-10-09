@@ -503,7 +503,7 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         case .alreadyGuessed: "You've made your guess for that chick. Wait and see."
         case .noSuchChoice: "Nobody is waiting on that choice. Type: people"
         case .noSuchDebt: "You don't owe anything by that name. Type: people"
-        case .onLoan: "She's on loan, so that's for her owner to decide."
+        case .onLoan: "That bird is on loan, so that's for the owner to decide."
         }
     case .starterChosen(let id): return "You take \(birdName(id, s)) home and settle them under the heat lamp."
     case .fed: return "You fill the feeder and top up the water."
@@ -573,12 +573,10 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return storyText(id, step: step)
     case .delivered:
         return "You hand the eggs over the fence, carefully."
-    case .storyGiftWaitingForRoom(let id) where id == Storylines.marigold:
-        // Hazel's thank-you is an egg: it waits for a space in the carton.
-        return "Hazel has an egg for you, but your carton is full. Make some space, and it comes that night."
-    case .storyGiftWaitingForRoom:
-        return
-            "Hazel has a gift for you, but your coop has no free perch. Make room, and it arrives that night."
+    case .storyGiftWaitingForRoom(let id):
+        let who = Storylines.story(id).map { People.name($0.person) } ?? People.neighbour
+        return "\(who) has something for you, but there's no room for it yet: it needs a free perch, "
+            + "or space in the egg carton. Make room, and it comes that night."
     case .storyGift(_, let id):
         return
             "Hazel comes round with a basket. \"She hatched every one. Here, one of my own girls, to say thank you.\" \(birdName(id, s)) moves into Henhaven."
@@ -1054,7 +1052,7 @@ public func yardLines(_ s: GameState) -> [String] {
         let waiting = b.age(onDay: s.day) >= s.rules.brooderDays
         out.append("  " + birdLabel(b, s) + (waiting ? " · needs a home" : ""))
     }
-    out.append("Coop (\(s.coop.count)/\(s.perches) perches, \(s.nestBoxes) nesting boxes):")
+    out.append("Coop (\(s.perchesUsed)/\(s.perches) perches, \(s.nestBoxes) nesting boxes):")
     for b in s.coop {
         var line = "  " + birdLabel(b, s)
         if s.isPenned(b.id) { line += " · in the breeding pen" }

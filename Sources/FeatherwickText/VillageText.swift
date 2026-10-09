@@ -89,7 +89,8 @@ public func loanLineText(_ b: Bird, _ s: GameState) -> String? {
     let kind = kindWord(b, s)
     if loan.tag == Storylines.marigold {
         let asked = s.pendingChoices.contains { $0.story == Storylines.marigold }
-        return asked ? "\(owner)'s \(kind). \(owner) is home: keep her, or send her home?" : "\(owner)'s \(kind), staying a week"
+        return asked
+            ? "\(owner)'s \(kind). \(owner) is home: keep her, or send her home?" : "\(owner)'s \(kind), staying a week"
     }
     if let day = loan.returnDay {
         let left = max(0, day - s.day)
@@ -99,7 +100,7 @@ public func loanLineText(_ b: Bird, _ s: GameState) -> String? {
 }
 
 /// The words for a note in the post, by note ID (see `Notes.pool` and story `.note` rewards).
-/// Nil for an unknown ID: `NotesTests` checks every note has words.
+/// Nil for an unknown ID. A note in `Notes.pool` or in a story's `.note` reward must have words.
 public func postNoteText(_ id: String, _ s: GameState) -> String? {
     switch id {
     default: nil
@@ -120,9 +121,9 @@ public func villageDayName(_ v: VillageDay) -> String {
 public func villageDayAbout(_ v: VillageDay) -> String {
     switch v {
     case .hatchAlong: "The village hatches eggs together."
-    case .longestDay: "The longest day of the year. The fox stays home."
+    case .longestDay: "The longest day of the year."
     case .moultWeek: "The flock drops its old feathers and grows new ones."
-    case .midwinterLights: "Lanterns in every window, and a gift from the village."
+    case .midwinterLights: "Lanterns in every window of the village."
     }
 }
 
@@ -139,11 +140,15 @@ func villageEventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .storyGiftEgg(_, let breed):
         return "A \(breed.definition.displayName) egg goes into your carton, already candled."
     case .loanArrived(let id, let owner):
-        return "\(birdName(id, s)) comes to stay. She's \(People.name(owner))'s, and she brings her own box."
+        let bird = s.bird(id)
+        let they = bird.map { subjectPronoun($0) } ?? "she"
+        return "\(birdName(id, s)) comes to stay. \(they.capitalizedFirst) belongs to \(People.name(owner)), "
+            + "and comes with a box of \(bird?.revealed == true && bird?.sex == .rooster ? "his" : "her") own."
     case .loanReturned(let id, let owner):
         return "\(birdName(id, s)) goes home to \(People.name(owner))."
     case .loanKept(let id, let owner):
-        return "\(birdName(id, s)) is yours now. \(People.name(owner)) is glad she's staying."
+        let they = s.bird(id).map { subjectPronoun($0) } ?? "she"
+        return "\(birdName(id, s)) is yours now. \(People.name(owner)) is glad \(they)'s staying."
     case .debtOwed(_, let owner, let coins):
         return "You owe \(People.name(owner)) \(coins) coins. Pay when you can: there's no hurry."
     case .debtReminder(_, let owner):

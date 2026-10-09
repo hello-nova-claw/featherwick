@@ -58,7 +58,8 @@ public indirect enum StoryGoal: Hashable, Codable, Sendable {
     case birdRehomed(atLeast: Int)
     /// The player has paid this debt.
     case coinsPaid(debtID: String)
-    /// Any one of these goals is met. For "whichever comes first".
+    /// Any one of these goals is met. For "whichever comes first". Not for choices or deliveries: those
+    /// are step goals on their own, so the player is always offered them (`StoryTests` checks this).
     case anyOf([StoryGoal])
     /// The game began as a new keeper's, with the early game (`GameState.earlyGameStories`). The early-game
     /// stories start with it. A save from before them never meets it, so it gets no retroactive loan.
@@ -150,10 +151,11 @@ public indirect enum StoryReward: Hashable, Codable, Sendable {
     /// These rewards only if the player chose `optionID` in the choice `choiceID` of this story.
     case ifChosen(String, String, [StoryReward])
 
-    /// Gift birds in these rewards, for the free-perch check. Conditional rewards count only when chosen.
+    /// Birds these rewards add to the keeper's perches, for the free-perch check: gift birds, and a loaned
+    /// bird the keeper keeps (she needs a perch of her own then). Conditional rewards count only when chosen.
     func giftBirds(chosen: [String: String]) -> Int {
         switch self {
-        case .giftBird: 1
+        case .giftBird, .offerToKeep: 1
         case .ifChosen(let choice, let option, let inner):
             chosen[choice] == option ? inner.reduce(0) { $0 + $1.giftBirds(chosen: chosen) } : 0
         default: 0
@@ -486,27 +488,9 @@ extension Engine {
             case .choice(let id, let options) = story.steps[progress.step].goal,
             progress.chosen[id] == nil, options.contains(option)
         else { return [.rejected(.noSuchChoice)] }
-        // A kept bird is the keeper's own and needs a perch: with none free, the choice waits for room.
-        let picked = [id: option]
-        let keeps = keptLoans(in: story.steps[progress.step].rewards, chosen: picked)
-        if keeps.contains(where: { s.loanedBird(tag: $0) != nil }), !s.hasFreePerch {
-            return [.rejected(.noFreePerch)]
-        }
         progress.chosen[id] = option
         s.stories[storyID] = progress
         return [.chose(storyID, option)] + advance(story, &s, &rng)
-    }
-
-    /// The loan tags these rewards keep (`offerToKeep`), counting conditional rewards only when chosen.
-    static func keptLoans(in rewards: [StoryReward], chosen: [String: String]) -> [String] {
-        rewards.flatMap { reward -> [String] in
-            switch reward {
-            case .offerToKeep(let tag, _): [tag]
-            case .ifChosen(let choice, let option, let inner):
-                chosen[choice] == option ? keptLoans(in: inner, chosen: chosen) : []
-            default: []
-            }
-        }
     }
 
     /// The player hands over what a story step asks for.

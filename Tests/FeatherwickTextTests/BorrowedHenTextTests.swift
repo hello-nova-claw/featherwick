@@ -30,7 +30,8 @@ struct BorrowedHenTextTests {
             #expect(choiceButtonText(story: story.id, option: option).first?.isUppercase == true)
             #expect(choiceReplyText(story: story.id, option: option) != nil)
         }
-        #expect(choiceReplyText(story: story.id, option: "keep")?.contains("Pay me when you can. She likes you.") == true)
+        #expect(
+            choiceReplyText(story: story.id, option: "keep")?.contains("Pay me when you can. She likes you.") == true)
         #expect(eventText(.storyGiftWaitingForRoom(Self.tag), GameState.blank)?.contains("carton") == true)
     }
 

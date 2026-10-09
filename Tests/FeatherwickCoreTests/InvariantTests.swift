@@ -8,7 +8,7 @@ import Testing
 struct InvariantTests {
     static func problems(in s: GameState) -> [String] {
         var p: [String] = []
-        // A bird on loan brings her own box (see Loans.swift): only the keeper's own birds take perches.
+        // A loaned bird brings her own box, so only the keeper's own birds take perches.
         if s.perchesUsed > s.perches { p.append("coop \(s.perchesUsed) > perches \(s.perches)") }
         if s.brooder.count > s.brooderSize { p.append("brooder \(s.brooder.count) > size \(s.brooderSize)") }
         if s.carton.count > s.cartonCapacity { p.append("carton over capacity") }

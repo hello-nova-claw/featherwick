@@ -13,7 +13,8 @@ struct NeighbourNoteSheet: View {
     var body: some View {
         let choices = store.state.pendingChoices
         SheetPage(context: "Over the back fence") {
-            Text("A word from \(People.neighbour)").font(Typeface.title)
+            // Most notes are Hazel's, but a story or a loan can come from any of the people; each line names them.
+            Text("A word over the fence").font(Typeface.title)
             ForEach(Array(store.neighbourNotes.enumerated()), id: \.offset) { item in
                 Text(item.element).font(Typeface.body).foregroundStyle(palette.inkSoft)
                     .fixedSize(horizontal: false, vertical: true)

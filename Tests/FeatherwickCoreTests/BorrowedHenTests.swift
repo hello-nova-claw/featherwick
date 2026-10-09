@@ -69,7 +69,8 @@ struct BorrowedHenTests {
         #expect(s.nest.contains { $0.motherID == hen.id })
         // Her eggs are the keeper's: collect and sell them.
         #expect(Engine.apply(.collectEggs, to: &s, using: &rng).first == .eggsCollected(count: 1, leftInNest: 0))
-        #expect(Engine.apply(.sellEggs, to: &s, using: &rng).contains { if case .eggsSold = $0 { true } else { false } })
+        #expect(
+            Engine.apply(.sellEggs, to: &s, using: &rng).contains { if case .eggsSold = $0 { true } else { false } })
     }
 
     @Test func theNewTimelineHasALessonADay() {
@@ -77,7 +78,9 @@ struct BorrowedHenTests {
         let days = Feature.allCases.filter { $0 != .shows }.map { r.introductionDay(of: $0) }
         #expect(days == [1, 2, 3, 4, 5, 8, 9, 10, 14, 29, 35])
         // The cases are in timeline order.
-        #expect(Feature.allCases.map { r.introductionDay(of: $0) } == Feature.allCases.map { r.introductionDay(of: $0) }.sorted())
+        #expect(
+            Feature.allCases.map { r.introductionDay(of: $0) }
+                == Feature.allCases.map { r.introductionDay(of: $0) }.sorted())
     }
 
     // MARK: - She is the starter's mother
@@ -218,11 +221,17 @@ struct BorrowedHenTests {
         Self.play(until: 10, &s, &rng)
         let hen = try #require(Self.marigold(s))
         s.perches = s.perchesUsed  // every perch taken by the keeper's own birds
-        #expect(Engine.apply(.choose(story: Self.tag, option: "keep"), to: &s, using: &rng) == [.rejected(.noFreePerch)])
-        #expect(s.pendingChoices.count == 1 && Self.marigold(s) != nil)  // the choice waits
-        s.perches += 1
-        let ev = Engine.apply(.choose(story: Self.tag, option: "keep"), to: &s, using: &rng)
-        #expect(ev.contains(.loanKept(hen.id, from: .hazel)))
+        let chose = Engine.apply(.choose(story: Self.tag, option: "keep"), to: &s, using: &rng)
+        // The choice is made and kept; the keeping waits for a perch, and she stays on loan meanwhile.
+        #expect(chose.contains(.chose(Self.tag, "keep")))
+        #expect(chose.contains(.storyGiftWaitingForRoom(Self.tag)))
+        #expect(s.chosen(Self.tag, in: Self.tag) == "keep" && s.pendingChoices.isEmpty)
+        #expect(Self.marigold(s) != nil && s.debts.isEmpty)
+        // Room for the grown chicks waiting in the brooder (they move in first) and one more for her.
+        s.perches = s.perchesUsed + s.brooder.count + 1
+        let night = Self.play(until: s.day + 1, &s, &rng)
+        #expect(night.contains(.loanKept(hen.id, from: .hazel)))
+        #expect(night.contains(.debtOwed(Self.tag, to: .hazel, coins: 40)))
         #expect(s.perchesUsed == s.perches)
     }
 
