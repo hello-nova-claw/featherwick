@@ -20,6 +20,8 @@ enum Haptics {
     static func tick() { impact(.light, intensity: 0.45) }
     /// A bird was tapped open.
     static func tap() { impact(.light, intensity: 0.8) }
+    /// The ground was tapped: a ripple spreads and the birds look up.
+    static func ripple() { impact(.light, intensity: 0.5) }
     /// A pet landed: the bird settles into your hand.
     static func petted() { impact(.soft, intensity: 1) }
     /// Already petted today: the bird only leans in.

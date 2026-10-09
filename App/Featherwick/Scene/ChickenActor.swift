@@ -3,6 +3,8 @@ import SwiftUI
 /// What a chicken is doing. The scene picks it; `AnimatedChicken` acts it out.
 enum ChickenActivity: Hashable, Sendable {
     case idle, walking, pecking
+    /// On the ground, legs tucked under: a lap chicken by a ripple.
+    case sitting
 }
 
 /// A `ChickenRig` that moves by itself. Walking cycles the legs. Pecking runs one peck, then stands.
@@ -62,13 +64,15 @@ struct AnimatedChicken: View {
         }
         pose.headTurn = face.headTurn
         pose.blink = face.blink
+        // A pose, not a motion: it holds with Reduce Motion too. Sit down inside `withAnimation` to ease it.
+        if activity == .sitting { pose.sit = 1 }
         return pose
     }
 
     /// Runs for as long as the activity lasts: one peck if pecking, then blinks (and glances when idle).
     private func live(_ activity: ChickenActivity) async {
         peckStart = nil
-        let canLook: Bool = activity == .idle && !reduceMotion
+        let canLook: Bool = (activity == .idle || activity == .sitting) && !reduceMotion
         if !canLook && face.headTurn != 0 {
             withAnimation(.easeInOut(duration: M.lookDuration)) { face.headTurn = 0 }
         }

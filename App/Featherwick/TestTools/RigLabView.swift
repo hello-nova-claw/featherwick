@@ -27,6 +27,7 @@ struct RigLabView: View {
     @State private var blink: Double = 0
     @State private var legBack: Double = 0
     @State private var legFront: Double = 0
+    @State private var sit: Double = 0
 
     private let rigHeight: CGFloat = 240
 
@@ -45,7 +46,7 @@ struct RigLabView: View {
     private var pose: ChickenPose {
         ChickenPose(
             bodyTilt: .degrees(bodyTilt), neckSwing: .degrees(neckSwing), headTurn: headTurn, blink: blink,
-            legBack: .degrees(legBack), legFront: .degrees(legFront))
+            legBack: .degrees(legBack), legFront: .degrees(legFront), sit: sit)
     }
 
     private var birds: [Bird] {
@@ -127,6 +128,7 @@ struct RigLabView: View {
             JointSlider(title: "eyelid (blink)", value: $blink, range: 0...1, unit: "")
             JointSlider(title: "leg_back (swing at hip)", value: $legBack, range: -45...45)
             JointSlider(title: "leg_front (swing at hip)", value: $legFront, range: -45...45)
+            JointSlider(title: "sit (body down, legs fold)", value: $sit, range: 0...1, unit: "")
         }
     }
 
@@ -151,6 +153,7 @@ struct RigLabView: View {
         blink = 0
         legBack = 0
         legFront = 0
+        sit = 0
         mode = .manual
     }
 }

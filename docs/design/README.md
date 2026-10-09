@@ -268,6 +268,7 @@ Until the bird art exists, birds are placeholders. In the Yard and the Far yard,
   - **Chicks with their mother:** a chick trails its mother. It stands a small gap behind the way she faces, one gap per chick, and the chicks step up and down in turn. About every half second it looks where she is heading and walks to its spot behind her. So it follows with a short lag. With Reduce Motion on, it stands behind her start.
   - **Strolling:** to leave, a chicken walks off the edge at its own height. It comes in on the other panel from the edge, at the nearest height where the ground at the edge is walkable.
   - **Touch:** the touch area is at least 44pt, also for a small chicken near the hill.
+  - **Ripple:** tap walkable ground, not a bird. Three dashed ink rings spread from the tap over 600ms (Reduce Motion: one ring, 200ms). A light haptic plays. Each bird on the panel reacts by its friendliness band (`RippleReaction`). A wild bird runs far away. A skittish bird walks a few steps away. A friendly bird walks toward the tap and stops one body length short. A lap chicken runs to the tap and sits by it. A hen's chicks follow her. A bird that was walking stops where it is, then reacts. After 3 seconds the birds wander again. A ripple sends no command and changes nothing in the game. With Reduce Motion, no bird walks: each answers in place with a pose that fades in (200ms). A friendly bird or a lap chicken turns to the tap, and a lap chicken also sits. A wild or skittish bird turns its back on it. After 3 seconds it stands as before. The numbers are in `Scene/SceneConstants.swift`.
 - **On the Barn:** blobs stay in a ground band in the lower part of the panel, below the place labels and above Books and ≡.
 - **Movement:** every 2–4 seconds a bird walks a short way slowly, or stops to peck. A bird held under a finger waits. Reduce Motion: birds stand still at their start and do not stroll. Coop birds then stay in the Yard, and with more than 6, every third bird stands in the Far yard.
 - **No labels** by default. Tap a bird (a short touch, no movement) to open its bird card.
@@ -286,12 +287,12 @@ A placeholder chicken on a fixed skeleton (`App/Featherwick/Scene/Chicken*.swift
 - **Ground point:** the bottom centre of the rig's frame, between the feet. The scene places each chicken by this point.
 - **Numbers:** every joint position is a fraction of the rig height, in `ChickenRigMetrics`. The rig faces right; the scene mirrors it to face left.
 - **Chicks** use their own build: a round ball of down, tiny legs, no comb. Colours come from the bird's look, as for `BirdSwatch`.
-- **Motion** (`AnimatedChicken`): walking swings the legs; pecking runs one peck (0.6 s); idle blinks every 3–6 s and sometimes looks around. A still bird does not redraw. Reduce Motion: no walking cycle, peck or looks. Blinks stay.
+- **Motion** (`AnimatedChicken`): walking swings the legs; pecking runs one peck (0.6 s); idle blinks every 3–6 s and sometimes looks around; sitting drops the body to the ground and folds the legs under it (0.3 s to sit or get up). A still bird does not redraw. Reduce Motion: no walking cycle, peck or looks. Blinks stay.
 - **Rig lab:** ≡ ▸ Open test tools ▸ Debug ▸ Rig lab has a slider for each joint.
 
 ### Sound and haptics
 Soft and few. Settings (≡) has a switch for each; both start on.
-- **Haptics:** light ticks while rubbing, a soft tap when a pet lands, a light tap when opening a bird, success on egg collection and hatching, a gentle warning when the game says no.
+- **Haptics:** light ticks while rubbing, a soft tap when a pet lands, a light tap when opening a bird, a lighter tap for a ripple on the ground, success on egg collection and hatching, a gentle warning when the game says no.
 - **Sound:** a cluck for tapping or petting a bird; egg, hatch and coin sounds for those events. At most one of each sound per action. The `.ambient` audio session obeys the silent switch. Until the sound files exist (`App/Featherwick/Sounds/README.md`), the game is silent.
 - **Unknown → known reveals** (breed, sex): animate the dashed outline to a filled state (~400ms), then show a toast ("Lavender added to the Breed Book").
 - **Reduce Motion:** replace slides and scales with fades.
