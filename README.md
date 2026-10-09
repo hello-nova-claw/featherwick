@@ -34,10 +34,10 @@ errands left. See "Daylight and errands".
 `Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. Command in, events out. All tunable numbers live in `Rules`.
 
 `MorningReport.from(events:state:)` sorts one night's events into groups (hatched, the fox, came home,
-the neighbour, new stock, the show, jobs, the season goal, eggs, other) for the app's morning report.
+the neighbours, the post, the village, new stock, the show, jobs, the season goal, eggs, other) for the app's morning report.
 Every event lands in exactly one group. IDs and events only; the words come from `eventText`.
 
-Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals ("hen or roo?" guesses settle as the sex shows) → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note, and the first why note opens "What might hatch"; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (a fertile-eggs step teaches candling if needed) & trade offer → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
+Night order: fox (only if the coop is open) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals ("hen or roo?" guesses settle as the sex shows) → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note, and the first why note opens "What might hatch"; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (loans due go home; a fertile-eggs step teaches candling if needed; debts are mentioned at most once a season) & trade offer → post (maybe one note) → village day (a notice a week ahead, and the day) → county show (on show days) → early game (features whose day has come; the show tip) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
 
 ## The early game (tutorial timeline)
 
@@ -790,8 +790,8 @@ arrive already named by their keeper. Any bird you own can be renamed any time, 
 `Story.swift`. Small puzzles told through Featherwick's people, which lead to gifts and unlocks.
 A storyline has a trigger, steps with goals, and rewards. Night goals (hatch chicks, wait days)
 are checked in `passNight`; delivery goals need the player (`deliver`). Rewards are given once;
-a gift bird waits for a free perch, so the coop never overfills. The engine holds IDs only; the
-words live in the UI.
+a gift bird waits for a free perch, so the coop never overfills. The engine holds IDs only. The
+words are in FeatherwickText: `storyText` for the steps, `choiceText` for the options.
 
 - **The broody Silkie** (first hatch): a neighbour's Silkie is sitting on a golf ball. Bring 3
   eggs you know are fertile (candled). 4 days later she thanks you with a Silkie pullet, and
@@ -802,7 +802,59 @@ words live in the UI.
   Speckle & Down's surprise stock. (Any in-game breed can also be the shop's daily special.)
 - CLI: `story`, `give eggs`.
 
-To add one: one `Storyline` in `Storylines.all`, plus its words in the UI.
+To add one: append one `Storyline` to `Storylines.all`, with its `person`. Add its words in `storyText`,
+and the words for each option in `choiceText`. A choice or a delivery is a step goal on its own, never
+inside `anyOf`.
+
+### People, choices, loans and debts
+
+- **Every system has a person** (`Person`): Hazel (genetics and the pen), Wren (the shop and the news),
+  Dot (shows), Teddy (friendliness), Mr Okafor (egg colours), Bea (rehoming). Each `Storyline` has a
+  `person`. The first three stories are Hazel's. Names and about lines are in `People` (FeatherwickText).
+  A person's name is never suggested for a bird.
+- **Goals.** A step or trigger can wait for: a day (`onDay`, an absolute day), a choice, the first show
+  entry, a placing in the top N, N birds at a friendliness band or better, an Egg Book colour, N birds
+  rehomed, a debt paid, or any one of several goals (`anyOf`).
+- **Step rewards.** A step can give rewards when its goal is met. The story's own rewards come after the
+  last step. A step whose rewards need room (a perch for a bird, a carton space for an egg) waits for room.
+  A delivery step gives no rewards of its own.
+- **Rewards.** A gift bird, a shop breed, a gift egg (candled), coins, treats, a loaned bird, the end of a
+  loan, the offer to keep a loaned bird, a note, and rewards that come only for one option (`ifChosen`).
+- **Choices.** A choice step offers two or three options. It waits for `choose(story, option)`. The pick is
+  kept in `StoryProgress.chosen`, so later words can remember it ("since you kept Marigold"). No option is
+  wrong, and no option locks content: each trades one good thing for another. Choosing costs no daylight.
+  Event: `.chose`. `GameState.pendingChoices` lists the choices that wait.
+- **Loans** (`Loans.swift`). A loaned bird (`Bird.loan`: owner, tag, return day) lives in the coop and needs
+  no perch: she brings her own box. She can be fed, cuddled, given treats, shown in the pet class and
+  scared by the fox, and she always comes home, perch or not. She cannot be rehomed, penned or renamed
+  (`.onLoan`). Her eggs are the keeper's. She does not count as the keeper's last bird.
+- A loan ends on its return day, or when a story ends it. A hen sitting on eggs or raising chicks stays
+  until she is free. She goes home with `.loanReturned`. Her family-tree record stays, with the look the
+  keeper saw. If the keeper keeps her (`offerToKeep`), the loan is cleared, she is the keeper's bird with
+  her pedigree, and her price becomes a debt (`.loanKept`, `.debtOwed`).
+- **Debts.** `GameState.debts`. `payDebt(id)` pays one in full, when the keeper has the coins (`.debtPaid`).
+  No interest, no deadline, and nothing is held back while a debt stands. The owner mentions it kindly at
+  most once every `debtReminderDays` (28, a season): `.debtReminder`. Paying costs no daylight.
+- CLI: `choose <story> <option>`, `pay <debt>`, `people`.
+
+### The post
+
+`Post.swift`. Some mornings a note comes from one of the people. In the night's "post" step, with
+`noteChance` (0.4), one note is picked from `Notes.pool`: a note whose condition holds
+(`NoteCondition`: always, has eggs, show in the week, has rehomed, has a loan, an Egg Book colour, N birds at
+a band, a season, after a story) and that has not come before (`GameState.notesSeen`). The roll and the
+pick come from `shopSeed` and the day, never from the game RNG, so the post changes no seeded game.
+Event: `.noteArrived(person, noteID)`. The words come from `postNoteText` by note ID. The morning report
+shows notes under "Post". Conditions read only what the keeper can see (rule 8).
+
+### The village calendar
+
+`VillageDay.swift`. Four village days a year: the Hatch-along (spring), the Longest Day (summer), Moult Week
+(autumn) and Midwinter Lights (winter). Each falls on a day of its season (`Rules.villageDays`), every year.
+`villageDayNoticeDays` (7) mornings before, `.villageDayComing(day, inDays:)`. On the morning,
+`.villageDay(day)`. The morning report shows both under "In the village". Nothing is missable: each day
+comes round again next year. `GameState.nextVillageDay` and `upcomingVillageDays(n)` give the dates.
+CLI: `calendar` lists the next four.
 
 ## Goal ladder
 

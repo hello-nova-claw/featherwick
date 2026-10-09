@@ -108,13 +108,31 @@ struct StoryTests {
         let ids = Storylines.all.map(\.id)
         #expect(Set(ids).count == ids.count)
         for story in Storylines.all {
-            #expect(!story.steps.isEmpty && !story.rewards.isEmpty)
+            // Every story gives something: at its end, or on a step.
+            #expect(!story.steps.isEmpty && !(story.rewards + story.steps.flatMap(\.rewards)).isEmpty)
             #expect(story.after.allSatisfy { Storylines.story($0) != nil })
-            for reward in story.rewards {
-                switch reward {
-                case .giftBird(let b, _), .unlockShopBreed(let b): #expect(b.definition.isInGame)
+            func check(_ rewards: [StoryReward]) {
+                for reward in rewards {
+                    switch reward {
+                    case .giftBird(let b, _), .unlockShopBreed(let b), .giftEgg(let b, _):
+                        #expect(b.definition.isInGame)
+                    case .loanBird(let spec): #expect(spec.breed?.definition.isInGame ?? true)
+                    case .ifChosen(let choice, let option, let inner):
+                        // The option must be one of the story's options for that choice.
+                        #expect(story.options(forChoice: choice).contains(option))
+                        check(inner)
+                    case .coins, .treats, .endLoan, .offerToKeep, .note: break
+                    }
                 }
             }
+            check(story.rewards + story.steps.flatMap(\.rewards))
+            // A choice or a delivery inside `anyOf` (or as a trigger) would never be offered to the player.
+            func hidesPlayerGoal(_ goal: StoryGoal) -> Bool {
+                if case .anyOf(let goals) = goal { return goals.contains { $0.needsPlayer || hidesPlayerGoal($0) } }
+                return false
+            }
+            #expect(!story.trigger.needsPlayer && !hidesPlayerGoal(story.trigger))
+            for step in story.steps { #expect(!hidesPlayerGoal(step.goal)) }
         }
     }
 

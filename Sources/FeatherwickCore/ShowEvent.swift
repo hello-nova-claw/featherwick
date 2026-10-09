@@ -156,7 +156,7 @@ extension Engine {
     /// The class a bird competes in by default: its breed class if it is a purebred adult in a standard
     /// colour, otherwise the pet class (where crosses, growers and off-colour birds are all welcome).
     public static func showClass(for bird: Bird, in s: GameState) -> ShowClass {
-        if bird.isPurebred, bird.stage(onDay: s.day, rules: s.rules) == .adult,
+        if bird.isPurebred, !bird.isOnLoan, bird.stage(onDay: s.day, rules: s.rules) == .adult,
             ShowStandard(bird.breed).accepts(Appearance(bird.phenotype))
         {
             return .breed(bird.breed)
@@ -168,6 +168,8 @@ extension Engine {
     /// A purebred adult in a standard colour may enter its breed class or the pet class.
     public static func eligibleClasses(for bird: Bird, in s: GameState) -> [ShowClass] {
         guard bird.stage(onDay: s.day, rules: s.rules) != .chick else { return [] }
+        // A loaned bird may go in the pet class. Her breed class is her owner's to enter.
+        if bird.isOnLoan { return [.pet] }
         let main = showClass(for: bird, in: s)
         return main == .pet ? [.pet] : [main, .pet]
     }

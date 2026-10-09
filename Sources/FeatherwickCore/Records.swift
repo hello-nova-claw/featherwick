@@ -116,9 +116,10 @@ public enum Records {
         let from = s.day - s.rules.recordWindowDays
         let rehomed = Set(s.rehomed.map(\.id))
         let laid: [EggRecordRow] = s.layRecords.compactMap { r in
-            guard let hen = s.bird(r.henID) else { return nil }
+            // A loaned hen who went home keeps her row, by her family-tree name.
+            guard let name = s.bird(r.henID)?.name ?? s.pedigree[r.henID]?.name else { return nil }
             return EggRecordRow(
-                henID: r.henID, name: hen.name, total: r.eggsLaid,
+                henID: r.henID, name: name, total: r.eggsLaid,
                 recent: r.recentLayDays.count(where: { $0 > from }), firstEggDay: r.firstEggDay,
                 rehomed: rehomed.contains(r.henID))
         }
