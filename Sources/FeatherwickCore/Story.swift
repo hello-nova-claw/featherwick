@@ -372,7 +372,8 @@ public enum Storylines {
     )
 
     /// Mr Okafor, the baker, wants eggs for his shop window: six brown eggs now, or three of a colour the
-    /// keeper has not had yet, for more coins. Then he talks of a market board in the village.
+    /// keeper has not had yet, for more coins. Both pay well above the egg price, so the window is worth it.
+    /// Then he talks of a market board in the village.
     public static let okaforWindow = Storyline(
         id: "okaforWindow",
         person: .okafor,
@@ -388,8 +389,8 @@ public enum Storylines {
             StoryStep(
                 id: "thanks", goal: .waitDays(0),
                 rewards: [
-                    .ifChosen("window", "now", [.coins(12)]),
-                    .ifChosen("window", "wait", [.coins(20), .note(.okafor, "okafor-window")]),
+                    .ifChosen("window", "now", [.coins(30)]),
+                    .ifChosen("window", "wait", [.coins(50), .note(.okafor, "okafor-window")]),
                 ]),
             StoryStep(id: "board", goal: .waitDays(3), rewards: [.note(.okafor, "okafor-marketBoard")]),
         ]

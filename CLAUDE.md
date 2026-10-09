@@ -38,7 +38,7 @@ Key Core files:
 - `BreedTable.swift`, `Breed.swift`: breeds and colour varieties (data tables).
 - `SaveFormat.swift` (versions, migrations), `SaveStore.swift` (slots, atomic writes, backups).
 - One file per feature: `EarlyGame`, `BreedingPen`, `Shows`, `ShowEvent`, `Friendliness`, `SexGuess` ("hen or roo?"), `Pedigree`, `Names`, `Quirks`, `Story`
-  (people, choices), `Loans` (loaned birds, debts), `Post` (notes), `VillageDay` (the calendar),
+  (people, choices), `Loans` (loaned birds, debts), `Post` (notes), `VillageDay` (the calendar), `HatchAlong` (the spring egg swap),
   `Milestone`, `Jobs` (daily jobs, season goals), `Records` (the flock record book), `Daylight` (day slots, errands, the sleep gate), `Look`, `Simulation`, `HatchWhy` (hatch-day "why" note).
 - What might hatch: `Visible` (what the keeper sees, no genes), `Knowledge` + `KnowledgeTables` (genes worked
   out by elimination), `Planner` + `PlannerTables` (the pen forecast, carrier notes), `Inheritance`
@@ -121,7 +121,7 @@ Most new content is a table entry. See README "Data layer" and the feature secti
   `carrierText` (`PlannerTextTests` checks every allele).
 - Storyline: a `Storyline` in `Storylines.all` (with its `person`) + its words in `storyText`, and each
   choice option's words in `choiceText` (`VillageText.swift`).
-- Note: a `Note` in `Notes.pool` (with its `NoteCondition`) + its words in `postNoteText`.
+- Note: a `Note` at the end of `Notes.pool` (with its `NoteCondition`) + its words in `poolNoteText` (`NotesText.swift`).
 - Milestone: a `Milestone` in `Milestones.all` (order = ladder) + its words in `milestoneText`.
 - Night step: add it to `passNight` in order and update the "Night order" line in README.
 - Early-game step: a `Feature` case (timeline order), its day in `Rules.featureDays`, its gate in

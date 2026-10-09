@@ -79,7 +79,8 @@ extension GameState {
 }
 
 extension Engine {
-    /// Each morning: a notice a week before a village day, and the day itself.
+    /// Each morning: a notice a week before a village day, and the day itself. Then the Hatch-along
+    /// chick, if it is due (see HatchAlong.swift).
     static func villageCalendar<R: RandomNumberGenerator>(_ s: inout GameState, _ rng: inout R) -> [GameEvent] {
         var ev: [GameEvent] = []
         let notice = s.rules.villageDayNoticeDays
@@ -90,18 +91,51 @@ extension Engine {
             ev.append(.villageDay(today))
             ev += villageDayEffects(today, &s, &rng)
         }
-        return ev
+        return ev + hatchAlongChickHome(&s)
     }
 
     /// What a village day does. Each day's effect is its own small rule (see README "The village calendar").
+    /// Gifts come every year. No day draws from the game RNG (the Longest Day skips one draw: see
+    /// `GameState.foxStaysHome`).
     static func villageDayEffects<R: RandomNumberGenerator>(
         _ v: VillageDay, _ s: inout GameState, _ rng: inout R
     ) -> [GameEvent] {
+        var ev: [GameEvent] = [.villageDayScene(v, year: s.year(onDay: s.day))]
         switch v {
-        case .hatchAlong: []
-        case .longestDay: []
-        case .moultWeek: []
-        case .midwinterLights: []
+        case .hatchAlong, .longestDay:
+            break  // the Hatch-along waits for an egg; the Longest Day acts at night (`foxStaysHome`)
+        case .moultWeek:
+            let treats = s.rules.moultWeekTreats
+            s.treats += treats
+            ev.append(.villageDayGift(.moultWeek, coins: 0, treats: treats))
+        case .midwinterLights:
+            let coins = s.rules.midwinterCoins
+            s.coins += coins
+            ev.append(.villageDayGift(.midwinterLights, coins: coins, treats: 0))
+            let note = VillageDay.midwinterNote(year: s.year(onDay: s.day))
+            s.notesSeen.insert(note)
+            ev.append(.noteArrived(.teddy, note))
         }
+        return ev
     }
+}
+
+extension VillageDay {
+    /// Teddy's Midwinter Lights notes, with a drawing, one a year. The ID holds the year it came, so its
+    /// words stay that year's words whenever they are read.
+    public static let midwinterNotePrefix = "teddyMidwinterDrawing.y"
+
+    public static func midwinterNote(year: Int) -> String { "\(midwinterNotePrefix)\(year)" }
+
+    /// The year in a Midwinter note ID, or nil for any other note.
+    public static func midwinterNoteYear(_ id: String) -> Int? {
+        id.hasPrefix(midwinterNotePrefix) ? Int(id.dropFirst(midwinterNotePrefix.count)) : nil
+    }
+}
+
+extension GameState {
+    /// True on the Longest Day: that night the fox stays home. `passNight` skips the fox roll, so that
+    /// night draws one number fewer from the game RNG. Every draw after it in that game moves too. Nights
+    /// before the first Longest Day are unchanged.
+    public var foxStaysHome: Bool { villageDay(onDay: day) == .longestDay }
 }

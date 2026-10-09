@@ -63,7 +63,7 @@ extension Engine {
         case .buy, .buySpecial, .buyIncubator: .village
         case .candle, .candleEgg: .candling
         case .enterShow, .enterShowIn, .enterEggs, .enterEggPlate: .showDesk
-        case .deliver, .acceptTrade, .rehome: .neighbour
+        case .deliver, .acceptTrade, .rehome, .giveHatchAlongEgg: .neighbour
         case .upgradeCoop: .building
         case .chooseStarter, .feed, .feedPremium, .collectEggs, .sellEggs, .sellChosenEggs, .sellClearEggs,
             .closeCoop, .pet, .giveTreat, .rename, .incubate, .incubateEggs, .sit, .sitEggs, .penBird, .unpenBird,

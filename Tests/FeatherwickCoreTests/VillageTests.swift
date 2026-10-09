@@ -289,15 +289,17 @@ struct VillageTests {
         #expect(s.carton.map(\.colour) == [.blue, .blue, .blue, .blue])
         let coins = s.coins
         let ev = night(&s, &rng)
-        #expect(ev.contains(.storyCoins("okaforWindow", 12)))
+        #expect(ev.contains(.storyCoins("okaforWindow", 30)))
         #expect(!Self.notes(ev).contains("okafor-window"))
-        #expect(s.coins >= coins + 12)
+        #expect(s.coins >= coins + 30)
+        // Well above what the six eggs sell for.
+        #expect(30 >= 2 * 6 * s.rules.brownEggPrice)
         let later = Self.nights(3, &s, &rng)
         #expect(Self.notes(later) == ["okafor-marketBoard"])
         #expect(later.contains(.storyFinished("okaforWindow")))
     }
 
-    @Test func waitingForANewColourEarnsTwentyCoinsAndANote() throws {
+    @Test func waitingForANewColourEarnsFiftyCoinsAndANote() throws {
         var (s, rng) = Self.game()
         s.eggBook.insert(EggBookEntry(colour: .cream, speckled: false))
         Self.okaforAtWindow(&s, &rng)
@@ -317,7 +319,7 @@ struct VillageTests {
         #expect(Engine.apply(.deliver(story: "okaforWindow"), to: &s, using: &rng).contains(.delivered("okaforWindow")))
         #expect(s.carton.count(where: { $0.colour == .blue }) == 0 && s.carton.count == 9)
         let ev = night(&s, &rng)
-        #expect(ev.contains(.storyCoins("okaforWindow", 20)))
+        #expect(ev.contains(.storyCoins("okaforWindow", 50)))
         #expect(Self.notes(ev) == ["okafor-window"])
     }
 
