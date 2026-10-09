@@ -173,7 +173,7 @@ public struct Rules: Codable, Hashable, Sendable {
     // with Marigold, Hazel's hen on loan, and laying on day 4, because she lays (see BorrowedHen.swift).
     public var featureDays: [Feature: Int] = [
         .handling: 1, .treats: 2, .coopDoor: 3, .laying: 4, .premiumFeed: 5, .breedBook: 8, .daylight: 9,
-        .birdShop: 10, .coopUpgrade: 14, .incubatorShop: 29, .breedingPen: 35,
+        .birdShop: 10, .coopUpgrade: 14, .incubatorShop: 29, .breedingPen: 35, .marketBoard: 42,
     ]
     /// The county show opens this many days before the first show (`.shows` has no entry above).
     public var showNoticeDays = 7
@@ -245,6 +245,38 @@ public struct Rules: Codable, Hashable, Sendable {
     public var moultWeekTreats = 4
     /// Coins the village gives at Midwinter Lights, each year.
     public var midwinterCoins = 15
+
+    // The market board (see MarketBoard.swift). Cards pay more than the farm gate; a missed card just comes down.
+    /// Mornings between pins: new cards once a week.
+    public var marketPinIntervalDays = 7
+    /// Wanted cards pinned each week: at least this many (when enough kinds fit)...
+    public var marketCardsMin = 1
+    /// ...and at most this many.
+    public var marketCardsMax = 2
+    /// Days a card stays up, the pin day included.
+    public var marketCardDays = 7
+    /// An egg card pays this many times the eggs' fresh price at the farm gate.
+    public var marketEggRewardFactor = 2.5
+    /// Bird cards in one week's pin, at most. The rest are egg cards (when the Egg Book has their colours).
+    public var marketBirdCardsPerPin = 1
+    /// A bird card pays this, plus the extras below. A little more than a new home pays for a plain bird.
+    public var marketBirdCoins = 8
+    /// Extra for a card that asks for a laying hen.
+    public var marketLayingHenCoins = 4
+    /// Extra for a card that asks for a friendly bird.
+    public var marketFriendlyCoins = 5
+    /// Extra for a card that asks for a lap chicken.
+    public var marketLapChickenCoins = 12
+    /// A buyer comes this many days after the keeper pins a card, at the soonest...
+    public var marketBuyerMinDays = 1
+    /// ...and at the latest.
+    public var marketBuyerMaxDays = 3
+    /// Days the buyer waits in the village. Then they go home, and the card comes down.
+    public var marketBuyerWaitDays = 2
+    /// A buyer pays the rehome value times this (rounded up)...
+    public var marketBuyerFactor = 1.5
+    /// ...plus this.
+    public var marketBuyerBonus = 4
 
     public init() {}
 
@@ -337,16 +369,7 @@ public struct Rules: Codable, Hashable, Sendable {
     }
 
     public func price(of egg: Egg, onDay day: Int) -> Int {
-        var base =
-            switch egg.colour {
-            case .cream: creamEggPrice
-            case .brown: brownEggPrice
-            case .blue: blueEggPrice
-            case .olive: oliveEggPrice
-            case .chocolate: chocolateEggPrice
-            case .green: greenEggPrice
-            case .white: whiteEggPrice
-            }
+        var base = freshPrice(of: egg.colour)
         base += egg.speckled ? speckleBonus : 0
         guard isStale(egg, onDay: day) else { return base }
         return max(1, Int((Double(base) * staleEggPriceFactor).rounded(.down)))

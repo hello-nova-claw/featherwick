@@ -110,6 +110,10 @@ let help = """
       pay <debt>           pay back what you owe (no hurry)
       people               the people you've met, and what they're waiting on
       calendar             the next village days
+      board                the market board by the bakery: wanted cards and your own card
+      fill <n> [name]      fill wanted card n with eggs from your carton, or with the named bird
+      post <breed>         pin your own card for young birds of a breed; a buyer comes in a few days
+      sell <name>          sell a young bird to the buyer who came for your card
       judge <name>         practice judging: breed class (purebred adults) and pet class
       judge eggs           practice judging: your best plate of 3 matched eggs
       shows                the county show: schedule, your entries, and the trophy case
@@ -230,6 +234,12 @@ while true {
         run(.chooseStarter(index: index - 1, name: original))
     case "feed", "f": run(words.count > 1 && words[1] == "premium" ? .feedPremium : .feed)
     case "collect", "c": run(.collectEggs)
+    case "sell" where words.count > 1 && !["clear", "eggs", "all"].contains(words[1]):
+        guard let bird = findBird(words.dropFirst().joined(separator: ""), game.state) else {
+            print("Use: sell (all eggs), sell clear, or sell <name> to the buyer from your card")
+            break
+        }
+        run(.sellToBuyer(bird.id))
     case "sell": run(words.count > 1 && words[1] == "clear" ? .sellClearEggs : .sellEggs)
     case "candle": run(.candle)
     case "buy":
@@ -437,6 +447,38 @@ while true {
     case "calendar":
         (villageCalendarLines(game.state) + hatchAlongLines(game.state)).forEach { print($0) }
         if game.state.hatchAlongRefusal() == nil { print("To bring your Hatch-along egg: give egg") }
+    case "board", "market": marketBoardLines(game.state).forEach { print($0) }
+    case "fill":
+        let cards = game.state.marketBoard.cards
+        guard words.count > 1, let n = Int(words[1]), cards.indices.contains(n - 1) else {
+            print("Use: fill <card number> [bird name]. Type: board")
+            break
+        }
+        if case .bird = cards[n - 1].want, words.count == 2 {
+            let fits = game.state.birdsFor(cards[n - 1]).map(\.name)
+            print(
+                "That card needs a bird: fill \(n) <name>."
+                    + (fits.isEmpty ? "" : " Fits: " + fits.joined(separator: ", ")))
+            break
+        }
+        let bird = words.count > 2 ? findBird(words.dropFirst(2).joined(separator: ""), game.state) : nil
+        if words.count > 2, bird == nil {
+            print("There is no bird with that name here.")
+            break
+        }
+        run(.fillCard(cards[n - 1].id, bird: bird?.id))
+    case "post":
+        let wanted = words.dropFirst().joined()
+        guard
+            let breed = BreedTable.all.first(where: {
+                $0.displayName.lowercased().replacingOccurrences(of: " ", with: "") == wanted
+            })
+        else {
+            let breeds = game.state.breedsForKeeperCard.map { $0.definition.displayName.lowercased() }
+            print("Use: post <breed>." + (breeds.isEmpty ? "" : " You could post: " + breeds.joined(separator: ", ")))
+            break
+        }
+        run(.postCard(breed.id))
     case "pay":
         guard words.count > 1 || game.state.debts.count == 1,
             let id = words.dropFirst().first ?? game.state.debts.first?.id

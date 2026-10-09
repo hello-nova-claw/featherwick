@@ -20,6 +20,7 @@ public enum Simulation {
         public var eggsSold: Int
         public var coinsFromEggs: Int
         public var coinsFromShows: Int
+        public var coinsFromMarket: Int
         public var chicksHatched: Int
         public var foxVisits: Int
         public var storiesFinished: Int
@@ -44,7 +45,7 @@ public enum Simulation {
         var r = Report(
             seed: seed, days: days, finalCoins: 0, peakCoins: 0, finalFlock: 0, peakFlock: 0,
             breedBook: 0, eggBook: 0, eggsLaid: 0, eggsSold: 0, coinsFromEggs: 0, coinsFromShows: 0,
-            chicksHatched: 0, foxVisits: 0, storiesFinished: 0)
+            coinsFromMarket: 0, chicksHatched: 0, foxVisits: 0, storiesFinished: 0)
         apply(.chooseStarter(index: Int(seed % 3), name: "Sim"), &s, &rng, &r)
 
         for _ in 0..<max(0, days) {
@@ -90,6 +91,7 @@ public enum Simulation {
         if !s.hasIncubator, s.coins >= s.rules.incubatorPrice { apply(.buyIncubator, &s, &rng, &r) }
 
         maybeEnterShow(&s, &rng, &r)
+        visitMarketBoard(&s, &rng, &r)
         visitNeighbour(&s, &rng, &r)
 
         // Set fertile eggs if the incubator is free and the brooder has room for every one.
@@ -110,6 +112,19 @@ public enum Simulation {
         apply(.closeCoop, &s, &rng, &r)
         for e in Engine.restUntilEvening(&s, using: &rng) { tally(e, &r) }
         apply(.passNight, &s, &rng, &r)
+    }
+
+    /// One trip to the market board: fill every egg card the carton can, and a bird card with a spare
+    /// adult (one the flock can lose and still breed). All one errand, so only the first costs daylight.
+    private static func visitMarketBoard(_ s: inout GameState, _ rng: inout SeededRNG, _ r: inout Report) {
+        for card in s.marketBoard.cards where s.canFill(card) {
+            switch card.want {
+            case .eggs: apply(.fillCard(card.id, bird: nil), &s, &rng, &r)
+            case .bird:
+                guard let spare = spareBird(s), s.birdsFor(card).contains(where: { $0.id == spare }) else { continue }
+                apply(.fillCard(card.id, bird: spare), &s, &rng, &r)
+            }
+        }
     }
 
     /// One trip next door: hand over what a story waits for, if the carton has it, and take any spare
@@ -186,6 +201,7 @@ public enum Simulation {
             r.eggsSold += n
             r.coinsFromEggs += coins
         case .showPrizesWon(let coins): r.coinsFromShows += coins
+        case .marketCardFilled(_, let coins), .soldToBuyer(_, let coins): r.coinsFromMarket += coins
         case .chicksHatched(let ids, _): r.chicksHatched += ids.count
         case .foxVisited: r.foxVisits += 1
         default: break
@@ -214,6 +230,7 @@ public enum Simulation {
             \(line("eggs/day", "%.2f") { $0.eggsPerDay })
             \(line("egg income") { Double($0.coinsFromEggs) })
             \(line("show income") { Double($0.coinsFromShows) })
+            \(line("market") { Double($0.coinsFromMarket) })
             \(line("hatched") { Double($0.chicksHatched) })
             \(line("fox visits") { Double($0.foxVisits) })
             """

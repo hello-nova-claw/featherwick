@@ -225,6 +225,8 @@ public struct GameState: Hashable, Codable, Sendable {
     /// The mornings Hatch-along chicks come back, soonest first. A day stays here from the egg until its
     /// chick is home: with no room, the chick waits with Hazel. One a year, so the list stays short.
     public var hatchAlongChickDays: [Int] = []
+    /// The market board by the bakery (see MarketBoard.swift). Empty in saves from before the board.
+    public var marketBoard = MarketBoard()
 
     init(rules: Rules, phase: Phase) {
         self.rules = rules

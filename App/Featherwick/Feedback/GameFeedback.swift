@@ -18,7 +18,7 @@ enum GameFeedback {
             case .chicksHatched:
                 cues.insert(.hatch)
                 success = true
-            case .eggsSold, .rehomed, .showPrizesWon:
+            case .eggsSold, .rehomed, .showPrizesWon, .marketCardFilled, .soldToBuyer:
                 cues.insert(.coins)
                 success = true
             // Spending: a clear tap in the hand, so the keeper knows the purchase went through

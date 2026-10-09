@@ -191,6 +191,7 @@ All screens are 393×852 (iPhone 15/16). Sheets sit over the dimmed farm.
 - Today shows how many of today's jobs are left in a buff badge. When all are done, the badge goes: "Today" turns `inkMuted`, with an ink tick and "Done" (Figtree 13). VoiceOver reads "Today, all jobs done".
 - Farm gate notice "new in today": stock the early game brought in this morning. It goes when the keeper opens the Farm gate or buys something there. The app keeps what was seen (per save slot); the game does not.
 - Farm gate village notice (story dot): a village day in the next 7 days ("Longest Day in 3 days", "Moult Week tomorrow", "Midwinter Lights today"), or "Hatch-along: bring an egg" while the Hatch-along week is on and the keeper has an egg they know is fertile. The words come from `villageNotice` (FeatherwickText). It asks for nothing: no egg costs nothing.
+- Farm gate: once the market board opens, a "Market board · N cards" text button under the shop opens `MarketBoardSheet` ("By the bakery"): each wanted card (person, want, coins, until day, their line in Caslon italic, and a "Bring them" or per-bird "Give" button), then "Your card" (pin a card per breed, or the buyer and a "Sell · N" button per bird). Notices: "a buyer is here" (decision) or "a card you can fill" (collect).
 - Night: same layout with night tokens. Place labels can show state ("5 asleep"). A toast example: "A chick has hatched" with the action "Name her".
 
 ### 2a / 2b — Bird card (sheet, top at 92pt)

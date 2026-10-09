@@ -42,6 +42,9 @@ public enum Feature: String, Hashable, Codable, Sendable, CaseOrdered {
     case incubatorShop
     /// The breeding pen: the keeper chooses which rooster fathers which hens' eggs.
     case breedingPen
+    /// The market board by the bakery: wanted cards, and the keeper's own card (see MarketBoard.swift).
+    /// Opens on its day, or sooner, the morning Mr Okafor's note about the board comes.
+    case marketBoard
 }
 
 /// The neighbour's advice for the next show: one of the keeper's birds, and the class it is most
@@ -101,6 +104,7 @@ extension Engine {
         case .enterShow, .enterShowIn, .enterEggs, .enterEggPlate: .shows
         case .penBird, .unpenBird: .breedingPen
         case .rest: .daylight
+        case .fillCard, .postCard, .sellToBuyer: .marketBoard
         default: nil
         }
     }
@@ -109,7 +113,9 @@ extension Engine {
     /// A gift that comes with a feature is given here. Deterministic: no randomness.
     static func introduceFeatures(_ s: inout GameState) -> [GameEvent] {
         var ev: [GameEvent] = []
-        let due = Feature.allCases.filter { !s.isOpen($0) && s.introductionDay(of: $0) <= s.day }
+        let due = Feature.allCases.filter {
+            !s.isOpen($0) && (s.introductionDay(of: $0) <= s.day || openedEarly($0, s))
+        }
         for feature in due {
             s.introduced.insert(feature)
             if feature == .treats { s.treats += s.rules.welcomeTreats }
@@ -127,6 +133,12 @@ extension Engine {
             ev.append(.plannerShownAtPen)
         }
         return ev
+    }
+
+    /// True when a feature opens before its day. The market board opens the morning Mr Okafor's note
+    /// about it comes.
+    static func openedEarly(_ feature: Feature, _ s: GameState) -> Bool {
+        feature == .marketBoard && s.notesSeen.contains(MarketBoard.openingNoteID)
     }
 
     // MARK: - The neighbour's show tip
