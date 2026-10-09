@@ -212,8 +212,9 @@ genotypes that cannot be:
 
 1. **Look.** `Phenotype` in reverse (`LookTable`). The table is made once from every combination of
    the single genes. It never reads a real bird.
-2. **Origin.** A bird from outside the flock (no parents on record, not hatched at home) is one of its
-   breed's public recipes (`RecipeTable`) that gives its look.
+2. **Origin.** A bird from outside the flock (not hatched at home) is one of its breed's public
+   recipes (`RecipeTable`) that gives its look. Where it was bred decides this, not its parents: the
+   starter has its mother (Marigold) on record, and is still Hazel's purebred stock.
 3. **Family up.** A chick keeps only genotypes its parents can give it.
 4. **Family down.** A parent keeps a genotype only if every seen chick can come from it.
 5. Steps 3 and 4 repeat until nothing changes.
@@ -845,7 +846,9 @@ inside `anyOf`.
   holds one of the starter's alleles at every gene. So she is one of the breed's public recipes, and
   `Knowledge` reads her as it reads any bought bird. The genes behind each quantitative trait share
   the starter's first allele too. The starter's `motherID` is Marigold. Its `fatherID` is her mate, a
-  family-tree record with no look (he stays at Hazel's).
+  family-tree record with no look (he stays at Hazel's). The starter keeps its own breed evidence
+  (`Visible.isFromOutside` reads the origin only), so its parents add to what the keeper knows and
+  never take away from it. The planner's sure lines stay as many as before (`KnowledgeTests`).
 - **Rule 8.** Marigold's look is evidence, like any mother's. It must never tell the starter's sex.
   Barring is on the Z: a barred hen gives barring to every son, so a barred mother with an unbarred
   chick would say "a daughter". So her one Z copy is the starter's first Z copy. Her barring always

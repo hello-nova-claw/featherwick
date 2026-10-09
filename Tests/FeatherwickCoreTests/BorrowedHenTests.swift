@@ -107,6 +107,22 @@ struct BorrowedHenTests {
             let k = Knowledge.of(s)
             #expect(k.contradictions == 0)
             #expect(k.bird(hen.id) != nil && k.bird(mate.id) != nil)
+            // The starter is still Hazel's purebred stock: its breed's recipes count as well as its
+            // family, so knowing its parents never makes the keeper know less than before.
+            #expect(visible.isFromOutside)
+            let orphan = Visible.all(in: s).map { v in
+                v.id != starter.id
+                    ? v
+                    : Visible(
+                        id: v.id, name: v.name, sex: v.sex, stage: v.stage, breed: v.breed, isPurebred: v.isPurebred,
+                        origin: v.origin, motherID: nil, fatherID: nil, look: v.look)
+            }
+            let before = Knowledge.of(orphan)
+            for space in GenotypeSpace.all {
+                #expect(
+                    k.candidates(starter.id, space.locus.id).isSubset(of: before.candidates(starter.id, space.locus.id))
+                )
+            }
             // And still none once the starter has grown and shows its breed and sex.
             Self.play(until: 12, &s, &rng)
             #expect(Knowledge.of(s).contradictions == 0)
