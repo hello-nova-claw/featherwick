@@ -27,9 +27,13 @@ struct SaveFormatTests {
         #expect(loaded.state.rules.broodyChance == game.state.rules.broodyChance)
         // Sets are written in hash order too.
         #expect(loaded.state.introduced == game.state.introduced)
+        #expect(loaded.state.notesSeen == game.state.notesSeen)
+        #expect(loaded.state.hatchAlongYears == game.state.hatchAlongYears)
         var same = loaded.state
         same.rules = game.state.rules
         same.introduced = game.state.introduced
+        same.notesSeen = game.state.notesSeen
+        same.hatchAlongYears = game.state.hatchAlongYears
         let sorted = JSONEncoder()
         sorted.outputFormatting = .sortedKeys
         #expect(try sorted.encode(same) == sorted.encode(game.state))

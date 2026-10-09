@@ -8,19 +8,21 @@ struct BooksView: View {
     @Environment(\.palette) private var palette
     @State private var tab = BookTab.breeds
 
-    enum BookTab: Hashable { case breeds, eggs, inheritance, records }
+    enum BookTab: Hashable { case breeds, eggs, inheritance, records, people }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Space.l) {
                 HStack {
-                    WordTabs(
-                        tabs: [
-                            (.breeds, "Breeds"), (.eggs, "Eggs"), (.inheritance, inheritanceTitleText),
-                            (.records, RecordsWords.tab),
-                        ],
-                        selection: $tab)
-                    Spacer()
+                    // Five tabs are wider than a phone: they scroll sideways, and the close button stays put.
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        WordTabs(
+                            tabs: [
+                                (.breeds, "Breeds"), (.eggs, "Eggs"), (.inheritance, inheritanceTitleText),
+                                (.records, RecordsWords.tab), (.people, PeopleWords.tab),
+                            ],
+                            selection: $tab)
+                    }
                     CloseButton()
                 }
                 switch tab {
@@ -28,6 +30,7 @@ struct BooksView: View {
                 case .eggs: EggBook()
                 case .inheritance: InheritanceBook()
                 case .records: RecordBook()
+                case .people: PeopleBook()
                 }
             }
             .padding(.horizontal, Space.sheetSide)
@@ -126,6 +129,14 @@ struct BreedPageSheet: View {
                 .font(Typeface.label).foregroundStyle(palette.inkMuted)
             VStack(alignment: .leading, spacing: Space.s) {
                 ForEach(found, id: \.self) { FeatherSwatch(colour: $0.colour, name: swatchName($0)) }
+            }
+            if s.dotStandardBreed == breed.id, let looks = dotStandardText(breed.id) {
+                StitchDivider()
+                VStack(alignment: .leading, spacing: Space.xs) {
+                    Text(PeopleWords.dotHeading).font(Typeface.item)
+                    Text(looks).font(Typeface.note).fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
             }
             if let lore = breedLore(breed.id) {
                 StitchDivider()

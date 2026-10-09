@@ -46,7 +46,7 @@ public func choiceText(story: String, option: String) -> String {
     switch (story, option) {
     case ("marigold", "return"): "send Marigold home, with an egg for you"
     case ("marigold", "keep"): "keep Marigold, and pay Hazel for her when you can"
-    default: option
+    default: peopleChoiceText(story: story, option: option) ?? option
     }
 }
 
@@ -134,7 +134,7 @@ public func loanLineText(_ b: Bird, _ s: GameState) -> String? {
 /// Nil for an unknown ID. A note in `Notes.pool` or in a story's `.note` reward must have words.
 public func postNoteText(_ id: String, _ s: GameState) -> String? {
     switch id {
-    default: nil
+    default: peopleNoteText(id, s) ?? poolNoteText(id, s) ?? calendarNoteText(id, s)
     }
 }
 
@@ -228,6 +228,7 @@ public func hasMet(_ p: Person, _ s: GameState) -> Bool {
     if p == .hazel || p == .wren { return true }
     if Storylines.all.contains(where: { $0.person == p && s.stories[$0.id] != nil }) { return true }
     if s.debts.contains(where: { $0.to == p }) || s.loanedBirds.contains(where: { $0.loan?.owner == p }) { return true }
+    if p == .teddy && s.notesSeen.contains(where: { VillageDay.midwinterNoteYear($0) != nil }) { return true }
     return Notes.pool.contains { $0.from == p && s.notesSeen.contains($0.id) }
 }
 

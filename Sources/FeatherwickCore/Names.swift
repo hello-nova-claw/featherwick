@@ -36,7 +36,7 @@ public enum NameBook {
     ]
     public static let hens = [
         "Clover", "Maple", "Marigold", "Henrietta", "Daisy", "Primrose", "Mabel", "Rosie", "Florence", "Ivy",
-        "Poppy", "Edith", "Willow", "Matilda", "Winifred", "Bluebell", "Hattie", "Agnes", "Dot", "Ada", "Adelaide",
+        "Poppy", "Edith", "Willow", "Matilda", "Winifred", "Bluebell", "Hattie", "Agnes", "Ada", "Adelaide",
         "Agatha", "Alma", "Annie", "Beatrice", "Bella", "Bertha", "Betty", "Blanche", "Bonnie", "Cecily", "Clara",
         "Clementine", "Cora", "Daphne", "Delia", "Dolly", "Dora", "Doris", "Edna", "Effie", "Eleanor", "Elsie",
         "Esme", "Ethel", "Etta", "Eudora", "Evie", "Fern", "Fay", "Flora", "Freya", "Georgie", "Gertrude", "Gladys",
@@ -65,6 +65,16 @@ public enum NameBook {
         "Dudley", "Ferdinand", "Leopold", "Solomon", "Bartholomew", "Rex", "Duke", "Earl", "Baron", "Hamlet",
         "Napoleon", "Alistair", "Bertram", "Crispin", "Dashiell",
     ]
+
+    /// Names Teddy gives a chick (`StoryReward.namesNextChick`): a child's names. All neutral, because a
+    /// newly hatched chick's sex is hidden (rule 8). None is in another list or is a person's name.
+    public static let teddy = [
+        "Nugget", "Rocket", "Pancake", "Sprinkles", "Wiggles", "Jellybean", "Thunder", "Bubbles", "Zoom",
+        "Pickle Pie", "Dinosaur", "Moonbeam", "Crumpet", "Puddle", "Socks", "Marshmallow", "Banjo", "Doodle",
+    ]
+
+    /// The people of Featherwick (see `Person`). Never suggested for a bird, and never in a list above.
+    public static let peopleNames = ["Hazel", "Wren", "Dot", "Teddy", "Okafor", "Bea"]
 
     /// How names are compared: case and spaces don't count.
     public static func key(_ name: String) -> String {
@@ -99,6 +109,19 @@ public enum NameBook {
         var n = 2 + max(0, skipping)
         while used.contains(key("\(list[start]) \(n)")) { n += 1 }
         return "\(list[start]) \(n)"
+    }
+}
+
+extension NameBook {
+    /// A name this person gives a chick, from their own list, never used before in the flock. Picked from
+    /// the chick's ID, so it moves no game randomness. A person with no list gives the usual suggestion.
+    static func name(by person: Person, for bird: Bird, in s: GameState) -> String {
+        guard person == .teddy else { return suggestion(for: bird, in: s) }
+        var local = bird.localRNG(salt: 0x5445_4444)  // "TEDD"
+        let start = Int.random(in: 0..<teddy.count, using: &local)
+        let used = usedKeys(exceptID: bird.id, in: s)
+        let free = (0..<teddy.count).map { teddy[(start + $0) % teddy.count] }.filter { !used.contains(key($0)) }
+        return free.first ?? suggestion(for: bird, in: s)
     }
 }
 

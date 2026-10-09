@@ -236,6 +236,15 @@ public struct Rules: Codable, Hashable, Sendable {
     public var villageDays: [VillageDay: Int] = [.hatchAlong: 10, .longestDay: 14, .moultWeek: 1, .midwinterLights: 14]
     /// The village says a village day is coming this many mornings before.
     public var villageDayNoticeDays = 7
+    /// The Hatch-along week: the day itself and the days after it, this many in all. The keeper may bring
+    /// one known-fertile egg in that time.
+    public var hatchAlongWeekDays = 7
+    /// Nights after the egg is handed over before the village hatch sends a chick back.
+    public var hatchAlongReturnNights = 3
+    /// Mealworms Hazel gives with her Moult Week lesson, each year.
+    public var moultWeekTreats = 4
+    /// Coins the village gives at Midwinter Lights, each year.
+    public var midwinterCoins = 15
 
     public init() {}
 
