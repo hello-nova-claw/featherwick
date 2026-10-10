@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 Featherwick: a cozy chicken-keeping game with real chicken genetics. Swift 6 package.
 Game logic first; an iOS front end (SpriteKit + SwiftUI) comes later and uses the same core.
 
@@ -10,6 +12,7 @@ section for the system you change. Keep it current: a change to behaviour update
 
 ```sh
 swift build
+swift build --build-tests -Xswiftc -warnings-as-errors   # the CI build: a warning fails it
 swift test                          # Swift Testing (`import Testing`), not XCTest
 swift test --filter ShowTests       # one suite
 swift run featherwick 2026          # play; the seed is used only for a new save
@@ -24,7 +27,7 @@ The CLI writes `featherwick-save*.json` in the current folder (git-ignored). Do 
 | Path | What |
 | --- | --- |
 | `Sources/FeatherwickCore` | Pure game logic. All rules live here. |
-| `Sources/FeatherwickText` | The words players read (events, screens, milestones). Shared by CLI and app. `People.swift`: Hazel (neighbour), Wren (shop), the day-1 welcome and tour. `VillageText.swift`: every person's name and about line, choices, loans, debts, the post, the calendar. `VillagePeopleText.swift`: the arcs of Dot, Teddy, Mr Okafor and Bea. `MarketText.swift`: the market board. |
+| `Sources/FeatherwickText` | The words players read (events, screens, milestones). Shared by CLI and app. `People.swift`: Hazel (neighbour), Wren (shop), the day-1 welcome and tour. `VillageText.swift`: every person's name and about line, choices, loans, debts, the post, the calendar. `VillagePeopleText.swift`: the arcs of Dot, Teddy, Mr Okafor and Bea. `MarketText.swift`: the market board. `Text.swift`: `eventText` (words for every event and error). `PlannerText.swift`: the forecast and `carrierText`. `InheritanceText.swift`: the Books page. `RecordsText.swift`: the record book. `CalendarText.swift`: village day names and effects. `BreedLore.swift`: one lore page per breed. |
 | `Sources/FeatherwickCLI/main.swift` | Thin text front end. Parses input, prints text. No rules, no words. |
 | `App/` | iOS test app (SwiftUI, no art yet). `project.yml` is the XcodeGen spec. |
 | `Tests/FeatherwickCoreTests` | One suite per system. `Fixtures/save-v0.json` is a real old save. |
@@ -37,6 +40,11 @@ Key Core files:
 - `GameState.swift`, `Genome.swift`, `Locus.swift`, `Alleles.swift`, `Phenotype.swift`: state and genetics.
 - `BreedTable.swift`, `Breed.swift`: breeds and colour varieties (data tables).
 - `SaveFormat.swift` (versions, migrations), `SaveStore.swift` (slots, atomic writes, backups).
+- `SeededRNG.swift` (SplitMix64, the only source of randomness), `Identity.swift` (UUIDs drawn from the RNG, so a seed
+  replays them too).
+- `Breeding.swift`: `cross`, `layEgg`, `hatch`. The order of random draws is fixed. `QuantitativeTrait.swift`:
+  traits made by many small genes (body type, egg shape).
+- `Shop.swift` (`ShopSpecial`, the bird of the day), `MorningReport.swift` (sorts the night's events into groups).
 - One file per feature: `EarlyGame`, `BreedingPen`, `Shows`, `ShowEvent`, `Friendliness`, `SexGuess` ("hen or roo?"), `Pedigree`, `Names`, `Quirks`, `Story`
   (people, choices), `Loans` (loaned birds, debts), `BorrowedHen` (Marigold, days 2 to 10), `Post` (notes), `VillageDay` (the calendar), `HatchAlong` (the spring egg swap),
   `Milestone`, `Jobs` (daily jobs, season goals), `Records` (the flock record book), `Daylight` (day slots, errands, the sleep gate), `MarketBoard` (wanted cards, the keeper's card, buyers), `Look`, `Simulation`, `HatchWhy` (hatch-day "why" note).
@@ -134,7 +142,7 @@ Most new content is a table entry. See README "Data layer" and the feature secti
 
 - Add or update tests in the matching suite for each change. Run `swift test` before a commit.
 - CI (`.github/workflows/swift.yml`) runs on Linux (`swift:6.0-noble`) for every pull request:
-  format check, build with warnings as errors, then tests. Code must build on Linux too: no
+  build with warnings as errors, then tests, then the format check (it runs even when an earlier step fails). Code must build on Linux too: no
   Apple-only APIs in Core. Fix warnings; do not silence them.
 - `.github/workflows/apple.yml` builds and tests on macOS and builds the core for iOS. It runs on
   `main` only (macOS minutes cost 10x); run it by hand before merging a change to platform code.
