@@ -138,6 +138,10 @@ public struct Rules: Codable, Hashable, Sendable {
     public var conditionLossStressed = 0.4  // still over a fright
     public var conditionLossBroody = 0.3
     public var conditionLossHungry = 0.2  // not fed today
+    /// Shell quality of an egg laid today (`Judge.shellQuality`) starts at 1, like condition.
+    public var shellLossFright = 0.3  // the hen is just over a fright
+    public var shellLossPerYear = 0.1  // each full in-game year of the hen's age
+    public var shellQualityFloor = 0.1  // the thinnest a shell gets
     // Flock turnover (cozy: hens slow with age and retire, they never die).
     public var layDeclineStartDays = 252  // full for about nine in-game months before slowing
     public var layDeclineFloor = 0.4  // the least a laying hen's age factor falls to
