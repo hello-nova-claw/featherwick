@@ -180,7 +180,7 @@ struct PedigreeTests {
         hen.inbreeding = 0.03  // distant: no visible effect
         #expect(Judge.condition(of: hen, in: s).notes == [.inFineCondition])
 
-        // Laying: a hen with inbreeding 0.5 lays about half as often (capped loss).
+        // Laying: a very inbred hen (0.9) lays about half as often: the loss is capped at `maxInbreedingLayLoss`.
         var r = Rules.standard
         r.inbreedingMatters = true
         r.layChance = [.spring: 1, .summer: 1, .autumn: 1, .winter: 1]

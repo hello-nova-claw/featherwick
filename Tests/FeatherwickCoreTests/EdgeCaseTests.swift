@@ -583,7 +583,7 @@ struct RoomEdgeCases {
         s.coop.append(plainBird(rng: &rng))  // so the chick is not the last bird
         let chick = s.brooder[0].id
         #expect(Engine.apply(.rehome(chick), to: &s, using: &rng) == [.rehomed(chick, coins: 2)])
-        #expect(s.bird(chick)?.name == "Pip")  // still known, for messages and town later
+        #expect(s.bird(chick)?.name == "Pip")  // still known: for messages, the family tree and Bea's notes
     }
 
     @Test func theLastBirdCannotBeRehomed() {

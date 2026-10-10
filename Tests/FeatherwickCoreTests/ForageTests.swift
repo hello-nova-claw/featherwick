@@ -175,7 +175,7 @@ struct ForageTests {
         #expect(Breed.australorp.definition.isInGame)
         #expect(!Breed.australorp.definition.isStarter)
         #expect(!Breed.starters.contains(.australorp))
-        // Still a planned breed remaining (plymouth rock), so the "planned" machinery stays exercised.
+        // Planned breeds remain (Plymouth Rock, Marans, Leghorn), so the "planned" machinery stays exercised.
         #expect(BreedTable.all.contains { !$0.isInGame })
     }
 }

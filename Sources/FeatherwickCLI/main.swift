@@ -74,8 +74,8 @@ func showsScreen(_ s: GameState) { showsLines(s).forEach { print($0) } }
 
 /// Finds a bird by name, matched the way names are kept unique (`NameBook.key`): case and spaces
 /// don't count, so "chick 3" can be typed as "chick3" too.
-/// Read-only and renaming commands pass `includeLost` so a bird the fox scared off can still be reached.
-/// Read-only commands about family pass `includeRehomed` too: a rehomed bird stays in the family tree.
+/// Read-only commands, `rename`, `guess` and `pen`/`unpen` pass `includeLost`, so a bird the fox scared off
+/// can still be reached. `carries` passes `includeRehomed` too: a rehomed bird stays in the family tree.
 /// Birds you have come first, so a rehomed bird never hides one with the same name.
 func findBird(_ query: String, _ s: GameState, includeLost: Bool = false, includeRehomed: Bool = false) -> Bird? {
     let q = NameBook.key(query)
@@ -142,7 +142,7 @@ let help = """
       rest                 sit a while: spends one slot of daylight
       time                 the time of day, and how many errands fit before dark
       sleep                pass the night (door left open? birds forage: fed free + a small bonus, but fox risk)
-      day [n]              do a full day n times: feed, collect, close, rest until evening, sleep
+      day [n]              do a full day n times: feed, collect, sell a full carton, close, rest until evening, sleep
       book                 Breed Book and egg colours
       journal              your milestones and what to aim for next
       records              the record book: eggs per hen, ribbons, the flock
