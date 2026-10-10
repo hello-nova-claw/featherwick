@@ -5,10 +5,10 @@ Featherwick is a calm, cozy chicken-keeping game for iPhone (portrait, one-hande
 
 This package covers the **menu layer only**: type, colour, spacing, components, sheets and screen layouts. The farm scene, chickens, portraits and backgrounds are hand-painted watercolour sprites made separately. In the mocks they appear as dashed placeholder boxes labelled "farm scene", "bird art", "portrait", "item" and so on.
 
-Architecture: **SwiftUI menus over a SpriteKit farm scene.** The farm is 4 painted panels side by side; swipe left or right between them. Left to right: Barn (Coop), Yard (Yard), Far yard (Back fence), Shop (Farm gate). The game opens on the Yard. Each place opens a SwiftUI bottom sheet.
+Architecture: **SwiftUI menus over a SwiftUI farm scene** (the 2.5D scene with a Metal colour shader, see Farm scene). The farm is 4 painted panels side by side; swipe left or right between them. Left to right: Barn (Coop), Yard (Yard), Far yard (Back fence), Shop (Farm gate). The game opens on the Yard. Each place opens a SwiftUI bottom sheet. The tokens and components are built in `App/Featherwick/Design/`.
 
 ## About the design files
-The `.dc.html` file in this bundle is a **design reference built in HTML**. It is not production code. Recreate the designs natively in **SwiftUI** using its own patterns (`.sheet` with `presentationDetents`, `Font.custom(_:size:relativeTo:)`, asset-catalog colours with light and dark variants, and so on). Do not embed the HTML.
+The `.dc.html` file in this bundle is a **design reference built in HTML**. It is not production code. Recreate the designs natively in **SwiftUI** using its own patterns (`.sheet` with `presentationDetents`, `Font.custom(_:size:relativeTo:)`, colour tokens with day and night values, and so on). Do not embed the HTML.
 
 Open `Featherwick UI System v4.dc.html` in a browser; it renders on its own. It is a single scrolling canvas with: intro, Pigments (colour), Type, Marks & components, Screens (1a, 1b, 2a, 2b) and Screens continued (3a–8a).
 
@@ -18,7 +18,7 @@ Open `Featherwick UI System v4.dc.html` in a browser; it renders on its own. It 
 Exceptions:
 - **Watercolour dabs** (friendliness, age and the colour-section swatches) are procedural SVG-filter stand-ins. In the shipped game they should be **painted by the bird artist** and used as image assets (see Assets).
 - All bird, scene, portrait and shop art are placeholders.
-- Copy for Mabel, Mr Alder, shop items and judge's notes is placeholder writing. Keep the tone, not necessarily the words.
+- Copy for Mabel, Mr Alder, shop items and judge's notes is placeholder writing. Keep the tone, not necessarily the words. In the game, the neighbour is Hazel.
 
 ---
 
@@ -33,7 +33,7 @@ Exceptions:
 
 ## Design tokens
 
-### Colour — day (default, 06:00–17:59)
+### Colour — day (default: morning and afternoon in game time)
 | Token | Hex | Use |
 |---|---|---|
 | `paper` | `#FFFFFF` | All sheet and page backgrounds |
@@ -41,12 +41,14 @@ Exceptions:
 | `inkSoft` | `#5A4D45` | Secondary body text, quiet actions (Rename, Later) |
 | `inkMuted` | `#7A6A5F` | Labels, captions, unselected tabs (4.6:1 on white) |
 | `hairline` | `#E6DCCF` | Secondary button outline, dashed row dividers |
-| `hairlineSoft` | `#ECE5DB` | Sheet grabber |
+| `hairlineSoft` | `#ECE5DB` | Sheet grabber (defined; the app uses the system grabber) |
 | `unknown` | `#C9BBAE` | Dashed "not yet" outlines, `?` glyph |
 | `unknownBox` | `#D8CDBF` | Dashed outline of unfound collection tiles and the egg carton |
 | `artPlaceholder` | `rgba(122,106,95,0.30)` | 1px dashed outline of art placeholders |
-| `coin` | `#D6A65E` | Coin disc |
-| `scrim` | farm dimmed to ~`#DDD8D0` | Background behind open sheets (implement as a dim layer over the scene) |
+| `coin` | `#D6A65E` | Coin disc, sun mark |
+| `floating` | white at 90% | Place-label, HUD and bottom-row backing |
+| `toast` / `toastText` | `#FFFFFF` / `#2A2320` | Toast |
+| `scrim` | farm dimmed to ~`#DDD8D0` | Background behind open sheets (the system sheet dim; not a `Palette` token) |
 
 Underline and selected-tab stroke: `ink` at 50–75% opacity (`rgba(42,35,32,.5)` for headline underlines, `.75` for tab underlines).
 
@@ -55,12 +57,19 @@ Underline and selected-tab stroke: `ink` at 50–75% opacity (`rgba(42,35,32,.5)
 |---|---|
 | `paper` | `#1B1817` |
 | `ink` | `#F3EEE6` |
+| `inkSoft` | `#D9CFC4` |
 | `inkMuted` | `#C2B6AA` |
+| `hairline`, `hairlineSoft` | `#3A3330` |
+| `unknown` | `#6E625A` |
+| `unknownBox` | `#5A504A` |
+| `artPlaceholder` | `rgba(194,182,170,0.30)` |
 | `coin` | `#E8C894` |
-| Place-label / HUD backing | `rgba(27,24,23,0.88)` |
-| Toast | background `#F3EEE6`, text `#1B1817` (inverts against the night scene) |
+| `floating` (place-label / HUD backing) | `rgba(27,24,23,0.88)` |
+| `toast` / `toastText` | background `#F3EEE6`, text `#1B1817` (inverts against the night scene) |
 
-Implement as asset-catalog colours with an "Any / Dark" pair, driven by the game clock rather than system appearance (or both, per product decision).
+Built as two `Palette` values (`Palette.day`, `Palette.night`) in `Design/Theme.swift`, read through the `\.palette` environment value. Game time picks the palette, not the system appearance; the app then sets the colour scheme to match. In the evening crossfade, `Palette.between` mixes the two palettes (it starts 10% of the way in) and counts as night past halfway.
+
+Notice and speckle pigments (`Pigment`): decision dot buff `#DDAE6E`, collect dot brown `#A86E45`, egg speckles `#6B3E25`.
 
 ### Feather colours (swatch fill, always with name beside)
 | Name | Hex |
@@ -85,163 +94,182 @@ Implement as asset-catalog colours with an "Any / Dark" pair, driven by the game
 
 ### Typography
 Fonts (Google Fonts, OFL): **Libre Caslon Display**, **Libre Caslon Text** (regular and italic), **Figtree** (300, 400, 500).
-Enable ligatures on serif text (`liga`, `dlig`, `hlig`). Libre Caslon has only a few, which is fine.
+The design enables ligatures on serif text (`liga`, `dlig`, `hlig`). Libre Caslon has only a few. The app does not set them.
 
-| Style | Font | Size / line height | SwiftUI `relativeTo:` | Use |
+The app's styles are `Typeface` in `Design/Theme.swift`. The sizes below are the app's.
+
+| Style (`Typeface`) | Font | Size / line height | SwiftUI `relativeTo:` | Use |
 |---|---|---|---|---|
-| display | Libre Caslon Display 400 | 54 / 1.0 | `.largeTitle` | Bird name on bird card |
-| title | Libre Caslon Display 400 | 36–44 / 1.05 | `.largeTitle` | Sheet titles (Breed Book, Today's eggs, Speckle & Down) |
-| title2 | Libre Caslon Display 400 | 28–32 / 1.15 | `.title` | Naming question, HUD "Day 12" |
+| display (`displayName`) | Libre Caslon Display 400 | 54 / 1.0 | `.largeTitle` | Bird name on bird card |
+| title | Libre Caslon Display 400 | 38 / 1.05 | `.largeTitle` | Sheet titles (Breed Book, Today's eggs, Speckle & Down) |
+| title2 | Libre Caslon Display 400 | 30 / 1.15 | `.title` | Naming question, class names on Show day, "This season" |
 | speech | Libre Caslon Text italic 400 | 24 / 1.3 | `.title2` | Neighbour dialogue |
-| epithet | Libre Caslon Text italic 400 | 19–21 / 1.3 | `.title3` | Breed line ("a Buff Orpington hen"), grade word |
-| place | Libre Caslon Text 400 | 18 | `.title3` | Tap-place labels on farm (upright, not italic) |
-| item | Libre Caslon Text 400 | 15–22 | `.headline` | Collection names, shop items, Egg Book rows |
-| body | Figtree 400 | 16–17 / 1.55 | `.body` | Body copy, values |
-| action | Figtree 500 | 15–17 | `.body` | Button labels, selected tab |
+| epithet | Libre Caslon Text italic 400 | 20 / 1.3 | `.title3` | Breed line ("a Buff Orpington hen") |
+| note | Libre Caslon Text italic 400 | 17 | `.title3` | Quiet asides: judge's notes on the bird card, quirks, planner reasons |
+| place | Libre Caslon Text 400 | 18 | `.title3` | Place labels on the farm (upright, not italic), morning report headings |
+| item | Libre Caslon Text 400 | 17 | `.headline` | Collection names, shop items, Egg Book rows |
+| rowName | Libre Caslon Text 400 | 15 | `.headline` | A name in a table row (Record Book, arc titles) |
+| body | Figtree 400 | 16 / 1.55 | `.body` | Body copy, values |
+| action | Figtree 500 | 16 | `.body` | Button labels, selected tab |
 | label | Figtree 400 | 13 | `.footnote` | Field labels, captions (sentence case, never all caps) |
 | caption | Figtree 400 | 12 | `.caption` | Legends, notice text under place labels |
-| number | Figtree 500, `.monospacedDigit()` | 15–16 | `.body` | Coins, treats, counts |
+| number | Figtree 500, `.monospacedDigit()` | 15 | `.body` | Coins, treats, counts |
 
 Minimum size 12pt. All styles must scale with Dynamic Type. At accessibility sizes, two-column fact grids collapse to one column and button rows stack.
 
 ### Spacing (pt)
-4, 8, 12, 16, 24, 32.
-- Sheet side padding: **28–32**
-- Sheet bottom padding: **36** (clears home indicator)
+4, 8, 12, 16, 24, 32 (`Space.xs` to `Space.xxl`).
+- Sheet side padding: **28** (`Space.sheetSide`)
+- Sheet bottom padding: **36** (`Space.sheetBottom`, clears home indicator)
 - Gap between fact rows in bird card grid: **26 vertical / 16 horizontal**
 - Collection grid: 3 columns, **24 vertical / 14 horizontal**
 
 ### Radii
 | Element | Radius |
 |---|---|
-| Sheet (top corners) | 30 |
-| Buttons, toasts, place labels, HUD boxes, price buttons | **10** (no pills) |
-| Collection tiles, art placeholders | 12–16 |
-| Egg carton tray | 14 |
+| Sheet (top corners) | 30 (`Radius.sheet`) |
+| Buttons, toasts, place labels, HUD boxes, price buttons | **10** (`Radius.control`, no pills) |
+| Collection tiles, art placeholders | 12 (`Radius.tile`) |
+| Egg carton tray | 14 (`Radius.tray`) |
 | Swatches, dots, grade ring | full circle |
 | Eggs | `50% 50% 50% 50% / 60% 60% 40% 40%` (egg shape) |
 
 ### Lines
-- **Dashed stitch:** 1.3pt, `hairline` (`#E6DCCF`), for row dividers.
-- **Dashed underline:** 1.5–2pt, ink at 50%. Under display names it is drawn as a text decoration with *skip-ink off*, so descenders (the g in Marigold, the p in Pip) cross through the line. In SwiftUI, draw a dashed `Path` at the baseline + ~5pt **behind** the text, not `underline()`.
-- **Unknown outline:** 1–1.2pt dashed `unknown` (`#C9BBAE`).
-- **Tap-area outlines** on the farm mocks (1px dashed) are for the SpriteKit team only and are **not drawn in the game**.
+Stroke styles are `Stitch` in `Design/Theme.swift`.
+- **Dashed stitch** (`Stitch.divider`): 1.3pt, dash 4/4, `hairline` (`#E6DCCF`), for row dividers (`StitchDivider`).
+- **Dashed underline** (`Stitch.underline`): 1.5pt, dash 5/4, ink at 50%. Under display names it is drawn as a text decoration with *skip-ink off*, so descenders (the g in Marigold, the p in Pip) cross through the line. In SwiftUI, draw a dashed line **behind** the text (`UnderlinedName`), not `underline()`.
+- **Unknown outline** (`Stitch.unknown`): 1.1pt, dash 3/3, `unknown` (`#C9BBAE`).
+- **Tick** (`Stitch.tick`): 1.8pt solid with round ends, `inkMuted` (`TickMark`). It shows that something is done, always next to a word ("Done").
+- **Tap-area outlines** on the farm mocks (1px dashed) are for the farm scene work only and are **not drawn in the game**.
 
 ### Shadows
 Only on floating elements over the farm scene (place labels, HUD, toast):
 `0 4px 14px -8px rgba(42,35,32,0.35)`; night toast `0 18px 40px -16px rgba(0,0,0,0.8)`.
+In the app: `shadow(color: #2A2320 at 35%, radius: 7, y: 4)` (`FloatingBox`, `PlaceLabel`, day toast); night toast black at 80%, radius 20, y 4.
 No shadows inside sheets.
 
 ---
 
 ## Components
 
-**Primary button**: `ink` fill, white Figtree 500 17pt label, radius 10, min height 52. Pressed: scale 0.97, fill slightly lighter. Only one per screen.
+Components are in `Design/Components.swift` and `Design/Marks.swift`.
 
-**Secondary button**: white fill, 1pt inset `hairline` outline, ink label, radius 10, height 52.
+**Primary button** (`.primary`): `ink` fill, `paper` Figtree 500 16pt label, radius 10, min height 52. Pressed: scale 0.97, fill at 85%. Only one per screen.
 
-**Text action**: Figtree 400 15pt `inkSoft`, min 44×44 hit area (Rename, Family tree, Later, Candle the rest).
+**Secondary button** (`.secondary`): no fill, 1pt inset `hairline` outline, ink label, radius 10, min height 52.
 
-**Disabled**: drop the fill, keep a dashed outline, and change the label to say why ("No treats left").
+**Text action** (`.textAction`): Figtree 400 15pt `inkSoft`, min 44×44 hit area (Rename, Family tree, Later, Candle this egg).
 
-**Tabs / filters**: plain words, 44pt tall. Selected is `ink`, weight 500, with a 2pt dashed underline. Unselected is `inkMuted`, weight 400.
+**Disabled**: drop the fill, keep a dashed `unknown` outline, an `inkMuted` label, and change the label to say why ("No treats left").
 
-**Close**: "×" Figtree 300 26pt `inkMuted` in a 44×44 hit area, top-right of every sheet.
+**Tabs / filters** (`WordTabs`): plain words, 44pt tall. Selected is `ink`, weight 500, with a 1.5pt dashed underline (ink at 75%). Unselected is `inkMuted`, weight 400.
 
-**Sheet**: white, top radius 30, grabber 36×4 `hairlineSoft`. Detents: medium and large. The farm stays visible above, dimmed.
+**Close** (`CloseButton`): "×" Figtree 300 26pt `inkMuted` in a 44×44 hit area, top-right of every sheet.
+
+**Sheet** (`SheetPage`): `paper`, top radius 30, a context line (`label`, `inkMuted`) and close at the top. The grabber is the system one. Detents: large, or medium and large (each screen says which). The farm stays visible above, dimmed.
 
 **HUD** (farm): top-left white box (radius 10) holding "Day 12" (Caslon Display 28) and "Autumn · morning" (Figtree 13 `inkSoft`). Top-right white box with coins (gold disc + number) and treats (ink diamond rotated 45° + number). Each count is a 44pt hit area. VoiceOver reads "1,248 coins, 6 treats".
 
-**Place label** (farm): white box at 88–92% opacity, radius 10, place name in Libre Caslon Text 18. Optional notice line underneath: an 8pt dot plus Figtree 12 text.
+**Place label** (farm): white box at 90% opacity, radius 10, place name in Libre Caslon Text 18. Optional notice line underneath: an 8pt dot plus Figtree 12 text.
 - Things to collect: brown egg dot, "3 eggs waiting"
 - Decisions: buff dot, "a bird needs a name"
 - Story: ink dot, "has news"
 The text always carries the meaning; the dot only draws the eye.
 
-**Toast**: white (day) or cream (night) rectangle, **radius 10, not pill-shaped**, a small egg or bird glyph, a Figtree 15 sentence, and one action on the right ("View", "Name her"). Appears under the HUD, stays 4 seconds (longer with VoiceOver), at most two stacked.
+**Toast**: white (day) or cream (night) rectangle, **radius 10, not pill-shaped**, a small faint egg glyph, a Figtree 15 sentence, and at most one action on the right ("View", "Name"). Appears under the HUD, stays 4 seconds (10 with VoiceOver), at most two stacked.
 
-**Friendliness**: 4 dabs, 16pt, in order wild → skittish → friendly → lap chicken. Earned dabs are filled with watercolour; the rest are dashed `unknown` circles. The stage name is always written underneath.
+**Friendliness**: 4 dabs, 16pt, in order wild → skittish → friendly → lap chicken. Earned dabs are filled (the stand-in `Dab` in `inkMuted` until the painted dabs exist); the rest are dashed `unknown` circles. The stage name is always written underneath.
 
-**Age**: 3 dots of growing size (8, 12, 17pt) for chick → pullet/cockerel → hen/rooster. Filled up to the current stage, dashed after. The stage is written out ("Hen, 8 months").
+**Age**: 3 dots of growing size (8, 12, 17pt) for chick → pullet/cockerel → hen/rooster. Filled with buff up to the current stage, dashed after. The stage and age in days are written out ("Hen, 40 days"). Before the sex shows, the word is "Growing" or "Grown".
 
-**Feather swatch (inline)**: a feather outline (1pt ink stroke, filled with the feather colour) 14×24, plus the name.
+**Feather swatch (inline)** (`FeatherSwatch`): a feather outline (1pt ink stroke and quill, filled with the feather colour) 14×24, plus the name.
 
-**Egg swatch (inline)**: an egg shape 14×18 with a 1pt ink inset outline, filled with the egg colour, plus text ("Brown eggs").
+**Egg swatch (inline)** (`EggSwatch`): an egg shape 14×18 with a 1pt ink inset outline, filled with the egg colour, plus text ("Brown eggs").
 
-**Collection tile**: square art with a 1px dashed placeholder and radius 12, the name in Libre Caslon Text 15, and a row of 8pt colour dots: filled for colours found, dashed for colours still to find. Unfound breed: the tile shows a `?` in `unknown`, with a one-line italic hint ("lays blue eggs").
+**Collection tile** (`BreedTile`): square art with a 1px dashed placeholder and radius 12, the name in Libre Caslon Text 15, and a row of 8pt colour dots: filled for colours found, dashed for colours still to find. Unfound breed: the tile shows a `?` in `unknown` in a dashed `unknownBox` square, with a one-line italic hint ("lays blue eggs").
 
-**Grade**: a 128pt circle drawn as a 1.3pt dashed ink ring, score in Caslon Display 48 with "of 100" underneath, grade word in italic, then a 4-step scale (Fair, Good, Very good, Excellent). Reached steps are solid 2pt ink lines and the current one is labelled in weight 500; unreached steps are dashed `unknown`.
+**Grade** (not built in the app yet; Show day writes the score as "72 of 100"): a 128pt circle drawn as a 1.3pt dashed ink ring, score in Caslon Display 48 with "of 100" underneath, grade word in italic, then a 4-step scale (Fair, Good, Very good, Excellent). Reached steps are solid 2pt ink lines and the current one is labelled in weight 500; unreached steps are dashed `unknown`.
 
-**Dialogue**: a 72pt round portrait overlapping the sheet's top edge, a "Mabel, over the fence" label, the speech in Caslon italic 24, any gift line, then replies as full-width 52pt rows split by dashed rules, each with a → on the right.
+**Dialogue**: a 72pt round portrait overlapping the sheet's top edge, a "Hazel, over the fence" label, the speech in Caslon italic 24, then replies as full-width 52pt rows split by dashed rules, each with a → on the right.
 
 ---
 
 ## Screens
 
-All screens are 393×852 (iPhone 15/16). Sheets sit over the dimmed farm.
+All screens are 393×852 (iPhone 15/16). Sheets sit over the dimmed farm. The mocks place each sheet's top edge; the app uses detents, given with each screen.
 
 ### 1a / 1b — Farm (day / night)
-- Full-bleed painted scene (SpriteKit).
+- Full-bleed painted scene (SwiftUI, see Farm scene).
 - HUD top-left and top-right (see Components), 58–62pt from top.
 - 4 panels to swipe between: Barn, Yard, Far yard, Shop. The Yard and the Far yard draw a placeholder 2.5D scene (see Farm scene). Until their paintings exist, the Barn and the Shop are a flat colour with a dashed "scene" box.
 - One place per panel: Barn: Coop. Yard: Yard. Far yard: Back fence. Shop: Farm gate. Its button sits in the bottom row after Today, so it never covers the scene, and it changes as you swipe. The Coop sheet holds the brooder, chicks with their mothers, broody hens and the incubator too (there is no separate potting shed).
 - Panel rail: a white box down the right side, under the HUD, with one dot per panel in swipe order. Tap a dot to go there. The current panel is an ink dot. A panel off screen with a notice gets a bigger dot in its notice colour (decision, then collect, then story) with a ring. Others are small `unknown` dots. VoiceOver reads the panel name and its notices.
-- Bottom: "Books" (Caslon Display 23) bottom-left, then "Today", then the place of the panel on screen (Coop, Yard, Back fence or Farm gate), then "Rest a while" ("Sleep" when the last slot is spent; only after the daylight lesson), and a settings button "≡" bottom-right, all white boxes with radius 10, 56pt tall, 24pt above the home indicator.
+- Bottom: "Books" (Caslon Display 23) bottom-left, then "Today", then the place of the panel on screen (Coop, Yard, Back fence or Farm gate), then "Rest a while" ("Sleep" when the last slot is spent; only after the daylight lesson, before it Sleep is in the Coop sheet), and a settings button "≡" bottom-right, all white boxes with radius 10, 56pt tall, 24pt above the home indicator.
 - Books appears when the early game introduces the Breed Book (the `breedBook` lesson, the morning the first chick's sex shows). Until then, an "added to the Breed Book" toast has no "View". "≡" is always there.
 - Today shows how many of today's jobs are left in a buff badge. When all are done, the badge goes: "Today" turns `inkMuted`, with an ink tick and "Done" (Figtree 13). VoiceOver reads "Today, all jobs done".
 - Farm gate notice "new in today": stock the early game brought in this morning. It goes when the keeper opens the Farm gate or buys something there. The app keeps what was seen (per save slot); the game does not.
 - Farm gate village notice (story dot): a village day in the next 7 days ("Longest Day in 3 days", "Moult Week tomorrow", "Midwinter Lights today"), or "Hatch-along: bring an egg" while the Hatch-along week is on and the keeper has an egg they know is fertile. The words come from `villageNotice` (FeatherwickText). It asks for nothing: no egg costs nothing.
 - Farm gate: once the market board opens, a "Market board · N cards" text button under the shop opens `MarketBoardSheet` ("By the bakery"): each wanted card (person, want, coins, until day, their line in Caslon italic, and a "Bring them" or per-bird "Give" button), then "Your card" (pin a card per breed, or the buyer and a "Sell · N" button per bird). Notices: "a buyer is here" (decision) or "a card you can fill" (collect).
-- Night: same layout with night tokens. Place labels can show state ("5 asleep"). A toast example: "A chick has hatched" with the action "Name her".
+- Night: same layout with night tokens. Place labels can show state ("5 asleep", "door still open"). A toast example: "A chick has hatched" with the action "Name".
 
-### 2a / 2b — Bird card (sheet, top at 92pt)
+### 2a / 2b — Bird card (sheet, large)
 Top to bottom:
-1. Grabber, then a context line ("In the yard · 1 of 6") and close.
-2. Art area, 240pt tall, art centred (placeholder 200×180).
+1. A context line ("In the flock") and close.
+2. Art placeholder 200×180, centred, 16pt above and below.
 3. Name, centred, Caslon Display 54, with a dashed underline that descenders cross. Then the breed line in italic ("a Buff Orpington hen" or, for an unknown breed, "breed still a mystery"). A bird on loan gets one more line under it, in italic `inkMuted`: whose she is and how long she stays ("Hazel's hen, staying a week"). A bird on loan has no Rename, Rehome or Pen: she is not the keeper's yet.
 4. A 2×2 fact grid: Friendliness · Age · Feathers · Lays (hen) or Hen or rooster (chick: "Shows in ~6 days").
-5. Ribbons, only after the bird has been to a show: one line per show, newest first ("1st of 8 · Orpington class, day 84, Harvest Show"). The top three get an ink rosette (1st filled, 2nd outlined, 3rd dashed).
-6. Bottom: Cuddle (primary) and Treat (secondary, shows "· 6" remaining) side by side, then Rename and Family tree as text actions. "Enter the show" opens the class choice (see 8a). It shows only once the county show has opened in the early game, and becomes "Entered in the show" (disabled) after entry. Each counts once a day per bird. When done today, the button is disabled and says so: "Cuddled today", "Had a treat today" (like "Fed for today" in the yard).
-7. Toasts show over the bird card too, so the keeper sees what a cuddle or treat did.
-Swipe left or right moves between birds in the same place.
+5. The bird's quirks (`note`), one line each. Then carrier lines once the keeper knows the planner ("carries lavender", tap for why). Then "Next show" (how the bird should look on the day) and the last "Judge's notes, day N".
+6. Ribbons, only after the bird has been to a show: one line per show, newest first ("1st of 8 · Orpington class, day 84, Harvest Show"). The top three get an ink rosette (1st filled, 2nd outlined, 3rd dashed).
+7. Bottom: Cuddle (primary) and Treat (secondary, shows "· 6" remaining) side by side. While a chick's sex does not show, "Hen or roo?" with Hen and Roo buttons (one free guess; after it, "You said …"). Then text actions: Rename and Family tree; Set eggs under her (a broody hen); Enter the show; Rehome; Pen or Take out of the pen (once the breeding pen is open). "Enter the show" opens the class choice (see 8a). It shows only once the county show has opened in the early game, and becomes "Entered in the show" (disabled) after entry. Each counts once a day per bird. When done today, the button is disabled and says so: "Cuddled today", "Had a treat today" (like "Fed for today" in the yard).
+8. The last log line, then toasts over the bird card too, so the keeper sees what a cuddle or treat did.
 
-### 3a — Naming prompt (sheet, top at 330pt)
-Chick art, "Just hatched in the brooder", the question "What shall we call her?", an editable name field (Caslon Text 30) pre-filled with a suggestion, a dashed underline, and "A suggestion. Try another". Primary button "Name her Clover" (the label repeats the current name). Text action "Later" keeps the "needs a name" notice on the shed.
+### 3a — Naming prompt (sheet, large)
+Chick art, "Just hatched in the brooder", the question "What shall we call this chick?" ("her" or "him" only once the sex shows), an editable name field (Caslon Text 30) pre-filled with a suggestion, a dashed underline, and "A suggestion. Try another". Primary button "Name it Clover" ("Name her Clover" once the sex shows; the label repeats the current name). Text action "Later" keeps the "needs a name" notice on the Coop.
 
-### 4a — Breed Book (full screen)
-Tabs "Breeds | Eggs | Inheritance", close. Title "Breed Book", progress "7 of 24 breeds, 12 of 120 colours". A 3-column grid of collection tiles in a fixed order, so gaps show where unfound breeds belong. Colour dots on a tile: filled for a colour you have owned, pale with a dashed rim for a colour only seen on a show podium, dashed and empty for a colour still to find. A breed only seen at a show gets its tile, with "seen at a show" in italic under the name. Under the grid, "Seen at shows" lists each seen look with its show ("Seen at the Summer Fete, day 28"). A look you own later moves out of that list. A tile with an owned colour opens the breed's page (a sheet): art box, name, "Found on day N", each found colour as a feather swatch with its name, then the lore under headings. Other tiles stay closed.
+### 4a — Breed Book (Books sheet, large)
+Tabs "Breeds | Eggs | Inheritance | Records | People", close. Title "Breed Book", progress "7 of 24 breeds, 12 of 120 colours". A 3-column grid of collection tiles in a fixed order, so gaps show where unfound breeds belong. Colour dots on a tile: filled for a colour you have owned, pale with a dashed rim for a colour only seen on a show podium, dashed and empty for a colour still to find. A breed only seen at a show gets its tile, with "seen at a show" in italic under the name. Under the grid, "Seen at shows" lists each seen look with its show ("Seen at the Summer Fete, day 28"). A look you own later moves out of that list. A tile with an owned colour opens the breed's page (a sheet): art box, name, "Found on day N", "n of N colours found", each found colour as a feather swatch with its name, then the lore under headings. Other tiles stay closed.
 
-### 4b — Egg Book (full screen)
+### 4b — Egg Book (Books sheet)
 Same header with the Eggs tab selected. "5 of 14 eggs found" (each `EggColour`, plain and speckled: 7 × 2). One row per egg colour, in `EggColour` order (Cream, Brown, Blue, Olive, Chocolate, Green, White): name and "n of 2", then 2 egg shapes (plain, speckled), filled if found and dashed if not. An italic hint appears on rows that are still empty.
 
-### 4c — Inheritance (full screen)
+### 4c — Inheritance (Books sheet)
 Same header with the Inheritance tab selected. Title "Inheritance", then "What your pairs have shown" (label, `inkMuted`). One row per rule, in the order first seen, each in body type with a stitch divider under it: "Blue × blue → 1 black : 2 blue : 1 splash". Before the first rule, a dashed box (`Stitch.unknown`, radius `tile`) holds "Set eggs from a pair in the pen and what you learn ends up here." in italic.
 
-### 4d — People (full screen)
+### 4d — People (Books sheet)
 Same header with the People tab selected. The five tabs scroll sideways on a narrow phone; the close button stays put. Title "People". One entry per person met, in `Person` order, each with a stitch divider under it: name (`item`), role (label, `inkMuted`), the about line (body). Then "Finished" and "Under way" (label, `inkMuted`), one arc title each (`rowName`), with what the keeper chose in italic under it ("You let Teddy name a chick."). A choice the person waits on shows "Dot asks you to choose:" in italic and one secondary button per option. Eggs the person asked for show a secondary button, "Hand over the eggs". The last words show at the bottom. On a breed's page (4a), the breed Dot showed the keeper gets a section "What Dot looks for" (`item`), with her notes in italic.
 
-### 5a — Egg carton (sheet, top at 140pt)
-Title "Today's eggs", filters (All 7 / Fertile / Clear / Not candled). The carton is a 6×2 grid of 1pt cups inside a dashed tray. Candling mark on each cup: **filled ink dot = fertile, hollow ring = clear, no mark = not candled**, with a legend underneath. Tap cups to choose eggs (1.5pt ink ring); tap again to put one back. One egg chosen: the detail row shows a large egg, "Blue egg" and "From Juniper. Fertile, candled this morning." More than one: "3 eggs chosen". Actions act on exactly the chosen eggs: **Set 3 to hatch** (primary) and **Sell 3** (secondary with price). With none chosen, the secondary is **Sell all**. Before the keeper learns to candle, an unknown egg shows "?" in its cup, the legend says "?: can't tell yet" and the filters are hidden. After the lesson, choose one egg that is not candled and tap "Candle this egg". Setting eggs never candles them: an egg that is not candled goes in, and a clear one comes back on hatch day. When the chosen eggs cannot hatch, replace the Set to hatch button with the reason (clear egg, room for 2 more). With no incubator, there is no Set to hatch button. The coop shows no incubator and no hint about one until the keeper has one. The incubator takes more eggs on the same day until it is full.
+### 4e — Record Book (Books sheet)
+Same header with the Records tab selected. Title "Record Book", then three tables (`RecordBook`, from Core's `Records`). Names in `rowName`, numbers in `number`, column heads in `label` / `inkMuted`.
+- "Eggs": one row per hen: Hen, Total, "Last N days", First egg. A hen who has not laid yet reads "none yet" in italic, not 0. With no hens: "No hens laying yet."
+- "Ribbons": one row per bird: Bird, 1st, 2nd, 3rd. With none: "No ribbons yet. The county show gives them for 1st, 2nd and 3rd."
+- "The flock": Birds now, Hatched here, Bought, Rehomed, Retired, First hatch, First ribbon, Days kept. A day not reached yet reads "not yet".
 
-### 6a — Back fence (sheet, top at 420pt)
-See Dialogue. Tapping a reply advances the conversation ("1 of 3"). Gifts are added to the inventory with a toast.
-- A choice the neighbour asked for waits here: one reply row per option ("Send Marigold home", "Keep Marigold"). The same buttons are in her note the morning she asks, with the option's words under each. "Decide later" closes the note. Nothing is lost by waiting.
+### 5a — Egg carton (Coop sheet, large)
+Context "From the nest boxes". Title "Today's eggs", then the eggs in the nest boxes with a Collect button, then filters (All 7 / Fertile / Clear / Not candled). The carton is a grid of 1pt cups, 6 across and at least 2 rows, inside a dashed tray. Candling mark on each cup: **filled ink dot = fertile, hollow ring = clear, no mark = not candled**, with a legend underneath. Tap cups to choose eggs (1.5pt ink ring); tap again to put one back. One egg chosen: the detail row shows a large egg, "Blue egg" and "From Juniper. Fertile." More than one: "3 eggs chosen". Actions act on exactly the chosen eggs: **Set 3 to hatch** (primary) and **Sell 3** (secondary with price). With none chosen, the secondary is **Sell all**. Before the keeper learns to candle, an unknown egg shows "?" in its cup, the legend says "?: can't tell yet" and the filters are hidden. After the lesson, choose one egg that is not candled and tap "Candle this egg". "Sell all but fertile" is a text action next to it. Setting eggs never candles them: an egg that is not candled goes in, and a clear one comes back on hatch day. When the chosen eggs cannot hatch, replace the Set to hatch button with the reason (clear egg, room for 2 more). With no incubator, there is no Set to hatch button. The coop shows no incubator and no hint about one until the keeper has one. The incubator takes more eggs on the same day until it is full.
+
+Under the carton, the same sheet holds:
+- **Brooder** (title): "Name the new birds" (primary) while one waits, "n of N places in the brooder", the brooder chicks as rows (swatch, name, → to the bird card), "With their mother", the incubator (only once the keeper has one) and hens sitting on eggs.
+- **The coop**: "n of N perches taken · door open", birds waiting for a perch, "Breeding pen" (text action, once it is open), "Shut the door" (secondary), and Sleep (secondary) when the sun is down, else the reason in its place. A caption says an open door lets the fox visit.
+
+### 6a — Back fence (sheet, medium and large)
+See Dialogue. The speech is the line of Hazel's newest open storyline, or a quiet hello. Reply rows, top to bottom: "Hand over the eggs" for each delivery waiting (with the person's name when it is not Hazel's), each choice option, "Yes, let's trade" when a trade is offered, the Hatch-along row, and "Bye for now". A reply sends its command; it does not advance a conversation.
+- A choice a person asked for waits here: one reply row per option, after the person's name ("Hazel: Send Marigold home", "Hazel: Keep Marigold"). The same buttons are in her note the morning she asks, with the option's words under each. "Decide later" closes the note. Nothing is lost by waiting.
 - Settings (≡) has a "You owe" list when the keeper owes someone: one line per debt ("Hazel, 40 coins") and a Pay button, disabled until the keeper has the coins. No hurry and no interest.
 
 The Hatch-along: while its week is on and the keeper has an egg they know is fertile, the Back fence label says "has news", and the sheet has the reply row "Bring an egg for the Hatch-along" above "Bye for now". It sends `giveHatchAlongEgg` with the first known-fertile egg. Once the egg is given (or the week ends), the row and the news go.
 
 ### 7a — Show day (full screen)
-Opens over the farm on the morning of a show. A place sheet closes first. Context "The county show, day 84" and close, a show-tent art area, the theme name ("Harvest Show") with a dashed underline, and the featured kind ("Featured: breed classes, bonus prizes"). Then one section per class: the class name (Caslon Display 30), "Hard class" (and "featured" when it is), then "The top three": one row per podium place, rivals included. A row has the rosette, a small bird drawing (the chicken rig, coloured from the bird's genes) or an egg for a plate, who it is ("Mrs Pennywhistle's buff Orpington hen", "your Clover"), "1st, 88 of 100", and a "Why?" text action that opens the judge's notes in italic. Your own places have a thin ink frame. Then each of your entries split by dashed rules: rosette, name, "72 of 100", the placing ("1st of 8", "4th of 6, no ribbon"), what it won, and the judge's notes in italic. The judge's notes appear only here. Then "Taken home" with coins and treats, and the primary button "Back to the farm". With no entries, the page says "You didn't enter this time." and gives the next show day.
+Opens over the farm on the morning of a show. A place sheet closes first. Context "The county show, day 84" and close, a show-tent art area, the theme name ("Harvest Show") with a dashed underline, and the featured kind ("Featured: breed classes, bonus prizes"). Then one section per class: the class name (Caslon Display 30), "Hard class" (and "featured" when it is), then "The top three": one row per podium place, rivals included. A row has the rosette, a small bird drawing (the chicken rig, coloured from the bird's genes) or an egg for a plate, who it is ("Mrs Pennywhistle's buff Orpington hen", "your Clover"), "1st, 88 of 100", and a "Why?" text action that opens the judge's notes in italic. Your own places have a thin ink frame. Then each of your entries split by dashed rules: rosette, name, "72 of 100", the placing ("1st of 8", "4th of 6, no ribbon"), what it won, and the judge's notes in italic. The bird card keeps the last judge's notes too. Then "Taken home" with coins and treats, and the primary button "Back to the farm". With no entries, the page says "You didn't enter this time." and gives the next show day.
 
-### 8a — Speckle & Down (sheet, top at 92pt)
-Context "In the village", coin balance and close. A painted shop front (130pt), the title, an italic greeting from the shopkeeper, and tabs Feed / Treats / Hatching / Show. Item rows are 72pt: a 48pt item art, name (Caslon Text 17) with a one-line description, and a price button (coin dot + number, secondary style). If the player can't afford an item, its price button is disabled and says "Not enough coins".
+### 8a — Speckle & Down (Farm gate sheet, large)
+Context "In the village", coin balance and close. A painted shop front (130pt), the title, an italic greeting from the shopkeeper, and tabs Feed / Treats / Hatching / Show (Show only once the early game opens the show). Stock the early game has not brought in yet shows a "not yet" line instead. Item rows are 72pt: a 48pt item art, name (Caslon Text 17) with a one-line description, and a price button (coin dot + number, secondary style). If the player can't afford an item, its price button is disabled and says "Not enough coins".
 
-The Show tab: the next show's theme name and day, the entry fee, and the featured kind. Then what is entered, a row per bird that can go (tap → a sheet with one row per class the bird may enter), and a row per matched plate of eggs in the carton. A class row gives the class name, its difficulty (pet: Easy, eggs: Medium, breed: Hard), what 1st place wins (coins, plus treats in the pet class), "Featured: bonus prizes" when the theme features it, and the entry fee as the price button. Past placings are listed last.
+The Show tab: the next show's theme name and day, the entry fee, and the featured kind. Then Hazel's tip when she has one (a bird and a class, and an "Enter … · N coins" button). Then what is entered, a row per bird that can go (tap → a sheet with one row per class the bird may enter), and a row per matched plate of eggs in the carton. A class row gives the class name, its difficulty (pet: Easy, eggs: Medium, breed: Hard), what 1st place wins (coins, plus treats in the pet class), how it is judged, "Featured: bonus prizes" when the theme features it, and the entry fee as the price button. Past shows come next.
 
 Under them, "Village calendar" (Figtree item style): the next two village days, one line each in `label` / `inkSoft`, with when and what the day does ("The Longest Day, in 12 days (day 41). The longest day of the year. The fox stays home that night."). While the Hatch-along week is on, or a Hatch-along chick is on its way, its lines follow. Nothing here is a button.
 
 ### 9a — Morning report (sheet, large)
-Opens once each morning after Sleep in the Coop sheet, before the farm. Context "Overnight" and close. Title "Day 12" (Caslon Display 38) and "Autumn morning" (Figtree 13 `inkMuted`). The quiet night and the turn of the season sit under the title. Then one section per group, split by dashed rules: Hatched, The fox, Came home, From the neighbour, New at Speckle & Down, The county show, Today's jobs, Goals, In the nest boxes, Around the flock. A section has a heading (Caslon Text 18) and, where one number says it best, a count (Figtree 15): chicks hatched, birds scared, birds home, eggs laid. The lines are the game's own words (Figtree 16 `inkSoft`). Empty groups are hidden. Primary button "Back to the farm".
+Opens once each morning after Sleep, before the farm. Context "Overnight" and close. Title "Day 12" (Caslon Display 38) and "Autumn morning" (Figtree 13 `inkMuted`). The quiet night and the turn of the season sit under the title. Then one section per group, split by dashed rules: Hatched, The fox, Came home, From the neighbours, Post, In the village, New at Speckle & Down, The county show, Today's jobs, Goals, In the nest boxes, Around the flock. A section has a heading (Caslon Text 18) and, where one number says it best, a count (Figtree 15): chicks hatched, birds scared, birds home, eggs laid. The lines are the game's own words (Figtree 16 `inkSoft`). Empty groups are hidden. Primary button "Back to the farm".
 - The groups come from `MorningReport` in Core. Every night event lands in exactly one group, so nothing is dropped.
 - While the report tells the night, that night gives no toasts. The log still has every line.
 - The neighbour's words from the night (the report's "neighbour" group, lessons and show news) also come as her own note. It opens when the keeper closes the report (after the show, on a show night). With the report off, the note opens at once.
@@ -249,18 +277,35 @@ Opens once each morning after Sleep in the Coop sheet, before the farm. Context 
 - Settings (≡) has a "Morning report" switch. It starts on. Off: the night gives toasts as before.
 - Fast forward and the test tools make no report.
 
+### Screens with no mock
+These screens exist in the app (`App/Featherwick/`) but not in the design file. They use the same tokens and components.
+
+**Day 1** (`RootView.swift`, full screen, then `Sheets/TourSheet.swift`). First, "Henhaven", a 72pt round portrait placeholder for Hazel, her welcome in `speech`, "Hazel, over the fence", a name field (Caslon Text 30, dashed underline) and "That's me" (primary, disabled while empty). Then "Henhaven", her chick offer, three chick tiles (art placeholder and the down colour; the chosen one has a 1.5pt ink ring), "What shall we call this chick?", a name field and "Take this chick home". Then the tour sheet (detents 45% and medium): context "A walk round with Hazel", the stop's title, her words in `speech`, "Hazel · 1 of 4", "Next" (primary; "Thank you, Hazel" at the last stop) and "Skip the tour" (secondary). The farm moves to each stop's place under the sheet.
+
+**Today** (`Sheets/JobsSheet.swift`, medium and large). Opened from the Today button. Context "Day 12, autumn", title "Today". One row per job (`item`): a filled dab when done (struck through, `inkMuted`), a dashed circle while it waits. Then the reward line in `label`. Then "This season" (`title2`): the season goal (`item`), a buff dab per step when there are 8 or fewer, "2 of 3" (`number`), and when it ends. Nothing can be failed.
+
+**Yard** (`YardSheet`, medium and large). Context "In the yard", title "The flock". "Feed the flock" (primary; "Fed for today" when done), premium feed as a text action when there is some, the coop birds as rows (swatch, name, a short label, →), then "Wandered off" and "Staying with Hazel" when they apply.
+
+**Breeding pen** (`Sheets/BreedingPenSheet.swift`, large). Opened from the Coop sheet. Context "In the coop", title "Breeding pen", one line on how the pen works. "Rooster" and "Hens · n of N": each place shows the bird (tap for its card) and "Take out", or a dashed empty box. Then "What might hatch" (`Sheets/WhatMightHatchSection.swift`): closed until the keeper first taps its heading; then, per penned hen, "Hen & Rooster" and one line per outcome, each with its reason a tap away (`WhyLine`). Then "From the coop": each bird that can go in, with "Pen". A bird whose sex does not show yet is never listed.
+
+**Neighbour's note** (`Sheets/NeighbourNoteSheet.swift`, medium and large). Opens on its own (see 9a). Context "Over the back fence", title "A word over the fence", each note in `body` / `inkSoft` split by stitches. "Thank you" (primary), or, when a choice waits, one secondary button per option with its words under it, and "Decide later" (text action).
+
+**Market board** (`Sheets/MarketBoardSheet.swift`, large). See 1a. Context "By the bakery", coin balance, title "Market board", a line in italic, "Wanted" cards split by stitches, then "Your card".
+
+**Settings** (≡, `SettingsSheet` in `Sheets/BooksView.swift`, medium and large). Title "Henhaven", the keeper's name field, "You owe" (see 6a), "Open test tools", Sound and Haptics switches, the Morning report switch, Time of day (Game, Day, Night), beta notes (beta builds only), Fast forward ("1 day", "7 days", and "To show day" or "To the show news"), and "Start a new game".
+
 ---
 
 ## Interactions & behaviour
-- **Tap place → sheet.** SpriteKit hit-tests the tap area and presents the matching SwiftUI sheet. Sheets dismiss by swipe or ×.
+- **Tap place → sheet.** The place button of the panel on screen sits in the bottom row; a tap presents the matching SwiftUI sheet. Sheets dismiss by swipe or ×.
 - **Day/night:** follows game time, not the device clock. Morning and afternoon use the day tokens. Evening starts a 30-minute crossfade to the night tokens. Night starts when the keeper taps Sleep and lasts until the morning report (or the farm) shows. Before the daylight lesson (day 9) there is no evening, so the farm is day until Sleep. For testing, Settings ▸ Time of day pins Day or Night (Game goes back to game time).
 - **Daylight (HUD):** after the daylight lesson, the HUD shows a sun mark on a dashed track, one place per slot. Tap it for the time in words ("Afternoon. Time for 2 more errands."). The button left of "≡" says "Rest a while" until the last slot is spent, then "Sleep". A rest plays for about 4 seconds (1 second with Reduce Motion) and cannot be skipped: the sun slides one place, the light moves on, and the yard birds stop to peck. Price buttons at Speckle & Down and show entry rows disable when no slot is left, and show why. The show tip and "Enter the show" on the bird card show the reason in place of the button. "No time left" and "not evening yet" come as a note from the neighbour, not a toast.
-- **Toasts:** slide down under the HUD over 250ms ease-out, fade out after 4 seconds.
+- **Toasts:** slide down under the HUD over 250ms ease-out, fade out after 4 seconds (10 with VoiceOver).
 - **Friendliness toasts:** a cuddle or treat that makes a bird tamer gives a small toast ("Juniper liked that", "Juniper enjoyed the mealworm"). A move up a friendliness band gives its own toast instead ("Juniper seems friendly now."). No action on either.
-- **Buttons:** pressed scale 0.97 over 120ms. Light haptic on Cuddle, Treat and Set to hatch.
+- **Buttons:** pressed scale 0.97 over 120ms. Light haptic on Cuddle and Treat.
 
 ### Birds on the farm
-Until the bird art exists, birds are placeholders. In the Yard and the Far yard, each coop bird is a rigged chicken (see Chicken rig) inside the 2.5D scene. On the Barn panel, each bird is a soft blob (`BirdSwatch`). Both take their colours from the bird's real look: feather colour, comb, and lacing or barring. Chicks are small, growers are medium, adults are full size.
+Until the bird art exists, birds are placeholders. In the Yard and the Far yard, each coop bird is a rigged chicken (see Chicken rig) inside the 2.5D scene. On the Barn panel, each bird is a soft blob (`BirdSwatch`). Both take their colours from the bird's real look: feather colour, comb, and lacing or barring. The colour for each look token is a placeholder in `Design/ToneColours.swift` (`Tone.artColour`), shared by both, until the art direction picks the real ones. Chicks are small, growers are medium, adults are full size.
 - **Where:** coop birds stroll between the Yard and the Far yard: each bird stays 20–60 seconds on one, then walks off the shared edge (the Yard's right, the Far yard's left) and walks in on the other. Each bird has its own rhythm from its id and the clock, not the game's dice, so it is the same on every panel. Even one bird strolls. Brooder chicks sit in a dashed "brooder" box on the Barn panel. A hen's chicks go with her. They keep her stroll, so they change yards with her. At night, or with the coop door shut, the coop birds roost in rows on dashed perches on the Barn panel. Each hen's chicks roost next to her. If a chick's mother is not shown, the chick sits in the brooder box. Lost and boarding birds are not shown.
 - **In the scene** (`Scene/SceneChicken.swift`): the chickens are in the scene's middle group, with the trees (see Farm scene).
   - **Ground point:** each chicken stands with its feet on one point. Its Y sets the draw order and the size (`SceneDepth`). So a chicken walks behind a tree when its feet are above the tree's base, and in front when they are below. A grown chicken is 64pt tall at the bottom of the panel and 0.45 of that at the hill line. Chicks and growers keep the blob ratios.
@@ -293,9 +338,9 @@ A placeholder chicken on a fixed skeleton (`App/Featherwick/Scene/Chicken*.swift
 
 ### Sound and haptics
 Soft and few. Settings (≡) has a switch for each; both start on.
-- **Haptics:** light ticks while rubbing, a soft tap when a pet lands, a light tap when opening a bird, a lighter tap for a ripple on the ground, success on egg collection and hatching, a gentle warning when the game says no.
-- **Sound:** a cluck for tapping or petting a bird; egg, hatch and coin sounds for those events. At most one of each sound per action. The `.ambient` audio session obeys the silent switch. Until the sound files exist (`App/Featherwick/Sounds/README.md`), the game is silent.
-- **Unknown → known reveals** (breed, sex): animate the dashed outline to a filled state (~400ms), then show a toast ("Lavender added to the Breed Book").
+- **Haptics:** light ticks while rubbing, a soft tap when a pet lands (a softer one when the bird only leans in), a light tap when opening a bird, a lighter tap for a ripple on the ground, success on egg collection, hatching, and coins earned or spent, a gentle warning when the game says no (not for running out of daylight).
+- **Sound:** a cluck for tapping or petting a bird; egg, hatch and coin sounds for those events (`Feedback/GameFeedback.swift`). At most one of each sound per action. The `.ambient` audio session obeys the silent switch. Until the sound files exist (`App/Featherwick/Sounds/README.md`), the game is silent.
+- **Unknown → known reveals** (breed, sex): show a toast ("Clover is a pullet", "Lavender … added to the Breed Book"). The design also animates the dashed outline to a filled state (~400ms); the app does not do this yet.
 - **Reduce Motion:** replace slides and scales with fades.
 - **VoiceOver:** every dab or dot group reads as text ("Friendliness: friendly, 3 of 4"). Carton cups read "Blue egg, fertile".
 
@@ -311,7 +356,7 @@ The Yard and the Far yard draw a 2.5D scene (`App/Featherwick/Scene/`). The art 
 
 **Three layer groups.**
 1. **Back:** sky, far hills and the yard ground, from one landscape PNG. Never sorted.
-2. **Middle:** trees, fences, the coop and the birds, in one stack, each sorted by its ground Y (`.zIndex(depth.zIndex(forGroundY:))`).
+2. **Middle:** the trees and the birds, in one stack, each sorted by its ground Y (`.zIndex(depth.zIndex(forGroundY:))`). Fences and the coop will join them when they are drawn; for now the walk mask only keeps their ground clear.
 3. **Front:** grass tufts along the bottom edge. Always on top.
 
 **Trees.** Five designs (`TreeKind`: oak, poplar, pine, apple, birch), each a trunk and a canopy in separate materials. Code places them along the hill line with random spacing, size and left/right flip, plus one or two lower in the yard near the outer edges (`TreeLine.makeJoined`). The dice are seeded per panel, never the game's, so a panel always has the same trees. A new panel gets its own tree line with no new painting. Each tree sways slowly on its own about its trunk base. Reduce Motion: no sway.
@@ -337,6 +382,7 @@ It also writes `Scene/SceneArtLayout.swift` (hill line and building ground per p
 **Performance.** Nothing in the scene runs on a timer. Only the tree sway animates (one repeating animation per tree). A redraw every second made swiping between panels stutter.
 
 ## State (sketch)
+The designers' model. The app reads Core's `GameState` instead.
 - `GameClock`: day number, season, time of day, `isNight`.
 - `Wallet`: coins, treats.
 - `Bird`: id, name?, breed? (nil until revealed), sex? (nil until revealed), featherColour, eggColour, friendliness (0–3), ageStage (0–2), ageDays, parents, location.
@@ -346,14 +392,15 @@ It also writes `Scene/SceneArtLayout.swift` (hill line and building ground per p
 - `Dialogue`: current neighbour storyline, line index, pending gifts.
 
 ## Assets
-- **Fonts:** Libre Caslon Display, Libre Caslon Text, Figtree (Google Fonts, SIL OFL). Bundle the TTFs in the app.
+- **Fonts:** Libre Caslon Display, Libre Caslon Text, Figtree (Google Fonts, SIL OFL). The TTFs and their licences are bundled in `App/Featherwick/Fonts/` and registered at launch (`Typeface.registerBundledFonts`).
 - **To be painted by the bird artist** (replace the procedural stand-ins): 6–8 small watercolour dabs (round, ~64px @3x, in feather, egg and buff tones), used for friendliness, age and swatches.
 - **Placeholders to be replaced with commissioned art:** farm scene (day and night), bird art (chick, adolescent, adult per breed and colour), neighbour portraits, shop front, shop item art.
-- The feather and egg glyphs are simple vector shapes. Recreate them as SwiftUI `Shape`s.
+- The feather and egg glyphs are simple vector shapes, built as SwiftUI `Shape`s (`FeatherShape`, `EggShape` in `Design/Marks.swift`).
+- **Scene art:** placeholder landscape and walk-mask PNGs in `App/Featherwick/Art/Scene/`, made by `scripts/make_scene_art.py` (see Farm scene).
+- **Sounds:** none yet. `App/Featherwick/Sounds/README.md` lists the files to add.
 
 ## Files
 - `Featherwick UI System v4.dc.html`: **the current design.** Open it directly in a browser.
-- `screenshots/`: one PNG per screen (1a–8a), named to match the screen IDs above.
+- `screenshots/`: one PNG per mocked screen (1a, 1b, 2a, 2b, 3a, 4a, 4b, 5a, 6a, 7a, 8a), named to match the screen IDs above. Screens 4c–4e and 9a have none.
 - `support.js`: runtime needed to open the `.dc.html` file. It is not part of the design.
-- `reference/` holds earlier explorations (v1–v3), superseded, for context only.
-- `reference/inspiration.png`: the chicken illustrations the palette and stitch marks were drawn from.
+- In the app: tokens in `App/Featherwick/Design/Theme.swift`, components in `Design/Components.swift` and `Design/Marks.swift`, screens in `Farm/` and `Sheets/`.
