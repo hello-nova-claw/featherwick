@@ -349,7 +349,8 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
   `carrierShortText`), rehomed birds too. The CLI `tree` adds them after a " · ". The app's tree on
   the bird card shows them under each bird.
 - Rehomed birds stay in Knowledge. Their chicks still count as evidence. `carries <name>` finds a
-  rehomed bird too. The app's bird card does not open for a rehomed bird.
+  rehomed bird too, and so do `tree <name>` and `kin <name> <name>`. The app's bird card does not open
+  for a rehomed bird.
 - A bird whose sex does not show yet gets sexless words: its name, never he or she.
 - Empty until the keeper has met the planner.
 
@@ -807,7 +808,8 @@ too) stay in the state; outside parents, such as those of a bought egg, are kept
   off (`SaveFormat.fillNewSettings`). When it is on, effects are light and never block a hatch:
   lay chance drops by the coefficient (capped at 50%); show condition drops (capped at 0.3)
   with "lacks vigour", for a bird bred as close as cousins (0.0625) or closer.
-- CLI: `tree <name>`, `kin <name> <name>`.
+- CLI: `tree <name>`, `kin <name> <name>`. Both find lost and rehomed birds too. A bird at home
+  comes first when two share a name.
 
 ## Names and quirks
 
