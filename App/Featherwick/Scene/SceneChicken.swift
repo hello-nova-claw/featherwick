@@ -5,9 +5,9 @@ import SwiftUI
 // behind and in front of the trees. View only, like `FarmBirds.swift`: the engine never knows where a
 // bird stands. Walks use the system's dice, not the game's, so the game is unchanged.
 
-/// A yard panel's scene with its coop birds in it. It redraws only when a bird's stay ends, as
-/// `PanelBirds` does: the birds walk with SwiftUI animations, not a clock. (A redraw every second on
-/// every panel made swiping between panels stutter.)
+/// A yard panel's scene with its coop birds in it. It redraws only when a bird's stay ends: the birds
+/// walk with SwiftUI animations, not a clock. (A redraw every second on every panel made swiping between
+/// panels stutter.)
 ///
 /// The clock wraps the whole scene, not only the birds: views in the scene's middle group must be
 /// direct children of its stack for their `.zIndex` to sort against the trees.

@@ -107,11 +107,6 @@ enum FarmFlock {
         }
     }
 
-    /// The id whose stroll a bird keeps: a hen chick keeps its mother's, so it changes yards with her.
-    static func strollID(for bird: Bird, in s: GameState) -> UUID {
-        following(in: s)[bird.id]?.mother ?? bird.id
-    }
-
     /// Where a coop bird is on its stroll at this moment. Each bird keeps its own rhythm, from its id
     /// (not the game's RNG, so the game is unchanged): a stay in the Yard, then a stay in the Far yard,
     /// each 20–60 seconds, round and round. It runs on the clock, so every panel agrees where a bird is.
@@ -203,37 +198,23 @@ enum FarmFlock {
 }
 
 /// The birds on one farm panel without a scene (the Barn). It lies over the panel; only the birds take touches.
-/// The Yard and the Far yard draw their birds inside the scene instead (`YardScene`).
-/// The yards redraw only when a bird's stay ends, so it leaves this panel for the next one.
-/// (A redraw every second on every panel made swiping between panels stutter.)
+/// The Yard and the Far yard draw their birds inside the scene instead (`YardScene`), so nothing here
+/// strolls between panels and no clock is needed.
 struct PanelBirds: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let panel: FarmPanel
     let open: (UUID) -> Void
 
     var body: some View {
-        if reduceMotion || !panel.birdSpots.contains(where: { $0 == .yard || $0 == .farYard }) {
-            // Nothing strolls here: no clock at all.
-            flock(now: reduceMotion ? nil : .now)
-        } else {
-            let ends: [Date] = FarmFlock.stayEnds(of: store.state.coop.map(\.id), from: .now)
-            TimelineView(.explicit(ends)) { context in
-                flock(now: context.date)
-            }
-        }
-    }
-
-    private func flock(now: Date?) -> some View {
         let s: GameState = store.state
         let inside: Bool = palette.isNight || !s.coopDoorOpen
         return GeometryReader { geo in
             ZStack(alignment: .topLeading) {
                 ForEach(panel.birdSpots, id: \.self) { spot in
                     BirdSpotView(
-                        spot: spot, birds: FarmFlock.birds(at: spot, in: s, inside: inside, now: now),
-                        area: FarmFlock.area(of: spot, in: geo.size), now: now, open: open)
+                        spot: spot, birds: FarmFlock.birds(at: spot, in: s, inside: inside, now: nil),
+                        area: FarmFlock.area(of: spot, in: geo.size), open: open)
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
@@ -241,31 +222,23 @@ struct PanelBirds: View {
     }
 }
 
-/// The birds in one spot: wandering, in the brooder, or on the perch.
+/// The birds in one spot: in the brooder, or on the perch.
 private struct BirdSpotView: View {
-    @Environment(GameStore.self) private var store
     let spot: BirdSpot
     let birds: [Bird]
     let area: CGRect
-    let now: Date?
     let open: (UUID) -> Void
 
     var body: some View {
         switch spot {
         case .yard, .farYard:
-            ForEach(birds) { bird in
-                WanderingBird(bird: bird, area: area, stroll: stroll(for: bird), open: open)
-            }
+            // Drawn inside the yard scene (`YardScene`), never on a flat panel.
+            EmptyView()
         case .brooder:
             if !birds.isEmpty { BrooderBox(birds: birds, area: area, open: open) }
         case .roost:
             if !birds.isEmpty { RoostRows(birds: birds, area: area, open: open) }
         }
-    }
-
-    private func stroll(for bird: Bird) -> Stroll? {
-        // A hen chick keeps its mother's stroll, so they leave and arrive together.
-        now.map { FarmFlock.stroll(for: FarmFlock.strollID(for: bird, in: store.state), at: $0) }
     }
 }
 
@@ -284,7 +257,7 @@ private struct BrooderBox: View {
                 .position(x: area.midX, y: area.midY)
                 .allowsHitTesting(false)
             ForEach(birds) { bird in
-                WanderingBird(bird: bird, area: inner, stroll: nil, open: open)
+                WanderingBird(bird: bird, area: inner, open: open)
             }
         }
     }
@@ -330,45 +303,26 @@ private struct RoostingBird: View {
     }
 }
 
-/// A bird that potters about its area: every few seconds it walks a little way, or stops to peck.
-/// A coop bird on a stroll walks off the panel edge when its stay is over, and walks in on the
-/// next panel. With Reduce Motion on, it stands still.
+/// A chick that potters about the brooder box: every few seconds it walks a little way, or stops to peck.
+/// With Reduce Motion on, it stands still.
 private struct WanderingBird: View {
     @Environment(GameStore.self) private var store
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let bird: Bird
     let area: CGRect
-    /// Its stay on this panel. Nil in the brooder and with Reduce Motion: the bird stays.
-    let stroll: Stroll?
     let open: (UUID) -> Void
-    /// Where the bird is (or is walking to), as fractions of its area. Below 0 or above 1 is off the panel.
+    /// Where the bird is (or is walking to), as fractions of its area.
     @State private var spot: CGPoint
     @State private var pecking = false
     /// A finger is on the bird: it waits, and does not walk away mid-pet.
     @State private var held = false
 
-    init(bird: Bird, area: CGRect, stroll: Stroll?, open: @escaping (UUID) -> Void) {
+    init(bird: Bird, area: CGRect, open: @escaping (UUID) -> Void) {
         self.bird = bird
         self.area = area
-        self.stroll = stroll
         self.open = open
-        var start: CGPoint = FarmFlock.startSpot(for: bird.id)
-        // Just in from the other yard: start off the edge it came in by, then walk in.
-        if let stroll, Date.now.timeIntervalSince(stroll.since) < 2.5 {
-            start.x = Self.offEdge(right: stroll.spot == .yard, width: area.width)
-        }
-        _spot = State(initialValue: start)
+        _spot = State(initialValue: FarmFlock.startSpot(for: bird.id))
     }
-
-    /// A spot just past the panel's left or right edge, as a fraction of the area.
-    private static func offEdge(right: Bool, width: CGFloat) -> CGFloat {
-        // A first layout pass can be tiny: never measure the edge against less than a narrow phone.
-        let past: CGFloat = (Space.xl + 30) / max(300, width)
-        return right ? 1 + past : -past
-    }
-
-    /// The Far yard is right of the Yard. A bird leaves the Yard on the right and the Far yard on the left.
-    private var exitX: CGFloat { Self.offEdge(right: stroll?.spot == .yard, width: area.width) }
 
     var body: some View {
         let size: CGFloat = FarmFlock.size(of: bird, in: store.state)
@@ -379,54 +333,19 @@ private struct WanderingBird: View {
             .task(id: reduceMotion) { await wander() }
     }
 
-    /// One slow loop per bird. SwiftUI animates each walk, so the loop only wakes every 2–4 seconds,
-    /// or when it is time to set off for the next panel.
+    /// One slow loop per bird. SwiftUI animates each walk, so the loop only wakes every 2–4 seconds.
     private func wander() async {
         guard !reduceMotion else { return }
-        if spot.x < 0 || spot.x > 1 { await walkIn() }
         while !Task.isCancelled {
-            let pause: Double = Double.random(in: 2...4)
-            let setOff: Double = secondsUntilSettingOff() ?? pause
-            // Always a short nap at least, so a held bird does not spin the loop.
-            try? await Task.sleep(for: .seconds(max(0.25, min(pause, setOff))))
+            try? await Task.sleep(for: .seconds(Double.random(in: 2...4)))
             if Task.isCancelled { return }
             if held { continue }
-            if let left = secondsUntilSettingOff(), left <= 0 {
-                walkOff()
-                return
-            }
             if Double.random(in: 0..<1) < 0.3 {
                 await peck()
             } else {
                 walk()
             }
         }
-    }
-
-    /// How long the walk to the edge takes from here: an unhurried 50 pt a second.
-    private func walkOffSeconds() -> Double {
-        let dx: CGFloat = abs(exitX - spot.x) * area.width
-        return min(6, max(1.5, Double(dx) / 50))
-    }
-
-    /// Seconds until the bird sets off, so it reaches the edge as its stay ends. Nil: it stays.
-    private func secondsUntilSettingOff() -> Double? {
-        guard let stroll else { return nil }
-        return stroll.until.timeIntervalSinceNow - walkOffSeconds() - 0.3
-    }
-
-    private func walkOff() {
-        let seconds: Double = max(0.8, min(walkOffSeconds(), stroll?.until.timeIntervalSinceNow ?? 0))
-        withAnimation(.easeIn(duration: seconds)) { spot.x = exitX }
-    }
-
-    /// From off the edge to a little way into the panel.
-    private func walkIn() async {
-        // Let the first frame draw it off the edge, so the walk in shows.
-        try? await Task.sleep(for: .milliseconds(50))
-        let x: CGFloat = spot.x > 1 ? CGFloat.random(in: 0.65...0.9) : CGFloat.random(in: 0.1...0.35)
-        withAnimation(.easeOut(duration: 2.5)) { spot.x = x }
-        try? await Task.sleep(for: .seconds(2.5))
     }
 
     private func walk() {
