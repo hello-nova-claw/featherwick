@@ -448,7 +448,8 @@ struct InheritanceBook: View {
     }
 }
 
-/// ≡: new game, the simulator, and the old test screens.
+/// ≡: the keeper's name, debts, the old test screens, sound and haptics, the morning report and time of day
+/// switches, fast forward and a new game.
 struct SettingsSheet: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
@@ -506,7 +507,7 @@ struct SettingsSheet: View {
     }
 }
 
-/// For testing: see the farm by day or by night without waiting for the clock.
+/// For testing: see the farm by day or by night without waiting for game time.
 struct TimeOfDayPicker: View {
     @Environment(\.palette) private var palette
     @AppStorage(TimeOfDayPin.key) private var pinned: TimeOfDayPin = .clock

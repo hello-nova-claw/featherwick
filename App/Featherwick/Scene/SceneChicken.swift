@@ -166,7 +166,7 @@ enum SceneFlock {
     static let walkOffTime: ClosedRange<Double> = 1.5...6
     /// A bird that came in from the other yard this recently starts off the edge and walks in.
     static let arrivalWindow: Double = 2.5
-    /// Without a walk mask: the old ground band, below the place labels and above Books and ≡.
+    /// Without a walk mask: the old ground band, the lower part of the panel above the bottom row.
     static let band = CGRect(x: 0.08, y: 0.62, width: 0.84, height: 0.24)
 
     /// The ground from the hill line down to the buttons. Starts are spread over it, then snapped to the mask.

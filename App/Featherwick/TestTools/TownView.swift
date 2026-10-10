@@ -86,7 +86,7 @@ struct JournalView: View {
     }
 }
 
-/// Tools for testing: the full yard as text, a new game, and the balance simulator.
+/// Tools for testing: the full yard as text, a new game, the balance simulator, the rig lab and the save file.
 struct DebugView: View {
     @Environment(GameStore.self) private var store
     @State private var confirmNew = false

@@ -145,7 +145,7 @@ enum FarmFlock {
         return ends.sorted()
     }
 
-    /// The ground band of a panel: below the place labels, above Books and ≡.
+    /// The ground band of a panel: its lower part, above the bottom row (Books, Today, the place, ≡).
     static func area(of spot: BirdSpot, in size: CGSize) -> CGRect {
         let top: CGFloat = size.height * 0.62
         let bottom: CGFloat = max(top + 60, size.height - 104)

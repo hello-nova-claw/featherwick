@@ -2,8 +2,8 @@ import FeatherwickCore
 import FeatherwickText
 import SwiftUI
 
-/// 2a / 2b: one bird. Art, name, breed line, four facts, its quirks, what it is proven to carry, show notes, then
-/// Cuddle and Treat.
+/// 2a / 2b: one bird. Art, name, breed line, four facts, its quirks, what it is proven to carry, show notes and
+/// ribbons, then Cuddle and Treat, the "hen or roo?" guess and the other actions.
 struct BirdCardSheet: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
@@ -441,7 +441,7 @@ struct NamingSheet: View {
     }
 }
 
-/// Toasts under the HUD: one sentence and at most one action. They leave after 4 seconds.
+/// Toasts under the HUD: one sentence and at most one action. They leave after 4 seconds (10 with VoiceOver).
 struct ToastStack: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette

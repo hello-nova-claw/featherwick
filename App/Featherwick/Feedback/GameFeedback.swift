@@ -28,7 +28,7 @@ enum GameFeedback {
                 cues.insert(.coins)
                 success = true
             case .rejected(.alreadyPettedToday):
-                break  // Not an error: the bird just leans in (see `BirdBlob`).
+                break  // Not an error: the bird just leans in (see `PettableBird`).
             case .rejected(.noTimeLeft), .rejected(.notEveningYet), .rejected(.timeForBed):
                 break  // Not an error: the light is gone, and the neighbour says so in a note.
             case .slotSpent, .rested:

@@ -4,7 +4,7 @@ import SwiftUI
 
 // MARK: - Coop (5a: today's eggs)
 
-/// The coop: the nest boxes, the carton of today's eggs, and shutting up for the night.
+/// The coop: the nest boxes, the carton of today's eggs, the brooder, and shutting up for the night.
 struct CoopSheet: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
