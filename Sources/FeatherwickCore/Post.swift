@@ -166,11 +166,11 @@ public enum Notes {
     /// Mr Okafor: eggs, egg colours and bread.
     static let okafor: [Note] = [
         Note("okafor.laying", from: .okafor, when: .all([.hasEggs, .dayAtLeast(6)])),
-        Note("okafor.blue", from: .okafor, when: .eggBookHas(.blue)),
-        Note("okafor.olive", from: .okafor, when: .eggBookHas(.olive)),
-        Note("okafor.chocolate", from: .okafor, when: .eggBookHas(.chocolate)),
-        Note("okafor.green", from: .okafor, when: .eggBookHas(.green)),
-        Note("okafor.white", from: .okafor, when: .eggBookHas(.white)),
+        Note("okafor.blue", from: .okafor, when: .all([.eggBookHas(.blue), .dayAtLeast(6)])),
+        Note("okafor.olive", from: .okafor, when: .all([.eggBookHas(.olive), .dayAtLeast(6)])),
+        Note("okafor.chocolate", from: .okafor, when: .all([.eggBookHas(.chocolate), .dayAtLeast(6)])),
+        Note("okafor.green", from: .okafor, when: .all([.eggBookHas(.green), .dayAtLeast(6)])),
+        Note("okafor.white", from: .okafor, when: .all([.eggBookHas(.white), .dayAtLeast(6)])),
         Note("okafor.brown", from: .okafor, when: .all([.eggBookHas(.brown), .dayAtLeast(14)])),
         Note("okafor.window", from: .okafor, when: .all([.hasEggs, .dayAtLeast(30)])),
         Note("okafor.winterOven", from: .okafor, when: .all([.season(.winter), .hasEggs])),
@@ -192,7 +192,7 @@ public enum Notes {
 
     /// Notes added after the first pool, in the order they were added. New notes go here, at the end.
     static let added: [Note] = [
-        Note("okafor.cream", from: .okafor, when: .eggBookHas(.cream))
+        Note("okafor.cream", from: .okafor, when: .all([.eggBookHas(.cream), .dayAtLeast(6)]))
     ]
 
     public static func note(_ id: String) -> Note? { pool.first { $0.id == id } }

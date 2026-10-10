@@ -1006,10 +1006,11 @@ The pool (`Notes.pool`, 72 notes). Each person writes about their own system:
 | Hazel | 14 | Chicken lore. The early-game lessons, recalled. One look from the Breed Book. |
 | Dot | 12 | Show hints. What she noticed at a show: the bird or plate that placed, by name. |
 | Teddy | 12 | Drawings and questions. The tamest bird at home (a loaned bird too), by name. |
-| Mr Okafor | 11 | Eggs and bread. One note for each egg colour in the Egg Book. |
+| Mr Okafor | 11 | Eggs and bread. One note for each egg colour in the Egg Book, from day 6 (brown from day 14). |
 | Bea | 9 | How the rehomed birds are doing, by name. |
 
-- The first days are quiet. No note can come before day 6. Most wait for a feature, a season or a later day.
+- The first days are quiet. No note can come before day 6, whatever the starter: Marigold may lay blue
+  from day 4, but Mr Okafor's blue-egg note waits. Most notes wait for a feature, a season or a later day.
 - A note never comes twice. A note that names a thing reads it when the words show
   (`poolNoteText` in `NotesText.swift`). If the thing has gone, the note says a general line.
 - Tone: short, plain, one idea, in the sender's voice. No nagging and no loss. Only Teddy uses exclamation marks.

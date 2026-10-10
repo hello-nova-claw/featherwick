@@ -250,16 +250,31 @@ struct NotesTests {
         }
     }
 
-    /// The first days of a new game stay quiet: no note can come before day 6.
+    /// The first days of a new game stay quiet: no note can come before day 6. This holds for every
+    /// starter: an Araucana's mother, Marigold, lays blue from day 4, and Mr Okafor's blue-egg note waits.
     @Test func theFirstDaysAreQuiet() {
-        var (s, rng) = Self.freshGame()
-        s.rules.noteChance = 1
-        while s.day < 6 {
-            for note in Notes.pool { #expect(!note.condition.holds(in: s), "\(note.id) on day \(s.day)") }
-            Engine.restUntilEvening(&s, using: &rng)
-            let ev = Engine.apply(.passNight, to: &s, using: &rng)
-            if s.day < 6 { #expect(!ev.contains { if case .noteArrived = $0 { true } else { false } }) }
+        var sawEarlyColour = false
+        for seed in UInt64(1)...4 {
+            for index in Breed.starters.indices {
+                var rng = SeededRNG(seed: seed)
+                var s = Engine.newGame(using: &rng)
+                _ = Engine.apply(.chooseStarter(index: index, name: "Pip"), to: &s, using: &rng)
+                s.rules.noteChance = 1
+                while s.day < 6 {
+                    for note in Notes.pool {
+                        #expect(!note.condition.holds(in: s), "\(note.id) on day \(s.day), seed \(seed)")
+                    }
+                    for command: Command in [.feed, .collectEggs, .closeCoop] {
+                        _ = Engine.apply(command, to: &s, using: &rng)
+                    }
+                    if s.eggBook.contains(where: { $0.colour != .brown }) { sawEarlyColour = true }
+                    Engine.restUntilEvening(&s, using: &rng)
+                    let ev = Engine.apply(.passNight, to: &s, using: &rng)
+                    if s.day < 6 { #expect(!ev.contains { if case .noteArrived = $0 { true } else { false } }) }
+                }
+            }
         }
+        #expect(sawEarlyColour, "no starter laid a non-brown egg before day 6: the test misses the blue note")
     }
 
     /// A note whose condition is false never comes, whatever the seed and the day.
