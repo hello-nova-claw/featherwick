@@ -2,7 +2,7 @@ import Foundation
 
 // What the keeper can see of a bird.
 //
-// `Knowledge` (and later the planner) reads only these values. They are made here, from the bird's
+// `Knowledge` and the planner read only these values. They are made here, from the bird's
 // look (`Phenotype`) and from facts the keeper is told, so the code that reasons about hidden genes
 // never touches a bird's genes (core rule 8: no hidden-gene leaks).
 

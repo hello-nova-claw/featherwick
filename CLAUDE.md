@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 Featherwick: a cozy chicken-keeping game with real chicken genetics. Swift 6 package.
-Game logic first; an iOS front end (SpriteKit + SwiftUI) comes later and uses the same core.
+Game logic first. The iOS app (`App/`, SwiftUI) uses the same core. Its art comes later.
 
 `README.md` is the full design doc (genes, breeds, shows, storylines, night order). Read the
 section for the system you change. Keep it current: a change to behaviour updates its README section.
@@ -24,22 +24,25 @@ The CLI writes `featherwick-save*.json` in the current folder (git-ignored). Do 
 | Path | What |
 | --- | --- |
 | `Sources/FeatherwickCore` | Pure game logic. All rules live here. |
-| `Sources/FeatherwickText` | The words players read (events, screens, milestones). Shared by CLI and app. `People.swift`: Hazel (neighbour), Wren (shop), the day-1 welcome and tour. `VillageText.swift`: every person's name and about line, choices, loans, debts, the post, the calendar. `VillagePeopleText.swift`: the arcs of Dot, Teddy, Mr Okafor and Bea. `MarketText.swift`: the market board. |
+| `Sources/FeatherwickText` | The words players read (events, screens, milestones). Shared by CLI and app. `People.swift`: Hazel (neighbour), Wren (shop), the day-1 welcome and tour. `VillageText.swift`: every person's name and about line, choices, loans, debts, the post, the calendar. `VillagePeopleText.swift`: the arcs of Dot, Teddy, Mr Okafor and Bea. `MarketText.swift`: the market board. `Text.swift`: `eventText`, `storyText`, `milestoneText`, `introducedText`, `notYetText`. Also `NotesText`, `CalendarText`, `PlannerText`, `InheritanceText`, `RecordsText`, `BreedLore`. |
 | `Sources/FeatherwickCLI/main.swift` | Thin text front end. Parses input, prints text. No rules, no words. |
 | `App/` | iOS test app (SwiftUI, no art yet). `project.yml` is the XcodeGen spec. |
 | `Tests/FeatherwickCoreTests` | One suite per system. `Fixtures/save-v0.json` is a real old save. |
+| `Tests/FeatherwickTextTests` | Tests for the words (e.g. `PlannerTextTests`, `NotesTests`). |
 
 Key Core files:
 
 - `Engine.swift`: `Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. `Command`,
-  `GameEvent` and `GameError` are defined here. `passNight` runs the numbered night steps.
+  `GameEvent` and `Rejection` (a refused command, sent as `.rejected`) are defined here. `passNight` runs the numbered night steps.
 - `Rules.swift`: every tunable number. The game has one setting, `Rules.standard` (no difficulty levels).
 - `GameState.swift`, `Genome.swift`, `Locus.swift`, `Alleles.swift`, `Phenotype.swift`: state and genetics.
 - `BreedTable.swift`, `Breed.swift`: breeds and colour varieties (data tables).
 - `SaveFormat.swift` (versions, migrations), `SaveStore.swift` (slots, atomic writes, backups).
 - One file per feature: `EarlyGame`, `BreedingPen`, `Shows`, `ShowEvent`, `Friendliness`, `SexGuess` ("hen or roo?"), `Pedigree`, `Names`, `Quirks`, `Story`
   (people, choices), `Loans` (loaned birds, debts), `BorrowedHen` (Marigold, days 2 to 10), `Post` (notes), `VillageDay` (the calendar), `HatchAlong` (the spring egg swap),
-  `Milestone`, `Jobs` (daily jobs, season goals), `Records` (the flock record book), `Daylight` (day slots, errands, the sleep gate), `MarketBoard` (wanted cards, the keeper's card, buyers), `Look`, `Simulation`, `HatchWhy` (hatch-day "why" note).
+  `Milestone`, `Jobs` (daily jobs, season goals), `MorningReport` (the night's events in groups), `Shop` (the daily special), `Records` (the flock record book), `Daylight` (day slots, errands, the sleep gate), `MarketBoard` (wanted cards, the keeper's card, buyers), `Look`, `Simulation`, `HatchWhy` (hatch-day "why" note).
+- Helpers: `Breeding` (a chick genome from two parents), `QuantitativeTrait` (many-gene traits), `SeededRNG`,
+  `Identity` (seeded IDs), `CaseOrdered`.
 - What might hatch: `Visible` (what the keeper sees, no genes), `Knowledge` + `KnowledgeTables` (genes worked
   out by elimination), `Planner` + `PlannerTables` (the pen forecast, carrier notes), `Inheritance`
   (`InheritancePage`, the Books page: rules learned by setting eggs from a penned pair). Never read genes there.
@@ -47,12 +50,12 @@ Key Core files:
 ## iOS app
 
 SwiftUI menus over the farm, built to the UI system in `docs/design/README.md` (tokens, type,
-components, screens 1a–8a). The painted farm and bird art come later; dashed boxes stand in for them.
+components, screens 1a–9a). The painted farm and bird art come later; dashed boxes stand in for them.
 
 - `App/Featherwick/Design/`: tokens (`Theme.swift`: `Palette` day/night, `Typeface`, `Space`, `Radius`,
   `Stitch`), marks (eggs, feathers, dabs) and components (buttons, tabs, sheet page, notices).
   Use these; do not hard-code colours, fonts or sizes in screens.
-- `Farm/FarmView.swift`: HUD, 4 swipe panels, a panel rail (dots, right side), and a bottom row: Books, Today,
+- `Farm/FarmView.swift`: HUD, 4 swipe panels, a panel rail (dots, right side), and a bottom row: Books (after the Breed Book lesson), Today,
   the panel's place, Rest a while / Sleep (after the daylight lesson), ≡. Panels left to right: Barn (Coop, which holds the brooder too), Yard (Yard), Far yard
   (Back fence), Shop (Farm gate). Barn and Shop are a flat colour until their painting exists. Each place opens
   a sheet (`Sheets/`). Notices under a place come from game state.
@@ -62,7 +65,8 @@ components, screens 1a–8a). The painted farm and bird art come later; dashed b
   run it after changing the script and commit its output. See "Farm scene (2.5D)" in `docs/design/README.md`.
 - `Farm/FarmBirds.swift`: where each bird is drawn, blobs (`BirdSwatch`) on the Barn, and `PettableBird`
   (tap opens the bird card; press and rub sends `.pet`). In the yards the coop birds are rigged chickens
-  inside the scene (`Scene/SceneChicken.swift`: `YardScene`, `SceneChicken`).
+  inside the scene (`Scene/SceneChicken.swift`: `YardScene`, `SceneChicken`). The placeholder chicken is a
+  rig (`ChickenRig`, `ChickenPose`, `ChickenActor`); test tools have a rig lab.
   A tap on yard ground makes a ripple. The birds react by friendliness band (`Scene/RippleReaction.swift`). It is view only: no command, no save. Scene presentation numbers go in `Scene/SceneConstants.swift`, not `Rules`. App unit tests are in `App/FeatherwickTests/` (Swift Testing, the `FeatherwickTests` target).
   `Feedback/`: `Haptics` and `Sound` (bundled `Sounds/*.caf`, silent if missing), with on/off switches in Settings. `GameStore.run` plays event feedback through `GameFeedback`.
 - Market board (`Sheets/MarketBoardSheet.swift`): opened from the farm gate sheet. Wanted cards, the keeper's own card, the buyer.
@@ -123,7 +127,7 @@ Most new content is a table entry. See README "Data layer" and the feature secti
   `carrierText` (`PlannerTextTests` checks every allele).
 - Storyline: a `Storyline` in `Storylines.all` (with its `person`) + its words in `storyText`, and each
   choice option's words in `choiceText` (`VillageText.swift`).
-- Note: a `Note` at the end of `Notes.pool` (with its `NoteCondition`) + its words in `poolNoteText` (`NotesText.swift`).
+- Note: a `Note` at the end of `Notes.added`, the last list in `Notes.pool` (with its `NoteCondition`) + its words in `poolNoteText` (`NotesText.swift`).
 - Milestone: a `Milestone` in `Milestones.all` (order = ladder) + its words in `milestoneText`.
 - Night step: add it to `passNight` in order and update the "Night order" line in README.
 - Early-game step: a `Feature` case (timeline order), its day in `Rules.featureDays`, its gate in
@@ -133,10 +137,10 @@ Most new content is a table entry. See README "Data layer" and the feature secti
 ## Workflow
 
 - Add or update tests in the matching suite for each change. Run `swift test` before a commit.
-- CI (`.github/workflows/swift.yml`) runs on Linux (`swift:6.0-noble`) for every pull request:
-  format check, build with warnings as errors, then tests. Code must build on Linux too: no
+- CI (`.github/workflows/swift.yml`) runs on Linux (`swift:6.0-noble`) for every pull request
+  and push to `main`: build with warnings as errors, tests, then the format check. Code must build on Linux too: no
   Apple-only APIs in Core. Fix warnings; do not silence them.
-- `.github/workflows/apple.yml` builds and tests on macOS and builds the core for iOS. It runs on
+- `.github/workflows/apple.yml` builds and tests on macOS, builds the core for iOS, and builds the iOS app and its tests. It runs on
   `main` only (macOS minutes cost 10x); run it by hand before merging a change to platform code.
 - Dependabot (`.github/dependabot.yml`) opens weekly PRs for new GitHub Action versions.
 - After a `Rules` balance change, run `sim` and check `SimulationTests` still pass.

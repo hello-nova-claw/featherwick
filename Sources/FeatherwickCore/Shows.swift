@@ -4,7 +4,7 @@ import Foundation
 //
 // Three kinds of class, as at a real poultry show:
 //   - breed classes: purebred adults, judged against their breed standard
-//   - the pet class: any bird, judged on condition (and on friendliness, when that trait exists)
+//   - the pet class: any bird, judged on condition and friendliness
 //   - egg classes: a plate of eggs of one colour
 //
 // Breed standards come from the breed table: a colour is standard for a breed if one of the
@@ -159,15 +159,15 @@ public enum Judge {
         var value = 1.0
         var notes: [JudgeNote] = []
         if s.day < bird.noLayUntilDay {
-            value -= 0.4
+            value -= s.rules.conditionLossStressed
             notes.append(.stressed)
         }
         if bird.isBroody(onDay: s.day) {
-            value -= 0.3
+            value -= s.rules.conditionLossBroody
             notes.append(.broody)
         }
         if !s.fedToday {
-            value -= 0.2
+            value -= s.rules.conditionLossHungry
             notes.append(.hungry)
         }
         if s.foragedToday {
@@ -307,9 +307,9 @@ public enum Judge {
     /// a keeper cannot do anything about the season, so it only felt unfair.)
     public static func shellQuality(of hen: Bird, in s: GameState) -> Double {
         var value = 1.0
-        if s.day < hen.noLayUntilDay + s.rules.scaredNoLayDays { value -= 0.3 }  // just over a fright
+        if s.day < hen.noLayUntilDay + s.rules.scaredNoLayDays { value -= s.rules.shellLossFright }
         let years = hen.age(onDay: s.day) / (s.rules.daysPerSeason * Season.allCases.count)
-        value -= 0.1 * Double(years)
-        return max(0.1, value)
+        value -= s.rules.shellLossPerYear * Double(years)
+        return max(s.rules.shellQualityFloor, value)
     }
 }

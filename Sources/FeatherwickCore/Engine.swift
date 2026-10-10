@@ -8,9 +8,10 @@ public enum Command: Hashable, Codable, Sendable {
     case closeCoop
     case passNight
     case buyIncubator
-    /// Candle eggs from the carton and set the fertile ones in the incubator.
+    /// Set this many carton eggs in the incubator: known-fertile ones first, then unchecked ones.
+    /// Setting never candles them.
     case incubate(count: Int)
-    /// Candle eggs from the carton and set the fertile ones under a broody hen.
+    /// Set this many carton eggs under a broody hen: known-fertile ones first, then unchecked ones.
     case sit(hen: UUID, count: Int)
     case rename(UUID, name: String)
     /// Hold every unchecked egg in the carton up to a light: shows which are fertile.
@@ -230,7 +231,7 @@ public enum GameEvent: Hashable, Codable, Sendable {
     // Hatching
     case incubatorBought(cost: Int, size: Int)
     /// First fertile egg ever: the neighbour gives her old 1-egg incubator (and the words explain hatching).
-    /// `ownRooster`: a hen laid it. False when the egg came from elsewhere (bought at Speckle & Down).
+    /// `ownRooster`: a hen laid it. False when the egg came from elsewhere (bought, or a story's gift egg).
     case neighbourGaveIncubator(size: Int, ownRooster: Bool)
     case candled(fertile: Int, clear: Int)
     case eggsSet(count: Int, hen: UUID?, hatchDay: Int)
@@ -380,7 +381,7 @@ public enum GameEvent: Hashable, Codable, Sendable {
 /// The game engine: command in, events out. No I/O, no system clock, no global random.
 public enum Engine {
     /// A new game: the neighbour offers 3 chicks. With `earlyGame` (the default) the keeper learns one
-    /// thing at a time (EarlyGame.swift); without it, every feature is open from day 0.
+    /// thing at a time (EarlyGame.swift); without it, every feature is open from the start.
     public static func newGame<R: RandomNumberGenerator>(
         rules: Rules = .standard, earlyGame: Bool = true, using rng: inout R
     ) -> GameState {

@@ -43,7 +43,7 @@ public struct PedigreeRecord: Hashable, Codable, Sendable {
         self.look = look
     }
 
-    /// "orpington hen", "olive egger rooster".
+    /// "orpington hen", "cross rooster".
     public var kind: String {
         "\(purebred ? breed.rawValue : "cross") \(sex.rawValue)"
     }

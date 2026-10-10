@@ -3,7 +3,7 @@ import SwiftUI
 // Components from the UI system. One primary button per screen; separation comes from white space
 // and dashed stitches, not boxes. No pills: controls have a 10pt radius.
 
-/// Ink fill, white label. Only one per screen.
+/// Ink fill, paper label. Only one per screen.
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.palette) private var palette
     @Environment(\.isEnabled) private var isEnabled

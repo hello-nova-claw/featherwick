@@ -20,7 +20,7 @@ struct RigLabView: View {
     /// Nil shows the sample colours.
     @State private var birdID: UUID?
 
-    // The joints, in degrees, plus head turn and blink.
+    // The joints, in degrees, plus head turn, blink and sit.
     @State private var bodyTilt: Double = 0
     @State private var neckSwing: Double = 0
     @State private var headTurn: Double = 0

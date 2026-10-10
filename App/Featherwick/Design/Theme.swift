@@ -87,7 +87,7 @@ struct Palette: Equatable, Sendable {
     }
 }
 
-/// A tester setting (Settings ▸ For testing): follow game time, or pin the farm to day or night.
+/// A tester setting (Settings ▸ Time of day): follow game time, or pin the farm to day or night.
 /// `clock` keeps its stored name from when the farm followed the device clock.
 enum TimeOfDayPin: String, CaseIterable {
     case clock, day, night

@@ -1,5 +1,5 @@
 /// Every tunable number in one place. Day counts are in-game days.
-/// All values are first guesses, to tune with `pass night` in the CLI.
+/// All values are first guesses, to tune with `sim` in the CLI.
 public struct Rules: Codable, Hashable, Sendable {
     // Growth
     public var growerAge = 7  // chick becomes pullet/cockerel; sex and breed show
@@ -134,6 +134,14 @@ public struct Rules: Codable, Hashable, Sendable {
     public var showFeaturedBonus = 1.5
     /// The Winter Championship draws the strongest field: every class's rival picks go up by this.
     public var winterChampionshipExtraPicks = 1
+    /// Show condition (`Judge.condition`) starts at 1 and drops by each of these that applies today.
+    public var conditionLossStressed = 0.4  // still over a fright
+    public var conditionLossBroody = 0.3
+    public var conditionLossHungry = 0.2  // not fed today
+    /// Shell quality of an egg laid today (`Judge.shellQuality`) starts at 1, like condition.
+    public var shellLossFright = 0.3  // the hen is just over a fright
+    public var shellLossPerYear = 0.1  // each full in-game year of the hen's age
+    public var shellQualityFloor = 0.1  // the thinnest a shell gets
     // Flock turnover (cozy: hens slow with age and retire, they never die).
     public var layDeclineStartDays = 252  // full for about nine in-game months before slowing
     public var layDeclineFloor = 0.4  // the least a laying hen's age factor falls to
@@ -188,7 +196,7 @@ public struct Rules: Codable, Hashable, Sendable {
     // Today's jobs and season goals (see Jobs.swift). Gentle nudges: nothing is lost by skipping them.
     public var jobsPerDay = 3  // jobs picked each morning; 0 turns daily jobs off
     public var jobsRewardCoins = 5  // paid once a day, when every job is done
-    public var jobPetBirds = 3  // "cuddle Juniper, Pip and Hazel" (fewer if the flock is smaller)
+    public var jobPetBirds = 3  // "cuddle Juniper, Pip and Sorrel" (fewer if the flock is smaller)
     public var seasonGoals = true  // false turns season goals off
     public var seasonGoalRewardCoins = 25  // paid once, when the season goal is reached
     public var seasonGoalMinDays = 7  // a goal set later in a season runs on through the next one

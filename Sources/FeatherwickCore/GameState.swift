@@ -145,7 +145,8 @@ public struct GameState: Hashable, Codable, Sendable {
     public var storyNotices: Set<String> = []
     /// Breeds a storyline added to Speckle & Down's surprise stock (see `surpriseBreeds`).
     public var shopBreeds: Set<Breed> = []
-    /// Goal-ladder milestones already reached (see Milestone.swift). Ids only; the words live in the UI.
+    /// Goal-ladder milestones already reached (see Milestone.swift). Ids only; the words live in
+    /// FeatherwickText.
     public var milestonesReached: Set<String> = []
     public var nest: [Egg] = []
     public var carton: [Egg] = []
@@ -188,7 +189,8 @@ public struct GameState: Hashable, Codable, Sendable {
     public var slotsUsed = 0
     /// The errand kinds already run today. More of the same kind cost no more daylight.
     public var errandsToday: Set<Errand> = []
-    /// True once the keeper has met "What might hatch" (after the first hatch surprise). See Planner.swift.
+    /// True once the keeper has met "What might hatch": after the first hatch surprise, or when the
+    /// breeding pen opens. See Planner.swift.
     public var plannerKnown = false
     /// True once the keeper has opened the "What might hatch" panel. The pen shows a notice until then.
     public var plannerOpened = false
@@ -266,7 +268,7 @@ public struct GameState: Hashable, Codable, Sendable {
     /// First-place ribbons won so far: the trophy count.
     public var firstPlaceRibbons: Int { showResults.count(where: { $0.placing == 1 }) }
 
-    /// Birds at home (brooder and coop). Lost birds are not fed.
+    /// Birds at home (brooder, hen chicks and coop). Lost birds are not fed.
     public var birdsAtHome: [Bird] { brooder + henChicks + coop }
 
     /// Every bird the player owns, wherever it is. Lost and boarding birds always come back.
@@ -293,7 +295,8 @@ public struct GameState: Hashable, Codable, Sendable {
     /// Grown birds with no perch: waiting in the brooder or boarding with the neighbour.
     public var birdsWaitingForPerch: [Bird] { (brooder + boarding).filter { $0.waitingSinceDay != nil } }
 
-    /// Ribbons (1st to 3rd) this bird won at county shows. Bird classes only, matched by name.
+    /// Ribbons (1st to 3rd) this bird won at county shows. Bird classes only, matched by bird ID
+    /// (by name for old results).
     public func ribbons(for bird: Bird) -> Int {
         showResults.count(where: { r in
             if case .eggs = r.showClass { return false }

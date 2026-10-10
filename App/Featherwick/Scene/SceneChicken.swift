@@ -5,9 +5,9 @@ import SwiftUI
 // behind and in front of the trees. View only, like `FarmBirds.swift`: the engine never knows where a
 // bird stands. Walks use the system's dice, not the game's, so the game is unchanged.
 
-/// A yard panel's scene with its coop birds in it. It redraws only when a bird's stay ends, as
-/// `PanelBirds` does: the birds walk with SwiftUI animations, not a clock. (A redraw every second on
-/// every panel made swiping between panels stutter.)
+/// A yard panel's scene with its coop birds in it. It redraws only when a bird's stay ends: the birds
+/// walk with SwiftUI animations, not a clock. (A redraw every second on every panel made swiping between
+/// panels stutter.)
 ///
 /// The clock wraps the whole scene, not only the birds: views in the scene's middle group must be
 /// direct children of its stack for their `.zIndex` to sort against the trees.
@@ -166,7 +166,7 @@ enum SceneFlock {
     static let walkOffTime: ClosedRange<Double> = 1.5...6
     /// A bird that came in from the other yard this recently starts off the edge and walks in.
     static let arrivalWindow: Double = 2.5
-    /// Without a walk mask: the old ground band, below the place labels and above Books and ≡.
+    /// Without a walk mask: the old ground band, the lower part of the panel above the bottom row.
     static let band = CGRect(x: 0.08, y: 0.62, width: 0.84, height: 0.24)
 
     /// The ground from the hill line down to the buttons. Starts are spread over it, then snapped to the mask.

@@ -11,7 +11,8 @@ This repo is the game logic first. The iOS front end (SpriteKit + SwiftUI) comes
 - `Sources/FeatherwickCLI`: text front end (`featherwick`).
 - `App`: iOS test app (SwiftUI, no art yet). Make the Xcode project with `cd App && xcodegen`.
   TestFlight builds (the "Featherwick Beta" scheme, `BETA` flag) ask two short beta questions, after the first hatch and after the first show. They are not in App Store builds: the flag leaves the code out, and a receipt check keeps it off outside TestFlight. Answers stay on the device until the tester shares them from Settings.
-- `Tests/FeatherwickCoreTests`: Swift Testing tests for the genetics rules.
+- `Tests/FeatherwickCoreTests`: Swift Testing tests for the game rules, one suite per system.
+- `Tests/FeatherwickTextTests`: Swift Testing tests for the words.
 
 ## Commands
 
@@ -33,18 +34,19 @@ errands left. See "Daylight and errands".
 
 `Engine.apply(command, to: &state, using: &rng) -> [GameEvent]`. Command in, events out. All tunable numbers live in `Rules`.
 
-`MorningReport.from(events:state:)` sorts one night's events into groups (hatched, the fox, came home,
+`MorningReport.from(events:state:)` sorts one night's events into groups (the morning, hatched, the fox, came home,
 the neighbours, the post, the village, new stock, the show, jobs, the season goal, eggs, other) for the app's morning report.
 Every event lands in exactly one group. IDs and events only; the words come from `eventText`.
 
-Night order: fox (only if the coop is open, and never on the Longest Day's night) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch) → growth and reveals ("hen or roo?" guesses settle as the sex shows) → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note, and the first why note opens "What might hatch"; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → retirements → laying (only if fed) → stories (loans due go home; a fertile-eggs step teaches candling if needed; debts are mentioned at most once a season) & trade offer → post (maybe one note) → village day (a notice a week ahead, the day and its gift, then the Hatch-along chick if it is due) → county show (on show days) → early game (features whose day has come; the show tip) → market board (old cards come down, the keeper's buyer comes or goes, new cards once a week) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
+Night order: fox (only if the coop is open, and never on the Longest Day's night) → foraging (if the door was left open and the flock came through) → new day → daylight resets → lost birds come home (needs a free perch; a loaned bird needs none) → growth and reveals ("hen or roo?" guesses settle as the sex shows) → neighbour's gift hen (rooster starter only) → neighbour's gift incubator (a known-fertile egg in the carton and no incubator) → hatching (eggs due today; clear ones go back to the carton, and a hen with no chicks stops being broody; a chick that looks like neither parent may get a "why" note, and the first why note opens "What might hatch"; the first hatch teaches candling) → brooder to coop (a bird that waited `homeWaitNights` for a perch is rehomed) → unnamed birds take a name (after `autoNameNights`) → broody hens wake → laying (only if fed; then a full nest may set a hen broody) → retirements → stories (loans due go home; a fertile-eggs step teaches candling if needed; debts are mentioned at most once a season) & trade offer → post (maybe one note) → village day (a notice a week ahead, the day and its gift, then the Hatch-along chick if it is due) → county show (on show days) → early game (features whose day has come; the show tip) → market board (old cards come down, the keeper's buyer comes or goes, new cards once a week) → milestones → season goal (check, then a new one when the season turns) → today's jobs → door opens.
 
 ## The early game (tutorial timeline)
 
 `EarlyGame.swift`. A new keeper starts with one chick and learns one thing at a time. The game is
 a tutorial told as a fixed timeline. Each morning on the timeline, the neighbour (Hazel) introduces one
-`Feature`. A lesson locks nothing. Other features stay locked until their day: the command is
-refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
+`Feature`. A lesson locks nothing, except `daylight`: it locks `rest`. Other features stay locked
+until their day: the command is refused with `.notYet(feature)`. The app hides the shop row or the
+Show tab. For treats and birds, the shop shows a "not yet" line (`notYetText`) instead.
 
 ### Day 1 and the people
 
@@ -56,7 +58,8 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 - Choosing the starter runs the first morning: the day-1 lesson, today's jobs and the season goal.
   Nothing grows, lays or hatches, and it draws no random numbers.
 - The people (`People` in FeatherwickText): Hazel, the neighbour over the back fence, and Wren, who
-  runs Speckle & Down. Their names are never suggested for a bird.
+  runs Speckle & Down. No person's name (`NameBook.peopleNames`: Hazel, Wren, Dot, Teddy, Okafor,
+  Bea) is ever suggested for a bird.
 - The app: a welcome page (Hazel asks your name), the chick choice, then a tour of the four places
   (`People.tour`, `TourSheet`). The farm moves to each place. The tour can be skipped. Hazel's first
   note opens after it.
@@ -94,8 +97,8 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
   Only visible traits are judged, and chicks are never named, so the tip leaks no hidden gene.
 - The tip is kept in `GameState.showTip` until show day. The app shows it on the Show tab with an
   "Enter" button, and a notice at the farm gate.
-- `Engine.newGame(earlyGame: false)` opens everything on day 0. Saves from before the early game
-  have every feature open (`GameState.introduced` defaults to all).
+- `Engine.newGame(earlyGame: false)` opens everything from day 1, and Marigold never comes. Saves
+  from before the early game have every feature open (`GameState.introduced` defaults to all).
 - To add a step: a `Feature` case (in timeline order), its day in `featureDays`, the command it gates
   in `Engine.feature(for:)`, and its words in `introducedText` and `notYetText`.
 
@@ -114,13 +117,16 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
 - Bought eggs are already candled, so they show as fertile.
 - **The neighbour's 1-egg incubator** (`giftIncubatorSize`) comes once, with the first fertile egg:
   - laid by a hen, with an adult rooster in the coop (in the night's laying step), or
-  - bought at Speckle & Down. It comes at once, with the egg. A save that already holds a bought
-    egg and no incubator gets it the next night (`incubatorGiftForFertileEggs`).
+  - bought at Speckle & Down, or
+  - a fertile gift egg from a story, such as Hazel's egg when Marigold goes home.
+  - A bought or gift egg brings it at once. A save that already holds a known-fertile egg and no
+    incubator gets it the next night (`incubatorGiftForFertileEggs`).
   - No gift if the keeper already has an incubator. Event: `.neighbourGaveIncubator(size:ownRooster:)`.
   - Its words say what to do: set the egg, and it hatches in `incubatorHatchDays` nights. The app shows
     them as a neighbour note, not only in the log.
 - When `chicksToLearnCandling` chicks (1) have hatched, the neighbour teaches candling. Then you candle one egg
-  at a time (`candleEgg`). The CLI can still candle the whole carton (`candle`).
+  at a time (`candleEgg`). The CLI can still candle the whole carton (`candle`). After the daylight
+  lesson, candling is an errand: the first candling of the day takes a slot. Setting eggs is free.
 - A story step that asks for eggs you know are fertile also teaches candling. If you cannot candle when
   the step starts (or on any night while it waits), the neighbour shows you at once. So the step never sticks.
 - Every fertile egg hatches (cozy rule).
@@ -159,7 +165,8 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
   so the pen adds no room and takes none away. The "birds never wait forever" rules do not change.
 - Commands: `penBird(id)` and `unpenBird(id)`. Events: `.birdPenned`, `.birdUnpenned`.
 - Refusals: `.penFull(hens:)`, `.penHasRooster`, `.notInPen`, `.alreadyInPen`, `.notInCoop` (a brooder
-  bird, or a chick with its mother), `.tooYoungForPen`, `.birdNotHome` (lost or boarding).
+  bird, or a chick with its mother), `.tooYoungForPen`, `.birdNotHome` (lost or boarding), `.onLoan`
+  (a loaned bird, such as Marigold: her line is her owner's to plan).
 - Laying (night step 8):
   - A penned hen's egg is fathered by the penned rooster only, if he is an adult.
   - A penned hen with no adult rooster in the pen lays eggs that are not fertile, like a coop with no rooster.
@@ -170,7 +177,7 @@ refused with `.notYet(feature)`, and the app hides the shop row or the Show tab.
     roosters do not unsettle the penned hens.
   - With an empty pen, laying makes the same random draws as before the pen. Old seeds do not change.
 - The fox, foraging, feeding, handling and broodiness treat a penned bird like any coop bird.
-- A bird that leaves the coop leaves the pen too: rehomed, traded, or scared off by the fox. `Engine.apply`
+- A bird that leaves the coop leaves the pen too: rehomed, traded, scared off by the fox, or a loan gone home. `Engine.apply`
   removes such ids after every command, and the fox step removes them at once. A bird that comes
   home is not penned again. The keeper pens it again.
 - No hidden sex leaks. A bird whose sex does not show yet is refused with `.tooYoungForPen`, before any
@@ -204,7 +211,8 @@ and `Knowledge` (what the keeper can work out from them). Hidden genes are found
   day it left is not known.
 - Birds that count (`Visible.all(in:)`): owned birds (home, lost, boarding), rehomed birds, and
   family-tree records. Not the neighbour's starter chicks before one is chosen, and not a trade offer's hen.
-- A family-tree record has a `look` field, but no code sets it today. So a record gives breed evidence only.
+- A family-tree record has a `look` field. Only a loaned bird that went home (such as Marigold) keeps one:
+  the look the keeper last saw. Other records have none, so they give breed evidence only.
 
 ### Working it out (`Knowledge`)
 
@@ -254,8 +262,8 @@ and in "likely no" lines ("Likely no blue eggs").
    "Every barred chick will be a cockerel, every plain one a pullet." Buff and white hide barring.
    If a chick can be buff or white, a plain chick can be a cockerel, so there is no sex-link line.
 4. **Egg colours.** Always one line: "Hens from this pair will lay white, cream or brown eggs." If an open
-   gene could add a colour, the line ends with "unless one of them carries blue" or "unless one of
-   them carries brown". When the family showed that gene, the reason is the family evidence, and
+   gene could add a colour, the line ends with "unless one of them carries blue", "unless one of
+   them carries brown" or "unless one of them carries speckles". When the family showed that gene, the reason is the family evidence, and
    the line ends with "unless one of them is hiding another egg colour".
 5. **Likely.** A parent with at least `plannerLikelyAfterChicks` (5) seen chicks, none of which shows
    an allele it may hide: "Likely no barred chicks." For an egg gene, only laying daughters count.
@@ -326,7 +334,8 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
   - `needsRooster`: "Pen a rooster to see what might hatch."
   - `forecast`: one forecast per penned hen with the penned rooster, hens in pen order.
 - Old saves load with `plannerKnown` and `plannerOpened` false (`SaveFormat.fillNewSettings`). They
-  wait for the next why note.
+  get the planner at the next why note, or the next night once the breeding pen is open. Saves from
+  before the early game have the pen open, so they get it the next night.
 
 ### Carrier notes
 
@@ -340,7 +349,8 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
   `carrierShortText`), rehomed birds too. The CLI `tree` adds them after a " · ". The app's tree on
   the bird card shows them under each bird.
 - Rehomed birds stay in Knowledge. Their chicks still count as evidence. `carries <name>` finds a
-  rehomed bird too. The app's bird card does not open for a rehomed bird.
+  rehomed bird too, and so do `tree <name>` and `kin <name> <name>`. The app's bird card does not open
+  for a rehomed bird.
 - A bird whose sex does not show yet gets sexless words: its name, never he or she.
 - Empty until the keeper has met the planner.
 
@@ -365,19 +375,21 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
   "Set eggs from a pair in the pen and what you learn ends up here."
 - State: `GameState.seenRules` (an ordered list with no repeats). Old saves start empty.
 - Code: `Inheritance.swift` (`InheritancePage.known(in:)`, `InheritanceRule`). Words: `inheritanceText`,
-  `inheritanceLines` (`FeatherwickText/InheritanceText.swift`). It never reads genes: the "no genome"
+  `inheritanceLines`, `inheritanceTitleText`, `inheritanceSubtitleText`, `inheritanceEmptyText`
+  (`FeatherwickText/InheritanceText.swift`). It never reads genes: the "no genome"
   test covers this file too.
 - CLI: `inheritance` prints the page.
 
 ### Words, app and CLI
 
 - Words (`FeatherwickText/PlannerText.swift`): `plannerText`, `plannerReasonText`, `plannerPanelText`,
-  `plannerLines`, `plannerNoticeText`, `carrierText`, `carrierReasonText`, `carrierLines`.
+  `plannerLines`, `plannerNoticeText`, `plannerNotYetText`, `carrierText`, `carrierReasonText`,
+  `carrierLines`, `carrierShortText`, `carrierNoneText`.
 - App: `Sheets/WhatMightHatchSection.swift`. "What might hatch" is in the breeding pen sheet. A feather
   or egg mark shows the colour a line names, from its `Trait`. Carrier lines are on the bird card.
 - CLI: `plan` shows the pen's forecast (and opens the panel). `plan <hen> <rooster>` shows any revealed
   hen and rooster. `carries <name>` shows what a bird surely carries. Before the unlock, both say
-  "Not yet".
+  "Not yet" (`plannerNotYetText`).
 
 ### Tests that guard it
 
@@ -407,7 +419,7 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
 
 ## Birds never wait forever
 
-- A grown bird needs a perch. With no free perch, it waits in the brooder. If the brooder is full, it
+- A grown bird needs a perch. A loaned bird (Marigold) does not. With no free perch, it waits in the brooder. If the brooder is full, it
   boards with the neighbour. Boarding birds stop you setting eggs.
 - A bird waits at most `homeWaitNights` (3). Then the neighbour finds it a good home and pays you its
   rehome value. So a full coop never blocks the brooder or the incubator for long.
@@ -429,7 +441,12 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
 - A purebred in a standard colour multiplies the quality bonus by `rehomeStandardPurebredFactor` (1.5).
 - An average bird gets no quality bonus. A plain adult is worth 6. A fine purebred hen with ribbons is worth 40 or more.
 - Only what the keeper can see counts. An unrevealed chick is worth its base price only.
-- Ribbons are matched by the bird's name for now. (The show code will match them by bird ID later.)
+- Ribbons are matched by the bird's ID. A show result from before results kept the ID is matched by
+  the bird's name.
+- A loaned bird cannot be rehomed (`.onLoan`). Neither can a hen on eggs or with chicks
+  (`.birdIsBusy`), or the keeper's last own bird (`.lastBird`). `Engine.rehomeBlocker` gives the reason.
+- After the daylight lesson, rehoming is an errand (a visit to the neighbour): the first one of the
+  day takes a slot.
 
 ## Speckle & Down (the shop)
 
@@ -437,7 +454,9 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
   You find out the breed when you buy it.
 - A surprise pullet or cockerel is a starter breed, or a breed a storyline added
   (`GameState.surpriseBreeds`). A fertile egg comes from starter breeds only.
-- Treats, premium feed and the big incubator are always there too.
+- Treats, premium feed and the big incubator are always there too, once the early game opens them.
+- After the daylight lesson, a trip to the shop is an errand. The first buy of the day takes a slot.
+  More buys that day are free.
 - No breed has its own sale. A keeper gets a breed by surprise, as the daily special, or as a gift.
 - **The daily special** (`Shop.swift`): one young bird. The seller names its breed, sex and colour.
   It changes each day. Its breed is any in-game breed. Its colour is one of the breed's usual colours.
@@ -447,7 +466,7 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
   for a rare colour. One special a day (`buySpecial`). It needs a free perch.
 - The special comes from `GameState.shopSeed` and the day, not from the game RNG. Looking at the shop
   changes nothing. Old saves have seed 0, so they still get a special that changes each day.
-- CLI: `shop`, `buy pullet|cockerel|egg`, `buy special`.
+- CLI: `shop`, `buy pullet|cockerel|egg`, `buy special`, `buy treats|feed|incubator`.
 
 ## Genome (current genes)
 
@@ -462,6 +481,9 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
 | Blue shell | O / o+ | Dominant | |
 | Brown coating | Br / br | Dominant | Simplified (real brown is polygenic). Depth sets the shade |
 | Speckle | sp+ / sp | Recessive | Game-only gene |
+| Show type | + / - at 10 genes | Additive | Quantitative trait (`QuantitativeTrait.showType`). Judged in breed classes |
+| Egg shape | + / - at 6 genes | Additive | Quantitative trait (`QuantitativeTrait.eggShape`). Judged in egg classes |
+| Calm | + / - at 8 genes | Additive | Quantitative trait (`QuantitativeTrait.calm`). 40% of friendliness |
 | Brown depth | + / - at 10 genes | Additive | Quantitative trait (`QuantitativeTrait.brownDepth`). Shows only with brown coating |
 | Dominant white | I / i+ | Dominant | One copy makes white plumage. Hides base colour, blue, lavender, lacing and barring. White chicks have yellow down |
 
@@ -487,7 +509,7 @@ Depth is a share from 0 to 1 (the "+" alleles out of 20).
 - Depth is half from each parent, like show type. Keepers can select for darker eggs.
 - Each breed has a depth (`BreedDefinition.brownDepth`). A purebred gets exactly that share. A bird
   from outside the flock draws each depth gene with that chance, from its own ID.
-  Marans 0.9 (chocolate), Orpington, Wyandotte and Australorp 0.5, Araucana and Silkie 0.2,
+  Marans 0.9 (chocolate), Orpington, Wyandotte, Australorp and Plymouth Rock 0.5, Araucana and Silkie 0.2,
   Leghorn 0 (white).
 - So Araucana x Orpington gives mostly green eggs, and Araucana x Marans gives olive eggs.
 - Leghorn x Silkie gives pale cream eggs (depth 0.1). Bred on, about 5 in 16 daughters lay white.
@@ -500,7 +522,7 @@ Depth is a share from 0 to 1 (the "+" alleles out of 20).
   this way. An egg keeps the colour it was laid with. A hen's colour comes from her genes when the
   game loads.
 - White is a cream with no tint. So `Knowledge` and the planner count it as cream
-  (`EggColour.coarse`), as they count chocolate as brown.
+  (`EggColour.coarse`), as they count chocolate as brown and olive as green.
 - The "new egg" goal asks for white only when a breed in play lays white. Now none does.
 
 ## Data layer: genes, breeds, colours, saves
@@ -510,7 +532,7 @@ Three tables. Most new content is a table entry, not new logic.
 | Table | File | One entry is |
 | --- | --- | --- |
 | Gene registry `Loci` | `Locus.swift` | one gene: allele enum + default allele |
-| Breed table `BreedTable` | `BreedTable.swift` | one breed: signature genes, colour varieties, broodiness, status |
+| Breed table `BreedTable` | `BreedTable.swift` | one breed: signature genes, colour varieties, broodiness, calmness, shell depth, look, status |
 | Colour varieties `ColourVariety` | `BreedTable.swift` | one named colour: a recipe of genes |
 
 - Genomes store only genes that differ from the default allele. A gene missing from a save is the
@@ -538,6 +560,13 @@ Append new breeds and genes at the END of their lists: seeded breeding draws in 
 
 Saves are `{ version, state, rng }` (`SaveFormat`). A migration is needed only when existing data
 changes shape. `Tests/.../Fixtures/save-v0.json` is a real old save; it must always load.
+The current save version is 2. Version 0 has no version key. Two migrations:
+
+- 0 → 1 (`migrateGenomesToRegistry`): genomes move from one field per gene to the locus names in `Loci`.
+- 1 → 2 (`migrateToOneSetting`): a Relaxed or Challenge game switches to the standard rules.
+
+A save with no `layRecords` gets its egg history from the eggs it still holds (`Records.backFill`).
+This is not a migration: no data changes shape, so the version stays the same.
 
 ## Shows (data layer)
 
@@ -558,6 +587,11 @@ changes shape. `Tests/.../Fixtures/save-v0.json` is a real old save; it must alw
   half from each parent, score capped. Selective breeding works; nothing can exceed the maximum.
   Birds from outside the flock get random quality genes from their own ID.
 - Condition and shell quality come from care: frights, broodiness, hunger, age. The season does not mark shells down.
+- Condition starts at 1. A fright takes off 0.4 (`conditionLossStressed`), broodiness 0.3
+  (`conditionLossBroody`) and hunger 0.2 (`conditionLossHungry`). Foraging adds `forageConditionBonus`.
+- Shell quality starts at 1. A fright in the last `scaredNoLayDays` takes off 0.3 (`shellLossFright`).
+  Each full year of the hen's age takes off 0.1 (`shellLossPerYear`). It never falls below 0.1
+  (`shellQualityFloor`).
 - No mark for what every bird does in a season. Every bird moults in autumn, so the judge does not
   mark the moult. (`JudgeNote.moulting` stays only so old show results load.)
 - Grades are absolute (fair → excellent). `judge <name>` / `judge eggs` are practice: judging with no competitors.
@@ -588,10 +622,11 @@ quality pay off. Before a show, you enter birds and plates of eggs. Each entry c
   3 carton eggs of one colour, all speckled or all plain.
 - A bird can be entered once per show. If a bird no longer fits its chosen class on show day,
   it competes in its default class.
+- A bird on loan may enter the pet class only. Her breed class is her owner's to enter.
 
 On show day (a `passNight` step), each entry is judged by the same `Judge` code against a field of
-AI entries. The entries are placed by score. Places 1–3 win prizes. A first place goes in the
-trophy case.
+AI entries. The entries are placed by score. A tie goes to the keeper's entry. Places 1–3 win prizes.
+A first place goes in the trophy case.
 
 Each kind of class has its own difficulty and prizes (`Rules`):
 
@@ -652,7 +687,8 @@ The keeper sees the top three in each class they entered, rivals too, and why ea
 ## Friendliness
 
 `Friendliness.swift`. Score 0...1 = 40% calm genes (8-gene quantitative trait, stronger in calm
-breeds) + 60% learned tameness. Bands: wild, skittish, friendly, lap chicken.
+breeds) + 60% learned tameness. Bands: wild (below 0.25), skittish (0.25), friendly (0.5),
+lap chicken (0.75 or more).
 
 - `pet <name>` and `treat <name>`: once a day per bird each. Gains shrink as a bird gets tamer
   and never pass 1. Chicks learn 3x faster, growers 1.5x. Chicks with a mother hen learn at half speed.
@@ -660,7 +696,9 @@ breeds) + 60% learned tameness. Bands: wild, skittish, friendly, lap chicken.
   petted today leans in. This is not an error.
 - Start: brooder chick 0.2, chick raised by a hen 0.05, bought bird 0.25.
 - A fox fright and days lost lower tameness. Neglect never does.
-- Effects: half of the pet show class; lap chickens rehome for more.
+- Effects: half of the pet show class; lap chickens rehome for more (`lapChickenRehomeBonus`).
+  A lap chicken at home gives one more day slot (`slotBonusLapChicken`). Some market cards ask
+  for a friendly bird or a lap chicken.
 
 ### Hen or roo?
 
@@ -688,17 +726,19 @@ breeds) + 60% learned tameness. Bands: wild, skittish, friendly, lap chicken.
 Hens slow and retire with age, so breeding keeps mattering (`Rules.layAgeFactor`, `Bird.isRetired`).
 
 - A hen lays at full rate until `layDeclineStartDays`, then gradually less, down to `layDeclineFloor`.
-- At `retirementAgeDays` (three in-game years) she becomes a beloved non-layer — never death (cozy).
+- At `retirementAgeDays` (504 days, four and a half in-game years) she becomes a beloved non-layer — never death (cozy).
   Retired hens keep their perch, can still be petted, shown in the pet class, and rehomed.
 - **Premium feed** is an optional coin sink (basic feed stays free). A bag is several day-portions;
   `feed premium` feeds the flock for the day and lifts that day's laying. CLI: `buy feed`, `feed premium`.
 
 ## Foraging
 
-Leaving the coop door open is a real risk/reward, not just a fox gamble. If the flock comes through
-the night, the free-ranging birds forage: they return fed (no feeding needed that day) and a little
-better off — a small lay bonus (`forageLayBonus`) and show-condition bonus (`forageConditionBonus`).
-So each night you choose: close up safe but feed tomorrow, or leave open to forage and risk the fox.
+Leaving the coop door open is a real risk/reward, not just a fox gamble. On a night with the door
+open, the birds still in the coop forage (night step 1b), also after a fox visit. Broody hens sit
+tight and do not forage. A night's foraging counts as feeding for that night's laying, so the hens
+lay even if the keeper did not feed them. Foraging birds are also a little better off: a small lay
+bonus (`forageLayBonus`) and show-condition bonus (`forageConditionBonus`).
+So each night you choose: close up safe, or leave open to forage and risk the fox.
 On the Longest Day's night the fox stays home, so an open door forages for free (see "The village calendar").
 
 ## Saves, rules and balance
@@ -710,11 +750,13 @@ On the Longest Day's night the fox stays home, so an open door forages for free 
   standard rules. A save from a Relaxed or Challenge game (save version 1) switches to the standard
   rules when it loads (`SaveFormat.migrateToOneSetting`). Its birds, coins and progress stay.
 - **Balance sim** (`Simulation.swift`): plays many seeded games with a simple keeper policy and reports
-  coins, flock size, Breed Book growth and eggs/day, so the first-guess `Rules` numbers can be tuned
+  coins, flock size, Breed Book growth, eggs/day, income from eggs, shows and the market board,
+  chicks hatched and fox visits, so the first-guess `Rules` numbers can be tuned
   from data. CLI: `sim [days] [games]`; `SimulationTests` guards against balance regressions.
 - **The sim keeper's day.** Care first: feed and collect. Then the errands, most useful first: candle
-  (only if an egg is not candled), shop (a breeding pair, the big incubator), the show desk in show week,
-  and the neighbour (a story delivery, and spare roosters go on the same visit). Then set eggs, sell clear
+  (only if an egg is not candled), story choices (always the first option), shop (a breeding pair, the
+  big incubator), the show desk in show week, the market board (egg cards, and a bird card with a spare
+  adult), and the neighbour (a story delivery, and spare roosters go on the same visit). Then set eggs, sell clear
   eggs, make room (coop upgrade, rehoming), and shut the coop. Then rest until evening, and sleep.
   An errand with no slot left is refused and costs nothing. It waits for the next day.
 
@@ -740,7 +782,7 @@ parts, so most new breeds need no new art. `bird.look(onDay:rules:)` returns:
 | Tail | hen, rooster, fluffy | |
 | Chick | plain, fluffy | |
 
-The kit is 21 parts and covers all 7 breeds in the table. Silkie feathering (a real gene) picks
+The kit is 21 parts and covers all 8 breeds in the table. Silkie feathering (a real gene) picks
 the fluffy body, tail and chick, for crosses too. Tokens are not RGB: the art direction maps them.
 Watercolour tip: paint each body whole, then cut it into parts with soft, overlapping edges.
 CLI: `draw <name>`, `art`.
@@ -751,8 +793,9 @@ CLI: `draw <name>`, `art`.
 too) stay in the state; outside parents, such as those of a bought egg, are kept as
 `PedigreeRecord`s, so no tree breaks.
 
-- A record has an optional look (`PedigreeRecord.look`, a `SeenLook`). It is kept for future use.
-  No code sets it today, so every record has none. A record gives breed evidence only to "What might hatch".
+- A record has an optional look (`PedigreeRecord.look`, a `SeenLook`). Only a loaned bird that goes
+  home (`sendLoanHome`, such as Marigold) gets a record with a look: the look the keeper last saw.
+  A record with no look gives breed evidence only to "What might hatch".
 - The "Local flock" parents of a bought egg are records with no look: the keeper never sees them.
 - A bird that leaves sight (rehomed, boarding, lost) is not a record. It keeps the look the keeper
   last saw in `Bird.lastSeenLook`. See "What might hatch".
@@ -769,14 +812,16 @@ too) stay in the state; outside parents, such as those of a bought egg, are kept
 - The penalty is off by default: `Rules.inbreedingMatters = false`. Old saves load with it
   off (`SaveFormat.fillNewSettings`). When it is on, effects are light and never block a hatch:
   lay chance drops by the coefficient (capped at 50%); show condition drops (capped at 0.3)
-  with "lacks vigour".
-- CLI: `tree <name>`, `kin <name> <name>`.
+  with "lacks vigour", for a bird bred as close as cousins (0.0625) or closer.
+- CLI: `tree <name>`, `kin <name> <name>`. Both find lost and rehomed birds too. A bird at home
+  comes first when two share a name.
 
 ## Names and quirks
 
 `Names.swift`. Birds you hatch or buy arrive with `needsName`; the UI asks for a name at once,
 with a suggestion (Enter takes it). Birds given by people (gift hen, trade hen, story gifts)
 arrive already named by their keeper. Any bird you own can be renamed any time, even while lost.
+A bird on loan (such as Marigold) keeps the name her owner gave her.
 If Teddy is to name the next chick (see "Storylines"), it hatches with a name from his list
 (`NameBook.teddy`) and does not wait for one. His names are neutral and in no other list.
 No list holds a person's name (`NameBook.peopleNames`).
@@ -788,7 +833,7 @@ No list holds a person's name (`NameBook.peopleNames`).
   When a list is all used, suggestions go on with numbers ("Clover 2").
   A chick whose sex is still hidden gets a neutral suggestion, so the name never gives it away.
 - A bird still unnamed after `autoNameNights` takes its suggestion (see "Birds never wait forever").
-- The app shows "needs a name" under the Coop button.
+- The app shows a "needs a name" notice under the Coop place (on the Barn panel).
 - Quirks (`Quirks.swift`, words in `quirkText`) are small habits for flavour, such as "Dust-bath lover".
   They change no rule and are not saved. They come from the bird's ID, like a name suggestion.
   Every bird has two neutral quirks for life. When its sex shows, about half of birds
@@ -806,12 +851,12 @@ words are in FeatherwickText: `storyText` for the steps, `choiceText` for the op
 - **The broody Silkie** (first hatch): a neighbour's Silkie is sitting on a golf ball. Bring 3
   eggs you know are fertile (candled). 4 days later she thanks you with a Silkie pullet, and
   Silkies join Speckle & Down's surprise stock. Always solvable: the shop sells candled fertile eggs.
-- **A laced gift** (after the broody Silkie): a neighbour admires your flock and gifts you a
-  Wyandotte hen, so lacing enters your lines.
-- **A heritage breed** (deliver 4 fertile eggs): earns an Australorp hen and adds Australorps to
-  Speckle & Down's surprise stock. (Any in-game breed can also be the shop's daily special.)
+- **A laced gift** (after the broody Silkie, once 4 chicks have hatched): a neighbour admires your
+  flock. 3 days later she gifts you a Wyandotte hen, so lacing enters your lines.
+- **A heritage breed** (after the laced gift, once 8 chicks have hatched): deliver 4 fertile eggs.
+  4 days later it earns an Australorp hen and adds Australorps to Speckle & Down's surprise stock. (Any in-game breed can also be the shop's daily special.)
 - **The borrowed hen** (a new keeper's first fortnight; see below).
-- Hazel's three stories each have one line about her mother's lavender line. Lavender is a colour
+- Hazel's first three stories each have one line about her mother's lavender line. Lavender is a colour
   here. No line says that the keeper's birds carry it (rule 8).
 - CLI: `story`, `give eggs`, `give eggs <story>`.
 
@@ -835,14 +880,14 @@ another (`after` is empty). Each arc's words are in `VillagePeopleText.swift`.
   "Drawing" sends a note with his drawing. The last beat waits for a lap chicken. Then Teddy says
   "that one's a lap chicken, you know" (a note).
 - **The bakery window** (Mr Okafor, the baker). Starts at the first brown egg in the Egg Book, on day 14 or later (a new keeper's first
-  fortnight is Marigold's, and she lays brown). He wants
+  fortnight is Marigold's, and she lays from day 4). He wants
   eggs for his window. Then he talks of a colour you do not have yet. Choice: take him 6 brown eggs now
   (30 coins, well above the egg price), or wait and take him 3 eggs of a new colour (50 coins and a note). The delivery step
   depends on the choice (`StoryGoal.ifChosen`). "A new colour" means a colour not in the Egg Book when
   the step starts (`StoryProgress.wantedColours`). If no breed the shop sells lays such a colour, any
   colour but brown that the shop's breeds lay counts. The Araucana is a starter breed and lays blue,
-  so the step is always possible. The last beat is a note about a market board in the village. The
-  market board is words only for now.
+  so the step is always possible. The last beat, 3 days later, is a note about a market board in the
+  village (`okafor-marketBoard`). That note opens the market board early (see "Market board").
 - **Postcards from the rescue** (Bea, the rescue). Starts at the first bird that goes to a new home.
   Two days later, a postcard names the first bird that left. The words fit even if it left long ago.
   Five days later, a second postcard asks you to visit. A third comes when three birds have new homes,
@@ -910,7 +955,7 @@ inside `anyOf`.
 
 - **Every system has a person** (`Person`): Hazel (genetics and the pen), Wren (the shop and the news),
   Dot (shows), Teddy (friendliness), Mr Okafor (egg colours), Bea (rehoming). Each `Storyline` has a
-  `person`. The first three stories are Hazel's. Names and about lines are in `People` (FeatherwickText).
+  `person`. The first three stories and the borrowed hen are Hazel's. Names and about lines are in `People` (FeatherwickText).
   A person's name is never suggested for a bird (`NameBook.peopleNames`; no name list holds one).
 - **Goals.** A step or trigger can wait for: a day (`onDay`, an absolute day), the day the early game
   introduces a feature (`featureDay`), a choice, the first show
@@ -932,8 +977,8 @@ inside `anyOf`.
   Event: `.chose`. `GameState.pendingChoices` lists the choices that wait.
 - **Loans** (`Loans.swift`). A loaned bird (`Bird.loan`: owner, tag, return day) lives in the coop and needs
   no perch: she brings her own box. She can be fed, cuddled, given treats, shown in the pet class and
-  scared by the fox, and she always comes home, perch or not. She cannot be rehomed, penned or renamed
-  (`.onLoan`). Her eggs are the keeper's. She does not count as the keeper's last bird.
+  scared by the fox, and she always comes home, perch or not. She cannot be rehomed, penned, renamed
+  or set on eggs (`.onLoan`). Her eggs are the keeper's. She does not count as the keeper's last bird.
 - A loan ends on its return day, or when a story ends it. A hen sitting on eggs or raising chicks stays
   until she is free. She goes home with `.loanReturned`. Her family-tree record stays, with the look the
   keeper saw. If the keeper keeps her (`offerToKeep`), the loan is cleared, she is the keeper's bird with
@@ -968,10 +1013,11 @@ The pool (`Notes.pool`, 72 notes). Each person writes about their own system:
 | Hazel | 14 | Chicken lore. The early-game lessons, recalled. One look from the Breed Book. |
 | Dot | 12 | Show hints. What she noticed at a show: the bird or plate that placed, by name. |
 | Teddy | 12 | Drawings and questions. The tamest bird at home (a loaned bird too), by name. |
-| Mr Okafor | 11 | Eggs and bread. One note for each egg colour in the Egg Book. |
+| Mr Okafor | 11 | Eggs and bread. One note for each egg colour in the Egg Book, from day 6 (brown from day 14). |
 | Bea | 9 | How the rehomed birds are doing, by name. |
 
-- The first days are quiet. No note can come before day 6. Most wait for a feature, a season or a later day.
+- The first days are quiet. No note can come before day 6, whatever the starter: Marigold may lay blue
+  from day 4, but Mr Okafor's blue-egg note waits. Most notes wait for a feature, a season or a later day.
 - A note never comes twice. A note that names a thing reads it when the words show
   (`poolNoteText` in `NotesText.swift`). If the thing has gone, the note says a general line.
 - Tone: short, plain, one idea, in the sender's voice. No nagging and no loss. Only Teddy uses exclamation marks.
@@ -1062,6 +1108,7 @@ brings it. The keeper can pin a card of their own to sell young birds. Nothing h
   `sellToBuyer(bird)` sells one bird for `marketBuyerPrice`: the rehome value times `marketBuyerFactor`
   (1.5, rounded up), plus `marketBuyerBonus` (4). That is always more than a new home pays. If nothing
   suits, the buyer goes home and the card comes down (`.marketBuyerLeft`). No penalty.
+  Events: `.marketCardPosted`, `.soldToBuyer`.
 - **Errands.** Filling, pinning and selling are the `.market` errand: the first one each day takes a slot.
 - **No game RNG.** The pins and the buyer's day come from `shopSeed` and the day. The board changes no
   seeded game.
@@ -1079,18 +1126,20 @@ brings it. The keeper can pin a card of their own to sell young birds. Nothing h
 
 ## Goal ladder
 
-`Milestone.swift`. Small, always-visible goals that give the no-loss sandbox a direction: first
-egg, first hatch, a blue/olive/speckled/chocolate/green/white egg, a growing flock, a show ribbon, a lap chicken, a
-finished storyline, a hen into retirement, a right "hen or roo?" guess. Cozy rule: a milestone is only ever *reached*, never
-failed — no deadlines, nothing lost by missing one.
+`Milestone.swift`. Small, always-visible goals that give the no-loss sandbox a direction. The ladder,
+in order: first egg, first hatch, a friendly bird, a growing flock (8 birds), a blue egg, an olive egg,
+a speckled egg, 8 Breed Book looks, a show ribbon (top 3), a first place, a lap chicken, a finished
+storyline, a hen into retirement, a chocolate egg, a green egg, a right "hen or roo?" guess, a white egg.
+Cozy rule: a milestone is only ever *reached*, never failed — no deadlines, nothing lost by missing one.
 
 - Each `Milestone` is an id plus a test read from existing, player-visible state (so none can leak
   a hidden gene). Checked each night, after the day settles (`advanceMilestones`, a `passNight` step).
 - Awarded once and recorded in `GameState.milestonesReached`; the engine emits `.milestoneReached(id)`
-  and the words live in the UI. Loading an older save simply back-fills what you've already done.
+  and the words are in `milestoneText` (FeatherwickText). Loading an older save simply back-fills what
+  you've already done.
 - CLI: `journal` (the ladder, ✓ reached / ○ with a hint for what to aim for next).
 
-To add one: append a `Milestone` to `Milestones.all` (list order is the ladder), plus its words in the UI.
+To add one: append a `Milestone` to `Milestones.all` (list order is the ladder), plus its words in `milestoneText`.
 
 ## Today's jobs and season goals
 
@@ -1098,7 +1147,7 @@ To add one: append a `Milestone` to `Milestones.all` (list order is the ladder),
 
 - **Today's jobs.** Each morning the game picks up to `jobsPerDay` (3) small jobs. It picks only from
   what the keeper can do now, and it follows the early-game timeline. Examples: feed the flock, collect
-  the eggs, cuddle Juniper, Pip and Hazel, cuddle Pip, give a treat, shut the coop door, sell eggs,
+  the eggs, cuddle Juniper, Pip and Sorrel, cuddle Pip, give a treat, shut the coop door, sell eggs,
   candle an egg, set eggs to hatch, name a new bird, enter the show (only in the week before a show).
 - **Jobs fit the day's light.** The jobs never ask for more errands than the day's slots
   (`Engine.withinDaylight`). Three jobs are errands: candle an egg, enter the show, and give a treat
@@ -1120,8 +1169,11 @@ To add one: append a `Milestone` to `Milestones.all` (list order is the ladder),
   picks only goals the keeper can work on now. Progress shows as "2 of 3". A bird on loan goes home
   one day, so she never counts for the flock or friend goals (`GameState.ownBirds`).
 - The "new egg" goal asks only for colours a breed in play can make. Chocolate needs an in-game breed
-  with shell depth above `Rules.chocolateShellDepth`; none has one yet, so it is left out. A chocolate
-  egg found anyway still counts as a new egg.
+  with shell depth above `Rules.chocolateShellDepth`. White needs an in-game breed that lays white.
+  No in-game breed has either yet, so both are left out. A chocolate or white egg found anyway still
+  counts as a new egg.
+- "Collect eggs" asks for `seasonGoalEggsPerHen` (8) eggs for each visible hen in the coop, at most
+  `seasonGoalMaxEggs` (40).
 - The goal is checked each night, like the milestones. Reached, it pays `seasonGoalRewardCoins` (25),
   once (`.seasonGoalReached`). New progress is told in the morning (`.seasonGoalProgress`).
 - When the season turns, a new goal comes (`.seasonGoalSet`). An unfinished goal is never failed: the
@@ -1146,7 +1198,8 @@ here changes play.
 - The egg lists lose sold and set eggs. So each hen's laying is counted as she lays
   (`GameState.layRecords`: total, first egg day, and her lay days in the window). The engine adds to it
   in the night's lay step. It draws nothing from the game RNG, so seeded games stay the same.
-- A rehomed hen keeps her row and her total. Her name has the note "rehomed".
+- A rehomed hen keeps her row and her total. Her name has the note "rehomed". A loaned hen who went
+  home keeps her row too, under her family-tree name.
 - A visible hen who has not laid yet shows "none yet", not 0. A chick whose sex does not show yet is
   never in this table (rule 8).
 - **Ribbons.** One row for each bird with a 1st, 2nd or 3rd place in a bird class (`showResults`).
@@ -1175,7 +1228,7 @@ Sleep waits until every slot is spent, and nothing is ever lost: a refused erran
 
 | Cost | Commands | Errand |
 | --- | --- | --- |
-| Free, never refused for time | `chooseStarter`, `feed`, `feedPremium`, `collectEggs`, `sellEggs`, `sellChosenEggs`, `sellClearEggs`, `closeCoop`, `pet`, `giveTreat`, `guessSex`, `rename`, `incubate`, `incubateEggs`, `sit`, `sitEggs`, `penBird`, `unpenBird` | none |
+| Free, never refused for time | `chooseStarter`, `feed`, `feedPremium`, `collectEggs`, `sellEggs`, `sellChosenEggs`, `sellClearEggs`, `closeCoop`, `pet`, `giveTreat`, `guessSex`, `rename`, `incubate`, `incubateEggs`, `sit`, `sitEggs`, `penBird`, `unpenBird`, `openPlanner`, `nameKeeper`, `choose`, `payDebt` | none |
 | One slot | `buy`, `buySpecial`, `buyIncubator` | `.village` (Speckle & Down) |
 | One slot | `candle`, `candleEgg` | `.candling` |
 | One slot | `enterShow`, `enterShowIn`, `enterEggs`, `enterEggPlate` | `.showDesk` |
@@ -1231,8 +1284,11 @@ Sleep waits until every slot is spent, and nothing is ever lost: a refused erran
 - A chick is purebred only if both parents are purebred and the same breed. Crosses are named
   like real keepers name them: olive egger (blue egg x brown egg), easter egger (other blue-egg
   crosses), barnyard mix (everything else).
-- An olive egger lays olive or green eggs, by brown depth. A barnyard mix lays white, cream, brown or chocolate.
-  A purebred hen lays her breed's colour; purebred parents pass on their exact shell depth.
+- An olive egger lays olive or green eggs, by brown depth. An easter egger lays blue. A barnyard mix
+  lays white, cream, brown or chocolate. A purebred hen lays her breed's colour; purebred parents pass
+  on their exact shell depth (`BreedTableTests`).
+- A laced purebred is always a Wyandotte. A purebred has silkie feathering only if it is a Silkie.
+  A white bird has yellow down. No bird is both barred and laced.
 - `GeneticsRealismTests` breeds tens of thousands of birds over 6 generations and fails on any
   bird a real keeper couldn't breed.
 

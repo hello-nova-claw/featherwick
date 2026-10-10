@@ -451,7 +451,7 @@ public enum Storylines {
 
     /// Mr Okafor, the baker, wants eggs for his shop window: six brown eggs now, or three of a colour the
     /// keeper has not had yet, for more coins. Not before day 14: a new keeper's first fortnight is
-    /// Marigold's, and she lays brown from day 4. Both pay well above the egg price, so the window is worth it.
+    /// Marigold's, and she lays from day 4. Both pay well above the egg price, so the window is worth it.
     /// Then he talks of a market board in the village.
     public static let okaforWindow = Storyline(
         id: "okaforWindow",

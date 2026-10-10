@@ -12,7 +12,7 @@ public struct MorningReport: Hashable, Sendable {
         case hatched
         /// The fox, and lost birds still out (it scares birds away; nobody is hurt).
         case fox
-        /// Lost birds back on a perch, and birds back from boarding with the neighbour.
+        /// Lost birds back on a perch, birds back from boarding with the neighbour, and a night's foraging.
         case cameHome
         /// What the neighbours said or brought: lessons, gifts, stories, trade offers, loans and debts.
         /// Mostly Hazel; a story's words name its person.

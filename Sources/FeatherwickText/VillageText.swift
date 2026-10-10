@@ -198,8 +198,8 @@ func villageEventText(_ e: GameEvent, _ s: GameState) -> String? {
 }
 
 /// The people the keeper has met, one line each, with what they are waiting on. For the CLI `people`.
-/// A person is met once one of their stories has started, or a note from them has come. Hazel and Wren
-/// are met on day 1.
+/// A person is met once one of their stories has started, the keeper owes them or has their bird on loan,
+/// or a note from them has come. Hazel and Wren are met on day 1.
 public func peopleLines(_ s: GameState) -> [String] {
     var out: [String] = []
     for person in Person.allCases where hasMet(person, s) {
@@ -232,7 +232,7 @@ public func hasMet(_ p: Person, _ s: GameState) -> Bool {
     return Notes.pool.contains { $0.from == p && s.notesSeen.contains($0.id) }
 }
 
-/// The next village days, one line each. For the CLI `calendar`.
+/// The next village days, one line each. `villageCalendarLines` adds what each day does.
 public func calendarLines(_ s: GameState, count: Int = 4) -> [String] {
     s.upcomingVillageDays(count).map { next in
         let days = next.date - s.day

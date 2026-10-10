@@ -4,7 +4,7 @@ import Testing
 @testable import FeatherwickCore
 
 struct FriendlinessTests {
-    /// A game in play with one bird of the given age in the right home, fed, on a spring day.
+    /// A game in play with one bird of the given age in the right home, on a spring day.
     static func game(
         age: Int, home: WritableKeyPath<GameState, [Bird]> = \.coop, tameness: Double? = nil,
         calmPlus: Int? = nil

@@ -6,10 +6,11 @@
 // about thriving.
 //
 // As everywhere, the engine holds only the id and the test; the words that name and describe each
-// goal live in the UI, keyed by id. Only the set of reached ids is saved (GameState).
+// goal live in FeatherwickText (`milestoneText`), keyed by id. Only the set of reached ids is saved
+// (GameState).
 //
 // To add one: append a `Milestone` to `Milestones.all` (list order is the ladder order), then its
-// words in the UI. Milestones are checked each night, after the day's events have settled.
+// words in `milestoneText`. Milestones are checked each night, after the day's events have settled.
 
 public struct Milestone: Identifiable, Sendable {
     public let id: String
@@ -24,6 +25,7 @@ public struct Milestone: Identifiable, Sendable {
 
 public enum Milestones {
     /// The ladder, in order: early and easy first, then breeding and taming, then the show ring.
+    /// Later goals are appended at the end.
     /// Every test reads only existing, player-visible state, so no milestone can leak hidden genes.
     public static let all: [Milestone] = [
         Milestone(id: "firstEgg") { !$0.eggBook.isEmpty },

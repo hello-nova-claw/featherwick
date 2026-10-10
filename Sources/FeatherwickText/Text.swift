@@ -1,7 +1,7 @@
 import FeatherwickCore
 import Foundation
 
-// The words players read. Core returns IDs and enums only; every front end (the CLI now, the app)
+// The words players read. Core returns IDs and enums only; every front end (the CLI and the app)
 // turns them into text here, so all front ends say the same thing.
 
 public func downText(_ d: ChickDown) -> String {
@@ -1110,7 +1110,7 @@ public func yardLines(_ s: GameState) -> [String] {
     return out
 }
 
-/// The goal ladder's words (kept in the UI, keyed by milestone id). Title, and a hint while locked.
+/// The goal ladder's words (kept here, not in Core, keyed by milestone id). Title, and a hint while locked.
 public func milestoneText(_ id: String) -> (title: String, hint: String) {
     switch id {
     case "firstEgg": ("First egg", "Collect your first egg from the nest.")

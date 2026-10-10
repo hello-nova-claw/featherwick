@@ -138,6 +138,22 @@ struct ShowTests {
         #expect(Set(notes) == [.stressed, .broody, .hungry])
     }
 
+    /// The losses are tunable numbers in `Rules`, not fixed in the judge.
+    @Test func conditionLossesComeFromRules() {
+        var rng = SeededRNG(seed: 4)
+        var s = Self.showDay()
+        s.rules.conditionLossStressed = 0.15
+        s.rules.conditionLossBroody = 0.1
+        s.rules.conditionLossHungry = 0.05
+        s.fedToday = false
+        var b = Self.bird(.araucana, typePlus: 20, s: s, rng: &rng)
+        b.noLayUntilDay = s.day + 2
+        b.broodyUntilDay = s.day + 3
+        let (value, notes) = Judge.condition(of: b, in: s)
+        #expect(abs(value - 0.7) < 1e-9)  // 1 - 0.15 - 0.1 - 0.05
+        #expect(Set(notes) == [.stressed, .broody, .hungry])
+    }
+
     // MARK: - Forecast: what the keeper knows before the show
 
     /// Every bird moults in autumn, so the moult sets no bird apart: the judge does not mark it.
@@ -357,6 +373,22 @@ struct ShowTests {
         #expect(Judge.shellQuality(of: summer, in: s) == 1)
         let veryOld = Self.bird(.orpington, age: 10_000, s: s, rng: &rng)
         #expect(Judge.shellQuality(of: veryOld, in: s) == 0.1)
+    }
+
+    /// The shell losses are tunable numbers in `Rules`, not fixed in the judge.
+    @Test func shellLossesComeFromRules() {
+        var rng = SeededRNG(seed: 13)
+        var s = Self.showDay()
+        s.rules.shellLossFright = 0.2
+        s.rules.shellLossPerYear = 0.05
+        s.rules.shellQualityFloor = 0.5
+        let year = s.rules.daysPerSeason * Season.allCases.count
+        var hen = Self.bird(.orpington, age: 2 * year, s: s, rng: &rng)
+        #expect(abs(Judge.shellQuality(of: hen, in: s) - 0.9) < 1e-9)  // 1 - 2 years × 0.05
+        hen.noLayUntilDay = s.day
+        #expect(abs(Judge.shellQuality(of: hen, in: s) - 0.7) < 1e-9)  // and 0.2 for the fright
+        let veryOld = Self.bird(.orpington, age: 10_000, s: s, rng: &rng)
+        #expect(Judge.shellQuality(of: veryOld, in: s) == 0.5)
     }
 
     @Test func bestPlatesPickMatchingEggsBestFirst() {

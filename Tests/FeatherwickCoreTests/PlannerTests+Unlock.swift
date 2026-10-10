@@ -5,9 +5,10 @@ import Testing
 
 // MARK: - Unlock
 
-/// "What might hatch" opens with the first hatch-day why note, and the pen's notice waits for the first look.
+/// "What might hatch" opens with the first hatch-day why note (or the breeding pen), and the pen's notice
+/// waits for the first look.
 extension PlannerTests {
-    /// Two black parents in the coop, set to hatch `chicks` tonight. Carriers of lavender unless `plain`.
+    /// Two black parents in the coop, both carrying lavender, set to hatch `chicks` tonight.
     static func pairReadyToHatch(_ chicks: [Genome], plannerKnown: Bool = false) -> (GameState, SeededRNG) {
         var (s, rng) = startedGame(sex: .hen, rules: calmRules())
         // No pen yet: the pen opens the planner too (see `thePenOpensThePlanner`).

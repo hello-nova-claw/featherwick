@@ -2,7 +2,8 @@ import FeatherwickCore
 import FeatherwickText
 import SwiftUI
 
-/// The five tap places on the farm. Each one opens a sheet.
+/// The tap places on the farm. Each one opens a sheet. The potting shed is on no panel now: the coop
+/// sheet holds it, so a request for it opens the coop.
 enum Place: String, CaseIterable, Identifiable {
     case backFence, coop, pottingShed, yard, farmGate
     var id: String { rawValue }
@@ -82,8 +83,9 @@ enum FarmSheet: Identifiable, Hashable {
     var id: Self { self }
 }
 
-/// The farm screen: four panels to swipe between (placeholder scenes and flat colours), the HUD,
-/// the place labels and the birds on each panel, and Books, the panel dots and settings at the bottom.
+/// The farm screen: four panels to swipe between (the 2.5D yard scenes and flat colours), the HUD, the panel
+/// rail down the right side, the birds on each panel, and the bottom row (Books, Today, the panel's place,
+/// Rest or Sleep, settings).
 struct FarmView: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
@@ -294,6 +296,10 @@ struct FarmView: View {
     /// A sheet closed: the show goes first, then the neighbour's note, then any beta question that waited
     /// for a quiet farm.
     private func sheetClosed() {
+        // A new sheet replaced this one (`sheet = request` while it was open), and the new one is on
+        // screen now. `shownSheet` is already the new one: reading it here would mark the neighbour's
+        // note as read while it shows, and the note would open empty.
+        guard sheet == nil else { return }
         let closed = shownSheet
         shownSheet = nil
         // Read, even if swiped away: so the note does not open again at once.
@@ -421,8 +427,9 @@ struct FarmView: View {
     }
 }
 
-/// One farm panel (its place button is in the bottom row, `FarmView.panelPlaces`). The Yard and the Far yard draw the 2.5D scene with the coop birds
-/// in it (`YardScene`). The others show a stand-in colour and a dashed box where the painting will go.
+/// One farm panel (its place button is in the bottom row, `FarmView.panelPlaces`). The Yard and the Far yard
+/// draw the 2.5D scene with the coop birds in it (`YardScene`). The others show a stand-in colour and a
+/// dashed box where the painting will go.
 /// Night darkens and cools both.
 struct FarmPanelView: View {
     @Environment(\.palette) private var palette
@@ -499,7 +506,7 @@ struct PanelDots: View {
     }
 }
 
-/// A white box floating over the scene: radius 10 and a soft shadow.
+/// A box floating over the scene (white by day, dark by night): radius 10 and a soft shadow.
 struct FloatingBox<Content: View>: View {
     @Environment(\.palette) private var palette
     @ViewBuilder var content: Content

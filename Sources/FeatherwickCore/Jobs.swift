@@ -29,7 +29,7 @@ public enum JobKind: String, Hashable, Codable, Sendable, CaseIterable {
     case giveTreat
     /// Shut the coop door for the night.
     case shutCoop
-    /// Sell some eggs at Speckle & Down.
+    /// Sell some eggs at the farm gate.
     case sellEggs
     /// Hold an egg up to the light.
     case candleEgg

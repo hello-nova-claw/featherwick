@@ -73,10 +73,10 @@ public enum Simulation {
 
     /// A sensible day. Care first (always free): feed and collect. Then the day's errands, most useful
     /// first, because daylight runs out: candle if an egg is unchecked, shop if coins allow, the show
-    /// desk in show week, the neighbour if a story waits (and spare roosters go with that visit), then
-    /// building. Setting eggs, selling at the gate and shutting the coop are free. Then rest until
-    /// evening, and sleep. An errand with no light left is refused and costs nothing: it waits for
-    /// tomorrow, like a real keeper's.
+    /// desk in show week, the market board, the neighbour if a story waits (and spare roosters go with
+    /// that visit), then building. Setting eggs, selling at the gate and shutting the coop are free.
+    /// Then rest until evening, and sleep. An errand with no light left is refused and costs nothing:
+    /// it waits for tomorrow, like a real keeper's.
     private static func playDay(_ s: inout GameState, _ rng: inout SeededRNG, _ r: inout Report) {
         apply(.feed, &s, &rng, &r)
         if !s.nest.isEmpty { apply(.collectEggs, &s, &rng, &r) }

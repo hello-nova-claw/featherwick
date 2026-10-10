@@ -564,8 +564,8 @@ import Testing
 
     /// A rooster whose daughters (by blue-egg hens) all lay cream. Each daughter got o+ from him, so
     /// he is not O/O. But any number of cream daughters fits O/o+ too: elimination can never rule it
-    /// out. "After N daughters he is likely o+/o+" is a likelihood for the planner (Phase 2 makes it a
-    /// "likely"), never an elimination.
+    /// out. "After N daughters he is likely o+/o+" is a likelihood: the planner shows it as "likely"
+    /// (`Reason.manyChicks`), never as an elimination.
     @Test func creamDaughtersNeverEliminateOneCopyOfBlueShell() {
         let blueHen = Self.genome(.hen) { $0.blueShell = AllelePair(.blue, .white) }
         let creamDaughter = Self.genome(.hen)

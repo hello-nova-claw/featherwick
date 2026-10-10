@@ -22,7 +22,7 @@ public struct Breed: RawRepresentable, Hashable, Codable, Sendable, ExpressibleB
     public static let orpington: Breed = "orpington"
     public static let wyandotte: Breed = "wyandotte"
     public static let araucana: Breed = "araucana"
-    // Planned
+    // Planned (the Australorp is in the game now, through a storyline)
     public static let australorp: Breed = "australorp"
     public static let plymouthRock: Breed = "plymouth rock"
     public static let marans: Breed = "marans"
@@ -109,7 +109,7 @@ public struct BreedDefinition: Sendable, Identifiable {
     public let signature: [GeneSetting]
     /// Colours the breed comes in. The first is the default. Starters draw from all of them.
     public let varieties: [ColourVariety]
-    /// Chance per day that an adult hen goes broody.
+    /// Chance per night that an adult hen goes broody, when a pile of eggs waits in the nest.
     public let broodiness: Double
     /// Temperament: the share of calm genes in birds bred outside the player's flock, 0...1.
     public let calmness: Double
@@ -216,7 +216,7 @@ extension Breed {
         return genome
     }
 
-    /// The same, for the four colours the neighbour's starters come in.
+    /// The same, for one of the four `StarterColour`s.
     public func purebred(_ sex: Sex, colour: StarterColour, barred: Bool = false) -> Genome {
         purebred(sex, variety: colour.variety, barred: barred)
     }
