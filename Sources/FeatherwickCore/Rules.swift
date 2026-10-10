@@ -134,6 +134,10 @@ public struct Rules: Codable, Hashable, Sendable {
     public var showFeaturedBonus = 1.5
     /// The Winter Championship draws the strongest field: every class's rival picks go up by this.
     public var winterChampionshipExtraPicks = 1
+    /// Show condition (`Judge.condition`) starts at 1 and drops by each of these that applies today.
+    public var conditionLossStressed = 0.4  // still over a fright
+    public var conditionLossBroody = 0.3
+    public var conditionLossHungry = 0.2  // not fed today
     // Flock turnover (cozy: hens slow with age and retire, they never die).
     public var layDeclineStartDays = 252  // full for about nine in-game months before slowing
     public var layDeclineFloor = 0.4  // the least a laying hen's age factor falls to

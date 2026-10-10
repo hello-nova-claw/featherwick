@@ -159,15 +159,15 @@ public enum Judge {
         var value = 1.0
         var notes: [JudgeNote] = []
         if s.day < bird.noLayUntilDay {
-            value -= 0.4
+            value -= s.rules.conditionLossStressed
             notes.append(.stressed)
         }
         if bird.isBroody(onDay: s.day) {
-            value -= 0.3
+            value -= s.rules.conditionLossBroody
             notes.append(.broody)
         }
         if !s.fedToday {
-            value -= 0.2
+            value -= s.rules.conditionLossHungry
             notes.append(.hungry)
         }
         if s.foragedToday {

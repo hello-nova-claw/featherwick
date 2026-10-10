@@ -587,6 +587,8 @@ This is not a migration: no data changes shape, so the version stays the same.
   half from each parent, score capped. Selective breeding works; nothing can exceed the maximum.
   Birds from outside the flock get random quality genes from their own ID.
 - Condition and shell quality come from care: frights, broodiness, hunger, age. The season does not mark shells down.
+- Condition starts at 1. A fright takes off 0.4 (`conditionLossStressed`), broodiness 0.3
+  (`conditionLossBroody`) and hunger 0.2 (`conditionLossHungry`). Foraging adds `forageConditionBonus`.
 - No mark for what every bird does in a season. Every bird moults in autumn, so the judge does not
   mark the moult. (`JudgeNote.moulting` stays only so old show results load.)
 - Grades are absolute (fair → excellent). `judge <name>` / `judge eggs` are practice: judging with no competitors.
