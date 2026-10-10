@@ -296,6 +296,10 @@ struct FarmView: View {
     /// A sheet closed: the show goes first, then the neighbour's note, then any beta question that waited
     /// for a quiet farm.
     private func sheetClosed() {
+        // A new sheet replaced this one (`sheet = request` while it was open), and the new one is on
+        // screen now. `shownSheet` is already the new one: reading it here would mark the neighbour's
+        // note as read while it shows, and the note would open empty.
+        guard sheet == nil else { return }
         let closed = shownSheet
         shownSheet = nil
         // Read, even if swiped away: so the note does not open again at once.
