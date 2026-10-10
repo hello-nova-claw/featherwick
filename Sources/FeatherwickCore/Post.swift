@@ -7,7 +7,7 @@ import Foundation
 // the pick are seeded from `GameState.shopSeed` and the day, never from the game RNG, so the post
 // changes no seeded game.
 //
-// Core holds note IDs and conditions only. The words live in FeatherwickText (`noteText`), by note ID.
+// Core holds note IDs and conditions only. The words live in FeatherwickText (`poolNoteText`), by note ID.
 // Rule 8: a condition reads only what the keeper can see.
 
 /// When a note may come. Every condition reads only player-visible state.

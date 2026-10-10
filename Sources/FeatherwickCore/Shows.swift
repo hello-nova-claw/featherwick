@@ -4,7 +4,7 @@ import Foundation
 //
 // Three kinds of class, as at a real poultry show:
 //   - breed classes: purebred adults, judged against their breed standard
-//   - the pet class: any bird, judged on condition (and on friendliness, when that trait exists)
+//   - the pet class: any bird, judged on condition and friendliness
 //   - egg classes: a plate of eggs of one colour
 //
 // Breed standards come from the breed table: a colour is standard for a breed if one of the

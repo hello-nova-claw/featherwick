@@ -21,7 +21,7 @@ public enum Errand: String, Hashable, Codable, Sendable, CaseIterable {
     case candling
     /// Entering birds or eggs in the county show. Show day itself costs nothing.
     case showDesk
-    /// A visit to the neighbour: a story delivery, a trade, or a bird going to a new home.
+    /// A visit to the neighbour: a story delivery, a trade, a bird going to a new home, or a Hatch-along egg.
     case neighbour
     /// The carpenter adds perches.
     case building

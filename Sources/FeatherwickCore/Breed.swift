@@ -1,6 +1,7 @@
 import Foundation
 
-/// Colours a starter bird can come in. Each one is a colour variety in the breed table.
+/// Four colours every starter breed comes in, for tests and tools. Each one is a colour variety in
+/// the breed table. Starters themselves draw from all their breed's varieties.
 public enum StarterColour: String, Hashable, Codable, Sendable, CaseIterable {
     case black, blue, buff, lavender
 
@@ -30,7 +31,7 @@ public struct Bird: Identifiable, Hashable, Codable, Sendable {
     public let id: UUID
     public var name: String
     /// V1 PLACEHOLDER RULE: a chick takes its mother's breed (like Pokémon).
-    /// Open question: how mixed-breed chicks show in the Breed Book.
+    /// A cross keeps it too, but shows as its cross name (`varietyName`) in the Breed Book.
     public let breed: Breed
     public internal(set) var genome: Genome
     public let hatchDay: Int
