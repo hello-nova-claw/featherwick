@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 Featherwick: a cozy chicken-keeping game with real chicken genetics. Swift 6 package.
-Game logic first; an iOS front end (SpriteKit + SwiftUI) comes later and uses the same core.
+Game logic first. The iOS app (`App/`, SwiftUI) uses the same core. Its art comes later.
 
 `README.md` is the full design doc (genes, breeds, shows, storylines, night order). Read the
 section for the system you change. Keep it current: a change to behaviour updates its README section.
