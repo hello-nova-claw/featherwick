@@ -19,6 +19,8 @@ struct KitLayer: Identifiable {
     /// The bone this part rides: its own, or the nearest one up its `ridesOn` chain. Nil: only the hip
     /// moves it.
     let bone: Bone?
+    /// A loose part sways after its bone (`FluffFollow`). Nil: it moves with its bone exactly.
+    let follow: Follow?
     let lacing: Bool
     let barring: Bool
 }
@@ -197,7 +199,8 @@ final class PartKit: @unchecked Sendable {
             layers.append(
                 KitLayer(
                     id: name, image: image, token: token, tokenScale: part.tokenScale ?? 1,
-                    bone: spec.carrierBone(of: name), lacing: overlay("lacing", isOn: name, in: spec),
+                    bone: spec.carrierBone(of: name), follow: spec.follow(of: name),
+                    lacing: overlay("lacing", isOn: name, in: spec),
                     barring: overlay("barring", isOn: name, in: spec)))
         }
         let lacing: CGImage? = spec.overlays?["lacing"] == nil ? nil : working("lacing.png")

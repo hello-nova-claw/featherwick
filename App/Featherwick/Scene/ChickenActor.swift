@@ -12,6 +12,9 @@ enum ChickenActivity: Hashable, Sendable {
 /// Idle, it blinks every few seconds and now and then looks somewhere new. The motions are the shared
 /// skeleton's (`ChickenMotion`): planted feet, a high step, a body bounce and a head bob.
 ///
+/// Loose parts (a tail, a wattle, thigh fluff) sway after their bones (`FluffFollow`): the lag is worked out
+/// from the same motion a moment earlier, so it needs no state. After a peck, frames run on until it settles.
+///
 /// Cheap when still. Idle blinks and glances come from a `.task` loop that sleeps between them and sets
 /// the pose with `withAnimation`, so nothing redraws in between. Only walking and a running peck use a
 /// per-frame `TimelineView`; it is paused at all other times. (A steady redraw once made swiping between
@@ -27,7 +30,7 @@ struct AnimatedChicken: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Blink and head turn. The task loop animates these; walking and pecking come on top.
     @State private var face: ChickenPose = .rest
-    /// When the running peck began. Nil when no peck is running.
+    /// When the running peck began. Nil when no peck is running or settling.
     @State private var peckStart: Date?
 
     private typealias M = ChickenRigMetrics
@@ -61,18 +64,26 @@ struct AnimatedChicken: View {
     /// leg angles depend on its leg lengths.
     private func pose(at date: Date) -> ChickenPose {
         let rig: SkeletonRig = ChickenView.rig(for: colours)
-        var pose: ChickenPose = .rest
-        if activity == .sitting {
-            // A pose, not a motion: it holds with Reduce Motion too. Sit down inside `withAnimation` to ease it.
-            pose = ChickenMotion.sitting(rig)
-        } else if !reduceMotion && activity == .walking {
-            pose = ChickenMotion.walk(rig, phase: date.timeIntervalSinceReferenceDate / M.stride)
-        } else if let peckStart, !reduceMotion {
-            pose = ChickenMotion.peck(rig, progress: date.timeIntervalSince(peckStart) / M.peckDuration)
+        var pose: ChickenPose = motion(rig, at: date)
+        if moving {
+            pose.sway = FluffFollow.sway(rig) { ago in motion(rig, at: date.addingTimeInterval(-ago)) }
         }
         pose.headTurn = face.headTurn
         pose.blink = face.blink
         return pose
+    }
+
+    /// The bones alone at `date`: no face, no sway.
+    private func motion(_ rig: SkeletonRig, at date: Date) -> ChickenPose {
+        if activity == .sitting {
+            // A pose, not a motion: it holds with Reduce Motion too. Sit down inside `withAnimation` to ease it.
+            return ChickenMotion.sitting(rig)
+        } else if !reduceMotion && activity == .walking {
+            return ChickenMotion.walk(rig, phase: date.timeIntervalSinceReferenceDate / M.stride)
+        } else if let peckStart, !reduceMotion {
+            return ChickenMotion.peck(rig, progress: date.timeIntervalSince(peckStart) / M.peckDuration)
+        }
+        return .rest
     }
 
     /// Runs for as long as the activity lasts: one peck if pecking, then blinks (and glances when idle).
@@ -84,7 +95,8 @@ struct AnimatedChicken: View {
         }
         if activity == .pecking && !reduceMotion {
             peckStart = Date()
-            guard await pause(M.peckDuration) else { return }
+            // On past the peck until the loose parts settle: the last frame must have no sway in it.
+            guard await pause(M.peckDuration + FluffFollow.settle) else { return }
             peckStart = nil
         }
         await blinkAndLook(canLook: canLook)

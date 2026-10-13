@@ -78,6 +78,25 @@ import Testing
         #expect(problems.contains("body and belly both set the joint of body"))
     }
 
+    /// A loose part reads its amount and root; a wild amount, or a loose part on no bone, is a problem.
+    @Test func loosePartsFollow() throws {
+        let kit: KitSpec = try spec(
+            """
+            {"body": {"bone": "body", "pivot": [-0.05, 0.40]},
+             "tail": {"bone": "body", "follow": {"amount": 0.8, "root": [-0.14, 0.70]}},
+             "fluff": {"bone": "body", "follow": {"amount": 1}},
+             "whip": {"bone": "body", "follow": {"amount": 5}},
+             "cloud": {"follow": {"amount": 1}}}
+            """, order: ["body", "tail", "fluff", "whip", "cloud"])
+        #expect(kit.follow(of: "tail") == Follow(amount: 0.8, root: CGPoint(x: -0.14, y: 0.70)))
+        #expect(kit.follow(of: "fluff") == Follow(amount: 1, root: nil))
+        #expect(kit.follow(of: "body") == nil)
+        let problems: [String] = kit.problems(files: Set(kit.drawOrder.map { "\($0).png" }))
+        #expect(problems.contains("follow of whip is not 0 to 2"))
+        #expect(problems.contains("cloud follows but rides no bone"))
+        #expect(problems.count == 2)
+    }
+
     /// Every bone has a kit name, and the name reads back.
     @Test func boneNamesRoundTrip() {
         for bone in Bone.allCases { #expect(Bone(kitName: bone.kitName) == bone) }

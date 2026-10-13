@@ -14,6 +14,8 @@ struct BoneEffect: GeometryEffect {
     let rig: SkeletonRig
     var pose: ChickenPose
     let height: CGFloat
+    /// A loose part sways after its bone (`FluffFollow`). Nil: it moves with its bone exactly.
+    var follow: Follow? = nil
 
     // Nonisolated: `Animatable` asks for it so, and it reads only Sendable values (Swift 6, SE-0434).
     nonisolated var animatableData: PoseVector {
@@ -22,7 +24,8 @@ struct BoneEffect: GeometryEffect {
     }
 
     nonisolated func effectValue(size: CGSize) -> ProjectionTransform {
-        let t: Affine = Skeleton.transform(of: bone, rig: rig, pose: pose, height: Double(height))
+        let t: Affine = Skeleton.transform(
+            of: bone, rig: rig, pose: pose, height: Double(height), follow: follow)
         return ProjectionTransform(
             CGAffineTransform(
                 a: CGFloat(t.a), b: CGFloat(t.b), c: CGFloat(t.c), d: CGFloat(t.d), tx: CGFloat(t.tx),
@@ -33,8 +36,11 @@ struct BoneEffect: GeometryEffect {
 extension PoseVector: VectorArithmetic {}
 
 extension View {
-    /// Moves this part (drawn at rest, filling the rig's frame) with `bone` for `pose`.
-    func riding(_ bone: Bone?, rig: SkeletonRig, pose: ChickenPose, height: CGFloat) -> some View {
-        modifier(BoneEffect(bone: bone, rig: rig, pose: pose, height: height))
+    /// Moves this part (drawn at rest, filling the rig's frame) with `bone` for `pose`. A part with
+    /// `follow` is loose: it sways after its bone.
+    func riding(
+        _ bone: Bone?, rig: SkeletonRig, pose: ChickenPose, height: CGFloat, follow: Follow? = nil
+    ) -> some View {
+        modifier(BoneEffect(bone: bone, rig: rig, pose: pose, height: height, follow: follow))
     }
 }

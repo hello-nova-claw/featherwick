@@ -6,7 +6,8 @@ Every PNG has the same canvas. RGB is a greyscale value, alpha is coverage. In e
 
 - `kit.json`: the canvas, the ground point, the bird height (`unit`), each part's pivot and bone (or joint,
   in format 1), the draw order, the overlays, the landmarks and the build's motion angles. In format 2 a
-  kit can cut a leg into thigh, shank and toes, and a neck into `neckLow` and `neckHigh`.
+  kit can cut a leg into thigh, shank and toes, and a neck into `neckLow` and `neckHigh`. A part with
+  `follow` is loose: it sways after its bone (the tail, the wattle, fluff).
 - `body.png`: the body. It tilts at its pivot to peck. The tail, neck and head ride on it.
 - `tail.png`: the tail. It rides on the body.
 - `neck.png`: the neck (hackle). It rides on the body.

@@ -66,7 +66,7 @@ components, screens 1a–9a). The painted farm and bird art come later; dashed b
 - `Farm/FarmBirds.swift`: where each bird is drawn, blobs (`BirdSwatch`) on the Barn, and `PettableBird`
   (tap opens the bird card; press and rub sends `.pet`). In the yards the coop birds are rigged chickens
   inside the scene (`Scene/SceneChicken.swift`: `YardScene`, `SceneChicken`). Every chicken moves on one
-  skeleton (`Scene/ChickenSkeleton.swift`: bones, inverse-kinematics legs, the walk, peck and sit motions;
+  skeleton (`Scene/ChickenSkeleton.swift`: bones, inverse-kinematics legs, the walk, peck and sit motions, fluff follow;
   pure maths, tested on Linux too). The placeholder chicken (`ChickenRig`) and each painted kit ride its
   bones through `BoneEffect`; test tools have a rig lab. A body shape with a painted kit
   (`Art/Parts/<build>/kit.json` + PNGs, read by `Scene/PartKit.swift`; `kit.json` and its skeleton are

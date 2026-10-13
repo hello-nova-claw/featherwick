@@ -269,9 +269,9 @@ struct ChickenRig: View {
         path.fill(fill).overlay(path.stroke(colours.outline, lineWidth: lineWidth))
     }
 
-    /// A part on `bone`, moved by the pose.
-    private func on(_ bone: Bone, _ view: some View) -> some View {
-        view.riding(bone, rig: rig, pose: pose, height: height)
+    /// A part on `bone`, moved by the pose. A loose part (`follow`) sways after its bone.
+    private func on(_ bone: Bone, follow: Follow? = nil, _ view: some View) -> some View {
+        view.riding(bone, rig: rig, pose: pose, height: height, follow: follow)
     }
 
     // MARK: - Legs
@@ -290,7 +290,9 @@ struct ChickenRig: View {
         return ZStack {
             on(leg.shank, part(shank, colours.legs).overlay(shank.fill(shade)))
             on(leg.toes, part(toes, colours.legs).overlay(toes.fill(shade)))
-            on(leg.thigh, part(thigh, colours.feathers).overlay(thigh.fill(shade)))
+            on(
+                leg.thigh, follow: Follow(amount: ChickenRigMetrics.thighFollow, root: hip),
+                part(thigh, colours.feathers).overlay(thigh.fill(shade)))
         }
     }
 
@@ -299,11 +301,13 @@ struct ChickenRig: View {
     private func torso(_ b: ChickenBuild, _ s: ChickenSpace) -> some View {
         ZStack {
             if !b.tail.isEmpty {
-                on(.tail, part(ChickenPaths.polygon(b.tail, s), colours.tail))
+                on(
+                    .tail, follow: Follow(amount: ChickenRigMetrics.tailFollow, root: b.tailRoot),
+                    part(ChickenPaths.polygon(b.tail, s), colours.tail))
             }
             on(.body, part(ChickenPaths.body(b, s), colours.feathers))
             on(.body, feathering(b, s))
-            on(.body, wing(b, s))
+            on(.body, follow: Follow(amount: ChickenRigMetrics.wingFollow, root: wingRoot(b)), wing(b, s))
             // No outline: the neck runs into the body and the head.
             on(.neckLow, ChickenPaths.polygon(b.neck, s).fill(colours.hackle))
             head(b, s)
@@ -325,6 +329,11 @@ struct ChickenRig: View {
         }
     }
 
+    /// The wing hangs from its front edge, at the shoulder.
+    private func wingRoot(_ b: ChickenBuild) -> CGPoint {
+        CGPoint(x: b.wingCentre.x + b.wingSize.width / 2, y: b.wingCentre.y)
+    }
+
     private func wing(_ b: ChickenBuild, _ s: ChickenSpace) -> some View {
         let path: Path = ChickenPaths.ellipse(b.wingCentre, b.wingSize, s)
         return part(path, colours.feathers).overlay(path.fill(colours.shade))
@@ -344,6 +353,12 @@ struct ChickenRig: View {
             if colours.pattern == .headSpot {
                 on(.head, ChickenPaths.headSpot(b, s).fill(colours.patternColour))
             }
+            if !b.isChick {
+                // Loose: it swings after the head.
+                on(
+                    .head, follow: Follow(amount: ChickenRigMetrics.wattleFollow, root: b.wattleTop),
+                    wattle(b, s).scaleEffect(x: face, y: 1, anchor: centre))
+            }
             on(.head, faceFront(b, s).scaleEffect(x: face, y: 1, anchor: centre))
         }
     }
@@ -361,12 +376,13 @@ struct ChickenRig: View {
 
     private var combScale: CGFloat { CGFloat(max(0.01, colours.combSize)) }
 
+    private func wattle(_ b: ChickenBuild, _ s: ChickenSpace) -> some View {
+        part(ChickenPaths.ellipse(b.wattleCentre, b.wattleSize, s), colours.comb)
+            .scaleEffect(combScale, anchor: ChickenSpace.anchor(b.wattleTop))
+    }
+
     private func faceFront(_ b: ChickenBuild, _ s: ChickenSpace) -> some View {
         ZStack {
-            if !b.isChick {
-                part(ChickenPaths.ellipse(b.wattleCentre, b.wattleSize, s), colours.comb)
-                    .scaleEffect(combScale, anchor: ChickenSpace.anchor(b.wattleTop))
-            }
             part(ChickenPaths.polygon(b.beak, s), colours.beak)
             eye(b, s)
         }

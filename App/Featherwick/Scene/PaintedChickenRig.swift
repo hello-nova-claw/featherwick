@@ -63,7 +63,7 @@ struct PaintedChickenRig: View {
                 part(layer, space)
                     .scaleEffect(growth(layer), anchor: growthAnchor(layer))
                     .scaleEffect(x: face(layer), y: 1, anchor: headAnchor)
-                    .riding(layer.bone, rig: kit.rig, pose: pose, height: height)
+                    .riding(layer.bone, rig: kit.rig, pose: pose, height: height, follow: layer.follow)
                 if layer.id == eyelidAfter {
                     eyelid(space)
                         .scaleEffect(x: faceScale, y: 1, anchor: headAnchor)

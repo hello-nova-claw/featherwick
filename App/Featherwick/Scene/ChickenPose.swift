@@ -175,6 +175,22 @@ enum ChickenRigMetrics {
     /// Seconds to sit down, or to get up.
     static let sitDuration: Double = 0.3
 
+    // Fluff follow. A loose part (a tail, a wattle, thigh fluff) is a damped spring on its bone: it lags
+    // behind each turn, swings a little past, and settles. See `FluffFollow`.
+    /// The spring's swing, in swings a second, and its damping (0 swings for ever, 1 does not swing past).
+    static let followHz: Double = 3
+    static let followDamping: Double = 0.4
+    /// The spring looks back this far, in samples this far apart (seconds). Past it the swing is gone.
+    static let followWindow: Double = 0.5
+    static let followStep: Double = 1.0 / 30
+    /// A part never lags more than this many degrees behind its bone, however fast the bone turns.
+    static let followMax: Double = 20
+    /// How loose each path rig part is: 1 is the full spring, 0 is stiff.
+    static let tailFollow: Double = 1
+    static let wattleFollow: Double = 1
+    static let thighFollow: Double = 0.25
+    static let wingFollow: Double = 0.35
+
     // Looking. The face (beak, eye, comb) narrows as the head turns to the viewer.
     /// Face width when the bird looks straight at the viewer.
     static let frontFaceScale: Double = 0.45
@@ -205,6 +221,9 @@ struct ChickenPose: Equatable, Sendable {
     var blink: Double = 0
     /// 0 stands, 1 sits. A one-piece (stiff) leg cannot bend, so it squashes to the ground instead.
     var sit: Double = 0
+    /// Degrees each bone's loose parts lag behind it (`FluffFollow`), in `Bone.allCases` order. A part turns
+    /// by this times its own `Follow.amount`. All 0 when the bird is still.
+    var sway: [Double] = Array(repeating: 0, count: Bone.allCases.count)
 
     /// Standing still, looking ahead, eyes open.
     static let rest = ChickenPose()
@@ -228,7 +247,7 @@ struct ChickenPose: Equatable, Sendable {
     }
 
     /// Every value in one list, for animation: SwiftUI interpolates the list (see `PoseVector`).
-    var vector: [Double] { angles + [rise, headTurn, blink, sit] }
+    var vector: [Double] { angles + [rise, headTurn, blink, sit] + sway }
 
     init() {}
 
@@ -241,5 +260,6 @@ struct ChickenPose: Equatable, Sendable {
         headTurn = value(n + 1)
         blink = value(n + 2)
         sit = value(n + 3)
+        sway = (0..<n).map { value(n + 4 + $0) }
     }
 }

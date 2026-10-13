@@ -26,6 +26,15 @@ struct KitSpec: Decodable, Sendable {
         var tokenScale: Double?
         /// A non-feather token: comb, beak, eye or legs. Other parts take a feather token.
         var token: String?
+        /// A loose part (a tail, a wattle, thigh fluff): it sways after its bone. See `FluffFollow`.
+        var follow: PartFollow?
+    }
+
+    struct PartFollow: Decodable, Sendable {
+        /// 1 is the full spring; less is stiffer. At most `KitSpec.maxFollow`.
+        var amount: Double
+        /// Where it hangs from, in rig units. Missing: its bone's joint.
+        var root: [Double]?
     }
 
     struct Overlay: Decodable, Sendable {
@@ -62,6 +71,8 @@ struct KitSpec: Decodable, Sendable {
 
     /// A part may ride on at most this many parts, counting itself (eye on head on neck on body).
     static let maxDepth: Int = 4
+    /// A loose part sways at most twice the spring: more would whip.
+    static let maxFollow: Double = 2
 
     /// The patterns a kit can paint, by overlay name.
     static let overlayPatterns: [String: FeatherwickCore.Pattern] = ["lacing": .lacing, "barring": .barring]
@@ -113,6 +124,15 @@ struct KitSpec: Decodable, Sendable {
             if part.pivot == nil && part.bone == nil { found.append("\(name) rotates but has no pivot") }
         }
         if let bone = part.bone, Bone(kitName: bone) == nil { found.append("\(name) rides unknown bone \(bone)") }
+        if let follow = part.follow {
+            if !(0...Self.maxFollow).contains(follow.amount) {
+                found.append("follow of \(name) is not 0 to \(Int(Self.maxFollow))")
+            }
+            if let root = follow.root, let problem = pointProblem(root) {
+                found.append("follow root of \(name) \(problem)")
+            }
+            if carrierBone(of: name) == nil { found.append("\(name) follows but rides no bone") }
+        }
         if let token = part.token, KitToken(rawValue: token) == nil {
             found.append("\(name) has unknown token \(token)")
         }
@@ -188,6 +208,13 @@ struct KitSpec: Decodable, Sendable {
             }
         }
         return SkeletonRig(joints: joints, feet: feet, motion: motion)
+    }
+
+    /// How a part sways after its bone, ready for the skeleton. Nil: it moves with its bone exactly.
+    func follow(of name: String) -> Follow? {
+        guard let f = parts[name]?.follow else { return nil }
+        let root: CGPoint? = f.root.flatMap { $0.count == 2 ? CGPoint(x: $0[0], y: $0[1]) : nil }
+        return Follow(amount: min(Self.maxFollow, max(0, f.amount)), root: root)
     }
 
     /// Rig units to canvas pixels (y down).

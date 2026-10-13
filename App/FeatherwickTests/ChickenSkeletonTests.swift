@@ -147,11 +147,62 @@ import Testing
         #expect(abs(squashed.y - hip.y * (1 - ChickenRigMetrics.sitDrop)) < 1e-6)
     }
 
+    /// A still bird does not sway: the spring's weights add up to 1, so a bone that holds still has no lag.
+    @Test func aStillBoneHasNoSway() {
+        #expect(abs(FluffFollow.weights.reduce(0, +) - 1) < 1e-12)
+        var bent = ChickenPose()
+        bent[.body] = 30
+        bent[.neckLow] = 40
+        for lag in FluffFollow.sway(adult, motion: { _ in bent }) { #expect(abs(lag) < 1e-9) }
+    }
+
+    /// A sudden turn: the loose part first lags behind (the other way), then swings a little past, then
+    /// settles. A child bone lags by its whole turn on screen, its parents' turns included.
+    @Test func aLoosePartLagsThenSwingsPast() {
+        // The body turned 20° `seconds` ago.
+        func lag(_ seconds: Double, _ bone: Bone) -> Double {
+            FluffFollow.sway(
+                adult,
+                motion: { ago in
+                    var pose = ChickenPose()
+                    pose[.body] = ago <= seconds ? 20 : 0
+                    return pose
+                })[bone.rawValue]
+        }
+        #expect(lag(0.05, .tail) < -5)
+        #expect(lag(0.05, .tail) == lag(0.05, .body))
+        let latest: [Double] = stride(from: 0.1, through: 0.45, by: 1.0 / 30).map { lag($0, .body) }
+        #expect(latest.contains { $0 > 0.3 }, "swings past")
+        #expect(abs(lag(10, .body)) < 1e-9, "settled")
+        #expect(lag(0.05, .thighBack) == 0, "the legs do not ride the body")
+    }
+
+    /// A loose part turns about its root by its amount times its bone's lag, capped; with no lag it is
+    /// exactly its bone.
+    @Test func aLoosePartSwaysAboutItsRoot() {
+        let root = CGPoint(x: -0.24, y: 0.62)
+        let tip = CGPoint(x: -0.45, y: 0.85)
+        let loose = Follow(amount: 1, root: root)
+        var pose: ChickenPose = ChickenMotion.walk(adult, phase: 0.3)
+        let fixed: CGPoint = Skeleton.place(tip, on: .tail, rig: adult, pose: pose)
+        #expect(Skeleton.place(tip, on: .tail, rig: adult, pose: pose, follow: loose) == fixed)
+        pose.sway[Bone.tail.rawValue] = 90
+        let anchored: CGPoint = Skeleton.place(root, on: .tail, rig: adult, pose: pose, follow: loose)
+        #expect(anchored == Skeleton.place(root, on: .tail, rig: adult, pose: pose))
+        let swung: CGPoint = Skeleton.place(tip, on: .tail, rig: adult, pose: pose, follow: loose)
+        let r: Double = hypot(Double(tip.x - root.x), Double(tip.y - root.y))
+        let moved: Double = hypot(Double(swung.x - fixed.x), Double(swung.y - fixed.y))
+        // Capped at `followMax`: a chord of that angle, not of 90°.
+        let chord: Double = 2 * r * sin(ChickenRigMetrics.followMax / 2 * Double.pi / 180)
+        #expect(abs(moved - chord) < 1e-9)
+    }
+
     /// A pose survives the trip through its animation vector, and an empty zero adds as zeros.
     @Test func posesRoundTripThroughTheirVector() {
         var pose: ChickenPose = ChickenMotion.walk(adult, phase: 0.37)
         pose.headTurn = 0.6
         pose.blink = 0.3
+        pose.sway[Bone.tail.rawValue] = -7
         #expect(ChickenPose(vector: pose.vector) == pose)
         let v = PoseVector(pose.vector)
         #expect(PoseVector.zero + v == v)

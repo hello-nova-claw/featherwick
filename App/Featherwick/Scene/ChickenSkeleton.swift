@@ -176,20 +176,36 @@ struct Affine: Equatable, Sendable {
     }
 }
 
+/// A loose part: it sways about `root` (rig units; nil is its bone's joint) by `amount` times its bone's lag.
+/// 1 is the full spring; less is stiffer.
+struct Follow: Equatable, Sendable {
+    var amount: Double
+    var root: CGPoint?
+}
+
 /// Forward kinematics: where the skeleton puts a part, in the rig's frame (points, y down).
 enum Skeleton {
+    private typealias M = ChickenRigMetrics
+
     /// A point in rig units, in the frame of a rig `height` points tall: the ground point is the bottom centre.
     static func frame(_ p: CGPoint, height: Double) -> CGPoint {
         let ground: Double = height * Double(ChickenRigMetrics.widthRatio) / 2
         return CGPoint(x: ground + Double(p.x) * height, y: height - Double(p.y) * height)
     }
 
-    /// The transform for a part on `bone` (nil: on no bone, so only the hip moves it). Its own bone turns
-    /// first, then each bone above it. The hip's lift carries the body, and the legs when they can bend; a
+    /// The transform for a part on `bone` (nil: on no bone, so only the hip moves it). A loose part
+    /// (`follow`) first sways about its root, by its bone's lag (`ChickenPose.sway`). Then its own bone
+    /// turns, then each bone above it. The hip's lift carries the body, and the legs when they can bend; a
     /// stiff leg stays on the ground and squashes down instead when the bird sits.
-    static func transform(of bone: Bone?, rig: SkeletonRig, pose: ChickenPose, height: Double) -> Affine {
+    static func transform(
+        of bone: Bone?, rig: SkeletonRig, pose: ChickenPose, height: Double, follow: Follow? = nil
+    ) -> Affine {
         let chain: [Bone] = bone.map(rig.chain(of:)) ?? []
         var t: Affine = .identity
+        if let follow, let carrier = chain.first, let root = follow.root ?? rig.joints[carrier] {
+            let lag: Double = min(M.followMax, max(-M.followMax, pose.sway[carrier.rawValue]))
+            t = .rotation(follow.amount * lag, about: frame(root, height: height))
+        }
         for link in chain {
             guard let joint = rig.joints[link] else { continue }
             let pivot: CGPoint = frame(joint, height: height)
@@ -208,9 +224,12 @@ enum Skeleton {
     }
 
     /// A point on a part riding `bone` (rig units in and out, y up): for tests and for placing things.
-    static func place(_ p: CGPoint, on bone: Bone?, rig: SkeletonRig, pose: ChickenPose) -> CGPoint {
+    static func place(
+        _ p: CGPoint, on bone: Bone?, rig: SkeletonRig, pose: ChickenPose, follow: Follow? = nil
+    ) -> CGPoint {
         let h: Double = 1
-        let moved: CGPoint = transform(of: bone, rig: rig, pose: pose, height: h).apply(frame(p, height: h))
+        let moved: CGPoint = transform(of: bone, rig: rig, pose: pose, height: h, follow: follow)
+            .apply(frame(p, height: h))
         let ground: Double = Double(ChickenRigMetrics.widthRatio) / 2
         return CGPoint(x: Double(moved.x) - ground, y: h - Double(moved.y))
     }
@@ -373,6 +392,48 @@ enum ChickenMotion {
     private static func sub(_ p: CGPoint, _ q: CGPoint) -> CGPoint { CGPoint(x: p.x - q.x, y: p.y - q.y) }
 
     private static func cross(_ u: CGPoint, _ v: CGPoint) -> Double { Double(u.x * v.y - u.y * v.x) }
+}
+
+/// Fluff follow: how far each bone's loose parts lag behind it. A loose part is a damped spring on its bone.
+/// The spring's output is a weighted mean of where the bone pointed over the last `followWindow` seconds,
+/// so it needs no state: give it the motion as a function of time and it works out the lag for any moment.
+/// A bone that has not turned in the window has no lag, so a still bird sways not at all.
+enum FluffFollow {
+    private typealias M = ChickenRigMetrics
+
+    /// The spring's response to a sudden turn, sampled every `followStep` seconds back from now, scaled to
+    /// add up to 1 (so a bone that holds still gives exactly its own angle).
+    static let weights: [Double] = {
+        let w: Double = 2 * Double.pi * M.followHz
+        let z: Double = M.followDamping
+        let wd: Double = w * (1 - z * z).squareRoot()
+        let count: Int = Int((M.followWindow / M.followStep).rounded())
+        let raw: [Double] = (0...count).map { k in
+            let t: Double = Double(k) * M.followStep
+            return exp(-z * w * t) * sin(wd * t)
+        }
+        let total: Double = raw.reduce(0, +)
+        return raw.map { $0 / total }
+    }()
+
+    /// Each bone's lag at this moment, in degrees, in `Bone.allCases` order. `motion(s)` is the pose `s`
+    /// seconds ago (0 is now). A bone's turn is its whole turn on screen: its own angle and every one above.
+    static func sway(_ rig: SkeletonRig, motion: (Double) -> ChickenPose) -> [Double] {
+        var spring: [Double] = Array(repeating: 0, count: Bone.allCases.count)
+        var now: [Double] = spring
+        for (k, weight) in weights.enumerated() {
+            let pose: ChickenPose = motion(Double(k) * M.followStep)
+            for bone in Bone.allCases where rig.has(bone) {
+                let turn: Double = rig.chain(of: bone).reduce(0) { $0 + pose[$1] }
+                spring[bone.rawValue] += weight * turn
+                if k == 0 { now[bone.rawValue] = turn }
+            }
+        }
+        return zip(spring, now).map { $0 - $1 }
+    }
+
+    /// Seconds the spring takes to settle after the bone stops: keep drawing frames this long after a motion.
+    static var settle: Double { M.followWindow }
 }
 
 /// A pose as a list of numbers that SwiftUI can interpolate (`VectorArithmetic`, in `SkeletonEffect.swift`).
