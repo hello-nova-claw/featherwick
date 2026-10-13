@@ -140,11 +140,12 @@ struct PaintedChickenRig: View {
         return Color(lifted)
     }
 
-    /// A comb grows in with age, and a hen's is smaller: the comb part scales by `combSize` about its own
-    /// painted base (the bottom centre of its alpha), as on the path rig. The `combBase` landmark is used
+    /// A comb grows in with age, and a hen's is smaller than a rooster's. The kit paints an adult hen's comb
+    /// (`PartKit.paintedCombSize`), so the comb part scales by `combSize` over that, about its own painted
+    /// base (the bottom centre of its alpha). A grown hen shows the comb as painted. The `combBase` landmark is used
     /// only when the kit has no comb art bounds. Other parts keep their size.
     private func growth(_ layer: KitLayer) -> CGFloat {
-        layer.token == .comb ? CGFloat(max(0.01, colours.combSize)) : 1
+        layer.token == .comb ? CGFloat(max(0.01, colours.combSize / PartKit.paintedCombSize)) : 1
     }
 
     private func growthAnchor(_ layer: KitLayer) -> UnitPoint {
@@ -217,7 +218,7 @@ struct PaintedChickenRig: View {
             let turn: Double = pose.faceScale
             move.face = CGFloat(abs(turn) < 0.01 ? (turn < 0 ? -0.01 : 0.01) : turn)
         case .neckSwing?:
-            move.rotation = pose.neckSwing
+            move.rotation = scaled(pose.neckSwing, kit: motion?.peckNeckSwing, rig: M.peckNeckSwing)
         case .legBack?, .legFront?:
             let swing: Angle = joint.kind == .legBack ? pose.legBack : pose.legFront
             move.rotation = scaled(swing, kit: motion?.legSwing, rig: M.legSwing)

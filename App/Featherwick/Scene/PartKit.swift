@@ -41,6 +41,8 @@ struct KitSpec: Decodable, Sendable {
     struct Motion: Decodable, Sendable {
         var peckBodyTilt: Double?
         var peckHeadDip: Double?
+        /// A kit whose neck swings at the shoulder (`neckSwing`): the neck's angle at the bottom of a peck.
+        var peckNeckSwing: Double?
         var glanceHeadDip: Double?
         var legSwing: Double?
         var stride: Double?
@@ -190,6 +192,9 @@ final class PartKit: @unchecked Sendable {
     /// A painted bird is downsampled once, at load, to this many pixels tall. A yard bird is at most
     /// about 64 pt tall, so 512 px is sharp at 3x with room to spare, and far cheaper to draw than 1673 px.
     static let workingHeight: CGFloat = 512
+    /// The comb size (`Look`'s comb scale) a kit's comb is painted at: an adult hen's. A grown hen shows the
+    /// painted comb at full size; a pullet's grows in towards it, and a rooster's is larger.
+    static let paintedCombSize: Double = 0.6
     /// A part may ride on at most this many parts, counting itself (eye on head on neck on body).
     static let maxDepth: Int = 4
 
