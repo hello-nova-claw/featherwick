@@ -5,186 +5,10 @@ import ImageIO
 import os
 
 // A painted parts kit for one body shape: `Art/Parts/<build>/kit.json` and one PNG per part.
-// See "Painted parts" in docs/design/README.md for the format.
+// See "Painted parts" in docs/design/README.md for the format, and `KitSpec.swift` for `kit.json`.
 //
 // Every PNG shares one canvas. RGB is a greyscale value, alpha is coverage. On screen a part is its colour
 // token times its value, clipped to its alpha: the token rule from `Look.swift`, applied to pixels.
-// Joints, landmarks and draw order all come from `kit.json`. No part name or position is fixed in code.
-
-/// `kit.json`, as written. Points are `[x, y]` arrays: rig units (x right of the ground point, y up, in bird
-/// heights) for pivots and landmarks, pixels for the canvas and the ground point.
-struct KitSpec: Decodable, Sendable {
-    struct Part: Decodable, Sendable {
-        /// The joint this part turns about, in rig units. Needed when the part `rotates`.
-        var pivot: [Double]?
-        /// Which pose angle turns it: one of `KitJoint.Kind`.
-        var rotates: String?
-        /// The part it moves with. A part with no parent moves with the whole bird.
-        var ridesOn: String?
-        /// Notes for people. The draw order is `drawOrder`.
-        var behind: String?
-        var inFront: String?
-        /// The token is multiplied by this: above 1 lifts the colour (the hackle).
-        var tokenScale: Double?
-        /// A non-feather token: comb, beak, eye or legs. Other parts take a feather token.
-        var token: String?
-    }
-
-    struct Overlay: Decodable, Sendable {
-        /// "multiply" (lacing) or "lighten" (barring). Kept for people: the pattern name sets the blend.
-        var mode: String
-        /// The parts it is drawn over.
-        var on: [String]
-    }
-
-    /// This build's angles, in degrees. Missing values keep the path rig's angles.
-    struct Motion: Decodable, Sendable {
-        var peckBodyTilt: Double?
-        var peckHeadDip: Double?
-        /// A kit whose neck swings at the shoulder (`neckSwing`): the neck's angle at the bottom of a peck.
-        var peckNeckSwing: Double?
-        /// How far the hip drops at the bottom of a peck, in bird heights. Missing: the standard crouch.
-        var peckCrouch: Double?
-        var glanceHeadDip: Double?
-        var legSwing: Double?
-        var stride: Double?
-    }
-
-    var build: String
-    var canvas: [Double]
-    var groundPoint: [Double]
-    /// The bird's height in canvas pixels.
-    var unit: Double
-    var parts: [String: Part]
-    /// Back to front.
-    var drawOrder: [String]
-    var overlays: [String: Overlay]?
-    var landmarks: [String: [Double]]?
-    var motion: Motion?
-
-    /// The patterns a kit can paint, by overlay name.
-    static let overlayPatterns: [String: FeatherwickCore.Pattern] = ["lacing": .lacing, "barring": .barring]
-
-    /// Everything wrong with the kit, in words for the log and the tests. Empty when the kit is good.
-    /// `files` are the file names in the kit's folder.
-    func problems(files: Set<String>) -> [String] {
-        var found: [String] = []
-        guard canvas.count == 2, canvas[0] > 0, canvas[1] > 0 else { return ["canvas is not [width, height]"] }
-        guard groundPoint.count == 2 else { return ["groundPoint is not [x, y]"] }
-        guard unit > 0 else { return ["unit is not above 0"] }
-        for name in drawOrder where parts[name] == nil { found.append("drawOrder names \(name), which is not a part") }
-        for name in parts.keys where !drawOrder.contains(name) { found.append("part \(name) is not in drawOrder") }
-        if Set(drawOrder).count != drawOrder.count { found.append("drawOrder names a part twice") }
-        for name in drawOrder where !files.contains("\(name).png") { found.append("part \(name) has no \(name).png") }
-        for (name, part) in parts.sorted(by: { $0.key < $1.key }) {
-            found += partProblems(name, part)
-        }
-        for (name, overlay) in (overlays ?? [:]).sorted(by: { $0.key < $1.key }) {
-            if Self.overlayPatterns[name] == nil { found.append("overlay \(name) is not lacing or barring") }
-            if !files.contains("\(name).png") { found.append("overlay \(name) has no \(name).png") }
-            for target in overlay.on where parts[target] == nil {
-                found.append("overlay \(name) is on \(target), which is not a part")
-            }
-        }
-        for (name, point) in (landmarks ?? [:]).sorted(by: { $0.key < $1.key }) {
-            if let problem = pointProblem(point) { found.append("landmark \(name) \(problem)") }
-        }
-        return found
-    }
-
-    private func partProblems(_ name: String, _ part: Part) -> [String] {
-        var found: [String] = []
-        if let pivot = part.pivot, let problem = pointProblem(pivot) { found.append("pivot of \(name) \(problem)") }
-        if let rotates = part.rotates {
-            if KitJoint.Kind(rawValue: rotates) == nil { found.append("\(name) rotates with unknown \(rotates)") }
-            if part.pivot == nil { found.append("\(name) rotates but has no pivot") }
-        }
-        if let token = part.token, KitToken(rawValue: token) == nil {
-            found.append("\(name) has unknown token \(token)")
-        }
-        if let parent = part.ridesOn, parts[parent] == nil { found.append("\(name) rides on \(parent), not a part") }
-        let links: [String] = chain(of: name)
-        if let top = links.last, let above = parts[top]?.ridesOn, parts[above] != nil {
-            found.append("\(name) rides on a loop of parts")
-        }
-        let depth: Int = links.count
-        if depth > PartKit.maxDepth { found.append("\(name) is \(depth) parts deep; at most \(PartKit.maxDepth)") }
-        return found
-    }
-
-    /// Nil when the point is two numbers inside the canvas.
-    private func pointProblem(_ point: [Double]) -> String? {
-        guard point.count == 2 else { return "is not [x, y]" }
-        let pixel: CGPoint = canvasPixel(CGPoint(x: point[0], y: point[1]))
-        let inside: Bool = pixel.x >= 0 && pixel.y >= 0 && pixel.x <= canvas[0] && pixel.y <= canvas[1]
-        return inside ? nil : "lies outside the canvas"
-    }
-
-    /// A part, then the part it rides on, and so on up. Stops at a loop or a missing parent.
-    func chain(of name: String) -> [String] {
-        var out: [String] = []
-        var next: String? = name
-        while let current = next, parts[current] != nil, !out.contains(current) {
-            out.append(current)
-            next = parts[current]?.ridesOn
-        }
-        return out
-    }
-
-    /// Rig units to canvas pixels (y down).
-    func canvasPixel(_ p: CGPoint) -> CGPoint {
-        CGPoint(x: groundPoint[0] + p.x * unit, y: groundPoint[1] - p.y * unit)
-    }
-
-    /// Canvas pixels (y down) to rig units.
-    func rigPoint(pixel p: CGPoint) -> CGPoint {
-        CGPoint(x: (p.x - groundPoint[0]) / unit, y: (groundPoint[1] - p.y) / unit)
-    }
-}
-
-/// The colour a part takes. A kit names comb, beak, eye or legs; other parts take a feather token.
-enum KitToken: String, Sendable {
-    case feathers, hackle, tail, comb, beak, eye, legs
-
-    /// With no token in the kit: a part that swings as a leg takes the leg token (a bird's legs follow its
-    /// genes, not its feathers). Then the same split as the path rig: the tail takes the tail token, the
-    /// neck and head the hackle, the rest the body feathers. These three names are the only part names
-    /// the code knows, besides "eye" for the eyelid.
-    static func implied(for part: String, rotates: String?) -> KitToken {
-        if rotates == KitJoint.Kind.legBack.rawValue || rotates == KitJoint.Kind.legFront.rawValue { return .legs }
-        switch part {
-        case "tail": return .tail
-        case "neck", "head": return .hackle
-        default: return .feathers
-        }
-    }
-}
-
-/// One joint a part turns about.
-struct KitJoint: Sendable {
-    enum Kind: String, Sendable {
-        case legBack, legFront, bodyTilt
-        /// The head turns down at the throat. A kit whose neck rides on the body pecks with this.
-        case headDip
-        /// The neck swings at the shoulder, as on the path rig.
-        case neckSwing
-
-        /// The skeleton bone this joint is. A one-piece leg is the thigh: it swings at the hip and cannot bend.
-        var bone: Bone {
-            switch self {
-            case .legBack: .thighBack
-            case .legFront: .thighFront
-            case .bodyTilt: .body
-            case .headDip: .head
-            case .neckSwing: .neckLow
-            }
-        }
-    }
-
-    let kind: Kind?
-    /// Rig units.
-    let pivot: CGPoint
-}
 
 /// One part, ready to draw: its working-size image and how it moves.
 struct KitLayer: Identifiable {
@@ -192,13 +16,11 @@ struct KitLayer: Identifiable {
     let image: CGImage
     let token: KitToken
     let tokenScale: Double
-    /// Its own joint first, then each parent's: the order nested groups would apply them.
-    let joints: [KitJoint]
+    /// The bone this part rides: its own, or the nearest one up its `ridesOn` chain. Nil: only the hip
+    /// moves it.
+    let bone: Bone?
     let lacing: Bool
     let barring: Bool
-
-    /// The bone this part rides: its own joint's, or the nearest joint above it. Nil: it rides no joint.
-    var bone: Bone? { joints.first(where: { $0.kind != nil })?.kind?.bone }
 }
 
 private let log = Logger(subsystem: "dev.featherwick.app", category: "PartKit")
@@ -211,8 +33,6 @@ final class PartKit: @unchecked Sendable {
     /// The comb size (`Look`'s comb scale) a kit's comb is painted at: an adult hen's. A grown hen shows the
     /// painted comb at full size; a pullet's grows in towards it, and a rooster's is larger.
     static let paintedCombSize: Double = 0.6
-    /// A part may ride on at most this many parts, counting itself (eye on head on neck on body).
-    static let maxDepth: Int = 4
 
     let build: BodyShape
     let spec: KitSpec
@@ -228,14 +48,14 @@ final class PartKit: @unchecked Sendable {
     let eyeBounds: CGRect?
     /// The comb part's painted bounds, in rig units: the comb grows from their bottom centre.
     let combBounds: CGRect?
-    /// The kit's skeleton: the shared bones at this kit's joint positions (`skeleton(of:)`).
+    /// The kit's skeleton: the shared bones at this kit's joint positions (`KitSpec.skeleton`).
     let rig: SkeletonRig
 
     private init(
         build: BodyShape, spec: KitSpec, folder: URL, layers: [KitLayer], lacing: CGImage?, barring: CGImage?,
         eyeBounds: CGRect?, combBounds: CGRect?
     ) {
-        self.rig = PartKit.skeleton(of: spec)
+        self.rig = spec.skeleton
         self.build = build
         self.spec = spec
         self.folder = folder
@@ -263,36 +83,6 @@ final class PartKit: @unchecked Sendable {
     var eyelidBone: Bone? {
         if let eye = layers.first(where: { $0.id == "eye" }) { return eye.bone }
         return rig.has(.head) ? .head : nil
-    }
-
-    /// The shared skeleton at this kit's joints. Each part that `rotates` puts its bone's joint at its pivot;
-    /// a bone with no part is missing, and parts on it ride the bone above. A one-piece leg is a stiff thigh
-    /// whose foot is straight below its hip. The kit's `motion` sets its angles; `legSwing` sets the step, so a
-    /// stiff leg swings that far either side.
-    static func skeleton(of spec: KitSpec) -> SkeletonRig {
-        var joints: [Bone: CGPoint] = [:]
-        for part in spec.parts.values {
-            guard let kind = part.rotates.flatMap(KitJoint.Kind.init(rawValue:)), let p = part.pivot, p.count == 2
-            else { continue }
-            joints[kind.bone] = CGPoint(x: p[0], y: p[1])
-        }
-        var feet: [Leg: CGPoint] = [:]
-        for leg in Leg.allCases {
-            if let hip = joints[leg.thigh] { feet[leg] = CGPoint(x: hip.x, y: 0) }
-        }
-        let hipHeight: Double = max(0.01, Double((joints[.body] ?? .zero).y))
-        var motion = SkeletonMotion.standard(hipHeight: hipHeight)
-        if let m = spec.motion {
-            if let v = m.peckBodyTilt { motion.peckBodyTilt = v }
-            if let v = m.peckNeckSwing { motion.peckNeckSwing = v }
-            if let v = m.peckHeadDip { motion.peckHeadDip = v }
-            if let v = m.peckCrouch { motion.peckCrouch = v }
-            let legHeight: Double = Leg.allCases.compactMap { joints[$0.thigh].map { Double($0.y) } }.max() ?? 0
-            if let swing = m.legSwing, legHeight > 0 {
-                motion.stepLength = 2 * legHeight * tan(swing * Double.pi / 180)
-            }
-        }
-        return SkeletonRig(joints: joints, feet: feet, motion: motion)
     }
 
     /// The full-size image of a part, read from disk when asked. Nothing asks yet: it is for the bird card
@@ -403,11 +193,11 @@ final class PartKit: @unchecked Sendable {
                 return nil
             }
             let token: KitToken =
-                part.token.flatMap(KitToken.init(rawValue:)) ?? KitToken.implied(for: name, rotates: part.rotates)
+                part.token.flatMap(KitToken.init(rawValue:)) ?? KitToken.implied(for: name, in: spec)
             layers.append(
                 KitLayer(
                     id: name, image: image, token: token, tokenScale: part.tokenScale ?? 1,
-                    joints: joints(of: name, in: spec), lacing: overlay("lacing", isOn: name, in: spec),
+                    bone: spec.carrierBone(of: name), lacing: overlay("lacing", isOn: name, in: spec),
                     barring: overlay("barring", isOn: name, in: spec)))
         }
         let lacing: CGImage? = spec.overlays?["lacing"] == nil ? nil : working("lacing.png")
@@ -429,14 +219,6 @@ final class PartKit: @unchecked Sendable {
         let bottomRight: CGPoint = spec.rigPoint(pixel: CGPoint(x: bounds.maxX / scale, y: bounds.maxY / scale))
         return CGRect(
             x: topLeft.x, y: bottomRight.y, width: bottomRight.x - topLeft.x, height: topLeft.y - bottomRight.y)
-    }
-
-    private static func joints(of name: String, in spec: KitSpec) -> [KitJoint] {
-        spec.chain(of: name).map { link in
-            let part: KitSpec.Part? = spec.parts[link]
-            let pivot: CGPoint = part?.pivot.map { CGPoint(x: $0[0], y: $0[1]) } ?? .zero
-            return KitJoint(kind: part?.rotates.flatMap(KitJoint.Kind.init(rawValue:)), pivot: pivot)
-        }
     }
 
     private static func overlay(_ name: String, isOn part: String, in spec: KitSpec) -> Bool {

@@ -4,8 +4,9 @@
 in `docs/design/README.md` for the format. The app reads each kit from its own folder (a folder reference).
 Every PNG has the same canvas. RGB is a greyscale value, alpha is coverage. In each kit folder:
 
-- `kit.json`: the canvas, the ground point, the bird height (`unit`), each part's pivot and joint, the draw
-  order, the overlays, the landmarks and the build's motion angles.
+- `kit.json`: the canvas, the ground point, the bird height (`unit`), each part's pivot and bone (or joint,
+  in format 1), the draw order, the overlays, the landmarks and the build's motion angles. In format 2 a
+  kit can cut a leg into thigh, shank and toes, and a neck into `neckLow` and `neckHigh`.
 - `body.png`: the body. It tilts at its pivot to peck. The tail, neck and head ride on it.
 - `tail.png`: the tail. It rides on the body.
 - `neck.png`: the neck (hackle). It rides on the body.

@@ -104,11 +104,11 @@ import Testing
         #expect(problems.contains("tail rides on a loop of parts"))
     }
 
-    /// Legs take the bird's leg token, from their joint, not its feathers. The eyelid covers the painted eye.
+    /// Legs take the bird's leg token, from their bone, not its feathers. The eyelid covers the painted eye.
     @MainActor @Test func legsTakeTheLegTokenAndTheEyeHasBounds() throws {
         PartKit.reload()
         let kit: PartKit = try #require(PartKit.load(build: .heavy))
-        for layer in kit.layers where layer.joints.first?.kind == .legBack || layer.joints.first?.kind == .legFront {
+        for layer in kit.layers where layer.bone?.leg != nil {
             #expect(layer.token == .legs, "\(layer.id)")
         }
         #expect(kit.layers.first(where: { $0.id == "tail" })?.token == .tail)
