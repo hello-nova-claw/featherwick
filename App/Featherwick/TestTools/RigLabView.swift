@@ -2,7 +2,8 @@ import FeatherwickCore
 import SwiftUI
 
 /// A test bench for the chicken rig: one large chicken, a slider per joint, and the three motions.
-/// For checking joints and poses now, and each painted part when the real art arrives.
+/// It shows the path rig or a painted kit (`PartKit`) on any feather colour and pattern, with the kit's
+/// joints as dots: the tool for checking each new painted part.
 struct RigLabView: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
@@ -12,7 +13,27 @@ struct RigLabView: View {
         case manual, idle, walking, pecking
     }
 
+    /// Which rig draws the bird. Painted falls back to the path rig when the kit does not load.
+    private enum Rig: Hashable {
+        case path, painted
+    }
+
+    /// The patterns a kit can paint, or none.
+    private enum LabPattern: Hashable {
+        case none, lacing, barring
+    }
+
+    /// The feather colours to check a part on, as the brief lists them.
+    private static let tones: [Tone] = [.black, .blue, .splash, .lavender, .buff, .whiteFeather]
+
     @State private var mode: Mode = .manual
+    @State private var rig: Rig = .painted
+    /// Nil keeps the bird's (or the sample's) own colours.
+    @State private var tone: Tone?
+    @State private var pattern: LabPattern = .none
+    @State private var showJoints = false
+    /// Bumped by "Reload kit", so the stage reads the kit again.
+    @State private var kitVersion = 0
     /// Bumped to restart an animation (another peck).
     @State private var run = 0
     @State private var facingRight = true
@@ -34,6 +55,7 @@ struct RigLabView: View {
     var body: some View {
         List {
             Section { stage }
+            Section("Rig") { rigControls }
             Section("Play") { playButtons }
             Section("Joints") { jointSliders }
             Section("Bird") { birdControls }
@@ -60,12 +82,32 @@ struct RigLabView: View {
         return ChickenColours(bird: bird, state: store.state)
     }
 
-    /// The chosen bird's colours, or a sample. The chick switch can force either build.
+    /// The chosen bird's colours, or a sample, with the lab's colour, pattern and rig on top. The chick
+    /// switch can force either build. Chicks always use the path rig.
     private var colours: ChickenColours {
         var c: ChickenColours = birdColours ?? (chick ? ChickenColours.sampleChick : ChickenColours.sample)
         c.isChick = chick
+        if let tone {
+            c.feathers = tone.artColour
+            c.hackle = tone.artColour
+            c.tail = tone.artColour
+        }
+        switch pattern {
+        case .none:
+            if tone != nil { c.pattern = nil }
+        case .lacing:
+            c.pattern = .lacing
+            c.patternColour = Tone.black.artColour
+        case .barring:
+            c.pattern = .barring
+            c.patternColour = Tone.white.artColour
+        }
+        c.build = rig == .painted ? .heavy : nil
         return c
     }
+
+    /// The painted kit the stage uses, or nil for the path rig.
+    private var kit: PartKit? { PartKit.kit(for: colours) }
 
     // MARK: - Stage
 
@@ -79,13 +121,20 @@ struct RigLabView: View {
         .frame(maxWidth: .infinity)
         .frame(height: rigHeight + Space.xxl)
         .padding(.vertical, Space.m)
+        .id(kitVersion)
     }
 
     @ViewBuilder
     private var chicken: some View {
         switch mode {
         case .manual:
-            ChickenRig(colours: colours, pose: pose, facingRight: facingRight, height: rigHeight)
+            if let kit {
+                PaintedChickenRig(
+                    kit: kit, colours: colours, pose: pose, facingRight: facingRight, height: rigHeight,
+                    showJoints: showJoints)
+            } else {
+                ChickenRig(colours: colours, pose: pose, facingRight: facingRight, height: rigHeight)
+            }
         case .idle:
             animated(.idle)
         case .walking:
@@ -120,10 +169,60 @@ struct RigLabView: View {
         .buttonStyle(.borderedProminent)
     }
 
+    private var rigControls: some View {
+        Group {
+            Picker("Rig", selection: $rig) {
+                Text("Path rig").tag(Rig.path)
+                Text("Painted (heavy)").tag(Rig.painted)
+            }
+            .pickerStyle(.segmented)
+            Picker("Feathers", selection: $tone) {
+                Text("Bird's own").tag(Tone?.none)
+                ForEach(Self.tones, id: \.self) { tone in
+                    Text(tone == .whiteFeather ? "white" : tone.rawValue).tag(Tone?.some(tone))
+                }
+            }
+            Picker("Pattern", selection: $pattern) {
+                Text("None").tag(LabPattern.none)
+                Text("Lacing").tag(LabPattern.lacing)
+                Text("Barring").tag(LabPattern.barring)
+            }
+            .pickerStyle(.segmented)
+            Toggle("Joints (pivots and landmarks, at rest)", isOn: $showJoints)
+            kitStatus
+            Button("Reload kit") {
+                PartKit.reload()
+                kitVersion += 1
+            }
+        }
+        .font(Typeface.body)
+    }
+
+    /// Where the kit came from, or why the path rig shows. Joints show in the manual pose only.
+    @ViewBuilder
+    private var kitStatus: some View {
+        if rig == .painted {
+            if let kit {
+                Text("Kit: \(kit.folder.path)")
+                    .font(Typeface.caption).foregroundStyle(palette.inkMuted)
+                    .lineLimit(2).truncationMode(.head)
+            } else {
+                Text("No kit loaded (a chick, or no Parts/heavy/kit.json): the path rig shows.")
+                    .font(Typeface.caption).foregroundStyle(palette.inkMuted)
+            }
+            Text(
+                "Reload reads the kit again. The app bundle changes only with a build. A Debug build on the "
+                    + "simulator reads App/Featherwick/Art/Parts on the Mac, so a new PNG shows at once."
+            )
+            .font(Typeface.caption).foregroundStyle(palette.inkMuted)
+        }
+    }
+
     private var jointSliders: some View {
         Group {
             JointSlider(title: "body (tilt at hip)", value: $bodyTilt, range: -40...40)
-            JointSlider(title: "neck (swing at shoulder)", value: $neckSwing, range: -60...80)
+            // A painted kit whose neck rides on the body dips the head at the throat with this instead.
+            JointSlider(title: "neck (swing at shoulder; head dip on heavy)", value: $neckSwing, range: -60...80)
             JointSlider(title: "head (turn)", value: $headTurn, range: -1...1, unit: "")
             JointSlider(title: "eyelid (blink)", value: $blink, range: 0...1, unit: "")
             JointSlider(title: "leg_back (swing at hip)", value: $legBack, range: -45...45)
