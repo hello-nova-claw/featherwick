@@ -380,8 +380,11 @@ struct BirdBlob: View {
 
     var body: some View {
         let colours = ChickenColours(bird: bird, state: store.state)
-        PettableBird(bird: bird, touch: CGSize(width: size, height: size), held: $held, open: open) {
-            if let kit = PartKit.kit(for: colours) {
+        let kit: PartKit? = PartKit.kit(for: colours)
+        // A painted bird is as wide as its rig's frame, so the touch area is too.
+        let width: CGFloat = kit == nil ? size : size * ChickenRigMetrics.widthRatio
+        PettableBird(bird: bird, touch: CGSize(width: width, height: size), held: $held, open: open) {
+            if let kit {
                 PaintedChickenRig(kit: kit, colours: colours, height: size)
             } else {
                 BirdSwatch(bird: bird, state: store.state, size: size)

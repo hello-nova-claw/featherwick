@@ -14,7 +14,8 @@ import SwiftUI
 // Each joint is a nested group with `.rotationEffect(_, anchor:)` at that joint's rest position. A child
 // turns about its own joint first, then its parent's rotation carries the whole group, as in a real
 // skeleton. Rotation and scale effects animate on their own, so a `withAnimation` blink or glance needs
-// no redraw loop. The real art replaces each `Path` with a painted part on the same joints.
+// no redraw loop. A painted kit (`PaintedChickenRig`) replaces the paths for its body shape, on the kit's
+// own joints: the heavy kit has no neck swing, so its head dips at the throat instead.
 //
 // The frame's bottom centre is the ground point, between the feet. The scene places chickens by it.
 

@@ -87,11 +87,29 @@ import Testing
             KitSpec.self, from: Data(contentsOf: folder.appendingPathComponent("kit.json")))
         let files = Set(try FileManager.default.contentsOfDirectory(atPath: folder.path))
         spec.overlays?["lacing"]?.on.append("wing")
+        spec.parts["tail"]?.ridesOn = "neck"
+        spec.parts["neck"]?.ridesOn = "tail"
         spec.parts["head"]?.pivot = [5, 5]
         let problems: [String] = spec.problems(files: files.subtracting(["beak.png"]))
         #expect(problems.contains("part beak has no beak.png"))
         #expect(problems.contains("pivot of head lies outside the canvas"))
         #expect(problems.contains("overlay lacing is on wing, which is not a part"))
+        #expect(problems.contains("tail rides on a loop of parts"))
+    }
+
+    /// Legs take the bird's leg token, from their joint, not its feathers. The eyelid covers the painted eye.
+    @MainActor @Test func legsTakeTheLegTokenAndTheEyeHasBounds() throws {
+        PartKit.reload()
+        let kit: PartKit = try #require(PartKit.load(build: .heavy))
+        for layer in kit.layers where layer.joints.first?.kind == .legBack || layer.joints.first?.kind == .legFront {
+            #expect(layer.token == .legs, "\(layer.id)")
+        }
+        #expect(kit.layers.first(where: { $0.id == "tail" })?.token == .tail)
+        #expect(kit.layers.first(where: { $0.id == "neck" })?.token == .hackle)
+        let eye: CGRect = try #require(kit.eyeBounds)
+        #expect(eye.width > 0 && eye.height > 0)
+        // The painted eye sits on the head, below the comb and above the throat.
+        #expect(eye.minY > 0.7 && eye.maxY < 1)
     }
 
     /// The canvas's ground point is the rig's ground point: the frame's bottom centre.

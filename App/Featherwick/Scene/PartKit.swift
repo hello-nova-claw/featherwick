@@ -99,7 +99,11 @@ struct KitSpec: Decodable, Sendable {
             found.append("\(name) has unknown token \(token)")
         }
         if let parent = part.ridesOn, parts[parent] == nil { found.append("\(name) rides on \(parent), not a part") }
-        let depth: Int = chain(of: name).count
+        let links: [String] = chain(of: name)
+        if let top = links.last, let above = parts[top]?.ridesOn, parts[above] != nil {
+            found.append("\(name) rides on a loop of parts")
+        }
+        let depth: Int = links.count
         if depth > PartKit.maxDepth { found.append("\(name) is \(depth) parts deep; at most \(PartKit.maxDepth)") }
         return found
     }
@@ -138,13 +142,16 @@ struct KitSpec: Decodable, Sendable {
 enum KitToken: String, Sendable {
     case feathers, hackle, tail, comb, beak, eye, legs
 
-    /// With no token in the kit: the tail takes the tail token, the neck and head the hackle, the rest the
-    /// body feathers. The same split as the path rig.
-    static func feather(for part: String) -> KitToken {
+    /// With no token in the kit: a part that swings as a leg takes the leg token (a bird's legs follow its
+    /// genes, not its feathers). Then the same split as the path rig: the tail takes the tail token, the
+    /// neck and head the hackle, the rest the body feathers. These three names are the only part names
+    /// the code knows, besides "eye" for the eyelid.
+    static func implied(for part: String, rotates: String?) -> KitToken {
+        if rotates == KitJoint.Kind.legBack.rawValue || rotates == KitJoint.Kind.legFront.rawValue { return .legs }
         switch part {
-        case "tail": .tail
-        case "neck", "head": .hackle
-        default: .feathers
+        case "tail": return .tail
+        case "neck", "head": return .hackle
+        default: return .feathers
         }
     }
 }
@@ -196,12 +203,12 @@ final class PartKit: @unchecked Sendable {
     /// strength as alpha, so a colour multiply gives the pattern colour where the bars are.
     let lacing: CGImage?
     let barring: CGImage?
-    /// The eye part's painted bounds, in rig units: the eyelid covers this much.
-    let eyeSize: CGSize?
+    /// The eye part's painted bounds, in rig units (origin at the bottom left): the eyelid covers this.
+    let eyeBounds: CGRect?
 
     private init(
         build: BodyShape, spec: KitSpec, folder: URL, layers: [KitLayer], lacing: CGImage?, barring: CGImage?,
-        eyeSize: CGSize?
+        eyeBounds: CGRect?
     ) {
         self.build = build
         self.spec = spec
@@ -209,7 +216,7 @@ final class PartKit: @unchecked Sendable {
         self.layers = layers
         self.lacing = lacing
         self.barring = barring
-        self.eyeSize = eyeSize
+        self.eyeBounds = eyeBounds
     }
 
     // MARK: - Geometry
@@ -231,8 +238,8 @@ final class PartKit: @unchecked Sendable {
         return layers.first(where: { $0.joints.first?.kind == .headDip })?.joints ?? []
     }
 
-    /// The full-size image of a part, read from disk when asked (for the bird card or a share card).
-    /// Not kept: eleven 2048 px images would hold about 180 MB.
+    /// The full-size image of a part, read from disk when asked. Nothing asks yet: it is for the bird card
+    /// art and the share card later. Not kept: eleven 2048 px images would hold about 180 MB.
     func fullSizeImage(of part: String) -> CGImage? {
         Self.image(at: folder.appendingPathComponent("\(part).png"), maxPixel: nil)
     }
@@ -261,6 +268,20 @@ final class PartKit: @unchecked Sendable {
     @MainActor static func kit(for colours: ChickenColours) -> PartKit? {
         guard !colours.isChick, let build = colours.build else { return nil }
         return load(build: build)
+    }
+
+    /// Reads every kit off the main thread, at launch, so the first painted bird does not stall a frame
+    /// (eleven 2048 px PNGs and two pixel passes). A bird drawn before this ends loads its kit itself.
+    @MainActor static func preload() async {
+        guard let root = partsRoot else { return }
+        for build in BodyShape.allCases where cache[build] == nil && !missing.contains(build) {
+            let folder: URL = root.appendingPathComponent(build.rawValue)
+            let kit: PartKit? = await Task.detached(priority: .utility) {
+                PartKit.load(build: build, from: folder)
+            }.value
+            guard cache[build] == nil, !missing.contains(build) else { continue }
+            if let kit { cache[build] = kit } else { missing.insert(build) }
+        }
     }
 
     /// Forgets every kit, so the next draw reads the folders again (the rig lab's "Reload kit").
@@ -303,6 +324,17 @@ final class PartKit: @unchecked Sendable {
             log.error("Kit \(build.rawValue, privacy: .public): \(problems.joined(separator: "; "), privacy: .public)")
             return nil
         }
+        // Every PNG must be the canvas size: a part of another size would be stretched onto the canvas.
+        let pngs: [String] =
+            spec.drawOrder.map { "\($0).png" } + (spec.overlays ?? [:]).keys.sorted().map { "\($0).png" }
+        let wrongSize: [String] = pngs.filter { name in
+            pixelSize(at: folder.appendingPathComponent(name)) != CGSize(width: spec.canvas[0], height: spec.canvas[1])
+        }
+        guard wrongSize.isEmpty else {
+            let names: String = wrongSize.joined(separator: ", ")
+            log.error("Kit \(build.rawValue, privacy: .public): not the canvas size: \(names, privacy: .public)")
+            return nil
+        }
         // The canvas's longer side, scaled so the bird is `workingHeight` pixels tall.
         let maxPixel = Int((max(spec.canvas[0], spec.canvas[1]) * workingHeight / spec.unit).rounded(.up))
         func working(_ name: String) -> CGImage? { image(at: folder.appendingPathComponent(name), maxPixel: maxPixel) }
@@ -313,7 +345,8 @@ final class PartKit: @unchecked Sendable {
                 log.error("Kit \(build.rawValue, privacy: .public): \(name).png does not read")
                 return nil
             }
-            let token: KitToken = part.token.flatMap(KitToken.init(rawValue:)) ?? KitToken.feather(for: name)
+            let token: KitToken =
+                part.token.flatMap(KitToken.init(rawValue:)) ?? KitToken.implied(for: name, rotates: part.rotates)
             layers.append(
                 KitLayer(
                     id: name, image: image, token: token, tokenScale: part.tokenScale ?? 1,
@@ -322,15 +355,20 @@ final class PartKit: @unchecked Sendable {
         }
         let lacing: CGImage? = spec.overlays?["lacing"] == nil ? nil : working("lacing.png")
         let barring: CGImage? = spec.overlays?["barring"] == nil ? nil : working("barring.png").flatMap(lightMap)
-        let eyeSize: CGSize? = layers.first(where: { $0.id == "eye" }).flatMap { eye in
+        let eyeBounds: CGRect? = layers.first(where: { $0.id == "eye" }).flatMap { eye in
             alphaBounds(eye.image).map { bounds in
-                let scale: Double = spec.unit * Double(eye.image.width) / max(spec.canvas[0], spec.canvas[1])
-                return CGSize(width: bounds.width / scale, height: bounds.height / scale)
+                // Working pixels to canvas pixels, then to rig units (y up).
+                let scale: Double = Double(eye.image.width) / spec.canvas[0]
+                let topLeft: CGPoint = spec.rigPoint(pixel: CGPoint(x: bounds.minX / scale, y: bounds.minY / scale))
+                let bottomRight: CGPoint = spec.rigPoint(
+                    pixel: CGPoint(x: bounds.maxX / scale, y: bounds.maxY / scale))
+                return CGRect(
+                    x: topLeft.x, y: bottomRight.y, width: bottomRight.x - topLeft.x, height: topLeft.y - bottomRight.y)
             }
         }
         return PartKit(
             build: build, spec: spec, folder: folder, layers: layers, lacing: lacing, barring: barring,
-            eyeSize: eyeSize)
+            eyeBounds: eyeBounds)
     }
 
     private static func joints(of name: String, in spec: KitSpec) -> [KitJoint] {
@@ -343,6 +381,16 @@ final class PartKit: @unchecked Sendable {
 
     private static func overlay(_ name: String, isOn part: String, in spec: KitSpec) -> Bool {
         spec.overlays?[name]?.on.contains(part) ?? false
+    }
+
+    /// A PNG's size in pixels, read from its header only.
+    static func pixelSize(at url: URL) -> CGSize? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+            let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+            let width = properties[kCGImagePropertyPixelWidth] as? Int,
+            let height = properties[kCGImagePropertyPixelHeight] as? Int
+        else { return nil }
+        return CGSize(width: width, height: height)
     }
 
     /// A PNG from disk. With `maxPixel`, downsampled so its longer side is at most that.
@@ -388,10 +436,12 @@ final class PartKit: @unchecked Sendable {
             p.bytes[i + 2] = strength
             p.bytes[i + 3] = strength
         }
+        let width: Int = p.width
+        let height: Int = p.height
         let made: CGImage? = p.bytes.withUnsafeMutableBytes { buffer -> CGImage? in
             CGContext(
-                data: buffer.baseAddress, width: p.width, height: p.height, bitsPerComponent: 8,
-                bytesPerRow: p.width * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                bytesPerRow: width * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?.makeImage()
         }
         return made

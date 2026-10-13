@@ -17,7 +17,8 @@ import SwiftUI
 // Rotation and scale effects animate on their own, so a still bird does not redraw, as with the path rig.
 
 /// Draws a coop bird with its painted kit when one exists for its body shape, and with the path rig when
-/// not. Call sites use this and never pick a rig themselves.
+/// not. The scene and the show podium draw through this. The Barn, the bird card and the rig lab pick
+/// themselves, because their fallback is not the path rig (a blob, a placeholder, the lab's own switch).
 struct ChickenView: View {
     let colours: ChickenColours
     var pose: ChickenPose = .rest
@@ -44,7 +45,6 @@ struct PaintedChickenRig: View {
     /// Dots on the kit's pivots (filled) and landmarks (rings), at rest: the rig lab's check for new parts.
     var showJoints: Bool = false
 
-    @Environment(\.self) private var environment
     @Environment(\.palette) private var palette
 
     private typealias M = ChickenRigMetrics
@@ -56,6 +56,7 @@ struct PaintedChickenRig: View {
         ZStack {
             ForEach(kit.layers) { layer in
                 part(layer, space)
+                    .scaleEffect(growth(layer), anchor: growthAnchor(layer))
                     .modifier(JointChain(moves: moves(layer.joints, space)))
                 if layer.id == eyelidAfter {
                     eyelid(space)
@@ -74,7 +75,8 @@ struct PaintedChickenRig: View {
     // MARK: - Parts
 
     /// One part, coloured by its token. A laced or barred bird gets its overlay too, on the listed parts
-    /// only, clipped to the part's own coverage.
+    /// only, clipped to the part's own coverage. Only the overlay is masked: masking the part by its own alpha
+    /// would square its soft edge, and patterned birds would get thinner edges than plain ones.
     @ViewBuilder
     private func part(_ layer: KitLayer, _ space: ChickenSpace) -> some View {
         let tint: Color = colour(for: layer)
@@ -83,17 +85,19 @@ struct PaintedChickenRig: View {
         if laced || barred {
             ZStack {
                 canvasImage(layer.image, space).colorMultiply(tint)
-                if laced, let map = kit.lacing {
-                    // RGB 255 changes nothing; darker darkens the feathers under it.
-                    canvasImage(map, space).blendMode(.multiply)
+                ZStack {
+                    if laced, let map = kit.lacing {
+                        // RGB 255 changes nothing; darker darkens the feathers under it.
+                        canvasImage(map, space).blendMode(.multiply)
+                    }
+                    if barred, let map = kit.barring {
+                        // White with the bar strength as alpha: the pattern colour where the bars are.
+                        canvasImage(map, space).colorMultiply(colours.patternColour)
+                    }
                 }
-                if barred, let map = kit.barring {
-                    // White with the bar strength as alpha, so this is the pattern colour where the bars are.
-                    canvasImage(map, space).colorMultiply(colours.patternColour)
-                }
+                .mask { canvasImage(layer.image, space) }
             }
             .compositingGroup()
-            .mask { canvasImage(layer.image, space) }
         } else {
             canvasImage(layer.image, space).colorMultiply(tint)
         }
@@ -124,12 +128,25 @@ struct PaintedChickenRig: View {
         case .legs: base = colours.legs
         }
         guard layer.tokenScale != 1 else { return base }
-        var lifted: Color.Resolved = base.resolve(in: environment)
+        // The tokens are fixed colours (`Tone.artColour`), so default environment values resolve them.
+        // Reading the view's whole environment would redraw every painted bird on any change.
+        var lifted: Color.Resolved = base.resolve(in: EnvironmentValues())
         let k: Float = Float(layer.tokenScale)
         lifted.red = min(1, lifted.red * k)
         lifted.green = min(1, lifted.green * k)
         lifted.blue = min(1, lifted.blue * k)
         return Color(lifted)
+    }
+
+    /// A comb grows in with age, and a hen's is smaller: the comb part scales by `combSize` about the
+    /// `combBase` landmark, as on the path rig. Other parts keep their size.
+    private func growth(_ layer: KitLayer) -> CGFloat {
+        layer.token == .comb ? CGFloat(max(0.01, colours.combSize)) : 1
+    }
+
+    private func growthAnchor(_ layer: KitLayer) -> UnitPoint {
+        guard layer.token == .comb, let base = kit.landmark("combBase") else { return .center }
+        return ChickenSpace.anchor(base)
     }
 
     // MARK: - Eyelid
@@ -140,16 +157,22 @@ struct PaintedChickenRig: View {
         return kit.layers.last(where: { layer in layer.joints.contains { $0.kind == .headDip } })?.id
     }
 
-    /// A comb-coloured patch with its top edge at the `eyelidTop` landmark, as wide and tall as the painted
-    /// eye. It grows down from that edge to blink, as on the path rig. No landmark: no eyelid.
+    /// A comb-coloured patch over the painted eye's own bounds. It grows down from its top edge to blink,
+    /// as on the path rig. The art is the truth: the `eyelidTop` landmark is used only when a kit has no eye
+    /// part (the heavy kit's landmark sits right of its painted eye). Neither: no eyelid.
+    private var eyelidBox: CGRect? {
+        if let bounds = kit.eyeBounds { return bounds }
+        guard let top = kit.landmark("eyelidTop") else { return nil }
+        let eye: CGPoint = kit.landmark("eye") ?? top
+        let reach: CGFloat = max(0.01, (top.y - eye.y) * 2)
+        return CGRect(x: top.x - reach / 2, y: top.y - reach, width: reach, height: reach)
+    }
+
     @ViewBuilder
     private func eyelid(_ space: ChickenSpace) -> some View {
-        if let top = kit.landmark("eyelidTop") {
-            let eye: CGPoint = kit.landmark("eye") ?? top
-            let reach: CGFloat = max(0.01, (top.y - eye.y) * 2)
-            let size: CGSize = kit.eyeSize ?? CGSize(width: reach, height: reach)
-            let box = CGRect(x: top.x - size.width / 2, y: top.y - size.height, width: size.width, height: size.height)
-            let corner: CGFloat = space.length(min(size.width, size.height) * 0.4)
+        if let box = eyelidBox {
+            let top = CGPoint(x: box.midX, y: box.maxY)
+            let corner: CGFloat = space.length(min(box.width, box.height) * 0.4)
             let shut: CGFloat = CGFloat(min(1, max(0.001, pose.blink)))
             Path(roundedRect: space.rect(box), cornerSize: CGSize(width: corner, height: corner))
                 .fill(colours.eyelid)

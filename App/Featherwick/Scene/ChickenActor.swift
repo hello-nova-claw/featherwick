@@ -7,7 +7,8 @@ enum ChickenActivity: Hashable, Sendable {
     case sitting
 }
 
-/// A chicken (painted or path rig, see `ChickenView`) that moves by itself. Walking cycles the legs. Pecking runs one peck, then stands.
+/// A chicken (painted or path rig, see `ChickenView`) that moves by itself. Walking cycles the legs.
+/// Pecking runs one peck, then stands.
 /// Idle, it blinks every few seconds and now and then looks somewhere new.
 ///
 /// Cheap when still. Idle blinks and glances come from a `.task` loop that sleeps between them and sets
