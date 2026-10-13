@@ -16,6 +16,10 @@ import Testing
         #expect(!builds.isEmpty)
         for build in builds {
             let folder: URL = root.appendingPathComponent(build)
+            // A folder with no kit.json is source art in progress (proto-hen): bundled, never loaded.
+            guard FileManager.default.fileExists(atPath: folder.appendingPathComponent("kit.json").path) else {
+                continue
+            }
             let spec: KitSpec = try JSONDecoder().decode(
                 KitSpec.self, from: Data(contentsOf: folder.appendingPathComponent("kit.json")))
             // The app loads only folders named for a body shape. Another folder (a kit in progress, such as
