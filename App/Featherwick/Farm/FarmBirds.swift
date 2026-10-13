@@ -369,7 +369,8 @@ private struct WanderingBird: View {
     }
 }
 
-/// One bird you can touch, drawn as a blob. See `PettableBird` for the touch.
+/// One bird you can touch on the Barn: painted, at rest, when its body shape has a kit, else a blob.
+/// See `PettableBird` for the touch.
 struct BirdBlob: View {
     @Environment(GameStore.self) private var store
     let bird: Bird
@@ -378,8 +379,13 @@ struct BirdBlob: View {
     let open: (UUID) -> Void
 
     var body: some View {
+        let colours = ChickenColours(bird: bird, state: store.state)
         PettableBird(bird: bird, touch: CGSize(width: size, height: size), held: $held, open: open) {
-            BirdSwatch(bird: bird, state: store.state, size: size)
+            if let kit = PartKit.kit(for: colours) {
+                PaintedChickenRig(kit: kit, colours: colours, height: size)
+            } else {
+                BirdSwatch(bird: bird, state: store.state, size: size)
+            }
         }
     }
 }

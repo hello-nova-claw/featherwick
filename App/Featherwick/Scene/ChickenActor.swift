@@ -7,7 +7,7 @@ enum ChickenActivity: Hashable, Sendable {
     case sitting
 }
 
-/// A `ChickenRig` that moves by itself. Walking cycles the legs. Pecking runs one peck, then stands.
+/// A chicken (painted or path rig, see `ChickenView`) that moves by itself. Walking cycles the legs. Pecking runs one peck, then stands.
 /// Idle, it blinks every few seconds and now and then looks somewhere new.
 ///
 /// Cheap when still. Idle blinks and glances come from a `.task` loop that sleeps between them and sets
@@ -39,7 +39,7 @@ struct AnimatedChicken: View {
 
     var body: some View {
         TimelineView(.animation(minimumInterval: nil, paused: !moving)) { context in
-            ChickenRig(colours: colours, pose: pose(at: context.date), facingRight: facingRight, height: height)
+            ChickenView(colours: colours, pose: pose(at: context.date), facingRight: facingRight, height: height)
         }
         .task(id: Cue(activity: activity, reduceMotion: reduceMotion)) { await live(activity) }
     }
