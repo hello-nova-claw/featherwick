@@ -1,0 +1,124 @@
+{
+  "build": "heavy",
+  "canvas": [
+    2048,
+    2048
+  ],
+  "groundPoint": [
+    1130,
+    1889
+  ],
+  "unit": 1673,
+  "note": "x right of the ground point, y up, in bird heights. Parts are greyscale value in RGB (multiply by the token colour), coverage in alpha.",
+  "parts": {
+    "leg_back": {
+      "pivot": [
+        -0.11,
+        0.18
+      ],
+      "rotates": "legBack",
+      "behind": "body"
+    },
+    "body": {
+      "pivot": [
+        -0.03,
+        0.18
+      ],
+      "rotates": "bodyTilt"
+    },
+    "tail": {
+      "ridesOn": "body"
+    },
+    "neck": {
+      "ridesOn": "body",
+      "tokenScale": 1.07
+    },
+    "head": {
+      "pivot": [
+        0.29,
+        0.79
+      ],
+      "rotates": "headDip",
+      "ridesOn": "body"
+    },
+    "comb": {
+      "ridesOn": "head",
+      "token": "comb"
+    },
+    "beak": {
+      "ridesOn": "head",
+      "token": "beak"
+    },
+    "eye": {
+      "ridesOn": "head",
+      "token": "eye"
+    },
+    "leg_front": {
+      "pivot": [
+        0.03,
+        0.18
+      ],
+      "rotates": "legFront",
+      "inFront": "body"
+    }
+  },
+  "drawOrder": [
+    "leg_back",
+    "body",
+    "tail",
+    "neck",
+    "head",
+    "comb",
+    "beak",
+    "eye",
+    "leg_front"
+  ],
+  "overlays": {
+    "lacing": {
+      "mode": "multiply",
+      "on": [
+        "body",
+        "tail",
+        "neck"
+      ]
+    },
+    "barring": {
+      "mode": "lighten",
+      "on": [
+        "body",
+        "tail",
+        "neck",
+        "head"
+      ]
+    }
+  },
+  "landmarks": {
+    "eye": [
+      0.365,
+      0.855
+    ],
+    "beakTip": [
+      0.44,
+      0.905
+    ],
+    "combBase": [
+      0.34,
+      0.92
+    ],
+    "tailRoot": [
+      -0.14,
+      0.7
+    ],
+    "eyelidTop": [
+      0.365,
+      0.87
+    ]
+  },
+  "motion": {
+    "peckBodyTilt": 22,
+    "peckHeadDip": 40,
+    "glanceHeadDip": 18,
+    "legSwing": 22,
+    "stride": 0.6
+  }
+}
