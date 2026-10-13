@@ -235,7 +235,7 @@ final class PartKit: @unchecked Sendable {
         build: BodyShape, spec: KitSpec, folder: URL, layers: [KitLayer], lacing: CGImage?, barring: CGImage?,
         eyeBounds: CGRect?, combBounds: CGRect?
     ) {
-        self.rig = Self.skeleton(of: spec)
+        self.rig = PartKit.skeleton(of: spec)
         self.build = build
         self.spec = spec
         self.folder = folder

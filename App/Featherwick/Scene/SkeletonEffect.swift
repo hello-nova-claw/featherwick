@@ -15,12 +15,13 @@ struct BoneEffect: GeometryEffect {
     var pose: ChickenPose
     let height: CGFloat
 
-    var animatableData: PoseVector {
+    // Nonisolated: `Animatable` asks for it so, and it reads only Sendable values (Swift 6, SE-0434).
+    nonisolated var animatableData: PoseVector {
         get { PoseVector(pose.vector) }
         set { pose = ChickenPose(vector: newValue.values) }
     }
 
-    func effectValue(size: CGSize) -> ProjectionTransform {
+    nonisolated func effectValue(size: CGSize) -> ProjectionTransform {
         let t: Affine = Skeleton.transform(of: bone, rig: rig, pose: pose, height: Double(height))
         return ProjectionTransform(
             CGAffineTransform(
