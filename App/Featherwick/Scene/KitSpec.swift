@@ -10,15 +10,12 @@ import Foundation
 /// heights) for pivots and landmarks, pixels for the canvas and the ground point.
 struct KitSpec: Decodable, Sendable {
     struct Part: Decodable, Sendable {
-        /// The joint this part turns about, in rig units. Needed when the part `rotates`. With `bone`, it
-        /// is that bone's joint; a part on a bone whose joint another part gives needs no pivot.
+        /// Its bone's joint, in rig units: one part on each bone gives it. Other parts on that bone (the comb
+        /// and beak on the head) need none.
         var pivot: [Double]?
-        /// The skeleton bone it rides, by its name in `Bone` ("shankFront"). Format 2: it replaces `rotates`.
+        /// The skeleton bone it rides, by its name in `Bone` ("shankFront"). With no bone, only the hip
+        /// moves it.
         var bone: String?
-        /// Format 1: which pose angle turns it, one of `KitJoint.Kind`. `bone` wins when both are set.
-        var rotates: String?
-        /// The part it moves with. A part with no parent moves with the whole bird.
-        var ridesOn: String?
         /// Notes for people. The draw order is `drawOrder`.
         var behind: String?
         var inFront: String?
@@ -48,7 +45,7 @@ struct KitSpec: Decodable, Sendable {
     struct Motion: Decodable, Sendable {
         var peckBodyTilt: Double?
         var peckHeadDip: Double?
-        /// A kit whose neck swings at the shoulder (`neckSwing`): the neck's angle at the bottom of a peck.
+        /// A kit with a `neckLow` bone: the neck's angle at the bottom of a peck.
         var peckNeckSwing: Double?
         /// How far the hip drops at the bottom of a peck, in bird heights. Missing: the standard crouch.
         var peckCrouch: Double?
@@ -69,8 +66,6 @@ struct KitSpec: Decodable, Sendable {
     var landmarks: [String: [Double]]?
     var motion: Motion?
 
-    /// A part may ride on at most this many parts, counting itself (eye on head on neck on body).
-    static let maxDepth: Int = 4
     /// A loose part sways at most twice the spring: more would whip.
     static let maxFollow: Double = 2
 
@@ -91,6 +86,8 @@ struct KitSpec: Decodable, Sendable {
         for (name, part) in parts.sorted(by: { $0.key < $1.key }) {
             found += partProblems(name, part)
         }
+        // Every bird tilts at the hip. A kit with no body joint has no skeleton: an old kit, or a broken one.
+        if skeleton.joints[.body] == nil { found.append("no part sets the joint of body") }
         // Each joint is set once: two pivots for one bone would tear the art.
         var setters: [Bone: [String]] = [:]
         for name in drawOrder {
@@ -119,11 +116,8 @@ struct KitSpec: Decodable, Sendable {
     private func partProblems(_ name: String, _ part: Part) -> [String] {
         var found: [String] = []
         if let pivot = part.pivot, let problem = pointProblem(pivot) { found.append("pivot of \(name) \(problem)") }
-        if let rotates = part.rotates {
-            if KitJoint.Kind(rawValue: rotates) == nil { found.append("\(name) rotates with unknown \(rotates)") }
-            if part.pivot == nil && part.bone == nil { found.append("\(name) rotates but has no pivot") }
-        }
         if let bone = part.bone, Bone(kitName: bone) == nil { found.append("\(name) rides unknown bone \(bone)") }
+        if part.pivot != nil && part.bone == nil { found.append("\(name) has a pivot but no bone") }
         if let follow = part.follow {
             if !(0...Self.maxFollow).contains(follow.amount) {
                 found.append("follow of \(name) is not 0 to \(Int(Self.maxFollow))")
@@ -131,18 +125,11 @@ struct KitSpec: Decodable, Sendable {
             if let root = follow.root, let problem = pointProblem(root) {
                 found.append("follow root of \(name) \(problem)")
             }
-            if carrierBone(of: name) == nil { found.append("\(name) follows but rides no bone") }
+            if bone(of: name) == nil { found.append("\(name) follows but rides no bone") }
         }
         if let token = part.token, KitToken(rawValue: token) == nil {
             found.append("\(name) has unknown token \(token)")
         }
-        if let parent = part.ridesOn, parts[parent] == nil { found.append("\(name) rides on \(parent), not a part") }
-        let links: [String] = chain(of: name)
-        if let top = links.last, let above = parts[top]?.ridesOn, parts[above] != nil {
-            found.append("\(name) rides on a loop of parts")
-        }
-        let depth: Int = links.count
-        if depth > Self.maxDepth { found.append("\(name) is \(depth) parts deep; at most \(Self.maxDepth)") }
         return found
     }
 
@@ -154,27 +141,9 @@ struct KitSpec: Decodable, Sendable {
         return inside ? nil : "lies outside the canvas"
     }
 
-    /// A part, then the part it rides on, and so on up. Stops at a loop or a missing parent.
-    func chain(of name: String) -> [String] {
-        var out: [String] = []
-        var next: String? = name
-        while let current = next, parts[current] != nil, !out.contains(current) {
-            out.append(current)
-            next = parts[current]?.ridesOn
-        }
-        return out
-    }
-
-    /// The bone a part rides itself: its `bone`, else the bone of what it `rotates`. Nil: it rides its parent.
+    /// The bone a part rides. Nil: it names none (or an unknown one), so only the hip moves it.
     func bone(of name: String) -> Bone? {
-        guard let part = parts[name] else { return nil }
-        if let named = part.bone.flatMap(Bone.init(kitName:)) { return named }
-        return part.rotates.flatMap(KitJoint.Kind.init(rawValue:))?.bone
-    }
-
-    /// The bone a part moves with: its own, or the nearest one up its `ridesOn` chain.
-    func carrierBone(of name: String) -> Bone? {
-        chain(of: name).lazy.compactMap { bone(of: $0) }.first
+        parts[name]?.bone.flatMap(Bone.init(kitName:))
     }
 
     /// The shared skeleton at this kit's joints. Each part with a pivot and a bone puts that bone's joint at
@@ -233,44 +202,19 @@ enum KitToken: String, Sendable {
     case feathers, hackle, tail, comb, beak, eye, legs
 
     /// With no token in the kit: the bare leg takes the leg token (a bird's legs follow its genes, not its
-    /// feathers). That is a part on a shank or toes, or a one-piece leg (`legBack`, `legFront`). A thigh
-    /// is the feathered drumstick, so it does not. Then the same split as the path rig: the tail takes the
-    /// tail token, the neck and head the hackle, the rest the body feathers. These three names are the only
-    /// part names the code knows, besides "eye" for the eyelid and "comb" for where it grows from.
+    /// feathers). That is a part on a shank or toes, or on the thigh of a one-piece leg (a kit with no shank
+    /// on that side). A thigh with a shank below it is the feathered drumstick, so it does not. Then the
+    /// same split as the path rig: the tail takes the tail token, the neck and head the hackle, the rest the
+    /// body feathers. These three names are the only part names the code knows, besides "eye" for the
+    /// eyelid and "comb" for where it grows from.
     static func implied(for part: String, in spec: KitSpec) -> KitToken {
-        let bone: Bone? = spec.carrierBone(of: part)
-        let bare: Bool = bone.map { $0.leg != nil && $0 != $0.leg?.thigh } ?? false
-        let oneLeg: Bool = spec.chain(of: part).contains { link in
-            let kind = spec.parts[link]?.rotates.flatMap(KitJoint.Kind.init(rawValue:))
-            return spec.parts[link]?.bone == nil && (kind == .legBack || kind == .legFront)
+        if let bone = spec.bone(of: part), let leg = bone.leg {
+            if bone != leg.thigh || spec.skeleton.joints[leg.shank] == nil { return .legs }
         }
-        if bare || oneLeg { return .legs }
         switch part {
         case "tail": return .tail
         case "neck", "head": return .hackle
         default: return .feathers
-        }
-    }
-}
-
-/// Format 1 joints: the `rotates` names. Format 2 names the bone itself (`Part.bone`).
-enum KitJoint {
-    enum Kind: String, Sendable {
-        case legBack, legFront, bodyTilt
-        /// The head turns down at the throat. A kit whose neck rides on the body pecks with this.
-        case headDip
-        /// The neck swings at the shoulder, as on the path rig.
-        case neckSwing
-
-        /// The skeleton bone this joint is. A one-piece leg is the thigh: it swings at the hip and cannot bend.
-        var bone: Bone {
-            switch self {
-            case .legBack: .thighBack
-            case .legFront: .thighFront
-            case .bodyTilt: .body
-            case .headDip: .head
-            case .neckSwing: .neckLow
-            }
         }
     }
 }

@@ -70,7 +70,8 @@ components, screens 1a–9a). The painted farm and bird art come later; dashed b
   pure maths, tested on Linux too). The placeholder chicken (`ChickenRig`) and each painted kit ride its
   bones through `BoneEffect`; test tools have a rig lab. A body shape with a painted kit
   (`Art/Parts/<build>/kit.json` + PNGs, read by `Scene/PartKit.swift`; `kit.json` and its skeleton are
-  `Scene/KitSpec.swift`, pure) is drawn by `PaintedChickenRig`.
+  `Scene/KitSpec.swift`, pure) is drawn by `PaintedChickenRig`. No kit ships now; source art that is not a
+  kit lives in `art-source/` (outside the bundle).
   `ChickenView` picks the rig. Kit format: "Painted parts" in `docs/design/README.md`.
   A tap on yard ground makes a ripple. The birds react by friendliness band (`Scene/RippleReaction.swift`). It is view only: no command, no save. Scene presentation numbers go in `Scene/SceneConstants.swift`, not `Rules`. App unit tests are in `App/FeatherwickTests/` (Swift Testing, the `FeatherwickTests` target).
   `Feedback/`: `Haptics` and `Sound` (bundled `Sounds/*.caf`, silent if missing), with on/off switches in Settings. `GameStore.run` plays event feedback through `GameFeedback`.

@@ -2,17 +2,19 @@ import FeatherwickCore
 import SwiftUI
 
 /// The frame budget stage: many chickens walking at yard size, for Instruments (Animation Hitches).
-/// The README's target is 10 painted birds walking on a yard panel at 60 fps on an iPhone 12.
+/// The README's target is 10 birds walking on a yard panel at 60 fps on an iPhone 12. Birds draw on the
+/// skeleton with the path rig, or with a body shape's painted kit when one exists.
 ///
 /// View only: the birds are samples, not the flock, so nothing is saved and no command runs. Every bird
 /// walks all the time, the worst case, at the yard's size and speed. They walk the way the scene's birds do
 /// (a linear position animation, then a turn), so the cost is the scene's cost. A mix of plain, laced and
-/// barred birds includes the extra offscreen pass the overlays take.
+/// barred birds includes the extra offscreen pass a painted kit's overlays take.
 struct RigStressView: View {
     @Environment(\.palette) private var palette
 
     @State private var count: Int = 10
-    @State private var painted = true
+    /// The body shape whose painted kit the birds use. Nil, or a shape with no kit: the path rig.
+    @State private var build: BodyShape?
     /// Bumped to put every bird back at its start.
     @State private var run = 0
 
@@ -31,28 +33,29 @@ struct RigStressView: View {
             .id(run)
             .background(palette.paper)
         }
-        .navigationTitle("\(count) \(painted ? "painted" : "path") birds")
+        .navigationTitle("\(count) walking birds")
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var controls: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
             Stepper("Birds: \(count)", value: $count, in: 1...30)
-            Picker("Rig", selection: $painted) {
-                Text("Painted (heavy)").tag(true)
-                Text("Path rig").tag(false)
+            Picker("Painted kit", selection: $build) {
+                Text("None (path rig)").tag(BodyShape?.none)
+                ForEach(BodyShape.allCases, id: \.self) { shape in
+                    Text(shape.rawValue).tag(BodyShape?.some(shape))
+                }
             }
-            .pickerStyle(.segmented)
             Text(
                 "To measure: Xcode ▸ Product ▸ Profile on the phone, the Animation Hitches template. Record "
-                    + "20 s here with no touches. Painted falls back to the path rig when the kit does not load."
+                    + "20 s here with no touches. A body shape with no kit falls back to the path rig."
             )
             .font(Typeface.caption).foregroundStyle(palette.inkMuted)
         }
         .font(Typeface.body)
         .padding(.horizontal, Space.m)
         .onChange(of: count) { run += 1 }
-        .onChange(of: painted) { run += 1 }
+        .onChange(of: build) { run += 1 }
     }
 
     /// Feather tones and patterns in turn: every third bird laced, every fourth barred.
@@ -71,7 +74,7 @@ struct RigStressView: View {
             c.pattern = .barring
             c.patternColour = Tone.white.artColour
         }
-        c.build = painted ? .heavy : nil
+        c.build = build
         return c
     }
 }

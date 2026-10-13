@@ -188,7 +188,7 @@ struct PaintedChickenRig: View {
 
     /// A comb-coloured patch over the painted eye's own bounds. It grows down from its top edge to blink,
     /// as on the path rig. The art is the truth: the `eyelidTop` landmark is used only when a kit has no eye
-    /// part (the heavy kit's landmark sits right of its painted eye). Neither: no eyelid.
+    /// part. Neither: no eyelid.
     private var eyelidBox: CGRect? {
         if let bounds = kit.eyeBounds { return bounds }
         guard let top = kit.landmark("eyelidTop") else { return nil }

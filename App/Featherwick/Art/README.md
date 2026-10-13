@@ -1,21 +1,16 @@
 # Farm art
 
-`Parts/` holds the painted parts kits, one folder for each body shape (now only `heavy/`). See "Painted parts"
-in `docs/design/README.md` for the format. The app reads each kit from its own folder (a folder reference).
-Every PNG has the same canvas. RGB is a greyscale value, alpha is coverage. In each kit folder:
+`Parts/` holds the painted parts kits, one folder for each body shape. It is empty now: the path rig draws
+every bird on the skeleton. See "Painted parts" in `docs/design/README.md` for the kit format. The app reads
+each kit from its own folder (a folder reference), so everything in `Parts/` ships in the app. Keep source
+art (sketches, guides, parts that are not a kit yet) in `art-source/` at the top of the repo.
 
-- `kit.json`: the canvas, the ground point, the bird height (`unit`), each part's pivot and bone (or joint,
-  in format 1), the draw order, the overlays, the landmarks and the build's motion angles. In format 2 a
-  kit can cut a leg into thigh, shank and toes, and a neck into `neckLow` and `neckHigh`. A part with
-  `follow` is loose: it sways after its bone (the tail, the wattle, fluff).
-- `body.png`: the body. It tilts at its pivot to peck. The tail, neck and head ride on it.
-- `tail.png`: the tail. It rides on the body.
-- `neck.png`: the neck (hackle). It rides on the body.
-- `head.png`: the head. It dips at its pivot (the throat) to peck. The comb, beak and eye ride on it.
-- `comb.png`, `beak.png`, `eye.png`: in the comb, beak and eye tokens. They ride on the head.
-- `leg_back.png`, `leg_front.png`: the legs. Each swings at its hip, behind and in front of the body.
-- `lacing.png`: a multiply map for laced birds (255 changes nothing, darker makes darker).
-- `barring.png`: a lighten map for barred birds (255 is a full light bar in the pattern colour).
+A kit folder holds `kit.json` and one PNG per part, all on the same canvas. RGB is a greyscale value,
+alpha is coverage. `kit.json` gives the canvas, the ground point, the bird height (`unit`), each part's bone
+and pivot, the draw order, the overlays, the landmarks and the build's motion angles. Each part rides one
+bone (`body`, `tail`, `neckLow`, `neckHigh`, `head`, and `thigh`, `shank` and `toes` for each leg). A part
+with `follow` is loose: it sways after its bone (the tail, the wattle, fluff). `lacing.png` is a multiply
+map for laced birds; `barring.png` is a lighten map for barred birds.
 
 `Scene/` holds the placeholder 2.5D scene art for the Yard and the Far yard: a landscape (value +
 material) and a walk mask per panel. Do not edit them by hand: they come from

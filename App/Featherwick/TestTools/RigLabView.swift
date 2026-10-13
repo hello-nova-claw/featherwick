@@ -13,11 +13,6 @@ struct RigLabView: View {
         case manual, idle, walking, pecking
     }
 
-    /// Which rig draws the bird. Painted falls back to the path rig when the kit does not load.
-    private enum Rig: Hashable {
-        case path, painted
-    }
-
     /// The patterns a kit can paint, or none.
     private enum LabPattern: Hashable {
         case none, lacing, barring
@@ -27,7 +22,8 @@ struct RigLabView: View {
     private static let tones: [Tone] = [.black, .blue, .splash, .lavender, .buff, .whiteFeather]
 
     @State private var mode: Mode = .manual
-    @State private var rig: Rig = .painted
+    /// The body shape whose painted kit the stage uses. Nil, or a shape with no kit: the path rig.
+    @State private var build: BodyShape?
     /// Nil keeps the bird's (or the sample's) own colours.
     @State private var tone: Tone?
     @State private var pattern: LabPattern = .none
@@ -108,7 +104,7 @@ struct RigLabView: View {
             c.pattern = .barring
             c.patternColour = Tone.white.artColour
         }
-        c.build = rig == .painted ? .heavy : nil
+        c.build = build
         return c
     }
 
@@ -177,11 +173,12 @@ struct RigLabView: View {
 
     private var rigControls: some View {
         Group {
-            Picker("Rig", selection: $rig) {
-                Text("Path rig").tag(Rig.path)
-                Text("Painted (heavy)").tag(Rig.painted)
+            Picker("Painted kit", selection: $build) {
+                Text("None (path rig)").tag(BodyShape?.none)
+                ForEach(BodyShape.allCases, id: \.self) { shape in
+                    Text(shape.rawValue).tag(BodyShape?.some(shape))
+                }
             }
-            .pickerStyle(.segmented)
             Picker("Feathers", selection: $tone) {
                 Text("Bird's own").tag(Tone?.none)
                 ForEach(Self.tones, id: \.self) { tone in
@@ -207,13 +204,13 @@ struct RigLabView: View {
     /// Where the kit came from, or why the path rig shows. Joints show in the manual pose only.
     @ViewBuilder
     private var kitStatus: some View {
-        if rig == .painted {
+        if let build {
             if let kit {
                 Text("Kit: \(kit.folder.path)")
                     .font(Typeface.caption).foregroundStyle(palette.inkMuted)
                     .lineLimit(2).truncationMode(.head)
             } else {
-                Text("No kit loaded (a chick, or no Parts/heavy/kit.json): the path rig shows.")
+                Text("No kit loaded (a chick, or no Parts/\(build.rawValue)/kit.json): the path rig shows.")
                     .font(Typeface.caption).foregroundStyle(palette.inkMuted)
             }
             Text(
