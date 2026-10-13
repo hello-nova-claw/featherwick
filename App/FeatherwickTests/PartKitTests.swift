@@ -18,8 +18,11 @@ import Testing
             let folder: URL = root.appendingPathComponent(build)
             let spec: KitSpec = try JSONDecoder().decode(
                 KitSpec.self, from: Data(contentsOf: folder.appendingPathComponent("kit.json")))
-            #expect(spec.build == build, "kit.json in \(build) says it is \(spec.build)")
-            #expect(BodyShape(rawValue: build) != nil, "\(build) is not a body shape")
+            // The app loads only folders named for a body shape. Another folder (a kit in progress, such as
+            // proto-hen) is bundled but never loaded; it must still be whole.
+            if BodyShape(rawValue: build) != nil {
+                #expect(spec.build == build, "kit.json in \(build) says it is \(spec.build)")
+            }
             let files = Set(try FileManager.default.contentsOfDirectory(atPath: folder.path))
             #expect(spec.problems(files: files) == [], "\(build)")
             for name in spec.drawOrder { #expect(files.contains("\(name).png"), "\(build): \(name).png") }
