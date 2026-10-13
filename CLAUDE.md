@@ -65,8 +65,14 @@ components, screens 1a–9a). The painted farm and bird art come later; dashed b
   run it after changing the script and commit its output. See "Farm scene (2.5D)" in `docs/design/README.md`.
 - `Farm/FarmBirds.swift`: where each bird is drawn, blobs (`BirdSwatch`) on the Barn, and `PettableBird`
   (tap opens the bird card; press and rub sends `.pet`). In the yards the coop birds are rigged chickens
-  inside the scene (`Scene/SceneChicken.swift`: `YardScene`, `SceneChicken`). The placeholder chicken is a
-  rig (`ChickenRig`, `ChickenPose`, `ChickenActor`); test tools have a rig lab.
+  inside the scene (`Scene/SceneChicken.swift`: `YardScene`, `SceneChicken`). Every chicken moves on one
+  skeleton (`Scene/ChickenSkeleton.swift`: bones, inverse-kinematics legs, the walk, peck and sit motions, fluff follow;
+  pure maths, tested on Linux too). The placeholder chicken (`ChickenRig`) and each painted kit ride its
+  bones through `BoneEffect`; test tools have a rig lab. A body shape with a painted kit
+  (`Art/Parts/<build>/kit.json` + PNGs, read by `Scene/PartKit.swift`; `kit.json` and its skeleton are
+  `Scene/KitSpec.swift`, pure) is drawn by `PaintedChickenRig`. No kit ships now; source art that is not a
+  kit lives in `art-source/` (outside the bundle).
+  `ChickenView` picks the rig. Kit format: "Painted parts" in `docs/design/README.md`.
   A tap on yard ground makes a ripple. The birds react by friendliness band (`Scene/RippleReaction.swift`). It is view only: no command, no save. Scene presentation numbers go in `Scene/SceneConstants.swift`, not `Rules`. App unit tests are in `App/FeatherwickTests/` (Swift Testing, the `FeatherwickTests` target).
   `Feedback/`: `Haptics` and `Sound` (bundled `Sounds/*.caf`, silent if missing), with on/off switches in Settings. `GameStore.run` plays event feedback through `GameFeedback`.
 - Market board (`Sheets/MarketBoardSheet.swift`): opened from the farm gate sheet. Wanted cards, the keeper's own card, the buyer.

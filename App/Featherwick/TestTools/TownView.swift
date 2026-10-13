@@ -112,6 +112,7 @@ struct DebugView: View {
                 }
                 Section("Art") {
                     NavigationLink("Rig lab") { RigLabView() }
+                    NavigationLink("10 walking birds (frame budget)") { RigStressView() }
                 }
                 Section("Save file") {
                     Text(store.saveLocation).font(.caption2).textSelection(.enabled)

@@ -173,7 +173,7 @@ struct PodiumArt: View {
     private var art: some View {
         switch entrant {
         case .rivalBird(_, let bird):
-            ChickenRig(colours: rivalColours(bird), height: height)
+            ChickenView(colours: rivalColours(bird), height: height)
         case .rivalPlate(_, let colour, let speckled):
             EggMark(colour: colour, speckled: speckled, size: CGSize(width: 22, height: 28))
         case .keeper(_, let birdID):
@@ -190,7 +190,7 @@ struct PodiumArt: View {
     @ViewBuilder
     private func keeperArt(_ id: UUID?) -> some View {
         if let id, let bird = store.state.bird(id) {
-            ChickenRig(colours: ChickenColours(bird: bird, state: store.state), height: height)
+            ChickenView(colours: ChickenColours(bird: bird, state: store.state), height: height)
         } else if case .eggs(let colour) = showClass {
             EggMark(colour: colour, size: CGSize(width: 22, height: 28))
         } else {

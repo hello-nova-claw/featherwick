@@ -13,6 +13,8 @@ struct FeatherwickApp: App {
         WindowGroup {
             RootView()
                 .environment(store)
+                // Painted part kits load off the main thread, before the first painted bird shows.
+                .task { await PartKit.preload() }
         }
     }
 }

@@ -21,7 +21,7 @@ struct BirdCardSheet: View {
         let s = store.state
         if let bird = s.bird(birdID), !s.rehomed.contains(where: { $0.id == birdID }) {
             SheetPage(context: context) {
-                ArtPlaceholder(label: "bird art · \(bird.name)")
+                art(bird, s)
                     .frame(width: 200, height: 180)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Space.l)
@@ -69,6 +69,20 @@ struct BirdCardSheet: View {
             SheetPage(context: context) {
                 Text("This bird has a new home.").font(Typeface.epithet).padding(.vertical, Space.xxl)
             }
+        }
+    }
+
+    /// The bird at rest in its painted kit, feet at the bottom of the art area, or a placeholder while its
+    /// body shape has no kit (chicks always, for now).
+    @ViewBuilder
+    private func art(_ bird: Bird, _ s: GameState) -> some View {
+        let colours = ChickenColours(bird: bird, state: s)
+        if let kit = PartKit.kit(for: colours) {
+            // As tall as the 200 × 180 area allows at the rig's width ratio.
+            PaintedChickenRig(kit: kit, colours: colours, height: min(180, 200 / ChickenRigMetrics.widthRatio))
+                .frame(width: 200, height: 180, alignment: .bottom)
+        } else {
+            ArtPlaceholder(label: "bird art · \(bird.name)")
         }
     }
 

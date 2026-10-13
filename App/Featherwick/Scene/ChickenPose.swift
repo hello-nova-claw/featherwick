@@ -1,23 +1,31 @@
-import SwiftUI
+import Foundation
 
-// The chicken rig's pose and its numbers. Pure values and functions: no views, no clock, no state.
-// The rig is a fixed skeleton. The real art replaces each part's shape and keeps these joints.
+// The chicken skeleton's builds, numbers and pose. Pure values and functions: no views, no clock, no state,
+// and no SwiftUI, so the skeleton maths builds and is tested on Linux too (see `ChickenSkeleton.swift`).
 //
-// Angles follow SwiftUI's `rotationEffect` on a bird that faces right: a positive angle turns
-// clockwise on screen. So a positive body tilt or neck swing moves the head forward and down,
-// and a positive leg angle swings the foot back.
+// Angles are in degrees and follow SwiftUI's `rotationEffect` on a bird that faces right: a positive angle
+// turns clockwise on screen. So a positive body tilt or neck swing moves the head forward and down, a
+// positive thigh angle swings the leg back, and a positive hock angle swings the foot back and up.
 
-/// Where one joint of the rig is, and how far every part reaches.
+/// Where each joint of the path rig is, and how far every part reaches.
 /// Rig units: x is right of the ground point, y is up from the ground, both in rig heights.
 /// The ground point is between the feet, at the bottom centre of the rig's frame.
 struct ChickenBuild: Equatable, Sendable {
     /// Chicks have no comb, wattle or tail, and a round body.
     let isChick: Bool
 
-    // Legs: each swings at its own hip. The leg runs from the hip down to the ground.
+    // Legs. Each leg is a thigh (the feathered drumstick) from the hip down to the hock, a bare shank from
+    // the hock down to the foot, and toes along the ground from the foot. The hock bends backwards.
     let backHip: CGPoint
     let frontHip: CGPoint
+    let backHock: CGPoint
+    let frontHock: CGPoint
+    /// Where the shank meets the toes, just above the ground.
+    let backFoot: CGPoint
+    let frontFoot: CGPoint
     let legWidth: CGFloat
+    /// The drumstick's width and height, around the middle of the thigh.
+    let thighSize: CGSize
     /// Toe length in front of the foot, and the short back toe.
     let toe: CGFloat
     let backToe: CGFloat
@@ -30,13 +38,17 @@ struct ChickenBuild: Equatable, Sendable {
     let wingSize: CGSize
     /// A four-point fan, base to tip. Empty for chicks.
     let tail: [CGPoint]
+    /// The tail flicks about this point.
+    let tailRoot: CGPoint
 
-    // Neck: swings about `shoulder`. Rides on the body.
+    // Neck: the lower neck swings about `shoulder`, the upper neck about `neckMid`. Rides on the body.
     let shoulder: CGPoint
+    let neckMid: CGPoint
     /// Four points: base back, base front, top front, top back.
     let neck: [CGPoint]
 
-    // Head: rides on the neck. It turns about `headCentre`.
+    // Head: dips about `throat`, on the upper neck. It turns (looks) about `headCentre`.
+    let throat: CGPoint
     let headCentre: CGPoint
     let headRadius: CGFloat
     /// Three points: top of the base, bottom of the base, tip.
@@ -70,7 +82,11 @@ enum ChickenRigMetrics {
     static let adult = ChickenBuild(
         isChick: false,
         backHip: CGPoint(x: -0.04, y: 0.40), frontHip: CGPoint(x: 0.04, y: 0.40),
-        legWidth: 0.035, toe: 0.10, backToe: 0.04,
+        // Bent at rest, as a chicken stands: room for the hip to bounce and the feet to step without
+        // straightening the leg.
+        backHock: CGPoint(x: -0.12, y: 0.23), frontHock: CGPoint(x: -0.04, y: 0.23),
+        backFoot: CGPoint(x: -0.04, y: 0.03), frontFoot: CGPoint(x: 0.04, y: 0.03),
+        legWidth: 0.035, thighSize: CGSize(width: 0.10, height: 0.17), toe: 0.10, backToe: 0.04,
         hip: CGPoint(x: 0, y: 0.40),
         bodyCentre: CGPoint(x: -0.05, y: 0.54), bodySize: CGSize(width: 0.60, height: 0.38),
         wingCentre: CGPoint(x: -0.08, y: 0.54), wingSize: CGSize(width: 0.34, height: 0.20),
@@ -78,10 +94,12 @@ enum ChickenRigMetrics {
             CGPoint(x: -0.22, y: 0.70), CGPoint(x: -0.40, y: 0.90), CGPoint(x: -0.47, y: 0.80),
             CGPoint(x: -0.32, y: 0.52),
         ],
-        shoulder: CGPoint(x: 0.16, y: 0.64),
+        tailRoot: CGPoint(x: -0.24, y: 0.62),
+        shoulder: CGPoint(x: 0.16, y: 0.64), neckMid: CGPoint(x: 0.22, y: 0.74),
         neck: [
             CGPoint(x: 0.06, y: 0.60), CGPoint(x: 0.24, y: 0.62), CGPoint(x: 0.30, y: 0.84), CGPoint(x: 0.17, y: 0.88),
         ],
+        throat: CGPoint(x: 0.25, y: 0.80),
         headCentre: CGPoint(x: 0.24, y: 0.86), headRadius: 0.085,
         beak: [CGPoint(x: 0.31, y: 0.885), CGPoint(x: 0.31, y: 0.845), CGPoint(x: 0.385, y: 0.862)],
         eyeCentre: CGPoint(x: 0.26, y: 0.875), eyeRadius: 0.017,
@@ -94,15 +112,18 @@ enum ChickenRigMetrics {
     static let chick = ChickenBuild(
         isChick: true,
         backHip: CGPoint(x: -0.05, y: 0.14), frontHip: CGPoint(x: 0.05, y: 0.14),
-        legWidth: 0.03, toe: 0.06, backToe: 0.025,
+        backHock: CGPoint(x: -0.09, y: 0.08), frontHock: CGPoint(x: 0.01, y: 0.08),
+        backFoot: CGPoint(x: -0.05, y: 0.02), frontFoot: CGPoint(x: 0.05, y: 0.02),
+        legWidth: 0.03, thighSize: CGSize(width: 0.08, height: 0.08), toe: 0.06, backToe: 0.025,
         hip: CGPoint(x: 0, y: 0.14),
         bodyCentre: CGPoint(x: -0.02, y: 0.40), bodySize: CGSize(width: 0.60, height: 0.56),
         wingCentre: CGPoint(x: -0.06, y: 0.40), wingSize: CGSize(width: 0.30, height: 0.20),
-        tail: [],
-        shoulder: CGPoint(x: 0.10, y: 0.56),
+        tail: [], tailRoot: CGPoint(x: -0.28, y: 0.40),
+        shoulder: CGPoint(x: 0.10, y: 0.56), neckMid: CGPoint(x: 0.14, y: 0.62),
         neck: [
             CGPoint(x: 0.02, y: 0.55), CGPoint(x: 0.20, y: 0.52), CGPoint(x: 0.26, y: 0.70), CGPoint(x: 0.08, y: 0.74),
         ],
+        throat: CGPoint(x: 0.20, y: 0.60),
         headCentre: CGPoint(x: 0.18, y: 0.72), headRadius: 0.17,
         beak: [CGPoint(x: 0.335, y: 0.745), CGPoint(x: 0.335, y: 0.705), CGPoint(x: 0.40, y: 0.725)],
         eyeCentre: CGPoint(x: 0.24, y: 0.76), eyeRadius: 0.028,
@@ -111,21 +132,38 @@ enum ChickenRigMetrics {
         tufts: [CGPoint(x: 0.12, y: 0.88), CGPoint(x: 0.17, y: 0.90), CGPoint(x: 0.22, y: 0.885)],
         tuftRadius: 0.03)
 
-    // Walking. One stride is one step of each leg.
+    // Walking. One stride is one step of each leg. The feet are placed (inverse kinematics), not swung.
     /// Seconds per stride.
     static let stride: Double = 0.6
-    /// Degrees each leg swings either side of straight down.
-    static let legSwing: Double = 22
-    /// Degrees of body rock and head bob, once per step.
+    /// The part of a leg's cycle its foot is on the ground. The rest it lifts and swings forward.
+    static let stance: Double = 0.6
+    /// How far a planted foot slides back under the body in one stance, in rig heights, for a grown bird.
+    /// Matched to the scene's walking speed (about 0.4 heights a second), so the feet do not skate.
+    static let stepLength: Double = 0.16
+    /// How high a foot lifts at the top of its swing, as a part of the hip's height: a high, deliberate step.
+    static let liftShare: Double = 0.32
+    /// Degrees the toes curl under while the foot is in the air.
+    static let toeCurl: Double = 50
+    /// The body rises this much (rig heights) over each planted foot, and rocks this many degrees.
+    static let bounce: Double = 0.012
     static let bodyBob: Double = 2
-    static let neckBob: Double = 6
+    /// The head bob: it holds still while the body walks on, then thrusts forward. How far it moves (rig
+    /// heights), and the part of each step spent holding. The lower neck swings it; the head turns back by
+    /// the same angle, so it stays level and never leaves its neck.
+    static let headBob: Double = 0.06
+    static let headHold: Double = 0.7
+    /// Degrees the tail flicks on each step.
+    static let tailFlick: Double = 4
 
     // Pecking.
     /// Seconds for one peck, down and back up.
     static let peckDuration: Double = 0.6
-    /// Degrees at the bottom of a peck. With both, an adult's beak reaches the ground.
-    static let peckBodyTilt: Double = 25
-    static let peckNeckSwing: Double = 55
+    /// Degrees at the bottom of a peck, and how far the hip crouches (rig heights; the legs bend, the feet
+    /// stay). With all four, an adult's beak reaches the ground: a tall bird has to crouch to peck.
+    static let peckBodyTilt: Double = 42
+    static let peckNeckSwing: Double = 88
+    static let peckHeadDip: Double = 10
+    static let peckCrouch: Double = 0.12
     /// Parts of the peck: going down, then holding at the bottom. The rest comes back up.
     static let peckDown: Double = 0.4
     static let peckHold: Double = 0.15
@@ -136,6 +174,22 @@ enum ChickenRigMetrics {
     static let sitDrop: Double = 0.85
     /// Seconds to sit down, or to get up.
     static let sitDuration: Double = 0.3
+
+    // Fluff follow. A loose part (a tail, a wattle, thigh fluff) is a damped spring on its bone: it lags
+    // behind each turn, swings a little past, and settles. See `FluffFollow`.
+    /// The spring's swing, in swings a second, and its damping (0 swings for ever, 1 does not swing past).
+    static let followHz: Double = 3
+    static let followDamping: Double = 0.4
+    /// The spring looks back this far, in samples this far apart (seconds). Past it the swing is gone.
+    static let followWindow: Double = 0.5
+    static let followStep: Double = 1.0 / 30
+    /// A part never lags more than this many degrees behind its bone, however fast the bone turns.
+    static let followMax: Double = 20
+    /// How loose each path rig part is: 1 is the full spring, 0 is stiff.
+    static let tailFollow: Double = 1
+    static let wattleFollow: Double = 1
+    static let thighFollow: Double = 0.25
+    static let wingFollow: Double = 0.35
 
     // Looking. The face (beak, eye, comb) narrows as the head turns to the viewer.
     /// Face width when the bird looks straight at the viewer.
@@ -153,78 +207,30 @@ enum ChickenRigMetrics {
     static let blinkDuration: Double = 0.16
 }
 
-/// The rig's joints at one moment. Every animation is a sequence of these.
+/// The skeleton at one moment: an angle for every bone, and a few moves that are not turns. Every motion is a
+/// sequence of these. A pose is worked out for one rig (`ChickenMotion`): leg angles depend on leg lengths.
 struct ChickenPose: Equatable, Sendable {
-    /// Body tilt at the hip. Positive tips the bird forward to peck.
-    var bodyTilt: Angle = .zero
-    /// Neck swing at the shoulder. Positive swings the head forward and down.
-    var neckSwing: Angle = .zero
+    /// Degrees for each bone, in `Bone.allCases` order. Each bone turns about its own joint, relative to its
+    /// parent: a shank angle bends the hock, on top of the thigh's angle.
+    var angles: [Double] = Array(repeating: 0, count: Bone.allCases.count)
+    /// The hip lifts by this much (rig heights, up). It carries the body, and the legs when they bend.
+    var rise: Double = 0
     /// -1 looks back, 0 is side profile, 1 looks at the viewer.
     var headTurn: Double = 0
     /// 0 is open, 1 is shut: how far the eyelid has grown down over the eye.
     var blink: Double = 0
-    /// Leg swings at the hip. Positive swings the foot back.
-    var legBack: Angle = .zero
-    var legFront: Angle = .zero
-    /// 0 stands, 1 sits: the body drops by `sitDrop` of the hip height and the legs fold under it.
+    /// 0 stands, 1 sits. A one-piece (stiff) leg cannot bend, so it squashes to the ground instead.
     var sit: Double = 0
+    /// Degrees each bone's loose parts lag behind it (`FluffFollow`), in `Bone.allCases` order. A part turns
+    /// by this times its own `Follow.amount`. All 0 when the bird is still.
+    var sway: [Double] = Array(repeating: 0, count: Bone.allCases.count)
 
     /// Standing still, looking ahead, eyes open.
     static let rest = ChickenPose()
 
-    /// Sitting on the ground, looking ahead.
-    static let sitting = ChickenPose(sit: 1)
-
-    private typealias M = ChickenRigMetrics
-
-    /// Walking. `phase` counts strides: each whole number is the start of a stride.
-    /// The legs swing opposite each other; the body rocks and the head bobs once per step.
-    static func walk(phase: Double) -> ChickenPose {
-        let turn: Double = 2 * Double.pi * phase.truncatingRemainder(dividingBy: 1)
-        let swing: Double = sin(turn) * M.legSwing
-        let step: Double = sin(2 * turn)
-        var pose = ChickenPose()
-        pose.legBack = .degrees(swing)
-        pose.legFront = .degrees(-swing)
-        pose.bodyTilt = .degrees(step * M.bodyBob)
-        pose.neckSwing = .degrees(step * M.neckBob)
-        return pose
-    }
-
-    /// One peck. `progress` runs from 0 (standing) to 1 (back up). The body tips at the hip and the neck
-    /// swings down, then both come back.
-    static func peck(progress: Double) -> ChickenPose {
-        let p: Double = min(1, max(0, progress))
-        let up: Double = M.peckDown + M.peckHold
-        let depth: Double
-        if p < M.peckDown {
-            depth = ease(p / M.peckDown)
-        } else if p < up {
-            depth = 1
-        } else {
-            depth = 1 - ease((p - up) / (1 - up))
-        }
-        var pose = ChickenPose()
-        pose.bodyTilt = .degrees(depth * M.peckBodyTilt)
-        pose.neckSwing = .degrees(depth * M.peckNeckSwing)
-        return pose
-    }
-
-    /// Standing, with the head turned. -1 looks back, 0 is side profile, 1 looks at the viewer.
-    static func look(turn: Double) -> ChickenPose {
-        var pose = ChickenPose()
-        pose.headTurn = min(1, max(-1, turn))
-        return pose
-    }
-
-    /// The pose part way from `a` (t = 0) to `b` (t = 1), joint by joint.
-    static func mix(_ a: ChickenPose, _ b: ChickenPose, t: Double) -> ChickenPose {
-        func angle(_ x: Angle, _ y: Angle) -> Angle { .degrees(x.degrees + (y.degrees - x.degrees) * t) }
-        func number(_ x: Double, _ y: Double) -> Double { x + (y - x) * t }
-        return ChickenPose(
-            bodyTilt: angle(a.bodyTilt, b.bodyTilt), neckSwing: angle(a.neckSwing, b.neckSwing),
-            headTurn: number(a.headTurn, b.headTurn), blink: number(a.blink, b.blink),
-            legBack: angle(a.legBack, b.legBack), legFront: angle(a.legFront, b.legFront), sit: number(a.sit, b.sit))
+    subscript(bone: Bone) -> Double {
+        get { angles[bone.rawValue] }
+        set { angles[bone.rawValue] = newValue }
     }
 
     /// How wide the face is drawn for `headTurn`: 1 in profile, narrower towards the viewer, and
@@ -232,9 +238,28 @@ struct ChickenPose: Equatable, Sendable {
     var faceScale: Double {
         let t: Double = min(1, max(-1, headTurn))
         if t < 0 { return cos(t * Double.pi) }
-        return 1 - (1 - M.frontFaceScale) * t
+        return 1 - (1 - ChickenRigMetrics.frontFaceScale) * t
     }
 
-    /// Smooth start and stop.
-    private static func ease(_ x: Double) -> Double { x * x * (3 - 2 * x) }
+    /// The pose part way from `a` (t = 0) to `b` (t = 1), value by value.
+    static func mix(_ a: ChickenPose, _ b: ChickenPose, t: Double) -> ChickenPose {
+        ChickenPose(vector: zip(a.vector, b.vector).map { x, y in x + (y - x) * t })
+    }
+
+    /// Every value in one list, for animation: SwiftUI interpolates the list (see `PoseVector`).
+    var vector: [Double] { angles + [rise, headTurn, blink, sit] + sway }
+
+    init() {}
+
+    /// The inverse of `vector`. Missing values (a shorter list, such as an animation's zero) are 0.
+    init(vector: [Double]) {
+        func value(_ i: Int) -> Double { i < vector.count ? vector[i] : 0 }
+        let n: Int = Bone.allCases.count
+        angles = (0..<n).map(value)
+        rise = value(n)
+        headTurn = value(n + 1)
+        blink = value(n + 2)
+        sit = value(n + 3)
+        sway = (0..<n).map { value(n + 4 + $0) }
+    }
 }
