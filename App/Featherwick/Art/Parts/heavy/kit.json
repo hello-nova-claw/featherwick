@@ -13,16 +13,16 @@
   "parts": {
     "leg_back": {
       "pivot": [
-        -0.11,
-        0.18
+        -0.136,
+        0.113
       ],
       "rotates": "legBack",
       "behind": "body"
     },
     "body": {
       "pivot": [
-        -0.03,
-        0.18
+        -0.052,
+        0.113
       ],
       "rotates": "bodyTilt"
     },
@@ -55,8 +55,8 @@
     },
     "leg_front": {
       "pivot": [
-        0.03,
-        0.18
+        0.032,
+        0.113
       ],
       "rotates": "legFront",
       "inFront": "body"
@@ -78,7 +78,6 @@
       "mode": "multiply",
       "on": [
         "body",
-        "tail",
         "neck"
       ]
     },
@@ -89,20 +88,21 @@
         "tail",
         "neck",
         "head"
-      ]
+      ],
+      "note": "stripes at 165, not 255"
     }
   },
   "landmarks": {
     "eye": [
-      0.365,
+      0.329,
       0.855
     ],
     "beakTip": [
-      0.44,
+      0.404,
       0.905
     ],
     "combBase": [
-      0.34,
+      0.304,
       0.92
     ],
     "tailRoot": [
@@ -110,7 +110,7 @@
       0.7
     ],
     "eyelidTop": [
-      0.365,
+      0.329,
       0.87
     ]
   },
