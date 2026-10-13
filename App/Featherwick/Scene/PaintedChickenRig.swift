@@ -1,7 +1,8 @@
 import FeatherwickCore
 import SwiftUI
 
-// A chicken drawn from a painted parts kit (`PartKit`), on the kit's own joints.
+// A chicken drawn from a painted parts kit (`PartKit`), on the shared skeleton (`ChickenSkeleton.swift`)
+// with the kit's own joint positions.
 //
 // The frame is the path rig's: `height × widthRatio` wide, with the ground point at the bottom centre. Every
 // part image covers the kit's whole canvas, placed so the canvas's ground point lands on the frame's. So
@@ -11,10 +12,9 @@ import SwiftUI
 // (value times token, coverage kept as alpha), and it runs on the GPU with no per-bird image work. The exact
 // route, a `Canvas` with a multiply blend, would redraw every part on the CPU each frame of a walk.
 //
-// Joints: drawing nested groups would need recursion, which SwiftUI only allows through `AnyView`. So each
-// part is drawn once, in `drawOrder`, with its own joint and then each parent's joint applied in turn
-// (`KitLayer.joints`). That is the same transform nested groups give, and the draw order stays the kit's.
-// Rotation and scale effects animate on their own, so a still bird does not redraw, as with the path rig.
+// Bones: each part rides one bone (`KitLayer.bone`), and `BoneEffect` places it by that bone and every bone
+// above it: the transform nested groups would give, with no recursion, so the draw order stays the kit's.
+// The effect animates on its own, so a still bird does not redraw, as with the path rig.
 
 /// Draws a coop bird with its painted kit when one exists for its body shape, and with the path rig when
 /// not. The scene and the show podium draw through this. The Barn, the bird card and the rig lab pick
@@ -24,6 +24,11 @@ struct ChickenView: View {
     var pose: ChickenPose = .rest
     var facingRight: Bool = true
     var height: CGFloat
+
+    /// The skeleton this bird is drawn on: its kit's, or the path rig's. Poses are worked out for it.
+    static func rig(for colours: ChickenColours) -> SkeletonRig {
+        PartKit.kit(for: colours)?.rig ?? ChickenRig.rig(isChick: colours.isChick)
+    }
 
     var body: some View {
         if let kit = PartKit.kit(for: colours) {
@@ -57,10 +62,12 @@ struct PaintedChickenRig: View {
             ForEach(kit.layers) { layer in
                 part(layer, space)
                     .scaleEffect(growth(layer), anchor: growthAnchor(layer))
-                    .modifier(JointChain(moves: moves(layer.joints, space)))
+                    .scaleEffect(x: face(layer), y: 1, anchor: headAnchor)
+                    .riding(layer.bone, rig: kit.rig, pose: pose, height: height)
                 if layer.id == eyelidAfter {
                     eyelid(space)
-                        .modifier(JointChain(moves: moves(kit.eyelidJoints, space)))
+                        .scaleEffect(x: faceScale, y: 1, anchor: headAnchor)
+                        .riding(kit.eyelidBone, rig: kit.rig, pose: pose, height: height)
                 }
             }
             if showJoints {
@@ -154,12 +161,29 @@ struct PaintedChickenRig: View {
         return kit.landmark("combBase").map(ChickenSpace.anchor) ?? .center
     }
 
+    // MARK: - Head
+
+    /// Looking narrows the face, about the head's joint: every part that rides the head, scaled at rest
+    /// before the bones move it. No new art: the same parts, narrower.
+    private func face(_ layer: KitLayer) -> CGFloat {
+        guard let bone = layer.bone, kit.rig.chain(of: bone).contains(.head) else { return 1 }
+        return faceScale
+    }
+
+    /// Never exactly 0: a flat scale has no inverse.
+    private var faceScale: CGFloat {
+        let turn: Double = pose.faceScale
+        return CGFloat(abs(turn) < 0.01 ? (turn < 0 ? -0.01 : 0.01) : turn)
+    }
+
+    private var headAnchor: UnitPoint { kit.rig.joints[.head].map(ChickenSpace.anchor) ?? .center }
+
     // MARK: - Eyelid
 
-    /// The eyelid goes over the eye: right after the eye part, or after the last part that dips with the head.
+    /// The eyelid goes over the eye: right after the eye part, or after the last part on the head.
     private var eyelidLayer: String? {
         if kit.layers.contains(where: { $0.id == "eye" }) { return "eye" }
-        return kit.layers.last(where: { layer in layer.joints.contains { $0.kind == .headDip } })?.id
+        return kit.layers.last(where: { $0.bone == .head })?.id
     }
 
     /// A comb-coloured patch over the painted eye's own bounds. It grows down from its top edge to blink,
@@ -189,48 +213,6 @@ struct PaintedChickenRig: View {
 
     // MARK: - Joints
 
-    /// How each joint in a part's chain moves for the pose: own joint first, then its parents'.
-    private func moves(_ joints: [KitJoint], _ space: ChickenSpace) -> [JointMove] {
-        joints.map { move(for: $0, space) }
-    }
-
-    /// This build's angle for a path-rig angle: the kit's own motion, scaled from the path rig's, so the
-    /// existing peck and walk timing gives this build's angles. Missing in the kit: the path rig's angle.
-    private func scaled(_ angle: Angle, kit value: Double?, rig: Double) -> Angle {
-        guard let value, rig != 0 else { return angle }
-        return .degrees(angle.degrees * value / rig)
-    }
-
-    private func move(for joint: KitJoint, _ space: ChickenSpace) -> JointMove {
-        let motion: KitSpec.Motion? = kit.spec.motion
-        let anchor: UnitPoint = ChickenSpace.anchor(joint.pivot)
-        // Sitting: the body drops by `sitDrop` of the hip's height and the legs fold under it, as on the path rig.
-        let drop: Double = min(1, max(0, pose.sit)) * M.sitDrop
-        var move = JointMove(anchor: anchor)
-        switch joint.kind {
-        case .bodyTilt?:
-            move.rotation = scaled(pose.bodyTilt, kit: motion?.peckBodyTilt, rig: M.peckBodyTilt)
-            move.drop = space.length(CGFloat(drop) * joint.pivot.y)
-        case .headDip?:
-            // The neck rides on the body, so the path rig's neck swing dips the head at the throat instead.
-            move.rotation = scaled(pose.neckSwing, kit: motion?.peckHeadDip, rig: M.peckNeckSwing)
-            // Looking narrows the face about the head's pivot. No new art: the same parts, scaled.
-            let turn: Double = pose.faceScale
-            move.face = CGFloat(abs(turn) < 0.01 ? (turn < 0 ? -0.01 : 0.01) : turn)
-        case .neckSwing?:
-            move.rotation = scaled(pose.neckSwing, kit: motion?.peckNeckSwing, rig: M.peckNeckSwing)
-        case .legBack?, .legFront?:
-            let swing: Angle = joint.kind == .legBack ? pose.legBack : pose.legFront
-            move.rotation = scaled(swing, kit: motion?.legSwing, rig: M.legSwing)
-            // Never exactly 0: a flat scale has no inverse.
-            move.fold = CGFloat(max(0.01, 1 - drop))
-            move.foldAnchor = ChickenSpace.anchor(CGPoint(x: joint.pivot.x, y: 0))
-        case nil:
-            break
-        }
-        return move
-    }
-
     /// The kit's pivots (filled dots) and landmarks (rings) at rest, and the ground point.
     private func joints(_ space: ChickenSpace) -> some View {
         let pivots: [CGPoint] = kit.spec.parts.values.compactMap { part in
@@ -252,47 +234,5 @@ struct PaintedChickenRig: View {
         }
         .frame(width: space.length(M.widthRatio), height: space.length(1))
         .allowsHitTesting(false)
-    }
-}
-
-/// One joint's move: the face narrows (head only), the part turns about the pivot, the leg folds down to the
-/// ground (sitting), and the body drops (sitting). In that order, the path rig's.
-struct JointMove: Equatable {
-    var rotation: Angle = .zero
-    var anchor: UnitPoint = .center
-    var face: CGFloat = 1
-    var fold: CGFloat = 1
-    var foldAnchor: UnitPoint = .bottom
-    /// Points down.
-    var drop: CGFloat = 0
-
-    static let still = JointMove()
-}
-
-/// Applies a part's joint moves, own joint first: what nested groups would do. Always `PartKit.maxDepth`
-/// slots, so every part has the same view type; empty slots stay still.
-private struct JointChain: ViewModifier {
-    let moves: [JointMove]
-
-    func body(content: Content) -> some View {
-        content
-            .modifier(JointEffect(move: slot(0)))
-            .modifier(JointEffect(move: slot(1)))
-            .modifier(JointEffect(move: slot(2)))
-            .modifier(JointEffect(move: slot(3)))
-    }
-
-    private func slot(_ i: Int) -> JointMove { i < moves.count ? moves[i] : .still }
-}
-
-private struct JointEffect: ViewModifier {
-    let move: JointMove
-
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(x: move.face, y: 1, anchor: move.anchor)
-            .rotationEffect(move.rotation, anchor: move.anchor)
-            .scaleEffect(x: 1, y: move.fold, anchor: move.foldAnchor)
-            .offset(y: move.drop)
     }
 }

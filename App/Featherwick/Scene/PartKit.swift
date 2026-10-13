@@ -43,6 +43,8 @@ struct KitSpec: Decodable, Sendable {
         var peckHeadDip: Double?
         /// A kit whose neck swings at the shoulder (`neckSwing`): the neck's angle at the bottom of a peck.
         var peckNeckSwing: Double?
+        /// How far the hip drops at the bottom of a peck, in bird heights. Missing: the standard crouch.
+        var peckCrouch: Double?
         var glanceHeadDip: Double?
         var legSwing: Double?
         var stride: Double?
@@ -166,6 +168,17 @@ struct KitJoint: Sendable {
         case headDip
         /// The neck swings at the shoulder, as on the path rig.
         case neckSwing
+
+        /// The skeleton bone this joint is. A one-piece leg is the thigh: it swings at the hip and cannot bend.
+        var bone: Bone {
+            switch self {
+            case .legBack: .thighBack
+            case .legFront: .thighFront
+            case .bodyTilt: .body
+            case .headDip: .head
+            case .neckSwing: .neckLow
+            }
+        }
     }
 
     let kind: Kind?
@@ -183,6 +196,9 @@ struct KitLayer: Identifiable {
     let joints: [KitJoint]
     let lacing: Bool
     let barring: Bool
+
+    /// The bone this part rides: its own joint's, or the nearest joint above it. Nil: it rides no joint.
+    var bone: Bone? { joints.first(where: { $0.kind != nil })?.kind?.bone }
 }
 
 private let log = Logger(subsystem: "dev.featherwick.app", category: "PartKit")
@@ -212,11 +228,14 @@ final class PartKit: @unchecked Sendable {
     let eyeBounds: CGRect?
     /// The comb part's painted bounds, in rig units: the comb grows from their bottom centre.
     let combBounds: CGRect?
+    /// The kit's skeleton: the shared bones at this kit's joint positions (`skeleton(of:)`).
+    let rig: SkeletonRig
 
     private init(
         build: BodyShape, spec: KitSpec, folder: URL, layers: [KitLayer], lacing: CGImage?, barring: CGImage?,
         eyeBounds: CGRect?, combBounds: CGRect?
     ) {
+        self.rig = Self.skeleton(of: spec)
         self.build = build
         self.spec = spec
         self.folder = folder
@@ -240,10 +259,40 @@ final class PartKit: @unchecked Sendable {
         return CGPoint(x: p[0], y: p[1])
     }
 
-    /// The joints the eyelid moves with: the eye's, or the head's when there is no eye part.
-    var eyelidJoints: [KitJoint] {
-        if let eye = layers.first(where: { $0.id == "eye" }) { return eye.joints }
-        return layers.first(where: { $0.joints.first?.kind == .headDip })?.joints ?? []
+    /// The bone the eyelid rides: the eye's, or the head's when there is no eye part.
+    var eyelidBone: Bone? {
+        if let eye = layers.first(where: { $0.id == "eye" }) { return eye.bone }
+        return rig.has(.head) ? .head : nil
+    }
+
+    /// The shared skeleton at this kit's joints. Each part that `rotates` puts its bone's joint at its pivot;
+    /// a bone with no part is missing, and parts on it ride the bone above. A one-piece leg is a stiff thigh
+    /// whose foot is straight below its hip. The kit's `motion` sets its angles; `legSwing` sets the step, so a
+    /// stiff leg swings that far either side.
+    static func skeleton(of spec: KitSpec) -> SkeletonRig {
+        var joints: [Bone: CGPoint] = [:]
+        for part in spec.parts.values {
+            guard let kind = part.rotates.flatMap(KitJoint.Kind.init(rawValue:)), let p = part.pivot, p.count == 2
+            else { continue }
+            joints[kind.bone] = CGPoint(x: p[0], y: p[1])
+        }
+        var feet: [Leg: CGPoint] = [:]
+        for leg in Leg.allCases {
+            if let hip = joints[leg.thigh] { feet[leg] = CGPoint(x: hip.x, y: 0) }
+        }
+        let hipHeight: Double = max(0.01, Double((joints[.body] ?? .zero).y))
+        var motion = SkeletonMotion.standard(hipHeight: hipHeight)
+        if let m = spec.motion {
+            if let v = m.peckBodyTilt { motion.peckBodyTilt = v }
+            if let v = m.peckNeckSwing { motion.peckNeckSwing = v }
+            if let v = m.peckHeadDip { motion.peckHeadDip = v }
+            if let v = m.peckCrouch { motion.peckCrouch = v }
+            let legHeight: Double = Leg.allCases.compactMap { joints[$0.thigh].map { Double($0.y) } }.max() ?? 0
+            if let swing = m.legSwing, legHeight > 0 {
+                motion.stepLength = 2 * legHeight * tan(swing * Double.pi / 180)
+            }
+        }
+        return SkeletonRig(joints: joints, feet: feet, motion: motion)
     }
 
     /// The full-size image of a part, read from disk when asked. Nothing asks yet: it is for the bird card

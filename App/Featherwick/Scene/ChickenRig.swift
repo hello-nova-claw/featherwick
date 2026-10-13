@@ -1,21 +1,18 @@
 import FeatherwickCore
 import SwiftUI
 
-// A placeholder chicken drawn with simple shapes, on a fixed skeleton:
+// A placeholder chicken drawn with simple shapes, on the shared skeleton (`ChickenSkeleton.swift`):
 //
-//   leg_back   swings at its hip            (drawn behind the body)
-//   body       tilts at the hip to peck     (tail and wing ride on it)
-//     neck     swings down at the shoulder  (rides on the body)
-//       head   turns to look                (rides on the neck: comb, beak, eye, wattle)
-//         eyelid  grows down over the eye to blink (rides on the head)
-//   leg_front  swings at its hip            (drawn in front of the body)
+//   thigh, shank, toes   each leg: the drumstick swings at the hip, the shank bends at the hock, the toes curl
+//   body       tilts at the hip to peck      (the wing rides on it; the tail flicks on it)
+//     neck     swings down at the shoulder   (the lower neck; the upper neck bends at mid-neck)
+//       head   dips at the throat, turns to look (comb, beak, eye, wattle ride on it)
+//         eyelid  grows down over the eye to blink
 //
-// How the joints compose: every part is a `Path` in the same full-size frame, at its rest position.
-// Each joint is a nested group with `.rotationEffect(_, anchor:)` at that joint's rest position. A child
-// turns about its own joint first, then its parent's rotation carries the whole group, as in a real
-// skeleton. Rotation and scale effects animate on their own, so a `withAnimation` blink or glance needs
-// no redraw loop. A painted kit (`PaintedChickenRig`) replaces the paths for its body shape, on the kit's
-// own joints: the heavy kit has no neck swing, so its head dips at the throat instead.
+// How the parts move: every part is a `Path` in the same full-size frame, at its rest position, and rides
+// one bone (`riding`). `BoneEffect` places it by that bone's turn and every bone's above it, as nested
+// groups would. It animates on its own, so a `withAnimation` blink or glance needs no redraw loop. A
+// painted kit (`PaintedChickenRig`) replaces the paths for its body shape, on the same skeleton.
 //
 // The frame's bottom centre is the ground point, between the feet. The scene places chickens by it.
 
@@ -141,17 +138,35 @@ enum ChickenPaths {
         return path
     }
 
-    /// A shank from the hip to the ground, and toes along the ground.
-    static func leg(at hip: CGPoint, _ b: ChickenBuild, _ s: ChickenSpace) -> Path {
-        let w: CGFloat = b.legWidth
-        let shank = CGRect(x: hip.x - w / 2, y: 0, width: w, height: hip.y)
-        let toes = CGRect(x: hip.x - b.backToe, y: 0, width: b.backToe + b.toe, height: w * 0.8)
-        let shankCorner = CGSize(width: s.length(w / 2), height: s.length(w / 2))
-        let toeCorner = CGSize(width: s.length(w * 0.4), height: s.length(w * 0.4))
-        var path = Path()
-        path.addRoundedRect(in: s.rect(shank), cornerSize: shankCorner)
-        path.addRoundedRect(in: s.rect(toes), cornerSize: toeCorner)
+    /// The feathered drumstick, between the hip and the hock.
+    static func thigh(hip: CGPoint, hock: CGPoint, _ b: ChickenBuild, _ s: ChickenSpace) -> Path {
+        let centre = CGPoint(x: (hip.x + hock.x) / 2, y: (hip.y + hock.y) / 2 + b.thighSize.height * 0.1)
+        return ellipse(centre, b.thighSize, s)
+    }
+
+    /// The bare shank, from the hock down to the foot: a band with round ends.
+    static func shank(hock: CGPoint, foot: CGPoint, _ b: ChickenBuild, _ s: ChickenSpace) -> Path {
+        let dx: CGFloat = foot.x - hock.x
+        let dy: CGFloat = foot.y - hock.y
+        let length: CGFloat = max(0.0001, (dx * dx + dy * dy).squareRoot())
+        let half: CGFloat = b.legWidth / 2
+        let nx: CGFloat = -dy / length * half
+        let ny: CGFloat = dx / length * half
+        var path: Path = polygon(
+            [
+                CGPoint(x: hock.x + nx, y: hock.y + ny), CGPoint(x: foot.x + nx, y: foot.y + ny),
+                CGPoint(x: foot.x - nx, y: foot.y - ny), CGPoint(x: hock.x - nx, y: hock.y - ny),
+            ], s)
+        path.addPath(circles([hock, foot], half, s))
         return path
+    }
+
+    /// The toes along the ground, from the foot: long in front, a short back toe.
+    static func toes(foot: CGPoint, _ b: ChickenBuild, _ s: ChickenSpace) -> Path {
+        let w: CGFloat = b.legWidth
+        let rect = CGRect(x: foot.x - b.backToe, y: max(0, foot.y - w * 0.8), width: b.backToe + b.toe, height: w * 0.8)
+        let corner = CGSize(width: s.length(w * 0.4), height: s.length(w * 0.4))
+        return Path(roundedRect: s.rect(rect), cornerSize: corner)
     }
 
     static func body(_ b: ChickenBuild, _ s: ChickenSpace) -> Path { ellipse(b.bodyCentre, b.bodySize, s) }
@@ -228,22 +243,24 @@ struct ChickenRig: View {
     var facingRight: Bool = true
     var height: CGFloat
 
+    /// The skeleton the path rig rides: the chick's or the grown bird's.
+    static func rig(isChick: Bool) -> SkeletonRig { isChick ? .chick : .adult }
+
     var body: some View {
         // Small helpers with explicit types keep the type checker fast (see `BirdSwatch`).
         let build: ChickenBuild = colours.isChick ? ChickenRigMetrics.chick : ChickenRigMetrics.adult
         let space = ChickenSpace(height: height)
-        // Sitting: the body drops and the legs fold to the hip's new height, so the joints still meet.
-        let drop: CGFloat = CGFloat(min(1, max(0, pose.sit)) * ChickenRigMetrics.sitDrop)
         ZStack {
-            leg(build.backHip, angle: pose.legBack, far: true, fold: drop, build, space)
+            leg(.back, build, space)
             torso(build, space)
-                .offset(y: space.length(drop * build.hip.y))
-            leg(build.frontHip, angle: pose.legFront, far: false, fold: drop, build, space)
+            leg(.front, build, space)
         }
         .frame(width: height * ChickenRigMetrics.widthRatio, height: height)
         .scaleEffect(x: facingRight ? 1 : -1, y: 1)
         .accessibilityHidden(true)
     }
+
+    private var rig: SkeletonRig { Self.rig(isChick: colours.isChick) }
 
     private var lineWidth: CGFloat { max(0.75, height * 0.006) }
 
@@ -252,24 +269,29 @@ struct ChickenRig: View {
         path.fill(fill).overlay(path.stroke(colours.outline, lineWidth: lineWidth))
     }
 
+    /// A part on `bone`, moved by the pose.
+    private func on(_ bone: Bone, _ view: some View) -> some View {
+        view.riding(bone, rig: rig, pose: pose, height: height)
+    }
+
     // MARK: - Legs
 
-    /// The far leg is a little darker, so the two legs read apart when they cross. `fold` (0...1) squashes
-    /// the leg down to the ground, for sitting.
-    private func leg(
-        _ hip: CGPoint, angle: Angle, far: Bool, fold: CGFloat, _ b: ChickenBuild, _ s: ChickenSpace
-    ) -> some View {
-        let path: Path = ChickenPaths.leg(at: hip, b, s)
-        // Never exactly 0: a flat scale has no inverse.
-        let squash: CGFloat = max(0.01, 1 - fold)
+    /// The far leg is a little darker, so the two legs read apart when they cross. The shank and toes come
+    /// first, so the drumstick's feathers cover the top of the shank.
+    private func leg(_ leg: Leg, _ b: ChickenBuild, _ s: ChickenSpace) -> some View {
+        let far: Bool = leg == .back
+        let hip: CGPoint = far ? b.backHip : b.frontHip
+        let hock: CGPoint = far ? b.backHock : b.frontHock
+        let foot: CGPoint = far ? b.backFoot : b.frontFoot
+        let shank: Path = ChickenPaths.shank(hock: hock, foot: foot, b, s)
+        let toes: Path = ChickenPaths.toes(foot: foot, b, s)
+        let thigh: Path = ChickenPaths.thigh(hip: hip, hock: hock, b, s)
+        let shade: Color = far ? colours.shade : Color.clear
         return ZStack {
-            part(path, colours.legs)
-            if far {
-                path.fill(colours.shade)
-            }
+            on(leg.shank, part(shank, colours.legs).overlay(shank.fill(shade)))
+            on(leg.toes, part(toes, colours.legs).overlay(toes.fill(shade)))
+            on(leg.thigh, part(thigh, colours.feathers).overlay(thigh.fill(shade)))
         }
-        .rotationEffect(angle, anchor: ChickenSpace.anchor(hip))
-        .scaleEffect(x: 1, y: squash, anchor: ChickenSpace.anchor(CGPoint(x: hip.x, y: 0)))
     }
 
     // MARK: - Body (tilts at the hip)
@@ -277,14 +299,15 @@ struct ChickenRig: View {
     private func torso(_ b: ChickenBuild, _ s: ChickenSpace) -> some View {
         ZStack {
             if !b.tail.isEmpty {
-                part(ChickenPaths.polygon(b.tail, s), colours.tail)
+                on(.tail, part(ChickenPaths.polygon(b.tail, s), colours.tail))
             }
-            part(ChickenPaths.body(b, s), colours.feathers)
-            feathering(b, s)
-            wing(b, s)
-            neckAndHead(b, s)
+            on(.body, part(ChickenPaths.body(b, s), colours.feathers))
+            on(.body, feathering(b, s))
+            on(.body, wing(b, s))
+            // No outline: the neck runs into the body and the head.
+            on(.neckLow, ChickenPaths.polygon(b.neck, s).fill(colours.hackle))
+            head(b, s)
         }
-        .rotationEffect(pose.bodyTilt, anchor: ChickenSpace.anchor(b.hip))
     }
 
     @ViewBuilder
@@ -298,7 +321,7 @@ struct ChickenRig: View {
                 .stroke(colours.patternColour.opacity(0.55), lineWidth: lineWidth * 1.5)
                 .clipShape(clip)
         default:
-            EmptyView()
+            Color.clear
         }
     }
 
@@ -307,18 +330,7 @@ struct ChickenRig: View {
         return part(path, colours.feathers).overlay(path.fill(colours.shade))
     }
 
-    // MARK: - Neck (swings at the shoulder, rides on the body)
-
-    private func neckAndHead(_ b: ChickenBuild, _ s: ChickenSpace) -> some View {
-        ZStack {
-            // No outline: the neck runs into the body and the head.
-            ChickenPaths.polygon(b.neck, s).fill(colours.hackle)
-            head(b, s)
-        }
-        .rotationEffect(pose.neckSwing, anchor: ChickenSpace.anchor(b.shoulder))
-    }
-
-    // MARK: - Head (turns, rides on the neck)
+    // MARK: - Head (dips at the throat, rides on the neck)
 
     /// The round head stays put; the face (comb, beak, eye, wattle) narrows or mirrors as the head turns.
     private func head(_ b: ChickenBuild, _ s: ChickenSpace) -> some View {
@@ -327,12 +339,12 @@ struct ChickenRig: View {
         let face: CGFloat = CGFloat(abs(turn) < 0.01 ? (turn < 0 ? -0.01 : 0.01) : turn)
         let centre: UnitPoint = ChickenSpace.anchor(b.headCentre)
         return ZStack {
-            crown(b, s).scaleEffect(x: face, y: 1, anchor: centre)
-            part(ChickenPaths.circle(b.headCentre, b.headRadius, s), colours.hackle)
+            on(.head, crown(b, s).scaleEffect(x: face, y: 1, anchor: centre))
+            on(.head, part(ChickenPaths.circle(b.headCentre, b.headRadius, s), colours.hackle))
             if colours.pattern == .headSpot {
-                ChickenPaths.headSpot(b, s).fill(colours.patternColour)
+                on(.head, ChickenPaths.headSpot(b, s).fill(colours.patternColour))
             }
-            faceFront(b, s).scaleEffect(x: face, y: 1, anchor: centre)
+            on(.head, faceFront(b, s).scaleEffect(x: face, y: 1, anchor: centre))
         }
     }
 

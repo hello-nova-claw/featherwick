@@ -41,13 +41,11 @@ struct RigLabView: View {
     /// Nil shows the sample colours.
     @State private var birdID: UUID?
 
-    // The joints, in degrees, plus head turn, blink and sit.
-    @State private var bodyTilt: Double = 0
-    @State private var neckSwing: Double = 0
+    // Every bone's angle in degrees (in `Bone.allCases` order), plus the hip's lift, head turn, blink and sit.
+    @State private var angles: [Double] = Array(repeating: 0, count: Bone.allCases.count)
+    @State private var rise: Double = 0
     @State private var headTurn: Double = 0
     @State private var blink: Double = 0
-    @State private var legBack: Double = 0
-    @State private var legFront: Double = 0
     @State private var sit: Double = 0
 
     private let rigHeight: CGFloat = 240
@@ -65,11 +63,19 @@ struct RigLabView: View {
         .onChange(of: birdID) { chick = birdColours?.isChick ?? false }
     }
 
+    /// The sliders' pose: sitting (legs folded by the solver) as far as the sit slider says, then each bone's
+    /// slider on top.
     private var pose: ChickenPose {
-        ChickenPose(
-            bodyTilt: .degrees(bodyTilt), neckSwing: .degrees(neckSwing), headTurn: headTurn, blink: blink,
-            legBack: .degrees(legBack), legFront: .degrees(legFront), sit: sit)
+        var p: ChickenPose = ChickenMotion.sitting(skeleton, amount: sit)
+        for bone in Bone.allCases { p[bone] += angles[bone.rawValue] }
+        p.rise += rise
+        p.headTurn = headTurn
+        p.blink = blink
+        return p
     }
+
+    /// The skeleton on the stage: the kit's, or the path rig's.
+    private var skeleton: SkeletonRig { kit?.rig ?? ChickenRig.rig(isChick: colours.isChick) }
 
     private var birds: [Bird] {
         let s: GameState = store.state
@@ -220,15 +226,38 @@ struct RigLabView: View {
 
     private var jointSliders: some View {
         Group {
-            JointSlider(title: "body (tilt at hip)", value: $bodyTilt, range: -40...40)
-            // A painted kit whose neck rides on the body dips the head at the throat with this instead.
-            JointSlider(title: "neck (swing at shoulder; head dip on heavy)", value: $neckSwing, range: -60...80)
+            ForEach(Bone.allCases, id: \.self) { bone in
+                JointSlider(title: title(bone), value: angle(bone), range: -90...90)
+                    .disabled(!skeleton.has(bone))
+            }
+            JointSlider(title: "hip (lift)", value: $rise, range: -0.3...0.1, unit: "")
             JointSlider(title: "head (turn)", value: $headTurn, range: -1...1, unit: "")
             JointSlider(title: "eyelid (blink)", value: $blink, range: 0...1, unit: "")
-            JointSlider(title: "leg_back (swing at hip)", value: $legBack, range: -45...45)
-            JointSlider(title: "leg_front (swing at hip)", value: $legFront, range: -45...45)
             JointSlider(title: "sit (body down, legs fold)", value: $sit, range: 0...1, unit: "")
         }
+    }
+
+    /// A bone's slider name: where it turns. A bone this rig does not have is greyed out.
+    private func title(_ bone: Bone) -> String {
+        let name: String
+        switch bone {
+        case .body: name = "body (tilt at hip)"
+        case .tail: name = "tail (flick)"
+        case .neckLow: name = "neck low (swing at shoulder)"
+        case .neckHigh: name = "neck high (bend mid-neck)"
+        case .head: name = "head (dip at throat)"
+        case .thighBack: name = "thigh back (swing at hip)"
+        case .shankBack: name = "shank back (bend at hock)"
+        case .toesBack: name = "toes back (curl)"
+        case .thighFront: name = "thigh front (swing at hip)"
+        case .shankFront: name = "shank front (bend at hock)"
+        case .toesFront: name = "toes front (curl)"
+        }
+        return skeleton.has(bone) ? name : name + " · not in this rig"
+    }
+
+    private func angle(_ bone: Bone) -> Binding<Double> {
+        Binding(get: { angles[bone.rawValue] }, set: { angles[bone.rawValue] = $0 })
     }
 
     private var birdControls: some View {
@@ -246,12 +275,10 @@ struct RigLabView: View {
     }
 
     private func resetJoints() {
-        bodyTilt = 0
-        neckSwing = 0
+        angles = Array(repeating: 0, count: Bone.allCases.count)
+        rise = 0
         headTurn = 0
         blink = 0
-        legBack = 0
-        legFront = 0
         sit = 0
         mode = .manual
     }

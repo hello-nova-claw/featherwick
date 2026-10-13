@@ -9,7 +9,8 @@ enum ChickenActivity: Hashable, Sendable {
 
 /// A chicken (painted or path rig, see `ChickenView`) that moves by itself. Walking cycles the legs.
 /// Pecking runs one peck, then stands.
-/// Idle, it blinks every few seconds and now and then looks somewhere new.
+/// Idle, it blinks every few seconds and now and then looks somewhere new. The motions are the shared
+/// skeleton's (`ChickenMotion`): planted feet, a high step, a body bounce and a head bob.
 ///
 /// Cheap when still. Idle blinks and glances come from a `.task` loop that sleeps between them and sets
 /// the pose with `withAnimation`, so nothing redraws in between. Only walking and a running peck use a
@@ -56,17 +57,21 @@ struct AnimatedChicken: View {
         !reduceMotion && (activity == .walking || peckStart != nil)
     }
 
+    /// The pose for this moment, worked out on the skeleton this bird is drawn with (painted or path):
+    /// leg angles depend on its leg lengths.
     private func pose(at date: Date) -> ChickenPose {
+        let rig: SkeletonRig = ChickenView.rig(for: colours)
         var pose: ChickenPose = .rest
-        if !reduceMotion && activity == .walking {
-            pose = .walk(phase: date.timeIntervalSinceReferenceDate / M.stride)
+        if activity == .sitting {
+            // A pose, not a motion: it holds with Reduce Motion too. Sit down inside `withAnimation` to ease it.
+            pose = ChickenMotion.sitting(rig)
+        } else if !reduceMotion && activity == .walking {
+            pose = ChickenMotion.walk(rig, phase: date.timeIntervalSinceReferenceDate / M.stride)
         } else if let peckStart, !reduceMotion {
-            pose = .peck(progress: date.timeIntervalSince(peckStart) / M.peckDuration)
+            pose = ChickenMotion.peck(rig, progress: date.timeIntervalSince(peckStart) / M.peckDuration)
         }
         pose.headTurn = face.headTurn
         pose.blink = face.blink
-        // A pose, not a motion: it holds with Reduce Motion too. Sit down inside `withAnimation` to ease it.
-        if activity == .sitting { pose.sit = 1 }
         return pose
     }
 
