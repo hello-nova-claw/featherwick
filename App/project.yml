@@ -31,6 +31,12 @@ targets:
       - path: Featherwick
         excludes:
           - "**/*.md"
+          - "Art/Parts/**"
+      # Painted part kits (Parts/<build>/kit.json and PNGs) go in as one folder reference, not flat: each
+      # kit keeps its folder in the bundle, so every kit can have a body.png, and a new kit needs no change here.
+      - path: Featherwick/Art/Parts
+        type: folder
+        buildPhase: resources
     configFiles:
       Debug: Config/Signing.xcconfig
       Release: Config/Signing.xcconfig
