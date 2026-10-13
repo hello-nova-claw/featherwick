@@ -41,6 +41,8 @@ struct ChickenColours: Equatable, Sendable {
     var combSize: Double
     /// Chicks draw as a round ball of down with tiny legs and no comb.
     var isChick: Bool
+    /// The body shape the look uses. A painted kit for it (`PartKit`) replaces the path rig. Nil: none.
+    var build: BodyShape? = nil
 
     /// A buff hen, for the rig lab when there is no bird to show.
     static let sample = ChickenColours(
@@ -67,6 +69,7 @@ extension ChickenColours {
         let feathers: Tone = look.tone(.body) ?? look.tone(.down) ?? Tone.buff
         let comb: Tone = look.tone(.comb) ?? Tone.red
         let overlay: PatternOverlay? = look.overlays.first
+        let build: BodyShape? = look.part(.body).flatMap { BodyShape(rawValue: $0.part.shape) }
         self.init(
             feathers: feathers.artColour,
             hackle: (look.tone(.hackle) ?? feathers).artColour,
@@ -78,7 +81,8 @@ extension ChickenColours {
             pattern: overlay?.pattern,
             patternColour: (overlay?.tone ?? Tone.white).artColour,
             combSize: look.part(.comb)?.scale ?? 0,
-            isChick: isChick)
+            isChick: isChick,
+            build: build)
     }
 }
 
