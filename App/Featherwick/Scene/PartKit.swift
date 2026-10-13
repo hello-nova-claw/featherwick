@@ -205,10 +205,12 @@ final class PartKit: @unchecked Sendable {
     let barring: CGImage?
     /// The eye part's painted bounds, in rig units (origin at the bottom left): the eyelid covers this.
     let eyeBounds: CGRect?
+    /// The comb part's painted bounds, in rig units: the comb grows from their bottom centre.
+    let combBounds: CGRect?
 
     private init(
         build: BodyShape, spec: KitSpec, folder: URL, layers: [KitLayer], lacing: CGImage?, barring: CGImage?,
-        eyeBounds: CGRect?
+        eyeBounds: CGRect?, combBounds: CGRect?
     ) {
         self.build = build
         self.spec = spec
@@ -217,6 +219,7 @@ final class PartKit: @unchecked Sendable {
         self.lacing = lacing
         self.barring = barring
         self.eyeBounds = eyeBounds
+        self.combBounds = combBounds
     }
 
     // MARK: - Geometry
@@ -355,20 +358,23 @@ final class PartKit: @unchecked Sendable {
         }
         let lacing: CGImage? = spec.overlays?["lacing"] == nil ? nil : working("lacing.png")
         let barring: CGImage? = spec.overlays?["barring"] == nil ? nil : working("barring.png").flatMap(lightMap)
-        let eyeBounds: CGRect? = layers.first(where: { $0.id == "eye" }).flatMap { eye in
-            alphaBounds(eye.image).map { bounds in
-                // Working pixels to canvas pixels, then to rig units (y up).
-                let scale: Double = Double(eye.image.width) / spec.canvas[0]
-                let topLeft: CGPoint = spec.rigPoint(pixel: CGPoint(x: bounds.minX / scale, y: bounds.minY / scale))
-                let bottomRight: CGPoint = spec.rigPoint(
-                    pixel: CGPoint(x: bounds.maxX / scale, y: bounds.maxY / scale))
-                return CGRect(
-                    x: topLeft.x, y: bottomRight.y, width: bottomRight.x - topLeft.x, height: topLeft.y - bottomRight.y)
-            }
+        func paintedBounds(_ name: String) -> CGRect? {
+            layers.first(where: { $0.id == name }).flatMap { rigBounds(of: $0.image, in: spec) }
         }
         return PartKit(
             build: build, spec: spec, folder: folder, layers: layers, lacing: lacing, barring: barring,
-            eyeBounds: eyeBounds)
+            eyeBounds: paintedBounds("eye"), combBounds: paintedBounds("comb"))
+    }
+
+    /// A working-size part's painted bounds (`alphaBounds`) in rig units, origin at the bottom left.
+    private static func rigBounds(of image: CGImage, in spec: KitSpec) -> CGRect? {
+        guard let bounds = alphaBounds(image) else { return nil }
+        // Working pixels to canvas pixels, then to rig units (y up).
+        let scale: Double = Double(image.width) / spec.canvas[0]
+        let topLeft: CGPoint = spec.rigPoint(pixel: CGPoint(x: bounds.minX / scale, y: bounds.minY / scale))
+        let bottomRight: CGPoint = spec.rigPoint(pixel: CGPoint(x: bounds.maxX / scale, y: bounds.maxY / scale))
+        return CGRect(
+            x: topLeft.x, y: bottomRight.y, width: bottomRight.x - topLeft.x, height: topLeft.y - bottomRight.y)
     }
 
     private static func joints(of name: String, in spec: KitSpec) -> [KitJoint] {

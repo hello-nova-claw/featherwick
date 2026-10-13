@@ -75,8 +75,9 @@ struct PaintedChickenRig: View {
     // MARK: - Parts
 
     /// One part, coloured by its token. A laced or barred bird gets its overlay too, on the listed parts
-    /// only, clipped to the part's own coverage. Only the overlay is masked: masking the part by its own alpha
-    /// would square its soft edge, and patterned birds would get thinner edges than plain ones.
+    /// only, clipped to the part's own coverage. Only the overlays are masked: masking the part by its own
+    /// alpha would square its soft edge. Each overlay is masked on its own, and the multiply blend comes
+    /// after the mask: a masked group draws offscreen, so a blend inside it would have nothing to darken.
     @ViewBuilder
     private func part(_ layer: KitLayer, _ space: ChickenSpace) -> some View {
         let tint: Color = colour(for: layer)
@@ -85,17 +86,18 @@ struct PaintedChickenRig: View {
         if laced || barred {
             ZStack {
                 canvasImage(layer.image, space).colorMultiply(tint)
-                ZStack {
-                    if laced, let map = kit.lacing {
-                        // RGB 255 changes nothing; darker darkens the feathers under it.
-                        canvasImage(map, space).blendMode(.multiply)
-                    }
-                    if barred, let map = kit.barring {
-                        // White with the bar strength as alpha: the pattern colour where the bars are.
-                        canvasImage(map, space).colorMultiply(colours.patternColour)
-                    }
+                if laced, let map = kit.lacing {
+                    // RGB 255 changes nothing; darker darkens the feathers under it.
+                    canvasImage(map, space)
+                        .mask { canvasImage(layer.image, space) }
+                        .blendMode(.multiply)
                 }
-                .mask { canvasImage(layer.image, space) }
+                if barred, let map = kit.barring {
+                    // White with the bar strength as alpha: the pattern colour where the bars are.
+                    canvasImage(map, space)
+                        .colorMultiply(colours.patternColour)
+                        .mask { canvasImage(layer.image, space) }
+                }
             }
             .compositingGroup()
         } else {
@@ -138,15 +140,17 @@ struct PaintedChickenRig: View {
         return Color(lifted)
     }
 
-    /// A comb grows in with age, and a hen's is smaller: the comb part scales by `combSize` about the
-    /// `combBase` landmark, as on the path rig. Other parts keep their size.
+    /// A comb grows in with age, and a hen's is smaller: the comb part scales by `combSize` about its own
+    /// painted base (the bottom centre of its alpha), as on the path rig. The `combBase` landmark is used
+    /// only when the kit has no comb art bounds. Other parts keep their size.
     private func growth(_ layer: KitLayer) -> CGFloat {
         layer.token == .comb ? CGFloat(max(0.01, colours.combSize)) : 1
     }
 
     private func growthAnchor(_ layer: KitLayer) -> UnitPoint {
-        guard layer.token == .comb, let base = kit.landmark("combBase") else { return .center }
-        return ChickenSpace.anchor(base)
+        guard layer.token == .comb else { return .center }
+        if let bounds = kit.combBounds { return ChickenSpace.anchor(CGPoint(x: bounds.midX, y: bounds.minY)) }
+        return kit.landmark("combBase").map(ChickenSpace.anchor) ?? .center
     }
 
     // MARK: - Eyelid
