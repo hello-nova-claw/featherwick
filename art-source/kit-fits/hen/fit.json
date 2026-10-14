@@ -60,8 +60,8 @@
     600
   ],
   "wattleTop": [
-    1052,
-    285
+    1060,
+    262
   ],
   "tailAim": [
     230,
@@ -406,7 +406,74 @@
       "head": "pieces/head.webp",
       "hackle": "pieces/hackle.webp",
       "neck": "pieces/neck.webp",
-      "tail": "pieces/tail.webp"
+      "tail": "pieces/tail.webp",
+      "beak": "pieces/beak.webp",
+      "comb": "pieces/comb.webp"
+    },
+    "splits": {
+      "wattle": {
+        "from": "head",
+        "take": [
+          [
+            1045,
+            258
+          ],
+          [
+            1084,
+            246
+          ],
+          [
+            1100,
+            265
+          ],
+          [
+            1100,
+            335
+          ],
+          [
+            1041,
+            335
+          ],
+          [
+            1041,
+            300
+          ],
+          [
+            1043,
+            280
+          ]
+        ],
+        "leave": [
+          [
+            1050,
+            270
+          ],
+          [
+            1086,
+            258
+          ],
+          [
+            1100,
+            270
+          ],
+          [
+            1100,
+            335
+          ],
+          [
+            1046,
+            335
+          ],
+          [
+            1046,
+            302
+          ],
+          [
+            1048,
+            287
+          ]
+        ]
+      }
     }
   }
 }

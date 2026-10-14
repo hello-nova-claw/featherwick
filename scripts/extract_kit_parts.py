@@ -9,6 +9,7 @@ canvas, with one part kept and the paper around it erased (some paper may stay).
    edges to the source silhouette's edge.
 3. Writes each part on the 2048 kit canvas, in the same place as `silhouette-2048.png`:
    - parts/<name>.png         kit-ready: grey value (the game adds the colour) and alpha coverage
+   - parts/kit.json           the fit's kit.json with only the parts cut so far: parts/ is a whole kit
    - parts-colour/<name>.png  the same part in its own colour, to paint on further
    - parts-preview.png        every part in colour over the faint silhouette and the joints
 
@@ -21,7 +22,7 @@ import os
 import sys
 
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter
 
 CANVAS = 2048
 UNIT = 1600
@@ -38,6 +39,8 @@ CRISP = 200
 # A clump under this part of the largest clump is a speck from another part. GROW is in quarter-size
 # pixels: how far past a kept clump its soft edge may reach.
 SPECK, GROW = 0.05, 31
+# How soft a split's cut edge is, in export pixels.
+SOFT = 3
 
 
 def silhouette(path):
@@ -140,6 +143,16 @@ def fit_placement(points, dist, start):
     return p, best
 
 
+def soft_polygon(points, placement, shape):
+    """A polygon in source pixels, drawn on the export with a soft edge (SOFT export pixels)."""
+    s, turn, tx, ty = placement
+    c, sn = math.cos(turn), math.sin(turn)
+    on_export = [(s * (c * x - sn * y) + tx, s * (sn * x + c * y) + ty) for x, y in points]
+    img = Image.new("L", (shape[1], shape[0]), 0)
+    ImageDraw.Draw(img).polygon(on_export, fill=255)
+    return np.asarray(img.filter(ImageFilter.GaussianBlur(SOFT))) / 255
+
+
 def start_guess(export_size, source_size):
     """The source image fills the export, a little turned: Procreate's usual import."""
     return [export_size / source_size * 0.96, math.radians(1.0), export_size * 0.025, export_size * 0.007]
@@ -156,6 +169,15 @@ def main(folder):
     points = np.concatenate([outline(cover) for _, cover in parts.values()])
     placement, err = fit_placement(points, edge_distance(mask), start_guess(size, mask.shape[0]))
     s, turn, tx, ty = placement
+
+    # A part painted into another one (the wattle in the head): `take` is its shape, in source pixels.
+    # The other part loses only `leave`, so a band of it stays under the join and the swing shows no hole.
+    for name, split in pieces.get("splits", {}).items():
+        colour, cover = parts[split["from"]]
+        take = soft_polygon(split["take"], placement, cover.shape)
+        leave = soft_polygon(split["leave"], placement, cover.shape)
+        parts[name] = (colour, cover * take)
+        parts[split["from"]] = (colour, cover * (1 - leave))
     print("placement: scale %.4f, turn %.2f°, shift (%.1f, %.1f), edge error %.2f px"
           % (s, math.degrees(turn), tx, ty, err))
 
@@ -182,6 +204,17 @@ def main(folder):
         kit = np.dstack([np.repeat(np.clip(grey, 0, 255)[..., None], 3, 2), arr[..., 3]]).astype("uint8")
         Image.fromarray(kit, "RGBA").save(os.path.join(folder, "parts", name + ".png"), optimize=True)
         preview = Image.alpha_composite(preview, placed)
+
+    # parts/ is a whole kit: the fit's kit.json, cut down to the parts that have a PNG.
+    kit = json.load(open(os.path.join(folder, "kit.json")))
+    kit["parts"] = {n: p for n, p in kit["parts"].items() if n in parts}
+    kit["drawOrder"] = [n for n in kit["drawOrder"] if n in parts]
+    with open(os.path.join(folder, "parts", "kit.json"), "w") as f:
+        json.dump(kit, f, indent=2)
+        f.write("\n")
+    missing = sorted(set(json.load(open(os.path.join(folder, "kit.json")))["parts"]) - set(parts))
+    if missing:
+        print("not cut yet (left out of parts/kit.json):", ", ".join(missing))
 
     base = Image.open(os.path.join(folder, "template.png")).convert("RGBA")
     veil = Image.new("RGBA", base.size, (246, 241, 231, 150))

@@ -14,7 +14,7 @@
     "hackle": {"bone": "neckHigh", "pivot": [0.269, 0.802], "token": "hackle"},
     "comb": {"bone": "head", "token": "comb"},
     "head": {"bone": "head", "pivot": [0.315, 0.861]},
-    "wattle": {"bone": "head", "token": "comb", "follow": {"amount": 1, "root": [0.355, 0.856]}},
+    "wattle": {"bone": "head", "token": "comb", "follow": {"amount": 1, "root": [0.362, 0.879]}},
     "beak": {"bone": "head", "token": "beak"},
     "eye": {"bone": "head", "token": "eye"},
     "shankFront": {"bone": "shankFront", "pivot": [0.041, 0.19]},

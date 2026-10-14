@@ -14,7 +14,7 @@ shape. Each folder is one fit. `python3 scripts/fit_kit_template.py <folder>` ma
 | `cut-guide.png` | Where to cut the silhouette into parts. |
 | `kit.json` | The starter kit, with this fit's pivots. |
 | `pieces/` | The keeper's cut parts, as Procreate exports (one part on each, paper erased round it). |
-| `parts/` | Each cut part on the kit canvas, kit-ready: grey value and alpha. Copy these to the kit. |
+| `parts/` | A whole kit: each cut part on the kit canvas (grey value and alpha), and a `kit.json` with only the parts cut so far. Copy the folder to the app. |
 | `parts-colour/` | The same parts in their own colour, to paint on further. |
 | `parts-preview.png` | Every cut part in colour over the faint silhouette and the joints. |
 
@@ -40,8 +40,14 @@ each part on the kit canvas. A part's soft edges stay soft. Only the crisp edges
 outline) are used to find the place, so long soft cuts do not pull it. Small specks of other parts left on
 an export are dropped.
 
+A part painted into another one (the hen's wattle is in her head) is split out by `pieces` > `splits` in
+`fit.json`: `take` is its shape and `leave` is what the other part loses, both in source pixels. The other
+part keeps a band under the join, so the split part can swing with no hole behind it.
+
 ## Fits
 
 - `hen/`: the first hen silhouette (14 Oct 2026). 11 joints. No wing in the silhouette: paint a `wing`
-  inside the body, or leave it out of `kit.json`. Cut so far (11): `body`, `tail`, `neck`, `hackle`,
-  `head`, `thighBack`, `thighFront`, `shankBack`, `shankFront`, `toesBack`, `toesFront`. The kit loads only when every part in `kit.json` has a PNG.
+  inside the body, or leave it out of `kit.json`. Cut so far (14): `body`, `tail`, `neck`, `hackle`,
+  `head`, `comb`, `wattle` (split from the head), `beak`, `thighBack`, `thighFront`, `shankBack`,
+  `shankFront`, `toesBack`, `toesFront`. Not cut yet: `eye`, `wing`. `parts/` loads as a kit now: with no
+  eye part, the bird does not blink. 
