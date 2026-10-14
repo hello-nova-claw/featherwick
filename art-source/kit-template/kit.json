@@ -1,0 +1,25 @@
+{
+  "build": "heavy",
+  "canvas": [2048, 2048],
+  "groundPoint": [1088, 1840],
+  "unit": 1600,
+  "parts": {
+    "shankBack": {"bone": "shankBack", "pivot": [-0.12, 0.23]},
+    "toesBack": {"bone": "toesBack", "pivot": [-0.04, 0.03]},
+    "thighBack": {"bone": "thighBack", "pivot": [-0.04, 0.4], "follow": {"amount": 0.25}},
+    "tail": {"bone": "tail", "pivot": [-0.24, 0.62], "follow": {"amount": 1}},
+    "body": {"bone": "body", "pivot": [0.0, 0.4]},
+    "wing": {"bone": "body", "follow": {"amount": 0.35, "root": [0.09, 0.54]}},
+    "neck": {"bone": "neckLow", "pivot": [0.16, 0.64]},
+    "hackle": {"bone": "neckHigh", "pivot": [0.22, 0.74], "token": "hackle"},
+    "comb": {"bone": "head", "token": "comb"},
+    "head": {"bone": "head", "pivot": [0.25, 0.8]},
+    "wattle": {"bone": "head", "token": "comb", "follow": {"amount": 1, "root": [0.31, 0.838]}},
+    "beak": {"bone": "head", "token": "beak"},
+    "eye": {"bone": "head", "token": "eye"},
+    "shankFront": {"bone": "shankFront", "pivot": [-0.04, 0.23]},
+    "toesFront": {"bone": "toesFront", "pivot": [0.04, 0.03]},
+    "thighFront": {"bone": "thighFront", "pivot": [0.04, 0.4], "follow": {"amount": 0.25}}
+  },
+  "drawOrder": ["shankBack", "toesBack", "thighBack", "tail", "body", "wing", "neck", "hackle", "comb", "head", "wattle", "beak", "eye", "shankFront", "toesFront", "thighFront"]
+}
