@@ -30,9 +30,11 @@ UNIT = 1600
 LOW, RAMP = 0.35, 0.35
 # The kit's value for the part's mean colour: light, so the token colour shows, with the texture kept.
 VALUE = 230
-# Edge match: distances are capped, and only the closest 80% of edge points count, so cut edges
-# (which are inside the silhouette) do not pull the fit.
-CAP, SHARE = 20, 0.8
+# Edge match: distances are capped. SHARE is the part of the crisp edge points that counts (all of them:
+# `outline` already leaves out the soft cut edges).
+CAP, SHARE = 20, 1.0
+# An edge is crisp when the coverage goes from almost none to almost all within 5 px.
+CRISP = 200
 
 
 def silhouette(path):
@@ -64,9 +66,13 @@ def unmix(path, paper, kraft):
 
 
 def outline(cover):
+    """The part's crisp edge points: its outline from the silhouette. Soft eraser edges (the cuts) change
+    slowly, so they are left out of the fit."""
     m = Image.fromarray(((cover > 0.5) * 255).astype("uint8"))
     edge = np.asarray(m.filter(ImageFilter.MaxFilter(3))) != np.asarray(m.filter(ImageFilter.MinFilter(3)))
-    ys, xs = np.nonzero(edge)
+    c = Image.fromarray((cover * 255).astype("uint8"))
+    spread = np.asarray(c.filter(ImageFilter.MaxFilter(5))).astype(int) - np.asarray(c.filter(ImageFilter.MinFilter(5)))
+    ys, xs = np.nonzero(edge & (spread > CRISP))
     return np.stack([xs, ys], 1).astype(float)
 
 

@@ -400,7 +400,8 @@
       "shankFront": "pieces/shankFront.webp",
       "toesBack": "pieces/toesBack.webp",
       "toesFront": "pieces/toesFront.webp",
-      "thighFront": "pieces/thighFront.webp"
+      "thighFront": "pieces/thighFront.webp",
+      "body": "pieces/body.webp"
     }
   }
 }
