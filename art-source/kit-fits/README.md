@@ -50,4 +50,4 @@ part keeps a band under the join, so the split part can swing with no hole behin
   inside the body, or leave it out of `kit.json`. Cut so far (14): `body`, `tail`, `neck`, `hackle`,
   `head`, `comb`, `wattle` (split from the head), `beak`, `thighBack`, `thighFront`, `shankBack`,
   `shankFront`, `toesBack`, `toesFront`. Not cut yet: `eye`, `wing`. `parts/` loads as a kit now: with no
-  eye part, the bird does not blink. 
+  eye part, the bird does not blink.
