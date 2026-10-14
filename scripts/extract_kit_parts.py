@@ -35,6 +35,9 @@ VALUE = 230
 CAP, SHARE = 20, 1.0
 # An edge is crisp when the coverage goes from almost none to almost all within 5 px.
 CRISP = 200
+# A clump under this part of the largest clump is a speck from another part. GROW is in quarter-size
+# pixels: how far past a kept clump its soft edge may reach.
+SPECK, GROW = 0.05, 31
 
 
 def silhouette(path):
@@ -62,7 +65,37 @@ def unmix(path, paper, kraft):
     t = ((rgb - paper) @ d) / (d @ d)
     cover = layer * np.clip((t - LOW) / RAMP, 0, 1)
     colour = paper + (rgb - paper) / np.maximum(t, LOW)[..., None]
-    return np.clip(colour, 0, 255), cover
+    return np.clip(colour, 0, 255), keep_main(cover)
+
+
+def keep_main(cover):
+    """Drops specks left from other parts: keeps each clump at least SPECK of the largest clump's size.
+    A soft edge stays with the clump it fades from."""
+    small = Image.fromarray(((cover > 0.5) * 255).astype("uint8")).resize(
+        (cover.shape[1] // 4, cover.shape[0] // 4), Image.BOX)
+    solid = np.asarray(small) > 127
+    label = np.zeros(solid.shape, int)
+    sizes = [0]
+    for start in zip(*np.nonzero(solid)):
+        if label[start]:
+            continue
+        sizes.append(0)
+        stack = [start]
+        label[start] = len(sizes) - 1
+        while stack:
+            y, x = stack.pop()
+            sizes[-1] += 1
+            for ny, nx in ((y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)):
+                if 0 <= ny < solid.shape[0] and 0 <= nx < solid.shape[1] and solid[ny, nx] and not label[ny, nx]:
+                    label[ny, nx] = len(sizes) - 1
+                    stack.append((ny, nx))
+    if len(sizes) < 2:
+        return cover
+    keep = np.isin(label, [i for i, n in enumerate(sizes) if n >= SPECK * max(sizes)])
+    # Grow the kept clumps a little, so their soft edges stay.
+    grown = Image.fromarray((keep * 255).astype("uint8")).filter(ImageFilter.MaxFilter(GROW))
+    mask = np.asarray(grown.resize((cover.shape[1], cover.shape[0]), Image.BILINEAR)) / 255
+    return cover * mask
 
 
 def outline(cover):

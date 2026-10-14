@@ -37,10 +37,11 @@ Export each cut part from Procreate as its own image, with the source image wher
 
 The script takes out any paper that is left, finds where the source image sits on the exports, and puts
 each part on the kit canvas. A part's soft edges stay soft. Only the crisp edges (the silhouette's own
-outline) are used to find the place, so long soft cuts do not pull it.
+outline) are used to find the place, so long soft cuts do not pull it. Small specks of other parts left on
+an export are dropped.
 
 ## Fits
 
 - `hen/`: the first hen silhouette (14 Oct 2026). 11 joints. No wing in the silhouette: paint a `wing`
-  inside the body, or leave it out of `kit.json`. Cut so far: `body`, `thighFront`, `shankBack`,
-  `shankFront`, `toesBack`, `toesFront`. The kit loads only when every part in `kit.json` has a PNG.
+  inside the body, or leave it out of `kit.json`. Cut so far (11): `body`, `tail`, `neck`, `hackle`,
+  `head`, `thighBack`, `thighFront`, `shankBack`, `shankFront`, `toesBack`, `toesFront`. The kit loads only when every part in `kit.json` has a PNG.

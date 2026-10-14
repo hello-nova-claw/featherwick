@@ -401,7 +401,12 @@
       "toesBack": "pieces/toesBack.webp",
       "toesFront": "pieces/toesFront.webp",
       "thighFront": "pieces/thighFront.webp",
-      "body": "pieces/body.webp"
+      "body": "pieces/body.webp",
+      "thighBack": "pieces/thighBack.webp",
+      "head": "pieces/head.webp",
+      "hackle": "pieces/hackle.webp",
+      "neck": "pieces/neck.webp",
+      "tail": "pieces/tail.webp"
     }
   }
 }
