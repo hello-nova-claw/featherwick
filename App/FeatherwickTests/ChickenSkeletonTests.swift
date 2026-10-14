@@ -21,6 +21,13 @@ import Testing
         }
     }
 
+    /// The path rigs walk on their own drawn feet: a grown bird's and a chick's foot spread is half the gap
+    /// between their feet.
+    @Test func pathRigsStepOnTheirDrawnFeet() {
+        #expect(abs(adult.motion.footSpread - 0.04) < tolerance)
+        #expect(abs(SkeletonRig.chick.motion.footSpread - 0.05) < tolerance)
+    }
+
     /// A part on a missing bone moves with the nearest bone above it: a head with no neck rides the body.
     @Test func aMissingBoneHandsOnToItsParent() {
         var rig: SkeletonRig = adult

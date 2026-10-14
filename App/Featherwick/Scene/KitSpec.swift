@@ -52,6 +52,8 @@ struct KitSpec: Decodable, Sendable {
         var glanceHeadDip: Double?
         var legSwing: Double?
         var stride: Double?
+        /// While walking, how far each foot steps behind or in front of the middle of the two feet.
+        var footSpread: Double?
     }
 
     var build: String
@@ -171,6 +173,7 @@ struct KitSpec: Decodable, Sendable {
             if let v = m.peckNeckSwing { motion.peckNeckSwing = v }
             if let v = m.peckHeadDip { motion.peckHeadDip = v }
             if let v = m.peckCrouch { motion.peckCrouch = v }
+            if let v = m.footSpread { motion.footSpread = v }
             let legHeight: Double = Leg.allCases.compactMap { joints[$0.thigh].map { Double($0.y) } }.max() ?? 0
             if let swing = m.legSwing, legHeight > 0 {
                 motion.stepLength = 2 * legHeight * tan(swing * Double.pi / 180)

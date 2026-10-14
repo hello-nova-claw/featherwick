@@ -62,6 +62,10 @@ struct SkeletonMotion: Equatable, Sendable {
     /// How far the hip drops at the bottom of a peck (rig heights). Bending legs crouch; stiff legs stay.
     var peckCrouch: Double
     var stepLength: Double
+    /// Where each foot steps while walking: this far behind (back leg) or in front of (front leg) the middle
+    /// of the two feet. Small, so the legs pass each other: a kit drawn mid-stride, feet wide apart, still
+    /// walks, not shuffles. Standing keeps the drawn feet.
+    var footSpread: Double
     var liftShare: Double
     var toeCurl: Double
     var bounce: Double
@@ -77,7 +81,8 @@ struct SkeletonMotion: Equatable, Sendable {
         return SkeletonMotion(
             peckBodyTilt: M.peckBodyTilt, peckNeckSwing: M.peckNeckSwing, peckHeadDip: M.peckHeadDip,
             peckCrouch: M.peckCrouch * k,
-            stepLength: M.stepLength * k, liftShare: M.liftShare, toeCurl: M.toeCurl, bounce: M.bounce * k,
+            stepLength: M.stepLength * k, footSpread: M.footSpread * k, liftShare: M.liftShare, toeCurl: M.toeCurl,
+            bounce: M.bounce * k,
             bodyBob: M.bodyBob, headBob: M.headBob, tailFlick: M.tailFlick)
     }
 }
@@ -128,7 +133,14 @@ struct SkeletonRig: Equatable, Sendable {
                 .thighFront: b.frontHip, .shankFront: b.frontHock, .toesFront: b.frontFoot,
             ],
             feet: [.back: b.backFoot, .front: b.frontFoot],
-            motion: .standard(hipHeight: Double(b.hip.y)))
+            motion: pathMotion(b))
+    }
+
+    /// The path rig walks on its own drawn feet: its foot spread is half the gap between them.
+    private static func pathMotion(_ b: ChickenBuild) -> SkeletonMotion {
+        var motion = SkeletonMotion.standard(hipHeight: Double(b.hip.y))
+        motion.footSpread = Double(abs(b.frontFoot.x - b.backFoot.x)) / 2
+        return motion
     }
 
     static let adult = path(ChickenRigMetrics.adult)
@@ -303,8 +315,11 @@ enum ChickenMotion {
 
     /// A leg at `u` (0..<1) of its own cycle: planted and sliding back, then lifted and swinging forward.
     private static func place(_ leg: Leg, at u: Double, rig: SkeletonRig, pose: inout ChickenPose) {
-        guard let foot = rig.feet[leg] else { return }
+        guard let drawn = rig.feet[leg] else { return }
         let m: SkeletonMotion = rig.motion
+        let feet: [CGPoint] = Leg.allCases.compactMap { rig.feet[$0] }
+        let middle: Double = feet.map { Double($0.x) }.reduce(0, +) / Double(feet.count)
+        let foot = CGPoint(x: middle + (leg == .back ? -m.footSpread : m.footSpread), y: Double(drawn.y))
         let half: Double = m.stepLength / 2
         let lift: Double = m.liftShare * Double(rig.hip.y)
         let target: CGPoint

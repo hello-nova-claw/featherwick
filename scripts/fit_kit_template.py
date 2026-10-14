@@ -119,6 +119,11 @@ def main(folder):
 
     t.PARTS = [(name, bone, rig(joints[SETTERS[name]]) if name in SETTERS else None, token, follow(name, f))
                for name, bone, _, token, f in t.PARTS]
+    if "drawOrder" in fit:
+        # This drawing's own order: the same parts, back to front.
+        by_name = {part[0]: part for part in t.PARTS}
+        assert sorted(fit["drawOrder"]) == sorted(by_name), "drawOrder must list every part once"
+        t.PARTS = [by_name[name] for name in fit["drawOrder"]]
     t.kit_json(os.path.join(folder, "kit.json"))
     print("wrote", os.path.relpath(folder))
 

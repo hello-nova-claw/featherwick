@@ -6,9 +6,9 @@
   "parts": {
     "shankBack": {"bone": "shankBack", "pivot": [-0.127, 0.19]},
     "toesBack": {"bone": "toesBack", "pivot": [-0.098, 0.05]},
-    "thighBack": {"bone": "thighBack", "pivot": [-0.059, 0.352], "follow": {"amount": 0.25}},
     "tail": {"bone": "tail", "pivot": [-0.171, 0.616], "follow": {"amount": 1}},
     "body": {"bone": "body", "pivot": [-0.02, 0.361]},
+    "thighBack": {"bone": "thighBack", "pivot": [-0.059, 0.352], "follow": {"amount": 0.25}},
     "wing": {"bone": "body", "follow": {"amount": 0.35, "root": [0.137, 0.548]}},
     "neck": {"bone": "neckLow", "pivot": [0.191, 0.665]},
     "hackle": {"bone": "neckHigh", "pivot": [0.269, 0.802], "token": "hackle"},
@@ -21,5 +21,5 @@
     "toesFront": {"bone": "toesFront", "pivot": [0.093, 0.052]},
     "thighFront": {"bone": "thighFront", "pivot": [0.015, 0.352], "follow": {"amount": 0.25}}
   },
-  "drawOrder": ["shankBack", "toesBack", "thighBack", "tail", "body", "wing", "neck", "hackle", "comb", "head", "wattle", "beak", "eye", "shankFront", "toesFront", "thighFront"]
+  "drawOrder": ["shankBack", "toesBack", "tail", "body", "thighBack", "wing", "neck", "hackle", "comb", "head", "wattle", "beak", "eye", "shankFront", "toesFront", "thighFront"]
 }

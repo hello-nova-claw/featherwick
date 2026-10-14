@@ -178,6 +178,22 @@ def main(folder):
         leave = soft_polygon(split["leave"], placement, cover.shape)
         parts[name] = (colour, cover * take)
         parts[split["from"]] = (colour, cover * (1 - leave))
+
+    # A part cut out of another (a drumstick out of the body) leaves a hole there. `underfill` fills the
+    # hole with the cut part's shape, pulled in by `inset` export pixels, so a swinging part never shows the
+    # background behind it.
+    for name, fill in pieces.get("underfill", {}).items():
+        colour, cover = parts[name]
+        for other in fill["from"]:
+            o_colour, o_cover = parts[other]
+            core = Image.fromarray((o_cover * 255).astype("uint8"))
+            if fill["inset"] > 0:
+                core = core.filter(ImageFilter.MinFilter(2 * fill["inset"] + 1)).filter(ImageFilter.GaussianBlur(SOFT))
+            core = np.asarray(core) / 255
+            add = core * (1 - cover)
+            colour = (colour * cover[..., None] + o_colour * add[..., None]) / np.maximum(cover + add, 1e-6)[..., None]
+            cover = cover + add
+        parts[name] = (colour, cover)
     print("placement: scale %.4f, turn %.2f°, shift (%.1f, %.1f), edge error %.2f px"
           % (s, math.degrees(turn), tx, ty, err))
 

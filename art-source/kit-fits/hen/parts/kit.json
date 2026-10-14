@@ -24,16 +24,6 @@
         0.05
       ]
     },
-    "thighBack": {
-      "bone": "thighBack",
-      "pivot": [
-        -0.059,
-        0.352
-      ],
-      "follow": {
-        "amount": 0.25
-      }
-    },
     "tail": {
       "bone": "tail",
       "pivot": [
@@ -50,6 +40,16 @@
         -0.02,
         0.361
       ]
+    },
+    "thighBack": {
+      "bone": "thighBack",
+      "pivot": [
+        -0.059,
+        0.352
+      ],
+      "follow": {
+        "amount": 0.25
+      }
     },
     "neck": {
       "bone": "neckLow",
@@ -120,9 +120,9 @@
   "drawOrder": [
     "shankBack",
     "toesBack",
-    "thighBack",
     "tail",
     "body",
+    "thighBack",
     "neck",
     "hackle",
     "comb",

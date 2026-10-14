@@ -474,6 +474,33 @@
           ]
         ]
       }
+    },
+    "underfill": {
+      "body": {
+        "from": [
+          "thighBack",
+          "thighFront"
+        ],
+        "inset": 0
+      }
     }
-  }
+  },
+  "drawOrder": [
+    "shankBack",
+    "toesBack",
+    "tail",
+    "body",
+    "thighBack",
+    "wing",
+    "neck",
+    "hackle",
+    "comb",
+    "head",
+    "wattle",
+    "beak",
+    "eye",
+    "shankFront",
+    "toesFront",
+    "thighFront"
+  ]
 }
