@@ -91,6 +91,10 @@ import Testing
         let wide: SkeletonRig = try spec(parts, order: order, motion: #"{"footSpread": 0.2}"#).skeleton
         #expect(wide.motion.footSpread == 0.2)
         #expect((0..<24).allSatisfy { gap(wide, Double($0) / 24) > 0 })
+        // A slower stride slides each foot further, so the bird keeps the scene's walking speed.
+        let slow: SkeletonRig = try spec(parts, order: order, motion: #"{"stride": 0.9}"#).skeleton
+        #expect(slow.motion.stride == 0.9)
+        #expect(abs(slow.motion.stepLength - rig.motion.stepLength * 0.9 / rig.motion.stride) < 1e-12)
     }
 
     /// An old kit (joints by `rotates`, parts by `ridesOn`) names no bones. It has no body joint, so it

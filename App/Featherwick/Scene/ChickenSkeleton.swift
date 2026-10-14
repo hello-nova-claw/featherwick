@@ -57,11 +57,24 @@ enum Leg: CaseIterable, Sendable {
 struct SkeletonMotion: Equatable, Sendable {
     var peckBodyTilt: Double
     var peckNeckSwing: Double
+    /// The upper neck's own bend at the bottom of a peck. Shared with the lower neck, the neck curves
+    /// down instead of folding at one joint, which would tear painted parts apart. The path rig: 0.
+    var peckNeckBend: Double
+    /// The tail's own turn at the bottom of a peck. Negative lowers it, against the body's tilt, so a big
+    /// tilt does not stand the tail on end. The path rig: 0.
+    var peckTail: Double = 0
     /// The head's own dip at the bottom of a peck. A rig with no neck bones pecks with this alone.
     var peckHeadDip: Double
+    /// Where the throat goes at the bottom of a peck, from where it is at rest (rig units). Set: the head
+    /// moves down this straight line and the two neck bones are solved to follow it, as the legs are, so
+    /// the head does not swing out in an arc. `peckHeadDip` is then the head's whole turn on screen. Nil: the
+    /// neck swings by `peckNeckSwing` and `peckNeckBend` (the path rig).
+    var peckReach: CGPoint? = nil
     /// How far the hip drops at the bottom of a peck (rig heights). Bending legs crouch; stiff legs stay.
     var peckCrouch: Double
     var stepLength: Double
+    /// Seconds per stride. A slower stride takes longer steps for the same walking speed.
+    var stride: Double = ChickenRigMetrics.stride
     /// Where each foot steps while walking: this far behind (back leg) or in front of (front leg) the middle
     /// of the two feet. Small, so the legs pass each other: a kit drawn mid-stride, feet wide apart, still
     /// walks, not shuffles. Standing keeps the drawn feet.
@@ -79,7 +92,7 @@ struct SkeletonMotion: Equatable, Sendable {
     static func standard(hipHeight: Double) -> SkeletonMotion {
         let k: Double = hipHeight / Double(M.adult.hip.y)
         return SkeletonMotion(
-            peckBodyTilt: M.peckBodyTilt, peckNeckSwing: M.peckNeckSwing, peckHeadDip: M.peckHeadDip,
+            peckBodyTilt: M.peckBodyTilt, peckNeckSwing: M.peckNeckSwing, peckNeckBend: 0, peckHeadDip: M.peckHeadDip,
             peckCrouch: M.peckCrouch * k,
             stepLength: M.stepLength * k, footSpread: M.footSpread * k, liftShare: M.liftShare, toeCurl: M.toeCurl,
             bounce: M.bounce * k,
@@ -288,8 +301,14 @@ enum ChickenMotion {
         var pose = ChickenPose()
         pose[.body] = depth * rig.motion.peckBodyTilt
         pose[.neckLow] = depth * rig.motion.peckNeckSwing
+        pose[.neckHigh] = depth * rig.motion.peckNeckBend
+        pose[.tail] = depth * rig.motion.peckTail
         pose[.head] = depth * rig.motion.peckHeadDip
         pose.rise = -depth * rig.motion.peckCrouch
+        if let reach = rig.motion.peckReach {
+            reachNeck(rig, by: reach, depth: depth, pose: &pose)
+            pose[.head] = depth * rig.motion.peckHeadDip - pose[.body] - pose[.neckLow] - pose[.neckHigh]
+        }
         for leg in Leg.allCases {
             guard let foot = rig.feet[leg] else { continue }
             solve(leg, target: foot, curl: 0, rig: rig, pose: &pose)
@@ -365,6 +384,41 @@ enum ChickenMotion {
         if rig.has(leg.toes) { pose[leg.toes] = degrees(shankTurn) + curl }
     }
 
+    /// Solves the two neck bones for a peck `depth` of the way down. At the bottom the throat is `by` (rig
+    /// units) from its rest place. On the way, the throat goes round the base of the neck (wherever the
+    /// body has put it), its distance from the base shrinking a little at halfway (`peckTuck`), so the head
+    /// neither swings out forward nor folds the neck. The neck bends to the same side it does at rest.
+    private static func reachNeck(_ rig: SkeletonRig, by offset: CGPoint, depth: Double, pose: inout ChickenPose) {
+        guard let low0 = rig.joints[.neckLow], let mid0 = rig.joints[.neckHigh], let throat0 = rig.joints[.head]
+        else { return }
+        var bottom = ChickenPose()
+        bottom[.body] = rig.motion.peckBodyTilt
+        bottom.rise = -rig.motion.peckCrouch
+        let baseAtBottom: CGPoint = Skeleton.place(low0, on: .body, rig: rig, pose: bottom)
+        let goal = CGPoint(x: throat0.x + offset.x, y: throat0.y + offset.y)
+        let fromAngle: Double = angle(from: low0, to: throat0)
+        let turn: Double = wrap(angle(from: baseAtBottom, to: goal) - fromAngle)
+        let fromLength: Double = distance(low0, throat0)
+        let toLength: Double = distance(baseAtBottom, goal)
+        let length: Double = (fromLength + depth * (toLength - fromLength)) * (1 - M.peckTuck * sin(Double.pi * depth))
+        let direction: Double = fromAngle + depth * turn
+        let base: CGPoint = Skeleton.place(low0, on: .body, rig: rig, pose: pose)
+        let target = CGPoint(x: Double(base.x) + length * cos(direction), y: Double(base.y) + length * sin(direction))
+        let a: Double = distance(low0, mid0)
+        let b: Double = distance(mid0, throat0)
+        let reach: Double = min(a + b - 1e-6, max(abs(a - b) + 1e-6, distance(base, target)))
+        let spread: Double = acos(min(1, max(-1, (a * a + reach * reach - b * b) / (2 * a * reach))))
+        let side: Double = cross(sub(throat0, low0), sub(mid0, low0)) >= 0 ? 1 : -1
+        let lowAngle: Double = angle(from: base, to: target) + side * spread
+        let mid = CGPoint(x: Double(base.x) + a * cos(lowAngle), y: Double(base.y) + a * sin(lowAngle))
+        let highAngle: Double = angle(from: mid, to: target)
+        let lowTurn: Double = wrap(lowAngle - angle(from: low0, to: mid0))
+        let highTurn: Double = wrap(highAngle - angle(from: mid0, to: throat0))
+        // Clockwise on screen is positive. The body's tilt already turns the neck, so take it off.
+        pose[.neckLow] = -degrees(lowTurn) - pose[.body]
+        pose[.neckHigh] = -degrees(wrap(highTurn - lowTurn))
+    }
+
     // MARK: - Head
 
     /// The head bob, once a step: it holds still while the body walks on (sliding back on the bird), then
@@ -392,6 +446,9 @@ enum ChickenMotion {
     static func ease(_ x: Double) -> Double { x * x * (3 - 2 * x) }
 
     private static func fraction(_ x: Double) -> Double { x - x.rounded(.down) }
+
+    /// An angle in radians brought into -π...π, so a turn never goes the long way round.
+    private static func wrap(_ a: Double) -> Double { remainder(a, 2 * Double.pi) }
 
     private static func degrees(_ radians: Double) -> Double {
         var d: Double = radians * 180 / Double.pi

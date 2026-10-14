@@ -194,6 +194,23 @@ def main(folder):
             colour = (colour * cover[..., None] + o_colour * add[..., None]) / np.maximum(cover + add, 1e-6)[..., None]
             cover = cover + add
         parts[name] = (colour, cover)
+
+    # Joint caps: a part that turns a long way (the neck in a peck) gets a disc round its joint, in its own
+    # colour, cut to the bird's outline at rest. A disc looks the same at any turn, so the joint never
+    # opens. At rest it lies on parts of the same colour, so nothing shows.
+    if "caps" in pieces:
+        outline_cover = np.maximum.reduce([c for _, c in parts.values()])
+        for name, cap in pieces["caps"].items():
+            colour, cover = parts[name]
+            centre = fit["joints"][cap["joint"]]
+            r = cap["radius"]
+            ring = [(centre[0] + r * math.cos(a), centre[1] + r * math.sin(a))
+                    for a in np.linspace(0, 2 * math.pi, 48, endpoint=False)]
+            disc = soft_polygon(ring, placement, cover.shape) * outline_cover
+            mean = (colour * cover[..., None]).sum((0, 1)) / max(cover.sum(), 1)
+            add = disc * (1 - cover)
+            colour = (colour * cover[..., None] + mean * add[..., None]) / np.maximum(cover + add, 1e-6)[..., None]
+            parts[name] = (colour, cover + add)
     print("placement: scale %.4f, turn %.2f°, shift (%.1f, %.1f), edge error %.2f px"
           % (s, math.degrees(turn), tx, ty, err))
 

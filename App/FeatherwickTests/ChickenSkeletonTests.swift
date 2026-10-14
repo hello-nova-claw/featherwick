@@ -28,6 +28,32 @@ import Testing
         #expect(abs(SkeletonRig.chick.motion.footSpread - 0.05) < tolerance)
     }
 
+    /// A peck by reach puts the throat where it is sent, and the neck never folds on the way: the head goes
+    /// round the base of the neck, not out in front of it. The tail turns down against the tilt.
+    @Test func aPeckByReachLandsWithoutFoldingTheNeck() {
+        var rig: SkeletonRig = adult
+        rig.motion.peckBodyTilt = 30
+        rig.motion.peckCrouch = 0.06
+        rig.motion.peckHeadDip = 80
+        rig.motion.peckTail = -20
+        rig.motion.peckReach = CGPoint(x: 0, y: -0.5)
+        let throat: CGPoint = rig.joints[.head]!
+        var furthest: Double = 0
+        for i in 0...20 {
+            let pose: ChickenPose = ChickenMotion.peck(rig, progress: 0.4 * Double(i) / 20)
+            #expect(abs(pose[.neckHigh]) < 150, "step \(i)")
+            furthest = max(furthest, Double(Skeleton.place(throat, on: .head, rig: rig, pose: pose).x))
+        }
+        let bottom: ChickenPose = ChickenMotion.peck(rig, progress: 0.45)
+        let landed: CGPoint = Skeleton.place(throat, on: .head, rig: rig, pose: bottom)
+        #expect(abs(landed.x - throat.x) < tolerance && abs(landed.y - (throat.y - 0.5)) < tolerance)
+        #expect(furthest < Double(throat.x) + 0.15)
+        #expect(abs(bottom[.tail] + 20) < tolerance)
+        // The head's whole turn on screen is the dip.
+        let whole: Double = bottom[.body] + bottom[.neckLow] + bottom[.neckHigh] + bottom[.head]
+        #expect(abs(whole - 80) < tolerance)
+    }
+
     /// A part on a missing bone moves with the nearest bone above it: a head with no neck rides the body.
     @Test func aMissingBoneHandsOnToItsParent() {
         var rig: SkeletonRig = adult

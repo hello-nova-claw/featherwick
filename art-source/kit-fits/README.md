@@ -45,6 +45,11 @@ A part cut out of another one leaves a hole in it (the hen's drumsticks came out
 part never shows the background behind it. `drawOrder` in `fit.json` sets this drawing's own order; the
 hen's back drumstick draws in front of her filled body.
 
+`pieces` > `caps` gives a part that turns a long way (the neck in a peck) a disc round its joint, in its
+own colour, cut to the bird's outline at rest. A disc looks the same at any turn, so the joint never opens.
+`motion` in `fit.json` goes into `kit.json` as it is: this bird's own peck and walk (see "Painted parts" in
+`docs/design/README.md`).
+
 A part painted into another one (the hen's wattle is in her head) is split out by `pieces` > `splits` in
 `fit.json`: `take` is its shape and `leave` is what the other part loses, both in source pixels. The other
 part keeps a band under the join, so the split part can swing with no hole behind it.

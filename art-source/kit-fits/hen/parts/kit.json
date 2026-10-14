@@ -132,5 +132,17 @@
     "shankFront",
     "toesFront",
     "thighFront"
-  ]
+  ],
+  "motion": {
+    "peckBodyTilt": 30,
+    "peckCrouch": 0.08,
+    "peckHeadDip": 80,
+    "peckTail": -22,
+    "peckReach": [
+      -0.052,
+      -0.713
+    ],
+    "stride": 0.8,
+    "footSpread": 0.06
+  }
 }

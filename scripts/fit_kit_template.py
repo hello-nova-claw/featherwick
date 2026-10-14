@@ -125,6 +125,14 @@ def main(folder):
         assert sorted(fit["drawOrder"]) == sorted(by_name), "drawOrder must list every part once"
         t.PARTS = [by_name[name] for name in fit["drawOrder"]]
     t.kit_json(os.path.join(folder, "kit.json"))
+    if "motion" in fit:
+        # This bird's own motion keys (see "Painted parts" in docs/design/README.md), as they are.
+        path = os.path.join(folder, "kit.json")
+        kit = json.load(open(path))
+        kit["motion"] = fit["motion"]
+        with open(path, "w") as f:
+            json.dump(kit, f, indent=2)
+            f.write("\n")
     print("wrote", os.path.relpath(folder))
 
 

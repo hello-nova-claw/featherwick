@@ -167,6 +167,9 @@ enum ChickenRigMetrics {
     static let peckNeckSwing: Double = 88
     static let peckHeadDip: Double = 10
     static let peckCrouch: Double = 0.12
+    /// A kit that pecks by reach (`peckReach`): how much nearer the base of the neck the head comes at
+    /// halfway down, as a part of the neck's length. Keeps the head from swinging out forward.
+    static let peckTuck: Double = 0.25
     /// Parts of the peck: going down, then holding at the bottom. The rest comes back up.
     static let peckDown: Double = 0.4
     static let peckHold: Double = 0.15
