@@ -382,5 +382,25 @@
       920,
       1140
     ]
+  },
+  "pieces": {
+    "canvas": "Procreate exports: the source image placed on a 2000 px canvas, one part kept on each.",
+    "paper": [
+      247,
+      242,
+      230
+    ],
+    "kraft": [
+      190,
+      157,
+      117
+    ],
+    "files": {
+      "shankBack": "pieces/shankBack.webp",
+      "shankFront": "pieces/shankFront.webp",
+      "toesBack": "pieces/toesBack.webp",
+      "toesFront": "pieces/toesFront.webp",
+      "thighFront": "pieces/thighFront.webp"
+    }
   }
 }

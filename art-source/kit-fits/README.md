@@ -13,6 +13,10 @@ shape. Each folder is one fit. `python3 scripts/fit_kit_template.py <folder>` ma
 | `template.png` | Grid, silhouette and bones. |
 | `cut-guide.png` | Where to cut the silhouette into parts. |
 | `kit.json` | The starter kit, with this fit's pivots. |
+| `pieces/` | The keeper's cut parts, as Procreate exports (one part on each, paper erased round it). |
+| `parts/` | Each cut part on the kit canvas, kit-ready: grey value and alpha. Copy these to the kit. |
+| `parts-colour/` | The same parts in their own colour, to paint on further. |
+| `parts-preview.png` | Every cut part in colour over the faint silhouette and the joints. |
 
 ## How to use a fit
 
@@ -24,7 +28,18 @@ shape. Each folder is one fit. `python3 scripts/fit_kit_template.py <folder>` ma
 
 To move a joint or a cut line, change `fit.json` (source pixels: x right, y down) and run the script again.
 
+## Cut parts
+
+Export each cut part from Procreate as its own image, with the source image where it was. List them in
+`fit.json` under `pieces` > `files`, then run:
+
+    python3 scripts/extract_kit_parts.py art-source/kit-fits/hen
+
+The script takes out any paper that is left, finds where the source image sits on the exports, and puts
+each part on the kit canvas. A part's soft edges stay soft.
+
 ## Fits
 
 - `hen/`: the first hen silhouette (14 Oct 2026). 11 joints. No wing in the silhouette: paint a `wing`
-  inside the body, or leave it out of `kit.json`.
+  inside the body, or leave it out of `kit.json`. Cut so far: `shankBack`, `shankFront`, `toesBack`,
+  `toesFront`, `thighFront`. The kit loads only when every part in `kit.json` has a PNG.
