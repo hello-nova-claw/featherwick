@@ -475,15 +475,6 @@
         ]
       }
     },
-    "underfill": {
-      "body": {
-        "from": [
-          "thighBack",
-          "thighFront"
-        ],
-        "inset": 40
-      }
-    },
     "caps": {
       "neck": {
         "joint": "neckLow",

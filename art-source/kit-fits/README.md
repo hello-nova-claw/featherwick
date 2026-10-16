@@ -40,9 +40,10 @@ each part on the kit canvas. A part's soft edges stay soft. Only the crisp edges
 outline) are used to find the place, so long soft cuts do not pull it. Small specks of other parts left on
 an export are dropped.
 
-A part cut out of another one leaves a hole in it (the hen's drumsticks came out of her body). `pieces` >
-`underfill` fills the hole with the cut part's shape (pulled in by `inset` export pixels), so a swinging
-part never shows the background behind it. `drawOrder` in `fit.json` sets this drawing's own order; the
+A part cut out of another one leaves a hole in it. The best fix is in the art: paint the part underneath
+on, behind the cut part (the hen's body now runs down behind her drumsticks). Where that is not done yet,
+`pieces` > `underfill` fills the hole with the cut part's shape (pulled in by `inset` export pixels), so a
+swinging part never shows the background behind it. `drawOrder` in `fit.json` sets this drawing's own order; the
 hen's back drumstick draws in front of her filled body.
 
 `pieces` > `caps` gives a part that turns a long way (the neck in a peck) a disc round its joint, in its
