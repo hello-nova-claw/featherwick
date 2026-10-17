@@ -55,6 +55,28 @@ A part painted into another one (the hen's wattle is in her head) is split out b
 `fit.json`: `take` is its shape and `leave` is what the other part loses, both in source pixels. The other
 part keeps a band under the join, so the split part can swing with no hole behind it.
 
+## Auto cut (test)
+
+A test: cut the silhouette into parts with a script, not by hand. Run:
+
+    python3 scripts/cut_kit_parts.py art-source/kit-fits/hen
+
+The script uses the cut lines in `fit.json`. Each line end runs on until it meets the outline or another
+cut, so a line drawn a little short still closes its part. Each part fills from its label point in
+`regions`. If that point is off the silhouette, the nearest silhouette pixel is used. To set the point,
+add it to `seeds` (source pixels). Split parts (the wattle) and caps work as in the hand pipeline.
+
+The output goes into `auto/`: the same `parts/`, `parts-colour/` and `parts-preview.png` as a hand cut.
+`auto/compare.png` shows the auto cut, with the pixels that differ from the hand cut in red. The script
+prints a score for each part.
+
+The cuts are hard: no part is painted on under the next one yet. A hand-cut part on top runs past its
+line with a soft edge. The auto cut stops on the line.
+
+Hen, first run: 91.5% of the silhouette matches the hand cut. Past a 24 px band each side of the cuts,
+96.8% matches. The remaining misses are hand parts painted far past their line (the back thigh up toward
+the hip, the neck down over the body).
+
 ## Fits
 
 - `hen/`: the first hen silhouette (14 Oct 2026). 11 joints. No wing in the silhouette: paint a `wing`
