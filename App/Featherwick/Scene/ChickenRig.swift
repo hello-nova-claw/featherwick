@@ -41,12 +41,20 @@ struct ChickenColours: Equatable, Sendable {
     var isChick: Bool
     /// The body shape the look uses. A painted kit for it (`PartKit`) replaces the path rig. Nil: none.
     var build: BodyShape? = nil
+    /// A grown hen: she is drawn with the hen kit (`Art/Parts/hen/`), whatever her body shape.
+    var isGrownHen: Bool = false
 
     /// A buff hen, for the rig lab when there is no bird to show.
     static let sample = ChickenColours(
         feathers: Tone.buff.artColour, hackle: Tone.buff.artColour, tail: Tone.buff.artColour,
         comb: Tone.red.artColour, eyelid: Tone.red.artColour, beak: Tone.horn.artColour,
         legs: Tone.willow.artColour, combSize: 0.6, isChick: false)
+
+    /// For the test tools: draw these colours with one kit, or with none (nil: the path rig).
+    mutating func use(kit: KitName?) {
+        isGrownHen = kit == .hen
+        if case .build(let shape)? = kit { build = shape } else { build = nil }
+    }
 
     /// A yellow chick, for the rig lab.
     static let sampleChick = ChickenColours(
@@ -80,7 +88,8 @@ extension ChickenColours {
             patternColour: (overlay?.tone ?? Tone.white).artColour,
             combSize: look.part(.comb)?.scale ?? 0,
             isChick: isChick,
-            build: build)
+            build: build,
+            isGrownHen: look.stage == .hen)
     }
 }
 

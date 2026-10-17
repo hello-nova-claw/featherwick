@@ -10,7 +10,8 @@ import UniformTypeIdentifiers
 /// The painted part kits in the app bundle, and the loader. No kit ships now (the skeleton's path rig draws
 /// every bird), so the loader is checked on a small kit these tests write to a temporary folder.
 @Suite struct PartKitTests {
-    /// Every kit folder in the bundle: `kit.json` reads and has no problems, and names its own build.
+    /// Every kit folder in the bundle: `kit.json` reads and has no problems, and names its own folder (the
+    /// hen kit, or a body shape).
     /// No kits at all is fine: the path rig draws every bird.
     @Test func everyKitInTheBundleIsWhole() throws {
         let root: URL = try #require(PartKit.bundleRoot, "no Parts folder in the app bundle")
@@ -20,7 +21,7 @@ import UniformTypeIdentifiers
             let folder: URL = root.appendingPathComponent(build)
             let spec: KitSpec = try JSONDecoder().decode(
                 KitSpec.self, from: Data(contentsOf: folder.appendingPathComponent("kit.json")))
-            #expect(BodyShape(rawValue: build) != nil, "\(build) is not a body shape")
+            #expect(KitName.all.map(\.folder).contains(build), "\(build) is not a kit name")
             #expect(spec.build == build, "kit.json in \(build) says it is \(spec.build)")
             let files = Set(try FileManager.default.contentsOfDirectory(atPath: folder.path))
             #expect(spec.problems(files: files) == [], "\(build)")
@@ -45,6 +46,24 @@ import UniformTypeIdentifiers
         }
         let eye: CGRect = try #require(kit.eyeBounds)
         #expect(abs(eye.minX - Fixture.eye.minX) < 0.01 && abs(eye.maxY - Fixture.eye.maxY) < 0.01)
+    }
+
+    /// Every grown hen shares the hen kit, whatever her body shape. A rooster (not a hen) does not use it.
+    @MainActor @Test func grownHensShareTheHenKit() {
+        PartKit.reload()
+        guard let henKit = PartKit.load(.hen) else { return }
+        var hen: ChickenColours = ChickenColours.sample
+        hen.isGrownHen = true
+        for shape in BodyShape.allCases {
+            hen.build = shape
+            #expect(PartKit.kit(for: hen) === henKit, "\(shape)")
+        }
+        var rooster: ChickenColours = ChickenColours.sample
+        rooster.build = nil
+        #expect(PartKit.kit(for: rooster) == nil)
+        var chick: ChickenColours = ChickenColours.sampleChick
+        chick.isGrownHen = true
+        #expect(PartKit.kit(for: chick) == nil)
     }
 
     /// Chicks keep the path rig, and so does a bird whose body shape has no kit.

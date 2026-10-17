@@ -519,5 +519,6 @@
     ],
     "stride": 0.8,
     "footSpread": 0.06
-  }
+  },
+  "build": "hen"
 }

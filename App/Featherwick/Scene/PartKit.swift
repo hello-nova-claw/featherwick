@@ -4,7 +4,8 @@ import Foundation
 import ImageIO
 import os
 
-// A painted parts kit for one body shape: `Art/Parts/<build>/kit.json` and one PNG per part.
+// A painted parts kit: `Art/Parts/<name>/kit.json` and one PNG per part. A grown hen uses the `hen` kit;
+// any other grown bird uses the kit for its body shape (`Art/Parts/heavy/`...), if there is one.
 // See "Painted parts" in docs/design/README.md for the format, and `KitSpec.swift` for `kit.json`.
 //
 // Every PNG shares one canvas. RGB is a greyscale value, alpha is coverage. On screen a part is its colour
@@ -27,6 +28,22 @@ struct KitLayer: Identifiable {
 private let log = Logger(subsystem: "dev.featherwick.app", category: "PartKit")
 
 /// A loaded kit. Immutable after load, so it is safe to share.
+/// Which kit a bird uses: the one every grown hen shares, or the one for a body shape.
+enum KitName: Hashable, Sendable {
+    case hen
+    case build(BodyShape)
+
+    /// The kit's folder in `Art/Parts/`.
+    var folder: String {
+        switch self {
+        case .hen: "hen"
+        case .build(let shape): shape.rawValue
+        }
+    }
+
+    static let all: [KitName] = [.hen] + BodyShape.allCases.map(KitName.build)
+}
+
 final class PartKit: @unchecked Sendable {
     /// A painted bird is downsampled once, at load, to this many pixels tall. A yard bird is at most
     /// about 64 pt tall, so 512 px is sharp at 3x with room to spare, and far cheaper to draw than 1673 px.
@@ -35,7 +52,7 @@ final class PartKit: @unchecked Sendable {
     /// painted comb at full size; a pullet's grows in towards it, and a rooster's is larger.
     static let paintedCombSize: Double = 0.6
 
-    let build: BodyShape
+    let name: KitName
     let spec: KitSpec
     /// Where the kit was read from: the app bundle, or the source folder in a Debug simulator build.
     let folder: URL
@@ -53,11 +70,11 @@ final class PartKit: @unchecked Sendable {
     let rig: SkeletonRig
 
     private init(
-        build: BodyShape, spec: KitSpec, folder: URL, layers: [KitLayer], lacing: CGImage?, barring: CGImage?,
+        name: KitName, spec: KitSpec, folder: URL, layers: [KitLayer], lacing: CGImage?, barring: CGImage?,
         eyeBounds: CGRect?, combBounds: CGRect?
     ) {
         self.rig = spec.skeleton
-        self.build = build
+        self.name = name
         self.spec = spec
         self.folder = folder
         self.layers = layers
@@ -94,41 +111,47 @@ final class PartKit: @unchecked Sendable {
 
     // MARK: - Loading
 
-    @MainActor private static var cache: [BodyShape: PartKit] = [:]
-    /// Builds that have no kit, or a broken one: asked once, then remembered, so the log says it once.
-    @MainActor private static var missing: Set<BodyShape> = []
+    @MainActor private static var cache: [KitName: PartKit] = [:]
+    /// Kits that are not there, or are broken: asked once, then remembered, so the log says it once.
+    @MainActor private static var missing: Set<KitName> = []
 
-    /// The kit for a bird's body shape, or nil (no kit yet, or a broken kit: then the path rig draws it).
-    /// Read once, then cached.
-    @MainActor static func load(build: BodyShape) -> PartKit? {
-        if let kit = cache[build] { return kit }
-        if missing.contains(build) { return nil }
-        guard let root = partsRoot, let kit = load(build: build, from: root.appendingPathComponent(build.rawValue))
-        else {
-            missing.insert(build)
+    /// A kit by name, or nil (no kit yet, or a broken kit: then the path rig draws the bird). Read once,
+    /// then cached.
+    @MainActor static func load(_ name: KitName) -> PartKit? {
+        if let kit = cache[name] { return kit }
+        if missing.contains(name) { return nil }
+        guard let root = partsRoot, let kit = load(name, from: root.appendingPathComponent(name.folder)) else {
+            missing.insert(name)
             return nil
         }
-        cache[build] = kit
+        cache[name] = kit
         return kit
     }
 
-    /// The kit for a grown bird with this build. Chicks keep the path rig: there is no chick kit yet.
+    /// The kit for a body shape, or nil.
+    @MainActor static func load(build: BodyShape) -> PartKit? { load(.build(build)) }
+
+    /// The kit a grown bird is drawn with: a grown hen's is the hen kit, whatever her body shape; any
+    /// other grown bird's is its body shape's. Chicks keep the path rig: there is no chick kit yet. Nil:
+    /// the path rig draws it.
     @MainActor static func kit(for colours: ChickenColours) -> PartKit? {
-        guard !colours.isChick, let build = colours.build else { return nil }
-        return load(build: build)
+        guard !colours.isChick else { return nil }
+        if colours.isGrownHen, let kit = load(.hen) { return kit }
+        guard let build = colours.build else { return nil }
+        return load(.build(build))
     }
 
     /// Reads every kit off the main thread, at launch, so the first painted bird does not stall a frame
     /// (eleven 2048 px PNGs and two pixel passes). A bird drawn before this ends loads its kit itself.
     @MainActor static func preload() async {
         guard let root = partsRoot else { return }
-        for build in BodyShape.allCases where cache[build] == nil && !missing.contains(build) {
-            let folder: URL = root.appendingPathComponent(build.rawValue)
+        for name in KitName.all where cache[name] == nil && !missing.contains(name) {
+            let folder: URL = root.appendingPathComponent(name.folder)
             let kit: PartKit? = await Task.detached(priority: .utility) {
-                PartKit.load(build: build, from: folder)
+                PartKit.load(name, from: folder)
             }.value
-            guard cache[build] == nil, !missing.contains(build) else { continue }
-            if let kit { cache[build] = kit } else { missing.insert(build) }
+            guard cache[name] == nil, !missing.contains(name) else { continue }
+            if let kit { cache[name] = kit } else { missing.insert(name) }
         }
     }
 
@@ -155,7 +178,10 @@ final class PartKit: @unchecked Sendable {
 
     /// Reads one kit folder. Nil, with one log line, when the folder is missing or the kit is broken:
     /// art never crashes the app.
-    static func load(build: BodyShape, from folder: URL) -> PartKit? {
+    static func load(build: BodyShape, from folder: URL) -> PartKit? { load(.build(build), from: folder) }
+
+    /// Reads one kit folder, for the kit `name`. See `load(build:from:)`.
+    static func load(_ name: KitName, from folder: URL) -> PartKit? {
         let specURL: URL = folder.appendingPathComponent("kit.json")
         guard FileManager.default.fileExists(atPath: specURL.path) else { return nil }
         let spec: KitSpec
@@ -163,13 +189,13 @@ final class PartKit: @unchecked Sendable {
             spec = try JSONDecoder().decode(KitSpec.self, from: Data(contentsOf: specURL))
         } catch {
             let reason: String = String(describing: error)
-            log.error("Kit \(build.rawValue, privacy: .public): kit.json does not read: \(reason, privacy: .public)")
+            log.error("Kit \(name.folder, privacy: .public): kit.json does not read: \(reason, privacy: .public)")
             return nil
         }
         let files = Set((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? [])
         let problems: [String] = spec.problems(files: files)
         guard problems.isEmpty else {
-            log.error("Kit \(build.rawValue, privacy: .public): \(problems.joined(separator: "; "), privacy: .public)")
+            log.error("Kit \(name.folder, privacy: .public): \(problems.joined(separator: "; "), privacy: .public)")
             return nil
         }
         // Every PNG must be the canvas size: a part of another size would be stretched onto the canvas.
@@ -180,7 +206,7 @@ final class PartKit: @unchecked Sendable {
         }
         guard wrongSize.isEmpty else {
             let names: String = wrongSize.joined(separator: ", ")
-            log.error("Kit \(build.rawValue, privacy: .public): not the canvas size: \(names, privacy: .public)")
+            log.error("Kit \(name.folder, privacy: .public): not the canvas size: \(names, privacy: .public)")
             return nil
         }
         // The canvas's longer side, scaled so the bird is `workingHeight` pixels tall.
@@ -190,7 +216,7 @@ final class PartKit: @unchecked Sendable {
         var layers: [KitLayer] = []
         for name in spec.drawOrder {
             guard let part = spec.parts[name], let image = working("\(name).png") else {
-                log.error("Kit \(build.rawValue, privacy: .public): \(name).png does not read")
+                log.error("Kit \(name.folder, privacy: .public): \(name).png does not read")
                 return nil
             }
             let token: KitToken =
@@ -208,7 +234,7 @@ final class PartKit: @unchecked Sendable {
             layers.first(where: { $0.id == name }).flatMap { rigBounds(of: $0.image, in: spec) }
         }
         return PartKit(
-            build: build, spec: spec, folder: folder, layers: layers, lacing: lacing, barring: barring,
+            name: name, spec: spec, folder: folder, layers: layers, lacing: lacing, barring: barring,
             eyeBounds: paintedBounds("eye"), combBounds: paintedBounds("comb"))
     }
 
