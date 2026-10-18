@@ -43,6 +43,8 @@ struct ChickenColours: Equatable, Sendable {
     var build: BodyShape? = nil
     /// A grown hen: she is drawn with the hen kit (`Art/Parts/hen/`), whatever her body shape.
     var isGrownHen: Bool = false
+    /// Test tools only: draw with this kit, whatever the bird is (a kit no bird uses yet, such as `hen-b`).
+    var kitOverride: KitName? = nil
 
     /// A buff hen, for the rig lab when there is no bird to show.
     static let sample = ChickenColours(
@@ -53,6 +55,7 @@ struct ChickenColours: Equatable, Sendable {
     /// For the test tools: draw these colours with one kit, or with none (nil: the path rig).
     mutating func use(kit: KitName?) {
         isGrownHen = kit == .hen
+        kitOverride = kit
         if case .build(let shape)? = kit { build = shape } else { build = nil }
     }
 

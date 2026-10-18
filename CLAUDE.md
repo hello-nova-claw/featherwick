@@ -71,7 +71,8 @@ components, screens 1a–9a). The painted farm and bird art come later; dashed b
   bones through `BoneEffect`; test tools have a rig lab. A body shape with a painted kit
   (`Art/Parts/<build>/kit.json` + PNGs, read by `Scene/PartKit.swift`; `kit.json` and its skeleton are
   `Scene/KitSpec.swift`, pure) is drawn by `PaintedChickenRig`. Every grown hen uses `Art/Parts/hen/`
-  (from `art-source/kit-fits/hen/parts/`); other grown birds use their body shape's kit, and none ships yet. Source art that is not a
+  (from `art-source/kit-fits/hen/parts/`). `Art/Parts/hen-b/` is a second hen kit, built from slices by
+  `scripts/make_kit_from_slices.py`; only the test tools pick it (`ChickenColours.kitOverride`). Other grown birds use their body shape's kit, and none ships yet. Source art that is not a
   kit lives in `art-source/` (outside the bundle). `art-source/kit-template/` is the page to paint a kit
   over, from `python3 scripts/make_kit_template.py`. `art-source/kit-fits/<name>/` fits that skeleton to a
   drawn silhouette (`python3 scripts/fit_kit_template.py <folder>`); `scripts/extract_kit_parts.py` puts the

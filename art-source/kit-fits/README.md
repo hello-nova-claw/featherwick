@@ -62,3 +62,20 @@ part keeps a band under the join, so the split part can swing with no hole behin
   `head`, `comb`, `wattle` (split from the head), `beak`, `thighBack`, `thighFront`, `shankBack`,
   `shankFront`, `toesBack`, `toesFront`. Not cut yet: `eye`, `wing`. `parts/` loads as a kit now: with no
   eye part, the bird does not blink.
+- `hen-b/`: the same hen silhouette, cut along other lines (17 Oct 2026). A larger head, a band of neck
+  under the hackle, and drumsticks that hang below the body. It uses the `hen` fit's joints and kit.json.
+  The cuts come as slices, not Procreate exports: see "Slices" below.
+
+## Slices
+
+A slice is one part, cropped, hard-edged and in colour, cut from a silhouette that already sits on the kit
+canvas. `slices/slices.json` gives the canvas, the ground point and each part's place (x, y, w, h). The
+fit's `fit.json` names the fit whose joints the slices were cut on (`slices` > `from`), and the draw order.
+Run:
+
+    python3 scripts/make_kit_from_slices.py art-source/kit-fits/hen-b
+
+Each part runs on under the parts drawn in front of it, `band` canvas pixels past the join, so a part that
+turns shows no gap. Where a slice is already painted on under its neighbour (the body under the neck, the
+tail and the drumsticks), its own paint stays. `caps` work as in the hen fit. The script writes `parts/` (a
+whole kit) and `parts-preview.png` (each part in its own colour, bands and caps lighter, over the bones).

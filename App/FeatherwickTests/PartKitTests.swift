@@ -66,6 +66,18 @@ import UniformTypeIdentifiers
         #expect(PartKit.kit(for: chick) == nil)
     }
 
+    /// The test tools' kit override wins over the bird's own kit: a grown hen can be drawn with `hen-b`.
+    /// Without it, she keeps the hen kit.
+    @MainActor @Test func theKitOverrideDrawsHenB() {
+        PartKit.reload()
+        guard let henB = PartKit.load(.henB) else { return }
+        var hen: ChickenColours = ChickenColours.sample
+        hen.use(kit: .henB)
+        #expect(PartKit.kit(for: hen) === henB)
+        hen.use(kit: .hen)
+        #expect(PartKit.kit(for: hen) === PartKit.load(.hen))
+    }
+
     /// Chicks keep the path rig, and so does a bird whose body shape has no kit.
     @MainActor @Test func chicksAndKitlessBuildsUseThePathRig() {
         PartKit.reload()

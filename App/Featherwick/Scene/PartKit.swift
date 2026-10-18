@@ -31,17 +31,21 @@ private let log = Logger(subsystem: "dev.featherwick.app", category: "PartKit")
 /// Which kit a bird uses: the one every grown hen shares, or the one for a body shape.
 enum KitName: Hashable, Sendable {
     case hen
+    /// A second hen kit, cut from the same silhouette along other lines (`art-source/kit-fits/hen-b/`).
+    /// No bird uses it yet: the test tools pick it.
+    case henB
     case build(BodyShape)
 
     /// The kit's folder in `Art/Parts/`.
     var folder: String {
         switch self {
         case .hen: "hen"
+        case .henB: "hen-b"
         case .build(let shape): shape.rawValue
         }
     }
 
-    static let all: [KitName] = [.hen] + BodyShape.allCases.map(KitName.build)
+    static let all: [KitName] = [.hen, .henB] + BodyShape.allCases.map(KitName.build)
 }
 
 final class PartKit: @unchecked Sendable {
@@ -136,6 +140,7 @@ final class PartKit: @unchecked Sendable {
     /// the path rig draws it.
     @MainActor static func kit(for colours: ChickenColours) -> PartKit? {
         guard !colours.isChick else { return nil }
+        if let name = colours.kitOverride { return load(name) }
         if colours.isGrownHen, let kit = load(.hen) { return kit }
         guard let build = colours.build else { return nil }
         return load(.build(build))
@@ -214,19 +219,19 @@ final class PartKit: @unchecked Sendable {
         func working(_ name: String) -> CGImage? { image(at: folder.appendingPathComponent(name), maxPixel: maxPixel) }
 
         var layers: [KitLayer] = []
-        for name in spec.drawOrder {
-            guard let part = spec.parts[name], let image = working("\(name).png") else {
-                log.error("Kit \(name.folder, privacy: .public): \(name).png does not read")
+        for part in spec.drawOrder {
+            guard let entry = spec.parts[part], let image = working("\(part).png") else {
+                log.error("Kit \(name.folder, privacy: .public): \(part).png does not read")
                 return nil
             }
             let token: KitToken =
-                part.token.flatMap(KitToken.init(rawValue:)) ?? KitToken.implied(for: name, in: spec)
+                entry.token.flatMap(KitToken.init(rawValue:)) ?? KitToken.implied(for: part, in: spec)
             layers.append(
                 KitLayer(
-                    id: name, image: image, token: token, tokenScale: part.tokenScale ?? 1,
-                    bone: spec.bone(of: name), follow: spec.follow(of: name),
-                    lacing: overlay("lacing", isOn: name, in: spec),
-                    barring: overlay("barring", isOn: name, in: spec)))
+                    id: part, image: image, token: token, tokenScale: entry.tokenScale ?? 1,
+                    bone: spec.bone(of: part), follow: spec.follow(of: part),
+                    lacing: overlay("lacing", isOn: part, in: spec),
+                    barring: overlay("barring", isOn: part, in: spec)))
         }
         let lacing: CGImage? = spec.overlays?["lacing"] == nil ? nil : working("lacing.png")
         let barring: CGImage? = spec.overlays?["barring"] == nil ? nil : working("barring.png").flatMap(lightMap)
