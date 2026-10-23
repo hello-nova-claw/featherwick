@@ -10,10 +10,11 @@ PNG per part, in colour. The fit folder holds `fit.json` with the joints, in the
 2. Paints each part on under the parts drawn in front of it, `band` canvas pixels past the join (only where
    that part is), so a part that turns never shows a gap. A part the slices already run on under (the body
    under the neck, tail and thighs) keeps its own paint there.
-3. Gives each part in `caps` a disc round its joint, cut to the bird's outline at rest, as the hen fit does.
-4. Writes the kit:
+3. Gives each part in `round` a rounded end: an arc round its joint, edge to edge, from the part behind.
+4. Gives each part in `caps` a disc round its joint, cut to the bird's outline at rest, as the hen fit does.
+5. Writes the kit:
    - parts/<name>.png         grey value (the game adds the colour) and alpha coverage
-   - parts/kit.json           the skeleton fit's kit.json, with this fit's build and draw order
+   - parts/kit.json           the skeleton fit's kit.json, with this fit's build, draw order and motion
    - parts-preview.png        every part in colour, the bands and caps shown faintly behind
 
     python3 scripts/make_kit_from_slices.py art-source/kit-fits/hen-b
@@ -104,6 +105,39 @@ def main(folder):
     def canvas(p):
         return (cx + (p[0] - gx) * k, cy + (p[1] - gy) * k)
 
+    # A rounded end: the part's cut becomes an arc round its own joint, edge to edge, so as the part turns
+    # its end slides along itself and never lifts out of the outline as a step. The radius reaches the far
+    # end of the cut (or `radius`, in canvas pixels); the arc is filled with the other part's own paint.
+    # A part in front (the neck over the body) just grows to the arc. A part behind (the tail under the
+    # body) takes the body's visible paint inside the arc, and the body is cut back to the arc, so the arc
+    # is what shows.
+    bird = np.maximum.reduce([solid[n] for n in order])
+    outside = dilate(~bird, 2)
+    for name, end in sl.get("round", {}).items():
+        jx, jy = canvas(bones["joints"][end["joint"]])
+        donor = end["from"]
+        behind = order.index(name) < order.index(donor)
+        front, back = (donor, name) if behind else (name, donor)
+        cut = dilate(solid[front], 1) & ~solid[front] & solid[back] & outside
+        ys, xs = np.nonzero(cut)
+        radius = end.get("radius", np.hypot(xs - jx, ys - jy).max())
+        inside = disc((jx, jy), radius, shape) > 0.5
+        take = inside & solid[donor] & ~solid[name]
+        if behind:
+            # The donor goes inside the arc, also where it was painted over this part, but not under the
+            # parts drawn in front of it.
+            over = np.maximum.reduce([solid[n] for n in order[order.index(donor) + 1:]])
+            lose = inside & ~over
+            # This part's paint runs a few pixels past the arc, under the donor's soft edge, so the two soft
+            # edges do not meet on one line and leave a light hairline.
+            take = (disc((jx, jy), radius + 4, shape) > 0.5) & solid[donor] & ~solid[name] & ~over
+            solid[donor] &= ~lose
+            cover[donor] &= ~lose
+        colour[name][take] = colour[donor][take]
+        solid[name] |= take
+        cover[name] |= take
+        print("round end: %s, %.0f px round %s" % (name, radius, end["joint"]))
+
     alpha = {n: np.asarray(Image.fromarray((cover[n] * 255).astype("uint8")).filter(
         ImageFilter.GaussianBlur(SOFT))) / 255 for n in order}
 
@@ -113,14 +147,20 @@ def main(folder):
         d = disc(canvas(bones["joints"][cap["joint"]]), cap["radius"] * k, shape) * outline
         alpha[name] = np.maximum(alpha[name], d)
 
-    # Where a band or a cap adds paint, it takes the part's own mean colour (the slices are flat).
+    # Where a band or a cap adds paint, it takes the slices' own paper there (whichever slice shows at that
+    # spot), so it keeps the texture; outside every slice, the part's mean colour.
+    paper = np.zeros(shape + (3,))
+    seen = np.zeros(shape, bool)
+    for n in order:
+        paper[solid[n]] = colour[n][solid[n]]
+        seen |= solid[n]
     out = os.path.join(folder, "parts")
     os.makedirs(out, exist_ok=True)
     lum = np.array([0.299, 0.587, 0.114])
     preview = Image.new("RGBA", (size[0], size[1]), (246, 241, 231, 255))
     for name in order:
         own = colour[name][solid[name]].mean(0)
-        rgb = np.where(solid[name][..., None], colour[name], own)
+        rgb = np.where(solid[name][..., None], colour[name], np.where(seen[..., None], paper, own))
         grey = np.clip(rgb @ lum / (mean @ lum) * VALUE, 0, 255)
         kit = np.dstack([grey, grey, grey, alpha[name] * 255]).astype("uint8")
         Image.fromarray(kit, "RGBA").save(os.path.join(out, name + ".png"), optimize=True)
@@ -134,6 +174,8 @@ def main(folder):
     spec["build"] = fit["build"]
     spec["parts"] = {n: spec["parts"][n] for n in order}
     spec["drawOrder"] = order
+    # This fit's own motion numbers replace the skeleton fit's, one key at a time.
+    spec["motion"] = {**spec.get("motion", {}), **fit.get("motion", {})}
     with open(os.path.join(out, "kit.json"), "w") as f:
         json.dump(spec, f, indent=2)
         f.write("\n")

@@ -77,5 +77,30 @@ Run:
 
 Each part runs on under the parts drawn in front of it, `band` canvas pixels past the join, so a part that
 turns shows no gap. Where a slice is already painted on under its neighbour (the body under the neck, the
-tail and the drumsticks), its own paint stays. `caps` work as in the hen fit. The script writes `parts/` (a
-whole kit) and `parts-preview.png` (each part in its own colour, bands and caps lighter, over the bones).
+tail and the drumsticks), its own paint stays. `caps` work as in the hen fit. `motion` in `fit.json`
+replaces those keys of the hen's motion. The script writes `parts/` (a whole kit) and `parts-preview.png`
+(each part in its own colour, bands and caps lighter, over the bones).
+
+hen-b's peck sends the throat forward (`peckReach` 0.45, -0.8) and tips the body 40°. With the hen's reach
+(throat straight down), the lower neck turns about 130° against the body at the bottom of the peck. Its
+neck part runs down the front of the breast, so that block flips up over the back as a box. With the throat
+forward, the lower neck turns about 55°, and the neck tips down in one line.
+
+`round` gives a part a rounded end: its cut becomes an arc round its own joint, from edge to edge, filled
+with the paint of the other part (`from`). As the part turns, its end slides along itself, so it never lifts
+out of the outline as a step. The radius reaches the far end of the cut, or `radius` (canvas pixels). A part
+in front (the neck over the body) grows to the arc. A part behind (the tail under the body) takes the body's
+paint inside the arc, and the body is cut back to the arc. hen-b rounds four ends, so it needs no caps:
+
+| Part | Joint | From | Radius |
+| --- | --- | --- | --- |
+| `neck` | `neckLow` | `body` | 270 px |
+| `hackle` | `neckHigh` | `neck` | 182 px |
+| `head` | `head` | `hackle` | 170 px |
+| `tail` | `tail` | `body` | 120 px |
+
+The tail's cut runs from the back (110 px from its joint) down to the rump (440 px). An arc that reaches the
+rump gives the tail half the body: it opens a step on the back in the peck and sways in the walk. So the
+tail's arc rounds only the top, where the back line is.
+
+Paint added under a join or in an arc takes the slices' own paper there, so it keeps the texture.

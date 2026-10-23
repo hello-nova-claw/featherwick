@@ -134,13 +134,13 @@
     "thighFront"
   ],
   "motion": {
-    "peckBodyTilt": 30,
+    "peckBodyTilt": 40,
     "peckCrouch": 0.08,
     "peckHeadDip": 80,
     "peckTail": -22,
     "peckReach": [
-      -0.052,
-      -0.713
+      0.45,
+      -0.8
     ],
     "stride": 0.8,
     "footSpread": 0.06
