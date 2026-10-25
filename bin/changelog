@@ -6,6 +6,11 @@ instead of editing CHANGELOG.md, so open pull requests never conflict over
 the same lines. At release time this script appends every fragment under
 "## Unreleased", in issue number order, and deletes the fragments.
 
+It checks every fragment before it writes anything, writes CHANGELOG.md in
+one step, and only then deletes the fragments. It runs in a git checkout, and
+its result goes into one release pull request, so a run that stops part way
+is undone with `git checkout -- CHANGELOG.md changelog/`.
+
 Usage: bin/changelog [root]
 """
 
@@ -16,14 +21,18 @@ from pathlib import Path
 UNRELEASED = "## Unreleased"
 
 
+FRAGMENT = re.compile(r"([1-9][0-9]*)-[^/]+\.txt")
+
+
 def issue_number(path: Path) -> tuple[int, str]:
-    match = re.match(r"(\d+)-", path.name)
+    match = FRAGMENT.fullmatch(path.name)
     return (int(match.group(1)) if match else sys.maxsize, path.name)
 
 
 def main() -> int:
     root = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
-    fragments = sorted((root / "changelog").glob("*.txt"), key=issue_number)
+    # Only files named like fragments, so a stray notes.txt is never folded in or deleted.
+    fragments = sorted((p for p in (root / "changelog").glob("*.txt") if FRAGMENT.fullmatch(p.name)), key=issue_number)
     if not fragments:
         print("No changelog fragments to fold in.")
         return 0
@@ -32,10 +41,11 @@ def main() -> int:
     for fragment in fragments:
         lines = fragment.read_text(encoding="utf-8").splitlines()
         # One fragment, one line, and nothing else: the pull request check holds every fragment to this.
-        if len(lines) != 1 or not lines[0].strip():
-            print(f"::error::{fragment} must hold exactly one line, and nothing else.")
+        entry = lines[0].strip().lstrip("-* ").strip() if len(lines) == 1 else ""
+        if not entry:
+            print(f"::error::{fragment} must hold exactly one line of text, and nothing else.")
             return 1
-        entries.append(f"- {lines[0].strip().lstrip('-* ').strip()}")
+        entries.append(f"- {entry}")
 
     changelog = root / "CHANGELOG.md"
     text = changelog.read_text(encoding="utf-8")
@@ -48,7 +58,9 @@ def main() -> int:
     match = re.search(r"\n## ", tail)
     section, rest = (tail[: match.start()], tail[match.start():]) if match else (tail, "")
     section = section.rstrip("\n") + "\n" + "\n".join(entries) + "\n"
-    changelog.write_text(head + UNRELEASED + section + rest, encoding="utf-8")
+    staged = changelog.with_suffix(".md.tmp")
+    staged.write_text(head + UNRELEASED + section + rest, encoding="utf-8")
+    staged.replace(changelog)
 
     for fragment in fragments:
         fragment.unlink()
