@@ -5,30 +5,35 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 # A new push to the same branch or PR stops the run still going for the old one.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  test:
+  linux:
+    # Job names are required-check names on main. Never rename one.
+    name: Build and test (Linux)
     runs-on: ubuntu-latest
     container: swift:6.0-noble
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/cache@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .build
           key: linux-spm-${{ hashFiles('Package.swift', 'Sources/**', 'Tests/**') }}
           restore-keys: linux-spm-
-      - name: Build (warnings are errors)
-        run: swift build --build-tests -Xswiftc -warnings-as-errors
-      - name: Test
-        run: swift test --skip-build
-      # Last, so one run reports build, tests and formatting. The diff shows what to change.
-      - name: Check formatting
-        if: always()
+      # Coverage is compiled in, so the build that the tests run must have it.
+      - name: Build with coverage (warnings are errors)
+        run: swift build --build-tests --enable-code-coverage -Xswiftc -warnings-as-errors
+      - name: Test, with coverage
+        run: swift test --skip-build --enable-code-coverage
+      - name: Coverage of Core and Text is not below the baseline
         run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          swift format --in-place --recursive --parallel Package.swift Sources Tests App
-          git diff --exit-code || { echo "::error::Run: swift format --in-place --recursive Package.swift Sources Tests App"; exit 1; }
+          command -v python3 >/dev/null || { apt-get update -qq && apt-get install -y -qq python3 >/dev/null; }
+          python3 bin/coverage-gate llvm-cov "$(swift test --show-codecov-path)" .github/coverage-baseline

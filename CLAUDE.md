@@ -113,7 +113,7 @@ open Featherwick.xcodeproj
   (Application Support, same `SaveStore` as the CLI).
 - Views only send commands and show state. No game rules in the app.
 - To run on a device: copy `App/Config/Local.xcconfig.example` to `Local.xcconfig` and set your team ID.
-- CI builds the app in `apple.yml` (on `main`, or run it by hand).
+- CI builds and tests the app in `ios.yml` on every pull request (see Workflow).
 
 ## Core rules (do not break)
 
@@ -158,12 +158,25 @@ Most new content is a table entry. See "Data layer" and the feature sections in 
 ## Workflow
 
 - Add or update tests in the matching suite for each change. Run `swift test` before a commit.
-- CI (`.github/workflows/swift.yml`) runs on Linux (`swift:6.0-noble`) for every pull request
-  and push to `main`: build with warnings as errors, tests, then the format check. Code must build on Linux too: no
-  Apple-only APIs in Core. Fix warnings; do not silence them.
-- `.github/workflows/apple.yml` builds and tests on macOS, builds the core for iOS, and builds the iOS app and its tests. It runs on
-  `main` only (macOS minutes cost 10x); run it by hand before merging a change to platform code.
-- Dependabot (`.github/dependabot.yml`) opens weekly PRs for new GitHub Action versions.
+- CI runs on Linux (`swift:6.0-noble`, or plain Ubuntu) for every pull request and push to `main`.
+  Code must build on Linux too: no Apple-only APIs in Core. Fix warnings; do not silence them.
+  - `swift.yml`, "Build and test (Linux)": build with warnings as errors, tests with coverage, and
+    `bin/coverage-gate` against `.github/coverage-baseline`.
+  - `checks.yml`: "swift-format", "SwiftLint" (with the colour, font-size and print rules), "Use what Apple
+    already has" (`bin/check-native`, the package allowlist),
+    "Licence files intact" (`bin/check-licences`), "Gitleaks", "actionlint".
+  - `pull-request.yml`: "Tests change with code", "Changelog fragment" (passes with `no-changelog` when no fragment is added).
+  - Job names are the required checks on `main`. Never rename one.
+- `.github/workflows/ios.yml` runs on macOS for every pull request and push to `main`:
+  - "iOS tests (latest)": macOS 15, Xcode 26.3, iPhone 17 Pro on iOS 26.2. The app's tests with coverage,
+    `bin/coverage-gate` against `.github/coverage-baseline-app`, and the simulator `.app` as an artifact.
+  - "iOS tests (iOS 17)": macOS 15, Xcode 16.4, iPhone 15 on iOS 17.5, the minimum supported version. The
+    macOS 14 image (the last with an iOS 17 simulator) retires on 2 November 2026, so the job downloads
+    the iOS 17.5 runtime from Apple on each run.
+  - `build-preview.yml` then comments on the pull request with how to install that `.app`. It runs from
+    `main`'s copy after the iOS workflow, never runs pull request code, and skips forks.
+- Dependabot (`.github/dependabot.yml`) opens weekly PRs for GitHub Actions and Swift packages.
+- At release time, follow `docs/release-checklist.md`; `bin/changelog` folds `changelog/*.txt` into `CHANGELOG.md`.
 - After a `Rules` balance change, run `sim` and check `SimulationTests` still pass.
 - Prefer the standard library: `count(where:)`, tuple compares for sort tie-breaks, Hashable
   structs (not joined strings) as dictionary keys. A ranked enum with String raw values conforms
@@ -193,7 +206,9 @@ swift build --build-tests -Xswiftc -warnings-as-errors
 swift test                                   # about 7 minutes; the simulation tests are slow
 swift test --filter VillageDayTests          # one suite
 swift test --filter "ShowTests/standardsListTheBreedsOwnColours"  # one test
-swift format lint --strict --recursive Package.swift Sources Tests App
+swift format --in-place --recursive Package.swift Sources Tests App && git diff --exit-code   # from a clean tree
+swiftlint lint --strict --baseline .swiftlint-baseline.json
+bin/check-native && bin/check-licences
 cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Featherwick \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' CODE_SIGNING_ALLOWED=NO \
   -only-testing:FeatherwickTests/PartKitTests
@@ -224,8 +239,9 @@ cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Fea
   `gh pr view <n> --json state` and confirm it is `OPEN` before every push to its branch.
 - Merge `main` into a branch only when it conflicts (GitHub says DIRTY). Being behind is not a reason:
   every push dismisses the approval and restarts CI. Don't rebase.
-- Each push queues every CI job. GitHub Free runs 20 jobs at once, only 5 of them on macOS. Keep the
-  number of open PRs to what the macOS slots can carry.
+- Each push queues every CI job. GitHub Free runs 20 jobs at once, only 5 of them on macOS. A push queues
+  2 macOS jobs (the two iOS tests), plus Screenshots when it touches UI. So keep at most 2 open PRs that
+  touch the app; Linux-only PRs (docs, Core, tooling) are not limited by the macOS slots.
 - When several sessions work at once, give each a lane: an ordered list of issues in one area, one PR
   at a time, so they never edit the same files.
 - Only `main` is protected. Never enable auto-merge on a PR whose base is another feature branch: it
