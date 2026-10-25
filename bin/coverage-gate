@@ -59,8 +59,10 @@ def main() -> int:
     if coverage < baseline - TOLERANCE:
         print(f"::error::Coverage went down from {baseline:.2f}% to {coverage:.3f}%. Add tests, or explain in the pull request why it must drop.")
         return 1
+    # The baseline is a ratchet: a rise that is not recorded would let a later drop pass unseen.
     if coverage > baseline + TOLERANCE:
-        print(f"Coverage went up. Raise {baseline_path} to {int(coverage * 100) / 100:.2f} in this pull request.")
+        print(f"::error::Coverage went up. Raise {baseline_path} to {int(coverage * 100) / 100:.2f} in this pull request.")
+        return 1
     return 0
 
 
