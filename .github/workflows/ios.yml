@@ -1,0 +1,92 @@
+name: iOS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODEGEN_VERSION: 2.46.0
+  XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
+
+# Job names are required-check names on main. Never rename one.
+# GitHub Free runs 5 macOS jobs at once, and each push queues both of these.
+jobs:
+  latest:
+    name: iOS tests (latest)
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Select Xcode 26.3
+        run: sudo xcode-select -s /Applications/Xcode_26.3.app
+      - name: Install XcodeGen
+        run: |
+          curl -fsSL -o xcodegen.zip "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
+          echo "${XCODEGEN_SHA256}  xcodegen.zip" | shasum -a 256 -c -
+          unzip -q xcodegen.zip -d "$RUNNER_TEMP" && rm xcodegen.zip
+          echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
+      - name: Generate the Xcode project
+        working-directory: App
+        run: xcodegen --quiet
+      - name: Test on iPhone 17 Pro, iOS 26.2, with coverage
+        run: |
+          xcodebuild test -project App/Featherwick.xcodeproj -scheme Featherwick \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' \
+            -derivedDataPath build/dd -resultBundlePath build/tests.xcresult \
+            -enableCodeCoverage YES CODE_SIGNING_ALLOWED=NO -quiet
+      - name: App coverage is not below the baseline
+        run: |
+          xcrun xccov view --report --json build/tests.xcresult > build/coverage.json
+          python3 bin/coverage-gate xccov build/coverage.json .github/coverage-baseline-app Featherwick.app
+      - name: Package the simulator app
+        run: |
+          ditto -c -k --keepParent build/dd/Build/Products/Debug-iphonesimulator/Featherwick.app build/Featherwick.app.zip
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: featherwick-simulator-app
+          path: build/Featherwick.app.zip
+          retention-days: 14
+      - uses: actions/upload-artifact@v7.0.2
+        if: failure()
+        with:
+          name: test-results-latest
+          path: build/tests.xcresult
+          retention-days: 7
+
+  minimum:
+    name: iOS tests (iOS 17)
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Select Xcode 16.2
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app
+      - name: Install XcodeGen
+        run: |
+          curl -fsSL -o xcodegen.zip "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
+          echo "${XCODEGEN_SHA256}  xcodegen.zip" | shasum -a 256 -c -
+          unzip -q xcodegen.zip -d "$RUNNER_TEMP" && rm xcodegen.zip
+          echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
+      - name: Generate the Xcode project
+        working-directory: App
+        run: xcodegen --quiet
+      - name: Test on iPhone 15, iOS 17.5, the minimum supported version
+        run: |
+          xcodebuild test -project App/Featherwick.xcodeproj -scheme Featherwick \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+            -derivedDataPath build/dd -resultBundlePath build/tests.xcresult \
+            CODE_SIGNING_ALLOWED=NO -quiet
+      - uses: actions/upload-artifact@v7.0.2
+        if: failure()
+        with:
+          name: test-results-ios17
+          path: build/tests.xcresult
+          retention-days: 7
