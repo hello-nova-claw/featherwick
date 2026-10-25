@@ -11,6 +11,11 @@ on:
 permissions:
   contents: read
 
+# One comment per pull request: a newer run replaces an older one still going.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
 jobs:
   comment:
     name: Build preview comment
@@ -60,7 +65,8 @@ jobs:
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner, repo: context.repo.repo, issue_number: pr.number,
             });
-            const mine = comments.find((c) => c.body.startsWith(marker));
+            // Only the bot's own comment: anyone can paste the marker into theirs.
+            const mine = comments.find((c) => c.user?.login === 'github-actions[bot]' && c.body.startsWith(marker));
             if (mine) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner, repo: context.repo.repo, comment_id: mine.id, body,
