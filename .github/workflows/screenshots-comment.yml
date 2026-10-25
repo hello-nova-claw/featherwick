@@ -32,13 +32,32 @@ jobs:
       pull-requests: write
       actions: read
     steps:
+      # Runs for one pull request can finish out of order. Only the run for its current head publishes,
+      # so an older run never replaces newer images or a newer comment.
+      - name: This run is for the pull request's current head
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          now=$(gh api "repos/${REPO}/pulls/${PR}" --jq .head.sha)
+          if [ "$now" = "$HEAD_SHA" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Skipping: this run is for ${HEAD_SHA:0:7}, but the pull request is now at ${now:0:7}."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: steps.current.outputs.publish == 'true'
         with:
           name: screenshots
           path: shots
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
       - name: Check the artifact holds only screenshots
+        if: steps.current.outputs.publish == 'true'
         run: |
           bad=$(find shots -type f | grep -vE '^shots/(changes\.json|(before|after)/[a-z0-9-]+--[a-z0-9-]+--[a-zA-Z0-9-]+--[a-z0-9-]+\.png)$' || true)
           if [ -n "$bad" ]; then echo "::error::Unexpected files in the artifact: $bad"; exit 1; fi
@@ -58,6 +77,7 @@ jobs:
                   sys.exit(f"::error::changes.json {key} must be a list of shot file names")
           PY
       - name: Store the shots on the screenshots branch
+        if: steps.current.outputs.publish == 'true'
         id: store
         env:
           GH_TOKEN: ${{ github.token }}
@@ -91,6 +111,7 @@ jobs:
           echo "::error::Could not push the screenshots after 5 attempts."
           exit 1
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        if: steps.current.outputs.publish == 'true'
         env:
           STORE_SHA: ${{ steps.store.outputs.sha }}
         with:
