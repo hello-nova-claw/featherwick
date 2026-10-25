@@ -16,7 +16,7 @@ import Foundation
 // To add a storyline: append one `Storyline` to `Storylines.all`, then its words in `storyText`.
 // Rules: every goal must stay possible (no dead ends), and rewards are given once.
 
-/// The people of Featherwick. Each system has a person (see README "Storylines").
+/// The people of Featherwick. Each system has a person (see "Storylines" in docs/design.md).
 /// The words (names, about lines) live in FeatherwickText.
 public enum Person: String, Hashable, Codable, Sendable, CaseIterable {
     /// The neighbour over the back fence: genetics, the breeding pen, the lessons.
