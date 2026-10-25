@@ -2,7 +2,7 @@ import XCTest
 
 /// Opens the main screens and runs Apple's accessibility audit on each: welcome, the starter choice, the
 /// tour, the four farm panels, the four place sheets, the market board, Books, Today and Settings. The rest
-/// (bird card, morning report, breeding pen, show day, village) follow in #98. Any issue fails, except the
+/// (bird card, morning report, breeding pen, show day, Books ▸ People, village) follow in #98. Any issue fails, except the
 /// known ones listed in `knownIssue` with the issue that will fix them. The subclasses below run the same
 /// tests at the largest accessibility text size, right to left, and with every localised string doubled.
 @MainActor
