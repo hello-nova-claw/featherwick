@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+"""Exports the screenshot catalogue from a test result bundle, one PNG per shot.
+
+ScreenshotTests names each attachment `<screen>--<state>--<locale>--<device>`.
+xcresulttool exports them under generated names; this script copies each to
+its shot name.
+
+Usage: bin/screenshots-export <result.xcresult> <output folder>
+"""
+
+import json
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+SHOT = re.compile(r"[a-z0-9-]+--[a-z0-9-]+--[a-zA-Z0-9-]+--[a-z0-9-]+")
+
+
+def main() -> int:
+    if len(sys.argv) != 3:
+        print(__doc__, file=sys.stderr)
+        return 2
+    bundle, out = Path(sys.argv[1]), Path(sys.argv[2])
+    out.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory() as raw:
+        subprocess.run(
+            ["xcrun", "xcresulttool", "export", "attachments", "--path", str(bundle), "--output-path", raw],
+            check=True,
+            capture_output=True,
+        )
+        manifest = json.loads((Path(raw) / "manifest.json").read_text(encoding="utf-8"))
+        count = 0
+        for test in manifest:
+            for attachment in test["attachments"]:
+                # xcresulttool adds "_<index>_<uuid>" to the name the test gave.
+                name = re.split(r"_\d+_[0-9A-F-]{36}", attachment["suggestedHumanReadableName"])[0]
+                name = name.removesuffix(".png")
+                if not SHOT.fullmatch(name):
+                    continue
+                shutil.copy(Path(raw) / attachment["exportedFileName"], out / f"{name}.png")
+                count += 1
+    print(f"Exported {count} shot(s) to {out}.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

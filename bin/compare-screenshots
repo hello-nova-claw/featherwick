@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+"""Compares two screenshot catalogues and lists what changed.
+
+Shots are compared by content hash. The simulator's status bar is fixed in CI,
+so the same screen gives the same bytes. A change never fails: the list is for
+the reviewer.
+
+Usage: bin/compare-screenshots <before folder> <after folder> <changes.json>
+"""
+
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+
+def digests(folder: Path) -> dict[str, str]:
+    if not folder.exists():
+        return {}
+    return {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(folder.glob("*.png"))}
+
+
+def main() -> int:
+    if len(sys.argv) != 4:
+        print(__doc__, file=sys.stderr)
+        return 2
+    before, after = digests(Path(sys.argv[1])), digests(Path(sys.argv[2]))
+    changes = {
+        "changed": sorted(n for n in after if n in before and after[n] != before[n]),
+        "added": sorted(n for n in after if n not in before),
+        "removed": sorted(n for n in before if n not in after),
+        "unchanged": sorted(n for n in after if n in before and after[n] == before[n]),
+    }
+    Path(sys.argv[3]).write_text(json.dumps(changes, indent=2) + "\n", encoding="utf-8")
+    print(", ".join(f"{len(v)} {k}" for k, v in changes.items()))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
