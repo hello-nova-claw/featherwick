@@ -41,7 +41,15 @@ jobs:
       - env:
           BASE_REF: ${{ github.base_ref }}
         run: |
-          if ! git diff --name-only --diff-filter=AM "origin/${BASE_REF}...HEAD" | grep -qE '^changelog/[1-9][0-9]*-[^/]+\.txt$'; then
+          fragments=$(git diff --name-only --diff-filter=AM "origin/${BASE_REF}...HEAD" | grep -E '^changelog/[1-9][0-9]*-[^/]+\.txt$' || true)
+          if [ -z "$fragments" ]; then
             echo "::error::Add a changelog fragment, changelog/<issue>-<slug>.txt, with one line a player would understand, or ask the maintainer for the no-changelog label."
             exit 1
           fi
+          for f in $fragments; do
+            lines=$(grep -c '[^[:space:]]' "$f" || true)
+            if [ "$lines" -ne 1 ]; then
+              echo "::error file=$f::A changelog fragment holds exactly one line a player would understand; this one has $lines."
+              exit 1
+            fi
+          done

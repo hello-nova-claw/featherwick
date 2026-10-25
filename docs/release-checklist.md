@@ -6,7 +6,7 @@ Follow these steps for each TestFlight or App Store build. CI never uploads a bu
 
 1. `main` is green: every required check passes on the last commit.
 2. Every issue in the release's milestone is Done, or moved to the next milestone with a reason.
-3. Run `bin/changelog`. It folds `changelog/*.txt` into `CHANGELOG.md` under "Unreleased" and deletes the fragments. Rename "Unreleased" to the version and date, add an empty "Unreleased" above it, and merge that in its own pull request.
+3. Run `bin/changelog`. It folds `changelog/*.txt` into `CHANGELOG.md` under "Unreleased" and deletes the fragments. Rename "Unreleased" to the version and date, add an empty "Unreleased" above it, and merge that in its own pull request. That pull request adds no fragment, so it needs the `no-changelog` label.
 4. Raise `MARKETING_VERSION` in `App/project.yml` for a new version, and `CURRENT_PROJECT_VERSION` for every upload.
 
 ## The build
