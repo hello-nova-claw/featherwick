@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     container: swift:6.0-noble
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check formatting
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -34,7 +34,7 @@ jobs:
       SWIFTLINT_VERSION: 0.65.1
       SWIFTLINT_SHA256: caeed6f4a679c35539ffaf124f6c4ab4a8416917f7d8796279dc52b74026059d
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install SwiftLint
         run: |
           apt-get update -qq && apt-get install -y -qq curl unzip >/dev/null
@@ -48,14 +48,14 @@ jobs:
     name: Use what Apple already has
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: python3 bin/check-native
 
   licences:
     name: Licence files intact
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: python3 bin/check-licences
 
   gitleaks:
@@ -65,7 +65,7 @@ jobs:
       GITLEAKS_VERSION: 8.30.1
       GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Install gitleaks
@@ -92,7 +92,7 @@ jobs:
       ACTIONLINT_VERSION: 1.7.12
       ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install actionlint
         run: |
           curl -fsSL -o actionlint.tar.gz "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
