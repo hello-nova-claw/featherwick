@@ -67,7 +67,7 @@ Featherwick should feel like an iPhone app. Before you write anything custom, us
 - **UI.** SwiftUI system components: `.sheet` with `presentationDetents`, `NavigationStack`, `Button`, `Toggle`, `Picker`, `List`. Build on the components in `App/Featherwick/Design/`, which wrap them. SF Symbols for icons.
 - **Colour.** Colours come only from the `Palette` tokens in `App/Featherwick/Design/`, which have day and night values. No `Color(red:…)`, `Color(hex:)` or `UIColor(red:…)` anywhere else.
 - **Type.** Fonts come only from the `Typeface` tokens, and every font scales with Dynamic Type (`relativeTo:`). No `.font(.system(size:))` and no fixed font sizes in screens.
-- **Logging.** `os.Logger` in the app. No `print` outside the CLI.
+- **Logging.** `os.Logger` in the app. No `print` in the app, Core or Text; the CLI prints, and a test may print what a failing run needs.
 - **Saves.** `Codable` and `FileManager`, through `SaveStore`. No other storage for game state.
 - **Feedback.** `UIFeedbackGenerator` through `Haptics`, and `AVAudioSession` (`.ambient`) through `Sound`.
 - **Game Center** through GameKit, if the game ever uses it.
@@ -80,7 +80,7 @@ Comments explain why. Delete any comment that restates the line below it. Each t
 ## Tests
 
 - Write the test first, and commit it first.
-- A pull request that changes `Sources/` or `App/Featherwick/` must also change a file under `Tests/`, `App/FeatherwickTests/` or `App/FeatherwickUITests/`. The reviewer checks this now; CI checks this ("Tests change with code").
+- A pull request that changes `Sources/` or `App/Featherwick/` must also change a file under `Tests/`, `App/FeatherwickTests/` or `App/FeatherwickUITests/`. CI checks this ("Tests change with code").
 - Tests use Swift Testing (`import Testing`). No XCTest except for UI tests, which need it.
 - Game logic is tested without the app or the renderer. Pass a `SeededRNG` with a fixed seed. Never read the clock: game time is state.
 - No sleeps and no real network in tests.
