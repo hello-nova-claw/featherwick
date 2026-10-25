@@ -1,0 +1,101 @@
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Job names are required-check names on main. Never rename one.
+jobs:
+  format:
+    name: swift-format
+    runs-on: ubuntu-latest
+    container: swift:6.0-noble
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Check formatting
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          swift format --in-place --recursive --parallel Package.swift Sources Tests App
+          git diff --exit-code || { echo "::error::Run: swift format --in-place --recursive Package.swift Sources Tests App"; exit 1; }
+
+  swiftlint:
+    name: SwiftLint
+    runs-on: ubuntu-latest
+    container: swift:6.0-noble
+    env:
+      SWIFTLINT_VERSION: 0.65.1
+      SWIFTLINT_SHA256: caeed6f4a679c35539ffaf124f6c4ab4a8416917f7d8796279dc52b74026059d
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install SwiftLint
+        run: |
+          apt-get update -qq && apt-get install -y -qq curl unzip >/dev/null
+          curl -fsSL -o swiftlint.zip "https://github.com/realm/SwiftLint/releases/download/${SWIFTLINT_VERSION}/swiftlint_linux_amd64.zip"
+          echo "${SWIFTLINT_SHA256}  swiftlint.zip" | sha256sum -c -
+          unzip -q swiftlint.zip -d /usr/local/bin && rm swiftlint.zip
+      - name: Lint (new violations fail; old ones are in the baseline)
+        run: swiftlint lint --strict --quiet --reporter github-actions-logging --baseline .swiftlint-baseline.json
+
+  native:
+    name: Use what Apple already has
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - run: python3 bin/check-native
+
+  licences:
+    name: Licence files intact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - run: python3 bin/check-licences
+
+  gitleaks:
+    name: Gitleaks
+    runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks
+        run: |
+          curl -fsSL -o gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf gitleaks.tar.gz gitleaks && rm gitleaks.tar.gz
+      - name: Scan the new commits
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          # A first push has no "before"; scan the pushed commit alone then.
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = 0000000000000000000000000000000000000000 ]; then
+            range="-1"
+          else
+            range="${BASE_SHA}..HEAD"
+          fi
+          ./gitleaks git --log-opts="$range" --redact --no-banner --exit-code 1
+
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-latest
+    env:
+      ACTIONLINT_VERSION: 1.7.12
+      ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install actionlint
+        run: |
+          curl -fsSL -o actionlint.tar.gz "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          echo "${ACTIONLINT_SHA256}  actionlint.tar.gz" | sha256sum -c -
+          tar -xzf actionlint.tar.gz actionlint && rm actionlint.tar.gz
+      - run: ./actionlint -color
