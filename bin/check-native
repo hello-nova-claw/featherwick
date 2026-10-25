@@ -57,7 +57,13 @@ def strip_swift_comments(text: str) -> str:
     """Removes // and /* */ comments from Swift source, keeping string literals (and the // in URLs)."""
     out, i, n = [], 0, len(text)
     while i < n:
-        if text.startswith('"', i):
+        if text.startswith('"""', i):
+            # A multiline string may hold bare quotes, so only its own closing """ ends it.
+            end = text.find('"""', i + 3)
+            end = n if end == -1 else end + 3
+            out.append(text[i:end])
+            i = end
+        elif text.startswith('"', i):
             end = i + 1
             while end < n and text[end] != '"':
                 end += 2 if text[end] == "\\" else 1
