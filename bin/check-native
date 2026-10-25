@@ -47,7 +47,8 @@ def project_packages(root: Path) -> list[str]:
     project = root / "App" / "project.yml"
     if not project.exists():
         return []
-    section = re.search(r"^packages:\n((?:[ \t]+.*\n|\n)*)", project.read_text(encoding="utf-8"), re.MULTILINE)
+    # The header may carry a comment: "packages: # app dependencies".
+    section = re.search(r"^packages:[ \t]*(?:#.*)?\n((?:[ \t]+.*\n|\n)*)", project.read_text(encoding="utf-8"), re.MULTILINE)
     return [
         value for kind, value in PROJECT_PACKAGE.findall(section.group(1) if section else "")
         if not (kind == "path" and value.strip("\"'") == "..")
