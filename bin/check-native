@@ -53,22 +53,36 @@ def swift_files(root: Path, *dirs: str):
             yield from sorted(base.rglob("*.swift"))
 
 
+def string_end(text: str, i: int) -> int:
+    """Returns where the Swift string literal starting at `i` ends: plain, multiline or raw (#"..."#)."""
+    hashes = 0
+    while text.startswith("#", i + hashes):
+        hashes += 1
+    j = i + hashes
+    multiline = text.startswith('"""', j)
+    close = ('"""' if multiline else '"') + "#" * hashes
+    j += 3 if multiline else 1
+    while j < len(text):
+        # A backslash escapes the next character, unless the string is raw (#"..."#).
+        if text[j] == "\\" and hashes == 0:
+            j += 2
+        elif text.startswith(close, j):
+            return j + len(close)
+        elif text[j] == "\n" and not multiline:
+            return j
+        else:
+            j += 1
+    return len(text)
+
+
 def strip_swift_comments(text: str) -> str:
     """Removes // and /* */ comments from Swift source, keeping string literals (and the // in URLs)."""
     out, i, n = [], 0, len(text)
     while i < n:
-        if text.startswith('"""', i):
-            # A multiline string may hold bare quotes, so only its own closing """ ends it.
-            end = text.find('"""', i + 3)
-            end = n if end == -1 else end + 3
+        if text[i] == '"' or (text[i] == "#" and text[i:].lstrip("#").startswith('"')):
+            end = string_end(text, i)
             out.append(text[i:end])
             i = end
-        elif text.startswith('"', i):
-            end = i + 1
-            while end < n and text[end] != '"':
-                end += 2 if text[end] == "\\" else 1
-            out.append(text[i : end + 1])
-            i = end + 1
         elif text.startswith("//", i):
             while i < n and text[i] != "\n":
                 i += 1
@@ -82,7 +96,6 @@ def strip_swift_comments(text: str) -> str:
             out.append(text[i])
             i += 1
     return "".join(out)
-
 
 
 def main() -> int:
