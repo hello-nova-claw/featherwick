@@ -1,0 +1,48 @@
+name: Bug report
+description: Something in the game does not work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for reporting a bug. Please do not include anything personal. To report a security problem, use the security advisory form instead.
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      description: For example, iPhone 15 or iPad Air (5th generation).
+    validations:
+      required: true
+  - type: input
+    id: ios
+    attributes:
+      label: iOS version
+      description: Settings › General › About › iOS Version.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Game version
+      description: The version and build in the game's Settings, or the TestFlight build number.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What you did, step by step, from opening the game.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: Add a screenshot or screen recording if you can.
+    validations:
+      required: true
