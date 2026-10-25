@@ -71,15 +71,20 @@ jobs:
               continue
             fi
             (cd "$side/App" && xcodegen --quiet)
-            # A shot that fails to load is a missing shot in the comment, not a failed check.
-            xcodebuild test -project "$side/App/Featherwick.xcodeproj" -scheme Featherwick \
+            # A failed run is noted, and the shots it did take are still exported, compared and uploaded.
+            # The last step then fails the check. A visual change never does.
+            if ! xcodebuild test -project "$side/App/Featherwick.xcodeproj" -scheme Featherwick \
               -destination "platform=iOS Simulator,id=${SMALL_ID}" \
               -destination "platform=iOS Simulator,id=${LARGE_ID}" \
               -only-testing:FeatherwickUITests/ScreenshotTests \
               -derivedDataPath "build/$side" -resultBundlePath "build/$side.xcresult" \
-              CODE_SIGNING_ALLOWED=NO -quiet || echo "::warning::Some $side screenshots did not run."
+              CODE_SIGNING_ALLOWED=NO -quiet; then
+              echo "::error::The screenshot tests failed on $side."
+              failed="${failed:+$failed }$side"
+            fi
             python3 head/bin/screenshots-export "build/$side.xcresult" "shots/$side"
           done
+          echo "SHOTS_FAILED=${failed:-}" >> "$GITHUB_ENV"
       - name: Compare
         run: |
           python3 head/bin/compare-screenshots shots/base shots/head shots/changes.json
@@ -98,3 +103,8 @@ jobs:
           name: screenshots
           path: upload
           retention-days: 14
+      - name: The screenshot tests ran
+        if: env.SHOTS_FAILED != ''
+        run: |
+          echo "::error::The screenshot tests failed on: ${SHOTS_FAILED}. A shot that cannot be taken fails; a visual change does not."
+          exit 1
