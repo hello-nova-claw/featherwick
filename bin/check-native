@@ -47,7 +47,8 @@ def project_packages(root: Path) -> list[str]:
     project = root / "App" / "project.yml"
     if not project.exists():
         return []
-    text = project.read_text(encoding="utf-8")
+    # A final line with no newline still counts as a line.
+    text = project.read_text(encoding="utf-8") + "\n"
     # A one-line (flow) mapping cannot be read here, so it is refused rather than let through.
     if re.search(r"^packages:[ \t]*[^\s#]", text, re.MULTILINE):
         return ["a packages: section written on one line (write it as an indented block)"]
