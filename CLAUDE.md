@@ -168,7 +168,7 @@ Most new content is a table entry. See "Data layer" and the feature sections in 
   - `pull-request.yml`: "Tests change with code", "Changelog fragment" (passes with `no-changelog` when no fragment is added).
   - Job names are the required checks on `main`. Never rename one.
 - `.github/workflows/ios.yml` runs on macOS for every pull request and push to `main`:
-  - "iOS tests (latest)": macOS 15, Xcode 26.3, iPhone 17 Pro on iOS 26.2. The app's tests with coverage,
+  - "iOS tests (latest)": macOS 15, Xcode 26.3, an iPhone 17 Pro it creates on the newest iOS runtime. The app's tests with coverage,
     `bin/coverage-gate` against `.github/coverage-baseline-app`, and the simulator `.app` as an artifact.
   - "iOS tests (iOS 17)": macOS 15, Xcode 16.4, iPhone 15 on iOS 17.5, the minimum supported version. The
     macOS 14 image (the last with an iOS 17 simulator) retires on 2 November 2026, so the job downloads

@@ -38,10 +38,17 @@ jobs:
       - name: Generate the Xcode project
         working-directory: App
         run: xcodegen --quiet
-      - name: Test on iPhone 17 Pro, iOS 26.2, with coverage
+      # Its own device on the newest iOS runtime the image has, by ID: a named device can vanish when
+      # GitHub updates the image ("Unable to find a device matching the provided destination").
+      - name: Create an iPhone 17 Pro on the newest iOS
+        run: |
+          runtime=$(xcrun simctl list runtimes -j | python3 -c 'import json, sys; rs = [r for r in json.load(sys.stdin)["runtimes"] if r["platform"] == "iOS" and r["isAvailable"]]; print(max(rs, key=lambda r: [int(x) for x in r["version"].split(".")])["identifier"])')
+          echo "Runtime: $runtime"
+          echo "LATEST_DEVICE=$(xcrun simctl create "iPhone 17 Pro latest" "iPhone 17 Pro" "$runtime")" >> "$GITHUB_ENV"
+      - name: Test on iPhone 17 Pro, newest iOS, with coverage
         run: |
           xcodebuild test -project App/Featherwick.xcodeproj -scheme Featherwick \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' \
+            -destination "platform=iOS Simulator,id=${LATEST_DEVICE}" \
             -derivedDataPath build/dd -resultBundlePath build/tests.xcresult \
             -enableCodeCoverage YES CODE_SIGNING_ALLOWED=NO -quiet
       - name: App coverage is not below the baseline
