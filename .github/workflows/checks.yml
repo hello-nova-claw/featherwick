@@ -86,9 +86,9 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
-          # A first push has no "before"; scan the pushed commit alone then.
+          # A first push has no "before"; scan the whole history then.
           if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = 0000000000000000000000000000000000000000 ]; then
-            range="-1"
+            range="HEAD"
           else
             range="${BASE_SHA}..HEAD"
           fi
