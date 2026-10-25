@@ -98,7 +98,8 @@ components, screens 1a–9a). The painted farm and bird art come later; dashed b
 - UI tests (`App/FeatherwickUITests/`, XCTest) launch the app with `-uiTestState fresh|farm` (and
   `-uiTestSeed`), which `UITestLaunch` turns into a known game on an empty save folder, Debug builds only.
   `AccessibilityAuditTests` audits these screens four ways: welcome, the starter choice, the tour, the four
-  farm panels, the four place sheets, the market board, Books, Today and Settings. #98 adds the rest: the
+  farm panels, the four place sheets, the market board, Books, Today and Settings. One exception: the Yard
+  sheet is not audited with doubled strings, because it stalls (#97). #98 adds the rest: the
   bird card, the morning report, the breeding pen, show day, Books ▸ People and the village sheets.
   - Find buttons by label prefix, not exact label. Doubled strings read "Settings Settings".
   - `Farm.button` takes the first match. Where two controls share a prefix, use the helper for each.
