@@ -6,7 +6,7 @@ Featherwick is in development and not yet on the App Store.
 
 ## Build it
 
-You need Xcode 26 or later. The game logic also builds on Linux with Swift 6.
+You need Xcode 16 or later. The game logic also builds on Linux with Swift 6.
 
 ```sh
 swift build
