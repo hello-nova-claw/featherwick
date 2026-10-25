@@ -122,7 +122,7 @@ open Featherwick.xcodeproj
    - A new `GameState` or `Rules` field needs a starting value in `SaveFormat.fillNewSettings`.
    - A new gene needs no migration: missing genes are the default allele.
    - A change to the shape of existing data needs a new step in `SaveFormat.migrations`.
-6. **Cozy design.** No death, no lethal genes, every egg hatches, the fox scares and never kills,
+6. **Cozy design.** No death, no lethal genes, every fertile egg hatches, the fox scares and never kills,
    milestones are reached and never failed, neglect never lowers tameness.
 7. **Genetics stay real.** A bird's colour comes from its genes (`Phenotype`), never from a variety
    name. `GeneticsRealismTests` must pass.

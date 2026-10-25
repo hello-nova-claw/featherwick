@@ -6,7 +6,7 @@ These rules apply to everyone: outside contributors, the maintainer and coding a
 
 Featherwick is a cozy game with real genetics. Before you build anything, check it against the design principles in [docs/design.md](docs/design.md#2-design-principles-not-negotiable). A pull request that breaks one of them is closed, however good the code is. In short:
 
-1. Cozy: nothing dies, and nothing can be failed. Every egg hatches, the fox never kills, and nothing is unsuitable for a child.
+1. Cozy: nothing dies, and nothing can be failed. Every fertile egg hatches, the fox never kills, and nothing is unsuitable for a child.
 2. Real genetics, and no leaks. Looks come from genes, and the game never shows a gene or a sex the keeper cannot see yet.
 3. The same seed plays the same game, and saves always load.
 4. Nothing leaves the device unless the player sends it. No ads, analytics, tracking or accounts. It works offline.
@@ -66,7 +66,7 @@ Featherwick should feel like an iPhone app. Before you write anything custom, us
 - **Saves.** `Codable` and `FileManager`, through `SaveStore`. No other storage for game state.
 - **Feedback.** `UIFeedbackGenerator` through `Haptics`, and `AVAudioSession` (`.ambient`) through `Sound`.
 - **Game Center** through GameKit, if the game ever uses it.
-- **Dependencies.** None today. A new Swift package needs an entry on the allowlist in `bin/check-native`, an MIT-compatible licence, a line in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and a reason in the pull request. Nothing may phone home (principle 4).
+- **Dependencies.** None today. A new Swift package needs an MIT-compatible licence, a line in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and a reason in the pull request. Nothing may phone home (principle 4).
 
 ### Comments
 
@@ -75,11 +75,11 @@ Comments explain why. Delete any comment that restates the line below it. Each t
 ## Tests
 
 - Write the test first, and commit it first.
-- A pull request that changes `Sources/` or `App/Featherwick/` must also change a file under `Tests/` or `App/FeatherwickTests/`. CI checks this.
+- A pull request that changes `Sources/` or `App/Featherwick/` must also change a file under `Tests/` or `App/FeatherwickTests/`. The reviewer checks this now; a CI check follows (#83).
 - Tests use Swift Testing (`import Testing`). No XCTest except for UI tests, which need it.
 - Game logic is tested without the app or the renderer. Pass a `SeededRNG` with a fixed seed. Never read the clock: game time is state.
 - No sleeps and no real network in tests.
-- Line coverage must not drop below the figure in `.github/coverage-baseline`. When your change raises coverage, raise the baseline in the same pull request.
+- Line coverage must not drop. Once `.github/coverage-baseline` exists (#83), CI fails below its figure; when your change raises coverage, raise the baseline in the same pull request.
 - `Fixtures/save-v0.json` must always load. A change to the save shape needs a migration and a test.
 
 Run everything locally:

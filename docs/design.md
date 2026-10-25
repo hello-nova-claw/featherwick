@@ -10,7 +10,7 @@ Featherwick is a cozy chicken-keeping game for iPhone, with real chicken genetic
 
 A pull request that breaks one of these is closed, however good the code is.
 
-1. **Cozy: nothing dies, and nothing can be failed.** No death, no lethal genes, and every egg hatches. The fox scares and never kills. Milestones are reached and never failed. Neglect never lowers tameness. Birds never wait forever. Nothing in the game is unsuitable for a child.
+1. **Cozy: nothing dies, and nothing can be failed.** No death, no lethal genes, and every fertile egg hatches; a clear egg is simply clear. The fox scares and never kills. Milestones are reached and never failed. Neglect never lowers tameness. Birds never wait forever. Nothing in the game is unsuitable for a child.
 2. **Real genetics, and no leaks.** A bird's looks come from its genes, never from a variety name, and every bird could be bred by a real keeper. The game never shows a gene or a sex the keeper cannot see yet, in words, names or milestones.
 3. **The same seed plays the same game, and saves always load.** All randomness comes from the seeded generator passed in. The rules never read the device clock. A save from any earlier version loads.
 4. **Nothing leaves the device unless the player sends it.** No ads, no analytics, no tracking, no accounts, and no third-party SDKs that phone home. The game works fully offline. Anything shared, such as beta notes, is shared by the player's own action.
@@ -1310,6 +1310,6 @@ Sleep waits until every slot is spent, and nothing is ever lost: a refused erran
 
 ## Design rules
 
-- Real genetics, but no lethal genes. Every egg hatches.
+- Real genetics, but no lethal genes. Every fertile egg hatches.
 - Seeded random only, so every hatch can be replayed and tested.
 - V1 placeholder: a chick takes its mother's breed.
