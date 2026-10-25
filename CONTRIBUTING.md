@@ -16,7 +16,11 @@ Featherwick is a cozy game with real genetics. Before you build anything, check 
 
 1. **Issue first.** Every change starts as an issue made from the task template. An issue is not ready until all five fields are filled in: problem, scope, out of scope, acceptance criteria, how to test. Agents fill the template before they write code.
 2. **Outside contributors wait.** If you are not the maintainer, open an issue and wait until it is accepted (moved to Ready) before you write code. A pull request without an accepted issue is closed.
-3. **Board.** Issues move across the project board: Backlog, Ready, In progress, In review, Done. Move the issue, not the pull request.
+3. **Board.** Issues move across the [project board](https://github.com/users/hello-nova-claw/projects/2): Backlog, Ready, In progress, In review, Done. Move the issue, not the pull request.
+   - New issues are not added to the board automatically. Whoever files an issue adds it (`gh project item-add 2 --owner hello-nova-claw --url <issue url>`) and sets its milestone, Priority and Status together.
+   - Priority mirrors the milestone: `P0 · 0.2 TestFlight`, `P1 · 0.3 Trade codes`, `P2 · Later`.
+   - Backlog comes first. An issue stays in Backlog, whatever its Priority, while it is labelled `question`, while it is in Later, or while it is an outside contributor's issue the maintainer has not triaged.
+   - Every other P0 and P1 issue is Ready.
 4. **One branch and one pull request per issue.** Name the branch `<issue number>-<short-slug>`, for example `58-string-catalog`.
 5. **Pull request.** Use the template. Link the issue with `Fixes #58`. Add a changelog fragment, `changelog/<issue>-<slug>.txt`, with one line a player would understand. Do not edit `CHANGELOG.md`: at release time `bin/changelog` folds every fragment in and deletes them. If the change has no effect a player can see, say so, and the maintainer adds the `no-changelog` label.
 6. **Review.** CodeRabbit reviews every pull request, and its approval is the required review. `main` is protected: no direct pushes, all checks green, stale approvals dismissed on push.
