@@ -68,15 +68,15 @@ def strip_swift_comments(text: str) -> str:
                 i += 1
         elif text.startswith("/*", i):
             end = text.find("*/", i + 2)
-            i = n if end == -1 else end + 2
+            end = n if end == -1 else end + 2
+            # Keep the line breaks, so line numbers still match the file.
+            out.append("\n" * text.count("\n", i, end))
+            i = end
         else:
             out.append(text[i])
             i += 1
     return "".join(out)
 
-
-def strip_comment(line: str) -> str:
-    return line.split("//", 1)[0]
 
 
 def main() -> int:
@@ -86,8 +86,10 @@ def main() -> int:
     for path in swift_files(root, "Sources", "App"):
         rel = path.relative_to(root).as_posix()
         is_test = rel.startswith(TEST_DIRS)
-        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-            code = strip_comment(line)
+        source = path.read_text(encoding="utf-8")
+        lines = source.splitlines()
+        # Comments are stripped from the whole file, so a // inside a string hides nothing.
+        for number, (line, code) in enumerate(zip(lines, strip_swift_comments(source).splitlines()), 1):
             if COLOUR.search(code) and not rel.startswith(DESIGN_TOKENS) and not is_test:
                 if not any(rel == p and piece in line for p, piece in ALLOWED_COLOURS):
                     errors.append(f"{rel}:{number}: a hard-coded colour. Use a Palette token from {DESIGN_TOKENS}.")
