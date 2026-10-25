@@ -1,0 +1,17 @@
+# SwiftLint checks the few rules swift-format cannot. swift-format owns layout and style.
+# Old violations are recorded in .swiftlint-baseline.json; only new ones fail. Remove an
+# entry by fixing it, never add one to get a pull request through.
+only_rules:
+  - force_cast
+  - force_try
+  - force_unwrapping
+  - inclusive_language
+  - optional_data_string_conversion
+  - unused_closure_parameter
+  - void_function_in_ternary
+included:
+  - Sources
+  - App/Featherwick
+excluded:
+  - Tests
+  - App/FeatherwickTests
