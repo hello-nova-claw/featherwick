@@ -122,10 +122,16 @@ cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Fea
 ## Screenshots
 
 - Every pull request from this repository that touches UI or asset paths gets a **Screenshots** comment: before and after images of every shot that changed or is new, and a collapsed list of the ones that did not. Look at it before you approve. A visual change never fails the check, so nothing else will catch one.
-- The shots cover every screen, by day and by night, in English, right to left and with doubled strings, on a small and a large iPhone. Each is named `<screen>--<state>--<locale>--<device>.png`.
+- The shots cover the screens the accessibility audit covers. The rest follow in #98.
+- Each screen is shot by day and by night, in English, right to left and with doubled strings.
+- Each is shot on a small and a large iPhone.
+- Each shot is named `<screen>--<state>--<locale>--<device>.png`.
+- The Yard sheet is not shot with doubled strings, because it stalls (#97).
+- A visual change never fails the check. A shot that cannot be taken does.
 - The images are kept on the `screenshots` branch under `pr-<number>/before/` and `pr-<number>/after/`; each push adds a commit there, so the record stays after the pull request merges.
 - When you add a screen or a state, add it to `App/FeatherwickUITests/ScreenshotTests.swift`.
-- Pull requests from forks get no comment, because posting needs a write token. The maintainer runs the shots locally: `xcodebuild test ... -only-testing:FeatherwickUITests/ScreenshotTests`, then `bin/screenshots-export`.
+- Pull requests from forks get no comment, because posting needs a write token.
+- For a fork's pull request, the maintainer runs the shots locally: `xcodebuild test ... -only-testing:FeatherwickUITests/ScreenshotTests`, then `bin/screenshots-export`.
 
 ## Security
 
