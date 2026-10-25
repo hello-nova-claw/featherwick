@@ -80,7 +80,7 @@ Comments explain why. Delete any comment that restates the line below it. Each t
 ## Tests
 
 - Write the test first, and commit it first.
-- A pull request that changes `Sources/` or `App/Featherwick/` must also change a file under `Tests/` or `App/FeatherwickTests/`. The reviewer checks this now; CI checks this ("Tests change with code").
+- A pull request that changes `Sources/` or `App/Featherwick/` must also change a file under `Tests/`, `App/FeatherwickTests/` or `App/FeatherwickUITests/`. The reviewer checks this now; CI checks this ("Tests change with code").
 - Tests use Swift Testing (`import Testing`). No XCTest except for UI tests, which need it.
 - Game logic is tested without the app or the renderer. Pass a `SeededRNG` with a fixed seed. Never read the clock: game time is state.
 - No sleeps and no real network in tests.
