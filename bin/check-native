@@ -76,7 +76,11 @@ def main() -> int:
 
     manifest = root / "Package.swift"
     if manifest.exists():
-        for match in PACKAGE.finditer(manifest.read_text(encoding="utf-8")):
+        text = manifest.read_text(encoding="utf-8")
+        # A dependency the pattern cannot read (a URL in a variable, say) fails rather than slips past.
+        if len(re.findall(r"\.package\(", text)) != len(PACKAGE.findall(text)):
+            errors.append("Package.swift: a .package(...) declaration names its source with something other than a string literal. Write the URL, path or id out in full.")
+        for match in PACKAGE.finditer(text):
             if match.group(1) not in ALLOWED_PACKAGES:
                 errors.append(f"Package.swift: {match.group(1)} is not on the allowlist in bin/check-native.")
 
