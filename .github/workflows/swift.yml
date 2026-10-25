@@ -20,14 +20,15 @@ jobs:
     runs-on: ubuntu-latest
     container: swift:6.0-noble
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/cache@v6.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .build
           key: linux-spm-${{ hashFiles('Package.swift', 'Sources/**', 'Tests/**') }}
           restore-keys: linux-spm-
-      - name: Build (warnings are errors)
-        run: swift build --build-tests -Xswiftc -warnings-as-errors
+      # Coverage is compiled in, so the build that the tests run must have it.
+      - name: Build with coverage (warnings are errors)
+        run: swift build --build-tests --enable-code-coverage -Xswiftc -warnings-as-errors
       - name: Test, with coverage
         run: swift test --skip-build --enable-code-coverage
       - name: Coverage of Core and Text is not below the baseline
