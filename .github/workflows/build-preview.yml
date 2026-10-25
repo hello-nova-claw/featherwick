@@ -1,0 +1,72 @@
+name: Build preview
+
+# Comments on a pull request with how to try its simulator build. It runs after
+# the iOS workflow, from main's copy of this file, and never checks out or runs
+# pull request code, so it can hold a write token safely.
+on:
+  workflow_run:
+    workflows: [iOS]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  comment:
+    name: Build preview comment
+    # Only pull requests from this repository: a fork's run carries no pull request here.
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      actions: read
+    steps:
+      - uses: actions/github-script@v9.0.0
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const pr = run.pull_requests[0];
+            if (!pr) {
+              core.info('No pull request on this run.');
+              return;
+            }
+            const { data } = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner, repo: context.repo.repo, run_id: run.id,
+            });
+            const artifact = data.artifacts.find((a) => a.name === 'featherwick-simulator-app');
+            if (!artifact) {
+              core.info('No simulator app on this run.');
+              return;
+            }
+            const marker = '<!-- featherwick-build-preview -->';
+            const url = `${run.html_url}/artifacts/${artifact.id}`;
+            const body = [
+              marker,
+              '### Build preview',
+              '',
+              `Simulator build of ${run.head_sha.slice(0, 7)}: [featherwick-simulator-app](${url}) (kept for 14 days).`,
+              '',
+              'To try it, download and unzip the artifact, boot a Simulator, then:',
+              '',
+              '```sh',
+              'unzip Featherwick.app.zip',
+              'xcrun simctl install booted Featherwick.app',
+              'xcrun simctl launch booted dev.featherwick.app',
+              '```',
+            ].join('\n');
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: pr.number,
+            });
+            const mine = comments.find((c) => c.body.startsWith(marker));
+            if (mine) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner, repo: context.repo.repo, comment_id: mine.id, body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo, issue_number: pr.number, body,
+              });
+            }
