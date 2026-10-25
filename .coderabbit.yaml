@@ -51,6 +51,9 @@ reviews:
     - path: ".github/workflows/**"
       instructions: |
         Flag pull_request_target, write permissions beyond what a job needs, unpinned actions, and anything that runs code from a fork with secrets or a write token. Every workflow sets permissions: contents: read and concurrency with cancel-in-progress. Job names are required-check names and must not be renamed.
+    - path: "{bin/**,.github/**}"
+      instructions: |
+        Tooling: CI scripts, workflows and templates. Review for correctness and security only. Raise a problem when it can happen with the files and pull requests this repository has: a check that passes when it should fail on real input, a wrong result, or a security issue. Do not raise hypothetical inputs that no file here uses (unusual YAML or Swift syntax, filenames with odd characters, interrupted runs), and do not ask for extra hardening of a script that already fails safe. Workflow security checks above still apply in full.
   tools:
     swiftlint:
       enabled: true
