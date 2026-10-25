@@ -59,7 +59,7 @@ struct VillageDayTests {
             if case .hatchAlongChickArrived(let id) = e { id } else { nil }
         }
         #expect(arrived.count == 1)
-        let chick = try? #require(s.brooder.first { !brooder.contains($0.id) })
+        let chick = s.brooder.first { !brooder.contains($0.id) }
         #expect(chick?.id == arrived.first)
         // A new chick: a surprise starter breed, its sex and breed not yet shown, waiting for a name.
         #expect(chick.map { Breed.starters.contains($0.breed) } == true)
