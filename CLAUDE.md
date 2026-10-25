@@ -3,8 +3,16 @@
 Featherwick: a cozy chicken-keeping game with real chicken genetics. Swift 6 package.
 Game logic first. The iOS app (`App/`, SwiftUI) uses the same core. Its art comes later.
 
-`README.md` is the full design doc (genes, breeds, shows, storylines, night order). Read the
-section for the system you change. Keep it current: a change to behaviour updates its README section.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before any change. It holds the process, commit style, code, test,
+localisation and accessibility rules, and this file does not repeat them.
+
+`docs/design.md` is the design record. Section 2 holds the design principles: they are not negotiable.
+Section 4 records rejected options. The rest is the design of each system (genes, breeds, shows,
+storylines, night order). Read the section for the system you change. Keep it current: a change to
+behaviour updates its section.
+
+**The repository is public.** Nothing secret or personal goes into an issue, a pull request, a commit
+message, a comment or a file: no keys, no team IDs, no email addresses, no private links, no personal notes.
 
 ## Commands
 
@@ -123,7 +131,7 @@ open Featherwick.xcodeproj
 
 ## Adding content
 
-Most new content is a table entry. See README "Data layer" and the feature sections.
+Most new content is a table entry. See "Data layer" and the feature sections in `docs/design.md`.
 
 - Breed: a `BreedDefinition` in `BreedTable.all` (status `.planned` until art is ready) + a static id on `Breed`.
 - Colour: a `ColourVariety`, then list it on its breeds.
@@ -136,7 +144,7 @@ Most new content is a table entry. See README "Data layer" and the feature secti
   choice option's words in `choiceText` (`VillageText.swift`).
 - Note: a `Note` at the end of `Notes.added`, the last list in `Notes.pool` (with its `NoteCondition`) + its words in `poolNoteText` (`NotesText.swift`).
 - Milestone: a `Milestone` in `Milestones.all` (order = ladder) + its words in `milestoneText`.
-- Night step: add it to `passNight` in order and update the "Night order" line in README.
+- Night step: add it to `passNight` in order and update the "Night order" line in `docs/design.md`.
 - Early-game step: a `Feature` case (timeline order), its day in `Rules.featureDays`, its gate in
   `Engine.feature(for:)`, and its words in `introducedText` and `notYetText`. Tests that are not about
   the timeline start with `Engine.newGame(earlyGame: false)` (see `startedGame`).
@@ -155,4 +163,65 @@ Most new content is a table entry. See README "Data layer" and the feature secti
   structs (not joined strings) as dictionary keys. A ranked enum with String raw values conforms
   to `CaseOrdered` instead of writing its own `<`.
 - Code style: short doc comments in plain English that say *why*. Match the file you are in.
-- Docs (README, this file) use Simplified Technical English: short sentences, one idea each.
+- Docs (`docs/design.md`, CONTRIBUTING, this file) use Simplified Technical English: short sentences, one idea each.
+
+## How it fits together
+
+- **The loop.** A front end sends a `Command`. `Engine.apply` changes `GameState` and returns `GameEvent`s.
+  The front end turns events into words with `FeatherwickText`. The keeper's day is a few slots of care
+  and errands; `.passNight` runs the night steps in order and starts the next day.
+- **The app.** `GameStore` owns the state and the `SeededRNG`. `GameStore.run` applies a command, logs
+  the words, plays feedback, builds the morning report after `.passNight`, and saves. Views read
+  `GameStore` and send commands; nothing else changes state.
+- **Saves.** `SaveStore` writes a slot atomically with rolling backups and quarantines an unreadable
+  file. `SaveFormat` versions and migrates. The CLI saves in the current folder; the app in
+  Application Support.
+- **Scenes.** `FarmView` holds four panels. The Yard and Far yard draw `FarmScene` (depth from ground Y,
+  the walk mask, the season shader) with `YardScene` birds on `ChickenSkeleton`. Scene numbers live in
+  `Scene/SceneConstants.swift`; game numbers live in `Rules`.
+
+## Running checks locally
+
+```sh
+swift build --build-tests -Xswiftc -warnings-as-errors
+swift test                                   # about 7 minutes; the simulation tests are slow
+swift test --filter VillageDayTests          # one suite
+swift test --filter "ShowTests/standardsListTheBreedsOwnColours"  # one test
+swift format lint --strict --recursive Package.swift Sources Tests App
+cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Featherwick \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' CODE_SIGNING_ALLOWED=NO \
+  -only-testing:FeatherwickTests/PartKitTests
+```
+
+## Traps
+
+- **Newer Swift finds new warnings.** CI builds with Swift 6.0. Xcode's newer Swift (6.4 on 25 October
+  2026) flags `#require` calls in `VillageDayTests` and others as redundant, so a local
+  `-warnings-as-errors` build fails where CI passes. Fix such warnings in their own pull request; do
+  not change the CI toolchain to hide them.
+- **Worktrees.** Worktrees live under `.claude/worktrees/`, and `.claude/` is git-ignored. No lint or
+  format config may exclude `.claude/`: every check is given explicit paths (`Sources Tests App`),
+  so it reads the worktree's own files. Run checks from inside the worktree, not the main checkout.
+- **A worktree has its own `.build/`.** The first build in a new worktree takes several minutes.
+- **The Xcode project is generated.** Run `xcodegen` again after any change to `App/project.yml` or a
+  new folder under `App/`.
+
+## Pull requests
+
+- Every PR needs an issue with all five template fields, a branch named `<issue>-<slug>`, and a changelog
+  fragment `changelog/<issue>-<slug>.txt`, or the `no-changelog` label for docs and tooling only.
+- Commits use the repo-local Novaclaw git identity, in WordPress core style (see CONTRIBUTING.md).
+- CodeRabbit's approval is the required review. It allows about 10 reviews an hour per repository, so
+  batch fixes into one push. When it says "Review paused", comment `@coderabbitai resume`, then
+  `@coderabbitai review`.
+- Auto-merge (`gh pr merge <n> --auto --merge`) can land a PR while you are still fixing it. Run
+  `gh pr view <n> --json state` and confirm it is `OPEN` before every push to its branch.
+- Merge `main` into a branch only when it conflicts (GitHub says DIRTY). Being behind is not a reason:
+  every push dismisses the approval and restarts CI. Don't rebase.
+- Each push queues every CI job. GitHub Free runs 20 jobs at once, only 5 of them on macOS. Keep the
+  number of open PRs to what the macOS slots can carry.
+- When several sessions work at once, give each a lane: an ordered list of issues in one area, one PR
+  at a time, so they never edit the same files.
+- Only `main` is protected. Never enable auto-merge on a PR whose base is another feature branch: it
+  merges into that base at once.
+- Never enable auto-merge on a PR from outside. Outside PRs wait for the maintainer.
