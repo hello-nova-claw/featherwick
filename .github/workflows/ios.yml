@@ -42,7 +42,9 @@ jobs:
       # GitHub updates the image ("Unable to find a device matching the provided destination").
       - name: Create an iPhone 17 Pro on the newest iOS
         run: |
-          runtime=$(xcrun simctl list runtimes -j | python3 -c 'import json, sys; rs = [r for r in json.load(sys.stdin)["runtimes"] if r["platform"] == "iOS" and r["isAvailable"]]; print(max(rs, key=lambda r: [int(x) for x in r["version"].split(".")])["identifier"])')
+          # The newest runtime this Xcode can run: none newer than its own iOS simulator SDK.
+          sdk=$(xcrun --sdk iphonesimulator --show-sdk-version)
+          runtime=$(xcrun simctl list runtimes -j | SDK="$sdk" python3 -c 'import json, os, sys; v = lambda s: [int(x) for x in s.split(".")]; rs = [r for r in json.load(sys.stdin)["runtimes"] if r["platform"] == "iOS" and r["isAvailable"] and v(r["version"]) <= v(os.environ["SDK"])]; print(max(rs, key=lambda r: v(r["version"]))["identifier"])')
           echo "Runtime: $runtime"
           echo "LATEST_DEVICE=$(xcrun simctl create "iPhone 17 Pro latest" "iPhone 17 Pro" "$runtime")" >> "$GITHUB_ENV"
       - name: Test on iPhone 17 Pro, newest iOS, with coverage
