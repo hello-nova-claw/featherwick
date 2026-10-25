@@ -157,7 +157,8 @@ Most new content is a table entry. See "Data layer" and the feature sections in 
   Code must build on Linux too: no Apple-only APIs in Core. Fix warnings; do not silence them.
   - `swift.yml`, "Build and test (Linux)": build with warnings as errors, tests with coverage, and
     `bin/coverage-gate` against `.github/coverage-baseline`.
-  - `checks.yml`: "swift-format", "SwiftLint", "Use what Apple already has" (`bin/check-native`),
+  - `checks.yml`: "swift-format", "SwiftLint" (with the colour, font-size and print rules), "Use what Apple
+    already has" (`bin/check-native`, the package allowlist),
     "Licence files intact" (`bin/check-licences`), "Gitleaks", "actionlint".
   - `pull-request.yml`: "Tests change with code", "Changelog fragment" (skipped with `no-changelog`).
   - Job names are the required checks on `main`. Never rename one.

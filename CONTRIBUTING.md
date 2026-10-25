@@ -65,7 +65,7 @@ Prefixes: `Genetics`, `Gameplay`, `Story`, `Save`, `Text`, `Scene`, `UI`, `Art`,
 Featherwick should feel like an iPhone app. Before you write anything custom, use the system equivalent. If there isn't one, say so in the pull request.
 
 - **UI.** SwiftUI system components: `.sheet` with `presentationDetents`, `NavigationStack`, `Button`, `Toggle`, `Picker`, `List`. Build on the components in `App/Featherwick/Design/`, which wrap them. SF Symbols for icons.
-- **Colour.** Colours come only from the `Palette` tokens in `App/Featherwick/Design/`, which have day and night values. No `Color(red:…)`, `Color(hex:)` or `UIColor(red:…)` anywhere else.
+- **Colour.** Colours come only from the `Palette` tokens in `App/Featherwick/Design/`, which have day and night values. No `Color(red:…)`, `Color(hex:)` or `UIColor(red:…)` anywhere else. The known exceptions sit in `.swiftlint-baseline.json`: the scene shader's channel colours (data, not colour), the placeholder chicken's eye, and the farm panels' flat stand-ins until their paintings exist (#77).
 - **Type.** Fonts come only from the `Typeface` tokens, and every font scales with Dynamic Type (`relativeTo:`). No `.font(.system(size:))` and no fixed font sizes in screens.
 - **Logging.** `os.Logger` in the app. No `print` in the app, Core or Text; the CLI prints, and a test may print what a failing run needs.
 - **Saves.** `Codable` and `FileManager`, through `SaveStore`. No other storage for game state.
