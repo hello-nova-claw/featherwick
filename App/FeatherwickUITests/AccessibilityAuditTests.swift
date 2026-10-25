@@ -75,7 +75,8 @@ class AccessibilityAuditTests: XCTestCase {
             if place == "Farm gate" {
                 Farm.button("Market board", in: app).tap()
                 XCTAssertTrue(
-                    app.staticTexts["Market board"].waitForExistence(timeout: 5), "The market board did not open")
+                    app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Market board")).firstMatch
+                        .waitForExistence(timeout: 5), "The market board did not open")
                 try audit(app, screen: "market-board")
                 Farm.close(app)
             }
