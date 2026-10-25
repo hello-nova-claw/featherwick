@@ -11,6 +11,12 @@ on:
 permissions:
   contents: read
 
+# One run at a time across all pull requests, queued, never cancelled: every run pushes to the one
+# screenshots branch, and a cancelled run would leave a pull request without its comment.
+concurrency:
+  group: screenshots-branch
+  cancel-in-progress: false
+
 jobs:
   comment:
     name: Screenshots comment
@@ -102,7 +108,8 @@ jobs:
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner, repo: context.repo.repo, issue_number: pr,
             });
-            const mine = comments.find((x) => x.body.startsWith(marker));
+            // Only the bot's own comment: anyone can paste the marker into theirs.
+            const mine = comments.find((x) => x.user?.login === 'github-actions[bot]' && x.body.startsWith(marker));
             if (mine) {
               await github.rest.issues.updateComment({ owner: context.repo.owner, repo: context.repo.repo, comment_id: mine.id, body });
             } else {
