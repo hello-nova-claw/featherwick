@@ -54,12 +54,24 @@ enum Farm {
             return
         }
         dot.tap()
+        // The rail marks the panel on screen as selected.
+        let shown = NSPredicate(format: "isSelected == true")
+        let wait = XCTNSPredicateExpectation(predicate: shown, object: dot)
+        XCTAssertEqual(XCTWaiter.wait(for: [wait], timeout: 5), .completed, "The \(panel) panel did not show")
     }
 
     /// The first button whose label starts with a name. Doubled strings read "Settings Settings", and a place
     /// button adds its notices after the name, so an exact match would miss both.
     static func button(_ name: String, in app: XCUIApplication) -> XCUIElement {
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
+    }
+
+    /// The place button in the bottom row. The Yard's rail dot starts with the same name, so this one is
+    /// told apart by size: a dot is under 30 points wide.
+    static func placeButton(_ name: String, in app: XCUIApplication) -> XCUIElement? {
+        let named = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name))
+        guard named.firstMatch.waitForExistence(timeout: 5) else { return nil }
+        return named.allElementsBoundByIndex.first { $0.frame.width >= 30 }
     }
 
     static func close(_ app: XCUIApplication) {

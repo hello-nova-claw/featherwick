@@ -1,0 +1,122 @@
+name: iOS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODEGEN_VERSION: 2.46.0
+  XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
+
+# Job names are required-check names on main. Never rename one.
+# GitHub Free runs 5 macOS jobs at once, and each push queues both of these.
+jobs:
+  latest:
+    name: iOS tests (latest)
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Select Xcode 26.3
+        run: sudo xcode-select -s /Applications/Xcode_26.3.app
+      - name: Install XcodeGen
+        run: |
+          curl -fsSL -o xcodegen.zip "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
+          echo "${XCODEGEN_SHA256}  xcodegen.zip" | shasum -a 256 -c -
+          unzip -q xcodegen.zip -d "$RUNNER_TEMP" && rm xcodegen.zip
+          echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
+      - name: Generate the Xcode project
+        working-directory: App
+        run: xcodegen --quiet
+      # Its own device on the newest iOS runtime the image has, by ID: a named device can vanish when
+      # GitHub updates the image ("Unable to find a device matching the provided destination").
+      - name: Create an iPhone 17 Pro on the newest iOS
+        run: |
+          # The newest runtime this Xcode can run: none newer than its own iOS simulator SDK.
+          sdk=$(xcrun --sdk iphonesimulator --show-sdk-version)
+          runtime=$(xcrun simctl list runtimes -j | SDK="$sdk" python3 -c 'import json, os, sys; v = lambda s: [int(x) for x in s.split(".")]; rs = [r for r in json.load(sys.stdin)["runtimes"] if r["platform"] == "iOS" and r["isAvailable"] and v(r["version"]) <= v(os.environ["SDK"])]; print(max(rs, key=lambda r: v(r["version"]))["identifier"])')
+          echo "Runtime: $runtime"
+          echo "LATEST_DEVICE=$(xcrun simctl create "iPhone 17 Pro latest" "iPhone 17 Pro" "$runtime")" >> "$GITHUB_ENV"
+      - name: Test on iPhone 17 Pro, newest iOS, with coverage
+        run: |
+          xcodebuild test -project App/Featherwick.xcodeproj -scheme Featherwick \
+            -destination "platform=iOS Simulator,id=${LATEST_DEVICE}" \
+            -derivedDataPath build/dd -resultBundlePath build/tests.xcresult \
+            -enableCodeCoverage YES CODE_SIGNING_ALLOWED=NO -quiet
+      - name: App coverage is not below the baseline
+        run: |
+          xcrun xccov view --report --json build/tests.xcresult > build/coverage.json
+          python3 bin/coverage-gate --tolerance 0.5 xccov build/coverage.json .github/coverage-baseline-app Featherwick.app
+      - name: Package the simulator app
+        run: |
+          ditto -c -k --keepParent build/dd/Build/Products/Debug-iphonesimulator/Featherwick.app build/Featherwick.app.zip
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: featherwick-simulator-app
+          path: build/Featherwick.app.zip
+          retention-days: 14
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: test-results-latest
+          path: build/tests.xcresult
+          retention-days: 7
+
+  minimum:
+    name: iOS tests (iOS 17)
+    # The macOS 14 image, the last with an iOS 17 simulator, retires on 2 November 2026. So this job
+    # runs on macOS 15 and downloads the iOS 17.5 runtime from Apple each time.
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Select Xcode 16.4
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+      - name: Install XcodeGen
+        run: |
+          curl -fsSL -o xcodegen.zip "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
+          echo "${XCODEGEN_SHA256}  xcodegen.zip" | shasum -a 256 -c -
+          unzip -q xcodegen.zip -d "$RUNNER_TEMP" && rm xcodegen.zip
+          echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
+      - name: Install the iOS 17.5 simulator
+        run: |
+          # Start the simulator service first: on a fresh runner the download can ask before it is up
+          # ("Unable to connect to simulator"). Not under sudo, which reaches a different user's service.
+          xcrun simctl list runtimes >/dev/null
+          for attempt in 1 2 3; do
+            xcodebuild -downloadPlatform iOS -buildVersion 17.5 && break
+            [ "$attempt" = 3 ] && exit 1
+            echo "::warning::Runtime download attempt $attempt failed; trying again."
+            sleep 20
+          done
+          runtime=$(xcrun simctl list runtimes -j | python3 -c 'import json, sys; print(next(r["identifier"] for r in json.load(sys.stdin)["runtimes"] if r["version"].startswith("17.5")))')
+          # By its ID: xcodebuild does not always find a new device by name.
+          echo "IOS17_DEVICE=$(xcrun simctl create "iPhone 15 iOS 17" "iPhone 15" "$runtime")" >> "$GITHUB_ENV"
+      - name: Generate the Xcode project
+        working-directory: App
+        run: xcodegen --quiet
+      - name: Test on iPhone 15, iOS 17.5, the minimum supported version
+        run: |
+          xcodebuild test -project App/Featherwick.xcodeproj -scheme Featherwick \
+            -destination "platform=iOS Simulator,id=${IOS17_DEVICE}" \
+            -skip-testing:FeatherwickUITests \
+            -derivedDataPath build/dd -resultBundlePath build/tests.xcresult \
+            CODE_SIGNING_ALLOWED=NO -quiet
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: test-results-ios17
+          path: build/tests.xcresult
+          retention-days: 7

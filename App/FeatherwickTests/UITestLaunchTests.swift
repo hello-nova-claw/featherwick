@@ -48,6 +48,7 @@ import Testing
         let first = try launch.makeStore()
         let second = try launch.makeStore()
         #expect(first.saveLocation != second.saveLocation)
+        #expect(first.slot != second.slot)
         #expect(first.state.day == launch.save().state.day)
     }
 }

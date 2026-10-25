@@ -44,8 +44,10 @@
             let directory = FileManager.default.temporaryDirectory
                 .appendingPathComponent("uitest-\(UUID().uuidString)", isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            try SaveStore(directory: directory).write(SaveFormat.encode(save()))
-            return GameStore(directory: directory)
+            // Its own slot too: the app keeps per-slot notes (new stock seen, beta prompts) outside the save.
+            let slot = "uitest-\(UUID().uuidString)"
+            try SaveStore(directory: directory, slot: slot).write(SaveFormat.encode(save()))
+            return GameStore(directory: directory, slot: slot)
         }
 
         /// Cares for the flock, rests until the sleep gate opens, then sleeps.

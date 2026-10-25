@@ -16,7 +16,11 @@ Featherwick is a cozy game with real genetics. Before you build anything, check 
 
 1. **Issue first.** Every change starts as an issue made from the task template. An issue is not ready until all five fields are filled in: problem, scope, out of scope, acceptance criteria, how to test. Agents fill the template before they write code.
 2. **Outside contributors wait.** If you are not the maintainer, open an issue and wait until it is accepted (moved to Ready) before you write code. A pull request without an accepted issue is closed.
-3. **Board.** Issues move across the project board: Backlog, Ready, In progress, In review, Done. Move the issue, not the pull request.
+3. **Board.** Issues move across the [project board](https://github.com/users/hello-nova-claw/projects/2): Backlog, Ready, In progress, In review, Done. Move the issue, not the pull request.
+   - New issues are not added to the board automatically. Whoever files an issue adds it (`gh project item-add 2 --owner hello-nova-claw --url <issue url>`) and sets its milestone, Priority and Status together.
+   - Priority mirrors the milestone: `P0 · 0.2 TestFlight`, `P1 · 0.3 Trade codes`, `P2 · Later`.
+   - Backlog comes first. An issue stays in Backlog, whatever its Priority, while it is labelled `question`, while it is in Later, or while it is an outside contributor's issue the maintainer has not triaged.
+   - Every other P0 and P1 issue is Ready.
 4. **One branch and one pull request per issue.** Name the branch `<issue number>-<short-slug>`, for example `58-string-catalog`.
 5. **Pull request.** Use the template. Link the issue with `Fixes #58`. Add a changelog fragment, `changelog/<issue>-<slug>.txt`, with one line a player would understand. Do not edit `CHANGELOG.md`: at release time `bin/changelog` folds every fragment in and deletes them. If the change has no effect a player can see, say so, and the maintainer adds the `no-changelog` label.
 6. **Review.** CodeRabbit reviews every pull request, and its approval is the required review. `main` is protected: no direct pushes, all checks green, stale approvals dismissed on push.
@@ -50,6 +54,7 @@ Prefixes: `Genetics`, `Gameplay`, `Story`, `Save`, `Text`, `Scene`, `UI`, `Art`,
 ## Code
 
 - Swift 6, formatted with `swift-format` using `.swift-format`. CI fails on unformatted code and on any warning. Fix warnings; do not silence them.
+- SwiftLint (`.swiftlint.yml`) checks force unwraps, `try!`, force casts and a few more. Old violations sit in `.swiftlint-baseline.json`. Fix one and it leaves the baseline; never add one to get a pull request through.
 - Rules live in `FeatherwickCore`, and only there. Words live in `FeatherwickText`, and only there. Views send commands and show state. See the core rules in [CLAUDE.md](CLAUDE.md).
 - Core builds on Linux: no Apple-only APIs in `FeatherwickCore` or `FeatherwickText`.
 - No force unwraps and no `try!` outside tests.
@@ -60,13 +65,13 @@ Prefixes: `Genetics`, `Gameplay`, `Story`, `Save`, `Text`, `Scene`, `UI`, `Art`,
 Featherwick should feel like an iPhone app. Before you write anything custom, use the system equivalent. If there isn't one, say so in the pull request.
 
 - **UI.** SwiftUI system components: `.sheet` with `presentationDetents`, `NavigationStack`, `Button`, `Toggle`, `Picker`, `List`. Build on the components in `App/Featherwick/Design/`, which wrap them. SF Symbols for icons.
-- **Colour.** Colours come only from the `Palette` tokens in `App/Featherwick/Design/`, which have day and night values. No `Color(red:…)`, `Color(hex:)` or `UIColor(red:…)` anywhere else.
+- **Colour.** Colours come only from the `Palette` tokens in `App/Featherwick/Design/`, which have day and night values. No `Color(red:…)`, `Color(hex:)` or `UIColor(red:…)` anywhere else. The known exceptions sit in `.swiftlint-baseline.json`: the scene shader's channel colours (data, not colour), the placeholder chicken's eye, and the farm panels' flat stand-ins until their paintings exist (#77).
 - **Type.** Fonts come only from the `Typeface` tokens, and every font scales with Dynamic Type (`relativeTo:`). No `.font(.system(size:))` and no fixed font sizes in screens.
-- **Logging.** `os.Logger` in the app. No `print` outside the CLI.
+- **Logging.** `os.Logger` in the app. No `print` in the app, Core or Text; the CLI prints, and a test may print what a failing run needs.
 - **Saves.** `Codable` and `FileManager`, through `SaveStore`. No other storage for game state.
 - **Feedback.** `UIFeedbackGenerator` through `Haptics`, and `AVAudioSession` (`.ambient`) through `Sound`.
 - **Game Center** through GameKit, if the game ever uses it.
-- **Dependencies.** None today. A new Swift package needs an MIT-compatible licence, a line in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and a reason in the pull request. Nothing may phone home (principle 4).
+- **Dependencies.** None today. A new Swift package needs an entry on the allowlist in `bin/check-native`, an MIT-compatible licence, a line in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and a reason in the pull request. Nothing may phone home (principle 4).
 
 ### Comments
 
@@ -75,11 +80,11 @@ Comments explain why. Delete any comment that restates the line below it. Each t
 ## Tests
 
 - Write the test first, and commit it first.
-- A pull request that changes `Sources/` or `App/Featherwick/` must also change a file under `Tests/` or `App/FeatherwickTests/`. The reviewer checks this now; a CI check follows (#83).
+- A pull request that changes `Sources/` or `App/Featherwick/` must also change a file under `Tests/`, `App/FeatherwickTests/` or `App/FeatherwickUITests/`. CI checks this ("Tests change with code").
 - Tests use Swift Testing (`import Testing`). No XCTest except for UI tests, which need it.
 - Game logic is tested without the app or the renderer. Pass a `SeededRNG` with a fixed seed. Never read the clock: game time is state.
 - No sleeps and no real network in tests.
-- Line coverage must not drop. Once `.github/coverage-baseline` exists (#83), CI fails below its figure; when your change raises coverage, raise the baseline in the same pull request.
+- Line coverage must not drop. CI fails below the figure in `.github/coverage-baseline` (Core and Text, on Linux); when your change raises coverage, raise the baseline in the same pull request.
 - `Fixtures/save-v0.json` must always load. A change to the save shape needs a migration and a test.
 
 Run everything locally:
@@ -87,7 +92,9 @@ Run everything locally:
 ```bash
 swift build --build-tests -Xswiftc -warnings-as-errors
 swift test
-swift format lint --strict --recursive Package.swift Sources Tests App
+swift format --in-place --recursive Package.swift Sources Tests App && git diff --exit-code   # from a clean tree
+swiftlint lint --strict --baseline .swiftlint-baseline.json
+bin/check-native && bin/check-licences
 cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Featherwick \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' CODE_SIGNING_ALLOWED=NO
 ```
@@ -108,7 +115,7 @@ cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Fea
 - Never use colour as the only signal. A colour that carries meaning also has a word, a shape or a mark.
 - Every sound has a visual or haptic equivalent, and the game is fully playable with sound off.
 - A toast or result the player must know about is announced to VoiceOver.
-- Apple's accessibility audit runs on every screen, four ways: default, the largest text, right to left, and doubled strings (`App/FeatherwickUITests/AccessibilityAuditTests.swift`). A new screen or sheet gets a test there. Known issue types are listed in `knownIssue` with the issue that fixes them; the pull request that fixes one removes its line. Any other issue fails.
+- Apple's accessibility audit runs on the main screens (the rest follow in #98), four ways: default, the largest text, right to left, and doubled strings (`App/FeatherwickUITests/AccessibilityAuditTests.swift`). A new screen or sheet gets a test there. Known issue types are listed in `knownIssue` with the issue that fixes them; the pull request that fixes one removes its line. Any other issue fails.
 - **Every pull request that touches UI says how it was tested with VoiceOver**: what you focused, what was read out, what you activated, and where focus went afterwards.
 - The game does not support hardware keyboards, so Full Keyboard Access is not required.
 

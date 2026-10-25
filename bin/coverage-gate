@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+"""Fails when line coverage is below the committed baseline.
+
+Reads either an llvm-cov export (the Swift package, on Linux) or an xccov
+report (the iOS app, on macOS), and compares its line coverage with a
+baseline file holding one number, a percentage.
+
+Usage:
+  bin/coverage-gate [--tolerance N] llvm-cov <export.json> <baseline-file>
+  bin/coverage-gate [--tolerance N] xccov <report.json> <baseline-file> <target name>
+"""
+
+import json
+import sys
+from pathlib import Path
+
+# Coverage moves between identical runs: about 0.01 points for Core and Text (hash-ordered sets steer a
+# few tests down other branches), up to about half a point for the app once UI tests drive it (view code runs by timing). The gate allows this
+# much either side of the baseline; --tolerance sets it per report. A real change is larger.
+TOLERANCE = 0.05
+
+
+def llvm_cov(report: dict) -> tuple[int, int]:
+    # The game logic only: Core and Text. Not the tests, the CLI or built files.
+    files = [
+        f for f in report["data"][0]["files"]
+        if "/Sources/" in f["filename"] and "/Sources/FeatherwickCLI/" not in f["filename"]
+        and "/.build/" not in f["filename"]
+    ]
+    return (sum(f["summary"]["lines"]["count"] for f in files),
+            sum(f["summary"]["lines"]["covered"] for f in files))
+
+
+def xccov(report: dict, target: str) -> tuple[int, int]:
+    for entry in report.get("targets", []):
+        if entry.get("name") == target:
+            return entry["executableLines"], entry["coveredLines"]
+    names = ", ".join(t.get("name", "?") for t in report.get("targets", []))
+    raise SystemExit(f"::error::No target named {target} in the coverage report. Targets: {names}")
+
+
+def main() -> int:
+    global TOLERANCE
+    if len(sys.argv) > 2 and sys.argv[1] == "--tolerance":
+        TOLERANCE = float(sys.argv[2])
+        del sys.argv[1:3]
+    if len(sys.argv) < 4 or sys.argv[1] not in ("llvm-cov", "xccov") or (sys.argv[1] == "xccov" and len(sys.argv) != 5):
+        print(__doc__, file=sys.stderr)
+        return 2
+    kind, report_path, baseline_path = sys.argv[1:4]
+    report = json.loads(Path(report_path).read_text(encoding="utf-8"))
+    total, covered = llvm_cov(report) if kind == "llvm-cov" else xccov(report, sys.argv[4])
+
+    # No lines means the report was built without the sources, not that all is covered.
+    if total == 0:
+        print("::error::The coverage report lists no lines. Build it where the sources are.")
+        return 1
+
+    # Compared unrounded: 94.515% rounds to 94.52% but is still below a 94.52 baseline.
+    coverage = 100 * covered / total
+    baseline = float(Path(baseline_path).read_text(encoding="utf-8").strip())
+    print(f"Line coverage {coverage:.3f}%, baseline {baseline:.2f}% ({baseline_path})")
+
+    if coverage < baseline - TOLERANCE:
+        print(f"::error::Coverage went down from {baseline:.2f}% to {coverage:.3f}%. Add tests, or explain in the pull request why it must drop.")
+        return 1
+    # The baseline is a ratchet: a rise that is not recorded would let a later drop pass unseen.
+    if coverage > baseline + TOLERANCE:
+        print(f"::error::Coverage went up. Raise {baseline_path} to {int(coverage * 100) / 100:.2f} in this pull request.")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
