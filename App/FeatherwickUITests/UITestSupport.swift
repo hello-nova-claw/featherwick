@@ -54,6 +54,10 @@ enum Farm {
             return
         }
         dot.tap()
+        // The rail marks the panel on screen as selected.
+        let shown = NSPredicate(format: "isSelected == true")
+        let wait = XCTNSPredicateExpectation(predicate: shown, object: dot)
+        XCTAssertEqual(XCTWaiter.wait(for: [wait], timeout: 5), .completed, "The \(panel) panel did not show")
     }
 
     /// The first button whose label starts with a name. Doubled strings read "Settings Settings", and a place

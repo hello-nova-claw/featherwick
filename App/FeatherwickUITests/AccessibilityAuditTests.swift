@@ -53,6 +53,7 @@ class AccessibilityAuditTests: XCTestCase {
         XCTAssertTrue(Farm.button("Settings", in: app).waitForExistence(timeout: 10))
         for (button, screen) in [("Books", "books"), ("Today", "today"), ("Settings", "settings")] {
             Farm.button(button, in: app).tap()
+            XCTAssertTrue(Farm.button("Close", in: app).waitForExistence(timeout: 5), "\(button) did not open")
             try audit(app, screen: screen)
             Farm.close(app)
         }
@@ -70,6 +71,14 @@ class AccessibilityAuditTests: XCTestCase {
             button.tap()
             XCTAssertTrue(Farm.button("Close", in: app).waitForExistence(timeout: 5), "The \(place) sheet did not open")
             try audit(app, screen: "place-\(Farm.slug(place))")
+            // The Market board opens from the farm gate.
+            if place == "Farm gate" {
+                Farm.button("Market board", in: app).tap()
+                XCTAssertTrue(
+                    app.staticTexts["Market board"].waitForExistence(timeout: 5), "The market board did not open")
+                try audit(app, screen: "market-board")
+                Farm.close(app)
+            }
             Farm.close(app)
         }
     }
