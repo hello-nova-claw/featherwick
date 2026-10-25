@@ -53,6 +53,28 @@ def swift_files(root: Path, *dirs: str):
             yield from sorted(base.rglob("*.swift"))
 
 
+def strip_swift_comments(text: str) -> str:
+    """Removes // and /* */ comments from Swift source, keeping string literals (and the // in URLs)."""
+    out, i, n = [], 0, len(text)
+    while i < n:
+        if text.startswith('"', i):
+            end = i + 1
+            while end < n and text[end] != '"':
+                end += 2 if text[end] == "\\" else 1
+            out.append(text[i : end + 1])
+            i = end + 1
+        elif text.startswith("//", i):
+            while i < n and text[i] != "\n":
+                i += 1
+        elif text.startswith("/*", i):
+            end = text.find("*/", i + 2)
+            i = n if end == -1 else end + 2
+        else:
+            out.append(text[i])
+            i += 1
+    return "".join(out)
+
+
 def strip_comment(line: str) -> str:
     return line.split("//", 1)[0]
 
@@ -76,7 +98,7 @@ def main() -> int:
 
     manifest = root / "Package.swift"
     if manifest.exists():
-        text = manifest.read_text(encoding="utf-8")
+        text = strip_swift_comments(manifest.read_text(encoding="utf-8"))
         # A dependency the pattern cannot read (a URL in a variable, say) fails rather than slips past.
         if len(re.findall(r"\.package\(", text)) != len(PACKAGE.findall(text)):
             errors.append("Package.swift: a .package(...) declaration names its source with something other than a string literal. Write the URL, path or id out in full.")
