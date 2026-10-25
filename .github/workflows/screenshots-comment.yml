@@ -1,0 +1,110 @@
+name: Screenshots comment
+
+# Posts the Screenshots comment and keeps the images on the screenshots branch, under pr-<number>/.
+# It runs after the Screenshots workflow, from main's copy of this file. It never checks out or runs pull
+# request code: it reads only the artifact, and checks that it holds nothing but PNGs and the change list.
+on:
+  workflow_run:
+    workflows: [Screenshots]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  comment:
+    name: Screenshots comment
+    # Only pull requests from this repository: a fork's run carries no pull request here.
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: screenshots
+          path: shots
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Check the artifact holds only screenshots
+        run: |
+          bad=$(find shots -type f | grep -vE '^shots/(changes\.json|(before|after)/[a-z0-9-]+--[a-z0-9-]+--[a-zA-Z0-9-]+--[a-z0-9-]+\.png)$' || true)
+          if [ -n "$bad" ]; then echo "::error::Unexpected files in the artifact: $bad"; exit 1; fi
+          find shots -name '*.png' -print0 | while IFS= read -r -d '' f; do
+            head -c 8 "$f" | od -An -tx1 | tr -d ' \n' | grep -qx '89504e470d0a1a0a' || { echo "::error::$f is not a PNG"; exit 1; }
+          done
+          python3 -c 'import json; json.load(open("shots/changes.json"))'
+      - name: Store the shots on the screenshots branch
+        id: store
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          git init -q store && cd store
+          git config user.name "github-actions[bot]"
+          git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+          if git ls-remote --exit-code --heads "$remote" screenshots >/dev/null; then
+            git fetch -q --depth 1 "$remote" screenshots && git checkout -q -b screenshots FETCH_HEAD
+          else
+            git checkout -q --orphan screenshots
+          fi
+          rm -rf "pr-${PR}" && mkdir -p "pr-${PR}"
+          cp -R ../shots/before ../shots/after "pr-${PR}/" 2>/dev/null || true
+          git add -A
+          git commit -q --allow-empty -m "Screenshots for #${PR} at ${HEAD_SHA:0:7}."
+          git push -q "$remote" screenshots
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          STORE_SHA: ${{ steps.store.outputs.sha }}
+        with:
+          script: |
+            const fs = require('fs');
+            const run = context.payload.workflow_run;
+            const pr = run.pull_requests[0].number;
+            const c = JSON.parse(fs.readFileSync('shots/changes.json', 'utf8'));
+            const base = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/${process.env.STORE_SHA}/pr-${pr}`;
+            const img = (side, name) => `<img src="${base}/${side}/${name}" width="240" alt="${name}">`;
+            const title = (name) => '`' + name.replace(/\.png$/, '') + '`';
+            const marker = '<!-- featherwick-screenshots -->';
+            const lines = [marker, '### Screenshots', '',
+              `Compared with \`main\` at ${run.head_sha.slice(0, 7)}: ${c.changed.length} changed, ${c.added.length} new, ` +
+              `${c.removed.length} gone, ${c.unchanged.length} unchanged. A change never fails the check; look before you approve.`, ''];
+            const shown = 40;
+            if (c.changed.length) {
+              lines.push('#### Changed', '', '| Shot | Before | After |', '| --- | --- | --- |');
+              for (const n of c.changed.slice(0, shown)) lines.push(`| ${title(n)} | ${img('before', n)} | ${img('after', n)} |`);
+              lines.push('');
+            }
+            if (c.added.length) {
+              lines.push('#### New', '', '| Shot | After |', '| --- | --- |');
+              for (const n of c.added.slice(0, shown)) lines.push(`| ${title(n)} | ${img('after', n)} |`);
+              lines.push('');
+            }
+            if (c.removed.length) {
+              lines.push('#### Gone', '', '| Shot | Before |', '| --- | --- |');
+              for (const n of c.removed.slice(0, shown)) lines.push(`| ${title(n)} | ${img('before', n)} |`);
+              lines.push('');
+            }
+            if ([c.changed, c.added, c.removed].some((l) => l.length > shown)) {
+              lines.push(`Only the first ${shown} of each list are shown. All are in \`pr-${pr}/\` on the \`screenshots\` branch.`, '');
+            }
+            lines.push('<details><summary>Unchanged</summary>', '', ...c.unchanged.map((n) => `- ${title(n)}`), '', '</details>');
+            const body = lines.join('\n');
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: pr,
+            });
+            const mine = comments.find((x) => x.body.startsWith(marker));
+            if (mine) {
+              await github.rest.issues.updateComment({ owner: context.repo.owner, repo: context.repo.repo, comment_id: mine.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: pr, body });
+            }
