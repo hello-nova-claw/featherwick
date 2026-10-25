@@ -1,38 +1,50 @@
-# Featherwick
+# Featherwick design record
 
-Cozy chicken-keeping game: Stardew Valley daily life, Pokémon-style collecting, real chicken genetics.
+This is the record of how Featherwick works and why. Section 2 is not negotiable. Sections 3 and 4 say how the game is built and which options were rejected, so they do not come back. The sections after them describe each system. A change to behaviour updates its section in the same pull request.
 
-This repo is the game logic first. The iOS front end (SwiftUI) uses the same core.
+## 1. The game
 
-## Licensing
+Featherwick is a cozy chicken-keeping game for iPhone, with real chicken genetics. The keeper looks after a backyard flock, hatches eggs and fills three collections: breeds, feather colours and egg colours. Think Stardew Valley daily life and Pokémon-style collecting, with genes that work the way they do in real birds. There is no combat and no death.
 
-The code is under the [MIT licence](LICENSE). The art, sound, writing, name and icon are not: they are all rights reserved ([ASSETS-LICENSE.md](ASSETS-LICENSE.md), [TRADEMARKS.md](TRADEMARKS.md)). You are welcome to learn from the code and reuse it in your own projects, but not to publish this game or a reskin of it.
+## 2. Design principles (not negotiable)
 
-## Layout
+A pull request that breaks one of these is closed, however good the code is.
 
-- `Sources/FeatherwickCore`: pure game logic. No printing, no input, no system clock, no global random.
-- `Sources/FeatherwickText`: the words players read, shared by the CLI and the app.
-- `Sources/FeatherwickCLI`: text front end (`featherwick`).
-- `App`: iOS test app (SwiftUI, no art yet). Make the Xcode project with `cd App && xcodegen`.
-  TestFlight builds (the "Featherwick Beta" scheme, `BETA` flag) ask two short beta questions, after the first hatch and after the first show. They are not in App Store builds: the flag leaves the code out, and a receipt check keeps it off outside TestFlight. Answers stay on the device until the tester shares them from Settings.
-- `Tests/FeatherwickCoreTests`: Swift Testing tests for the game rules, one suite per system.
-- `Tests/FeatherwickTextTests`: Swift Testing tests for the words.
+1. **Cozy: nothing dies, and nothing can be failed.** No death, no lethal genes, and every egg hatches. The fox scares and never kills. Milestones are reached and never failed. Neglect never lowers tameness. Birds never wait forever. Nothing in the game is unsuitable for a child.
+2. **Real genetics, and no leaks.** A bird's looks come from its genes, never from a variety name, and every bird could be bred by a real keeper. The game never shows a gene or a sex the keeper cannot see yet, in words, names or milestones.
+3. **The same seed plays the same game, and saves always load.** All randomness comes from the seeded generator passed in. The rules never read the device clock. A save from any earlier version loads.
+4. **Nothing leaves the device unless the player sends it.** No ads, no analytics, no tracking, no accounts, and no third-party SDKs that phone home. The game works fully offline. Anything shared, such as beta notes, is shared by the player's own action.
+5. **Fair and calm.** No pay-to-win, no loot boxes, no dark patterns, no streaks to lose, and no notifications that nag. Time in the game moves only when the keeper plays.
 
-## Commands
+## 3. Architecture
 
-```sh
-swift build
-swift test
-swift run featherwick 2026   # play; seed 2026 is used only for a new save
-```
+- **One Swift package, two front ends.** `FeatherwickCore` holds every rule and is pure: no printing, no input, no clock, no unseeded randomness. `FeatherwickText` holds every word the player reads. The CLI (`featherwick`) and the iOS app are thin front ends over both. The core builds and is tested on Linux.
+- **Command in, events out.** A front end sends a `Command`. `Engine.apply(command, to: &state, using: &rng)` changes the `GameState` and returns `GameEvent`s: IDs and enums only, never words. A refused command returns `.rejected` with a `Rejection`. The front end turns events into words through `FeatherwickText`.
+- **The game loop is the day.** The keeper spends the day's slots on care and errands, then sleeps. `.passNight` runs the numbered night steps in a fixed order (see "Night order" below). The app shows the night's events as a morning report, sorted into groups by `MorningReport`.
+- **State and saves.** `GameState` is `Codable`. `SaveStore` writes one slot atomically, keeps rolling backups and quarantines a save it cannot read. `SaveFormat` versions the state and runs migrations, so an old save always loads. The app's `GameStore` runs each command, logs the words and saves after every command.
+- **The app.** SwiftUI menus over the farm: four swipe panels (Barn, Yard, Far yard, Shop), each opening a sheet. The Yard and Far yard draw a 2.5D scene (`FarmScene`) with a Metal season-colour shader. Every chicken moves on one skeleton, with a placeholder rig or a painted part kit on top. Colours, fonts and sizes come from the tokens in `App/Featherwick/Design/`.
+- **Tunable numbers live in `Rules`.** The game has one setting, `Rules.standard`.
 
-The CLI autosaves to a named slot (default `featherwick-save.json`) in the current folder, writing
-atomically with rolling backups. Launch flag: `--slot <name>` picks a save. Type `help` in the game for commands. `day 10` runs ten full days
-(feed, collect, sell if the carton is full, close, rest until evening, sleep) for fast tuning; `sim [days] [games]` prints a balance report.
+## 4. Decisions
 
-After the daylight lesson (day 9), the prompt shows the day's slots: `Day 31 · ☀︎☀︎○ >`. A filled sun is a
-slot spent. A hollow sun is a slot left. `rest` spends one slot. `time` gives the time of day and the
-errands left. See "Daylight and errands".
+Each line is a decision and the reason for it. Reopen one only in an issue that says why the reason no longer holds.
+
+- **Open source: the code under MIT, the game reserved** (2026-10-25). The code is published so that people can learn from it and reuse it. The art, sound, writing, name and icon stay the author's (`ASSETS-LICENSE.md`, `TRADEMARKS.md`), so nobody can ship this game or a reskin of it. Asset contributions need a written agreement, so every asset keeps one owner.
+- **No history rewrite when going public.** No secrets were ever committed (gitleaks over every commit and branch). GitHub keeps old pull request refs, so a rewrite could not remove old files or author emails anyway. Files whose rights were unclear were removed from the tree instead.
+- **No third-party code.** The app has no package dependencies. A new one needs a reason, an MIT-compatible licence and an entry on the allowlist.
+- **No server.** Trading between friends will use short signed codes, not an online service (see the roadmap).
+- **One setting, no difficulty levels** (#28). Every game uses `Rules.standard`; old Relaxed and Challenge saves switch to it on load.
+- **SwiftUI and Metal, not SpriteKit.** The farm is a few panels and a handful of birds. SwiftUI with one shader keeps a single UI system and a core that also runs on Linux.
+- **The game's own palette and type, not system colours.** The look is a watercolour design with its own colours and fonts. Colours and fonts live only in the `Design/` tokens, with day and night values, and text scales with Dynamic Type.
+- **Game time, not the device clock.** Day and night follow the game's time slots, so the game never punishes a keeper for being away.
+- **No lethal genes.** Real breeders lose chicks to some genes. Featherwick does not, by principle 1.
+- **XcodeGen, not a committed Xcode project.** `App/project.yml` is the source; the project is generated and git-ignored, so it never conflicts.
+- **Swift Testing, not XCTest. swift-format, not SwiftFormat.**
+- **Trademarks and assets are separate from the code licence.** `LICENSE` holds only the MIT text, so GitHub detects it.
+
+---
+
+The sections below describe each system.
 
 ## Engine
 
