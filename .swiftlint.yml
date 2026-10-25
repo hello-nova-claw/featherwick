@@ -23,7 +23,7 @@ excluded:
 custom_rules:
   native_colour:
     name: Use what Apple already has (colour)
-    regex: '\b(?:Color\((?:red|hex|white):|UIColor\((?:red|white|hue):|Color\(\s*\.sRGB)'
+    regex: '\b(?:Color(?:\.init)?\((?:red|hex|white):|UIColor(?:\.init)?\((?:red|white|hue):|Color(?:\.init)?\(\s*\.sRGB)'
     excluded_match_kinds: [comment, comment.mark, comment.url, doccomment, doccomment.field, string]
     excluded: ['App/Featherwick/Design/']
     message: A hard-coded colour. Use a Palette token from App/Featherwick/Design/.
@@ -36,7 +36,7 @@ custom_rules:
     severity: error
   native_print:
     name: Use what Apple already has (print)
-    regex: '(?<![\w.])print\('
+    regex: '(?:(?<![\w.])|\bSwift\.)print\('
     excluded_match_kinds: [comment, comment.mark, comment.url, doccomment, doccomment.field, string]
     excluded: ['Sources/FeatherwickCLI/']
     message: print. Use os.Logger in the app; Core and Text never print.
