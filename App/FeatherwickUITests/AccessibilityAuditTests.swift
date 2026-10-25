@@ -105,7 +105,10 @@ class AccessibilityAuditTests: XCTestCase {
         // Recorded in the test report, so a reader sees what each known issue still hides.
         if !skipped.isEmpty {
             XCTContext.runActivity(named: "Known issues on \(screen) (\(Self.variantName))") { activity in
-                activity.add(XCTAttachment(string: skipped.joined(separator: "\n")))
+                // Kept in passing runs too: by default an attachment is deleted when the test passes.
+                let list = XCTAttachment(string: skipped.joined(separator: "\n"))
+                list.lifetime = .keepAlways
+                activity.add(list)
             }
         }
     }
