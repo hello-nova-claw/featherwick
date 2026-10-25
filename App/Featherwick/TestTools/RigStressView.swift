@@ -2,7 +2,7 @@ import FeatherwickCore
 import SwiftUI
 
 /// The frame budget stage: many chickens walking at yard size, for Instruments (Animation Hitches).
-/// The README's target is 10 birds walking on a yard panel at 60 fps on an iPhone 12. Birds draw on the
+/// The target in docs/design/README.md is 10 birds walking on a yard panel at 60 fps on an iPhone 12. Birds draw on the
 /// skeleton with the path rig, or with a body shape's painted kit when one exists.
 ///
 /// View only: the birds are samples, not the flock, so nothing is saved and no command runs. Every bird
