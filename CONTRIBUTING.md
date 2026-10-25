@@ -108,6 +108,7 @@ cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Fea
 - Never use colour as the only signal. A colour that carries meaning also has a word, a shape or a mark.
 - Every sound has a visual or haptic equivalent, and the game is fully playable with sound off.
 - A toast or result the player must know about is announced to VoiceOver.
+- Apple's accessibility audit runs on every screen, four ways: default, the largest text, right to left, and doubled strings (`App/FeatherwickUITests/AccessibilityAuditTests.swift`). A new screen or sheet gets a test there. Known issue types are listed in `knownIssue` with the issue that fixes them; the pull request that fixes one removes its line. Any other issue fails.
 - **Every pull request that touches UI says how it was tested with VoiceOver**: what you focused, what was read out, what you activated, and where focus went afterwards.
 - The game does not support hardware keyboards, so Full Keyboard Access is not required.
 
