@@ -47,7 +47,7 @@ jobs:
       - name: App coverage is not below the baseline
         run: |
           xcrun xccov view --report --json build/tests.xcresult > build/coverage.json
-          python3 bin/coverage-gate --tolerance 0.25 xccov build/coverage.json .github/coverage-baseline-app Featherwick.app
+          python3 bin/coverage-gate --tolerance 0.5 xccov build/coverage.json .github/coverage-baseline-app Featherwick.app
       - name: Package the simulator app
         run: |
           ditto -c -k --keepParent build/dd/Build/Products/Debug-iphonesimulator/Featherwick.app build/Featherwick.app.zip

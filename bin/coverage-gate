@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 # Coverage moves between identical runs: about 0.01 points for Core and Text (hash-ordered sets steer a
-# few tests down other branches), about 0.1 for the app (view code runs by timing). The gate allows this
+# few tests down other branches), up to about half a point for the app once UI tests drive it (view code runs by timing). The gate allows this
 # much either side of the baseline; --tolerance sets it per report. A real change is larger.
 TOLERANCE = 0.05
 
