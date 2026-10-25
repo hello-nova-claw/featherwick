@@ -37,7 +37,7 @@ reviews:
         Licence files. Flag any change at all as needing the maintainer's review. LICENSE must stay the unaltered MIT text so GitHub detects it.
     - path: "{Package.swift,Package.resolved,App/project.yml}"
       instructions: |
-        Check every new dependency: it must be on the allowlist in bin/check-native, have an MIT-compatible licence, be listed in THIRD-PARTY-NOTICES.md, and have a reason in the pull request. Reject anything that phones home (design principle 4).
+        Check every new dependency: it must have an MIT-compatible licence, be listed in THIRD-PARTY-NOTICES.md, and have a reason in the pull request. Reject anything that phones home (design principle 4).
     - path: "**/*.swift"
       instructions: |
         Enforce "Use what Apple already has" in CONTRIBUTING.md. Colours only from the Palette tokens and fonts only from the Typeface tokens in App/Featherwick/Design/; reject Color(red:), Color(hex:), UIColor(red:) and .font(.system(size:)) elsewhere. Fonts must scale with Dynamic Type. No print outside Sources/FeatherwickCLI; the app uses os.Logger. No force unwraps or try! outside tests. Check main-actor correctness and Sendable under Swift 6, and flag slow work on the main thread or in a scene frame. FeatherwickCore must stay pure: no I/O, no Date(), no Int.random() without using:, and every tunable number in Rules. Player-visible words belong in FeatherwickText, never in Core or a view, and no sentence is built from fragments. Every interactive view needs an accessibility label, respects Reduce Motion, and never uses colour as its only signal.
