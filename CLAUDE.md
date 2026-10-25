@@ -97,7 +97,7 @@ components, screens 1a–9a). The painted farm and bird art come later; dashed b
 - Fonts (Libre Caslon Display/Text, Figtree; OFL) are bundled in `Fonts/` and registered at launch.
 - UI tests (`App/FeatherwickUITests/`, XCTest) launch the app with `-uiTestState fresh|farm` (and
   `-uiTestSeed`), which `UITestLaunch` turns into a known game on an empty save folder, Debug builds only.
-  `AccessibilityAuditTests` audits every screen four ways. Find buttons by label prefix, not exact label:
+  `AccessibilityAuditTests` audits the main screens four ways (the rest: #98). Find buttons by label prefix, not exact label:
   doubled strings read "Settings Settings". Move between panels with the rail dots, not swipes: swipes
   reverse right to left. The four variants take about 4 minutes; two simulator runs at once make it 30.
 - ≡ → "Open test tools" shows the old plain screens (`TestTools/`), with every action and the full log.

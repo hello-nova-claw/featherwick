@@ -1,8 +1,10 @@
 import XCTest
 
-/// Opens every screen and runs Apple's accessibility audit on it. Any issue fails, except the known ones
-/// listed in `knownIssues` with the issue that will fix them. The subclasses below run the same tests at the
-/// largest accessibility text size, right to left, and with every localised string doubled in length.
+/// Opens the main screens and runs Apple's accessibility audit on each: welcome, the starter choice, the
+/// tour, the four farm panels, the four place sheets, the market board, Books, Today and Settings. The rest
+/// (bird card, morning report, breeding pen, show day, village) follow in #98. Any issue fails, except the
+/// known ones listed in `knownIssue` with the issue that will fix them. The subclasses below run the same
+/// tests at the largest accessibility text size, right to left, and with every localised string doubled.
 @MainActor
 class AccessibilityAuditTests: XCTestCase {
     /// How the app is launched for this run of the tests.
