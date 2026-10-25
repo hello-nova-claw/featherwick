@@ -2,7 +2,11 @@
 
 Cozy chicken-keeping game: Stardew Valley daily life, Pokémon-style collecting, real chicken genetics.
 
-This repo is the game logic first. The iOS front end (SpriteKit + SwiftUI) comes later and uses the same core.
+This repo is the game logic first. The iOS front end (SwiftUI) uses the same core.
+
+## Licensing
+
+The code is under the [MIT licence](LICENSE). The art, sound, writing, name and icon are not: they are all rights reserved ([ASSETS-LICENSE.md](ASSETS-LICENSE.md), [TRADEMARKS.md](TRADEMARKS.md)). You are welcome to learn from the code and reuse it in your own projects, but not to publish this game or a reskin of it.
 
 ## Layout
 
