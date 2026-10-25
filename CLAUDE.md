@@ -165,7 +165,9 @@ Most new content is a table entry. See "Data layer" and the feature sections in 
 - `.github/workflows/ios.yml` runs on macOS for every pull request and push to `main`:
   - "iOS tests (latest)": macOS 15, Xcode 26.3, iPhone 17 Pro on iOS 26.2. The app's tests with coverage,
     `bin/coverage-gate` against `.github/coverage-baseline-app`, and the simulator `.app` as an artifact.
-  - "iOS tests (iOS 17)": macOS 14, Xcode 16.2, iPhone 15 on iOS 17.5, the minimum supported version.
+  - "iOS tests (iOS 17)": macOS 15, Xcode 16.4, iPhone 15 on iOS 17.5, the minimum supported version. The
+    macOS 14 image (the last with an iOS 17 simulator) retires on 2 November 2026, so the job downloads
+    the iOS 17.5 runtime from Apple on each run.
   - `build-preview.yml` then comments on the pull request with how to install that `.app`. It runs from
     `main`'s copy after the iOS workflow, never runs pull request code, and skips forks.
 - Dependabot (`.github/dependabot.yml`) opens weekly PRs for GitHub Actions and Swift packages.
