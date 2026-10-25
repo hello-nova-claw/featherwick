@@ -36,7 +36,11 @@ ALLOWED_COLOURS = [
 COLOUR = re.compile(r"\b(?:Color\((?:red|hex|white):|UIColor\((?:red|white|hue):|Color\(\s*\.sRGB)")
 FIXED_FONT = re.compile(r"\.system\(size:")
 PRINT = re.compile(r"(?<![\w.])print\(")
-PACKAGE = re.compile(r'\.package\(\s*(?:name:\s*"[^"]*",\s*)?(?:url|path):\s*"([^"]+)"')
+# Every way Package.swift can name a dependency: by URL, by path, or by registry id.
+PACKAGE = re.compile(r'\.package\(\s*(?:name:\s*"[^"]*",\s*)?(?:url|path|id):\s*"([^"]+)"')
+# XcodeGen's packages: section names the app's dependencies, one key per package. The local
+# package (path: ..) is this repository and needs no entry.
+PROJECT_PACKAGE = re.compile(r"^\s{4}(url|path|github):\s*(\S+)", re.MULTILINE)
 
 DESIGN_TOKENS = "App/Featherwick/Design/"
 TEST_DIRS = ("Tests/", "App/FeatherwickTests/", "App/FeatherwickUITests/")
@@ -75,6 +79,16 @@ def main() -> int:
         for match in PACKAGE.finditer(manifest.read_text(encoding="utf-8")):
             if match.group(1) not in ALLOWED_PACKAGES:
                 errors.append(f"Package.swift: {match.group(1)} is not on the allowlist in bin/check-native.")
+
+    project = root / "App" / "project.yml"
+    if project.exists():
+        text = project.read_text(encoding="utf-8")
+        section = re.search(r"^packages:\n((?:[ \t]+.*\n|\n)*)", text, re.MULTILINE)
+        for kind, value in PROJECT_PACKAGE.findall(section.group(1) if section else ""):
+            if kind == "path" and value.strip("\"'") == "..":
+                continue
+            if value not in ALLOWED_PACKAGES:
+                errors.append(f"App/project.yml: package {value} is not on the allowlist in bin/check-native.")
 
     for error in errors:
         print(f"::error::{error}")
