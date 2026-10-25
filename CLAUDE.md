@@ -160,7 +160,7 @@ Most new content is a table entry. See "Data layer" and the feature sections in 
   - `checks.yml`: "swift-format", "SwiftLint" (with the colour, font-size and print rules), "Use what Apple
     already has" (`bin/check-native`, the package allowlist),
     "Licence files intact" (`bin/check-licences`), "Gitleaks", "actionlint".
-  - `pull-request.yml`: "Tests change with code", "Changelog fragment" (skipped with `no-changelog`).
+  - `pull-request.yml`: "Tests change with code", "Changelog fragment" (passes with `no-changelog` when no fragment is added).
   - Job names are the required checks on `main`. Never rename one.
 - `.github/workflows/apple.yml` builds and tests on macOS, builds the core for iOS, and builds the iOS app and its tests. It runs on
   `main` only (macOS minutes cost 10x); run it by hand before merging a change to platform code.
