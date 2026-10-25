@@ -195,7 +195,7 @@ swift build --build-tests -Xswiftc -warnings-as-errors
 swift test                                   # about 7 minutes; the simulation tests are slow
 swift test --filter VillageDayTests          # one suite
 swift test --filter "ShowTests/standardsListTheBreedsOwnColours"  # one test
-swift format --in-place --recursive Package.swift Sources Tests App && git diff --exit-code
+swift format --in-place --recursive Package.swift Sources Tests App && git diff --exit-code   # from a clean tree
 swiftlint lint --strict --baseline .swiftlint-baseline.json
 bin/check-native && bin/check-licences
 cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Featherwick \

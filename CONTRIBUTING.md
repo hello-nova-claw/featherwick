@@ -92,7 +92,7 @@ Run everything locally:
 ```bash
 swift build --build-tests -Xswiftc -warnings-as-errors
 swift test
-swift format --in-place --recursive Package.swift Sources Tests App && git diff --exit-code
+swift format --in-place --recursive Package.swift Sources Tests App && git diff --exit-code   # from a clean tree
 swiftlint lint --strict --baseline .swiftlint-baseline.json
 bin/check-native && bin/check-licences
 cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Featherwick \
