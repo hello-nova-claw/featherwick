@@ -3,7 +3,8 @@
     import Foundation
 
     /// Launch arguments that start the app in a known game, for UI tests and screenshots. Debug builds only.
-    /// `-uiTestState fresh` is day 1 before the keeper is named; `-uiTestState farm` is a farm a few days in.
+    /// `-uiTestState fresh` is day 1 before the keeper is named. `-uiTestState farm` is a farm a few days in,
+    /// with the early game's lessons already open, so every screen and button can be reached.
     /// `-uiTestSeed <n>` picks the seed (2026 if left out), so the same arguments give the same game.
     struct UITestLaunch: Equatable {
         enum Start: String {
@@ -29,7 +30,7 @@
         /// The save this launch starts from, played through the engine like any game.
         func save() -> SaveGame {
             var rng = SeededRNG(seed: seed)
-            var state = Engine.newGame(using: &rng)
+            var state = Engine.newGame(earlyGame: start == .fresh, using: &rng)
             if start == .farm {
                 let opening: [Command] = [.nameKeeper("Robin"), .chooseStarter(index: 0, name: "Pip")]
                 for command in opening { _ = Engine.apply(command, to: &state, using: &rng) }
