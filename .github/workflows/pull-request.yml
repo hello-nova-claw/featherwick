@@ -49,9 +49,10 @@ jobs:
             exit 1
           fi
           for f in $fragments; do
-            lines=$(grep -c '[^[:space:]]' "$f" || true)
-            if [ "$lines" -ne 1 ]; then
-              echo "::error file=$f::A changelog fragment holds exactly one line a player would understand; this one has $lines."
+            lines=$(grep -c '' "$f" || true)
+            text=$(grep -c '[^[:space:]]' "$f" || true)
+            if [ "$lines" -ne 1 ] || [ "$text" -ne 1 ]; then
+              echo "::error file=$f::A changelog fragment holds exactly one line a player would understand, and nothing else; this one has $lines line(s)."
               exit 1
             fi
           done
