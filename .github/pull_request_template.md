@@ -22,4 +22,4 @@ Fixes #
 - [ ] Player words are in `FeatherwickText` (and the String Catalog once it exists), not in views or Core
 - [ ] Tests committed before the code that makes them pass
 - [ ] Screenshots comment reviewed, if this touches UI
-- [ ] My contribution is under the MIT licence and adds or changes no assets (see `ASSETS-LICENSE.md`)
+- [ ] My code is contributed under the MIT licence, and it adds or changes no assets (see `ASSETS-LICENSE.md`) unless I have the maintainer's written agreement first
