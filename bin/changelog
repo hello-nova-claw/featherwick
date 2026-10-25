@@ -30,13 +30,12 @@ def main() -> int:
 
     entries = []
     for fragment in fragments:
-        lines = [line.strip().lstrip("-* ").strip() for line in fragment.read_text(encoding="utf-8").splitlines()]
-        lines = [line for line in lines if line]
-        # One fragment, one line: the pull request check holds every fragment to this.
-        if len(lines) != 1:
-            print(f"::error::{fragment} must hold exactly one line, not {len(lines)}.")
+        lines = fragment.read_text(encoding="utf-8").splitlines()
+        # One fragment, one line, and nothing else: the pull request check holds every fragment to this.
+        if len(lines) != 1 or not lines[0].strip():
+            print(f"::error::{fragment} must hold exactly one line, and nothing else.")
             return 1
-        entries.append(f"- {lines[0]}")
+        entries.append(f"- {lines[0].strip().lstrip('-* ').strip()}")
 
     changelog = root / "CHANGELOG.md"
     text = changelog.read_text(encoding="utf-8")
