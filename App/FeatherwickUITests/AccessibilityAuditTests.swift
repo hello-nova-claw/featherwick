@@ -21,82 +21,43 @@ class AccessibilityAuditTests: XCTestCase {
 
     func testFarmPanels() throws {
         let app = launch(.farm)
-        XCTAssertTrue(button("Settings", in: app).waitForExistence(timeout: 10))
+        XCTAssertTrue(Farm.button("Settings", in: app).waitForExistence(timeout: 10))
         for panel in ["Yard", "Far yard", "Shop", "Barn"] {
-            show(panel: panel, in: app)
-            try audit(app, screen: "farm-\(panel.lowercased().replacingOccurrences(of: " ", with: "-"))")
+            Farm.show(panel: panel, in: app)
+            try audit(app, screen: "farm-\(Farm.slug(panel))")
         }
     }
 
     func testBottomRowSheets() throws {
         let app = launch(.farm)
-        XCTAssertTrue(button("Settings", in: app).waitForExistence(timeout: 10))
+        XCTAssertTrue(Farm.button("Settings", in: app).waitForExistence(timeout: 10))
         for (button, screen) in [("Books", "books"), ("Settings", "settings")] {
-            self.button(button, in: app).tap()
+            Farm.button(button, in: app).tap()
             try audit(app, screen: screen)
-            close(app)
+            Farm.close(app)
         }
     }
 
     func testPlaceSheets() throws {
         let app = launch(.farm)
-        XCTAssertTrue(button("Settings", in: app).waitForExistence(timeout: 10))
+        XCTAssertTrue(Farm.button("Settings", in: app).waitForExistence(timeout: 10))
         for place in ["Yard", "Back fence", "Farm gate", "Coop"] {
-            show(panel: Self.panel(for: place), in: app)
-            let button = self.button(place, in: app)
+            Farm.show(panel: Farm.panel(for: place), in: app)
+            let button = Farm.button(place, in: app)
             guard button.waitForExistence(timeout: 5) else {
                 XCTFail("No \(place) button on the farm")
                 continue
             }
             button.tap()
-            try audit(app, screen: "place-\(place.lowercased().replacingOccurrences(of: " ", with: "-"))")
-            close(app)
+            try audit(app, screen: "place-\(Farm.slug(place))")
+            Farm.close(app)
         }
     }
 
     // MARK: - Helpers
 
-    enum Start: String {
-        case fresh, farm
-    }
-
-    private func launch(_ start: Start) -> XCUIApplication {
-        let app = XCUIApplication()
-        app.launchArguments = ["-uiTestState", start.rawValue, "-tester.timeOfDay", "day"] + Self.variant
-        app.launch()
-        return app
-    }
-
-    /// The panel that holds a place. The farm opens on the Yard.
-    private static func panel(for place: String) -> String {
-        ["Coop": "Barn", "Yard": "Yard", "Back fence": "Far yard", "Farm gate": "Shop"][place] ?? "Yard"
-    }
-
-    /// Taps the panel's dot on the rail. Swipes would go the other way right to left; the dots do not.
-    /// A dot is the narrow button whose label starts with the panel's name (the Yard place button shares it).
-    private func show(panel: String, in app: XCUIApplication) {
-        let named = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", panel))
-        let dot = named.allElementsBoundByIndex.first { $0.frame.width < 30 }
-        guard let dot else {
-            XCTFail("No rail dot for \(panel)")
-            return
-        }
-        dot.tap()
-    }
-
-    /// The first button whose label starts with a name. Doubled strings read "Settings Settings", and a place
-    /// button adds its notices after the name, so an exact match would miss both.
-    private func button(_ name: String, in app: XCUIApplication) -> XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
-    }
-
-    private func close(_ app: XCUIApplication) {
-        let close = button("Close", in: app)
-        if close.exists {
-            close.tap()
-        } else {
-            app.swipeDown(velocity: .fast)
-        }
+    private func launch(_ start: Farm.Start) -> XCUIApplication {
+        Farm.launch(start, extra: Self.variant)
     }
 
     private func audit(_ app: XCUIApplication, screen: String) throws {
@@ -133,16 +94,11 @@ final class AccessibilityAuditLargestTextTests: AccessibilityAuditTests {
 }
 
 final class AccessibilityAuditRightToLeftTests: AccessibilityAuditTests {
-    override class var variant: [String] {
-        [
-            "-AppleLanguages", "(ar)", "-AppleLocale", "ar_SA", "-NSForceRightToLeftWritingDirection", "YES",
-            "-AppleTextDirection", "YES",
-        ]
-    }
+    override class var variant: [String] { Farm.Language.rightToLeft.arguments }
     override class var variantName: String { "right to left" }
 }
 
 final class AccessibilityAuditLongStringsTests: AccessibilityAuditTests {
-    override class var variant: [String] { ["-NSDoubleLocalizedStrings", "YES"] }
+    override class var variant: [String] { Farm.Language.doubled.arguments }
     override class var variantName: String { "long strings" }
 }
