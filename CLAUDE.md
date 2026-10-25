@@ -8,7 +8,8 @@ localisation and accessibility rules, and this file does not repeat them.
 
 `docs/design.md` is the design record. Section 2 holds the design principles: they are not negotiable.
 Section 4 records rejected options. The rest is the design of each system (genes, breeds, shows,
-storylines, night order). Read the section for the system you change. Keep it current: a change to
+storylines, night order). `docs/design/README.md` is a different file: the UI system spec (tokens,
+screens, the farm scene, painted parts, the frame budget). Each path below names the one it means. Read the section for the system you change. Keep it current: a change to
 behaviour updates its section.
 
 **The repository is public.** Nothing secret or personal goes into an issue, a pull request, a commit
