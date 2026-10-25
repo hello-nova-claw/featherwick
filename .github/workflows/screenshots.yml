@@ -1,0 +1,93 @@
+name: Screenshots
+
+# Shoots the screenshot catalogue for main and for the pull request, and lists what changed. It only reads:
+# the comment is posted by screenshots-comment.yml, which runs no pull request code. A visual change never
+# fails this check. It runs only when UI or asset paths change, to keep the macOS slots free.
+on:
+  pull_request:
+    paths:
+      - "App/Featherwick/**"
+      - "App/FeatherwickUITests/**"
+      - "App/project.yml"
+      - "Sources/FeatherwickText/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODEGEN_VERSION: 2.46.0
+  XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
+  SMALL: iPhone 16e
+  LARGE: iPhone 17 Pro Max
+
+jobs:
+  shots:
+    name: Screenshots
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: head
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+      - name: Select Xcode 26.3
+        run: sudo xcode-select -s /Applications/Xcode_26.3.app
+      - name: Install XcodeGen
+        run: |
+          curl -fsSL -o xcodegen.zip "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
+          echo "${XCODEGEN_SHA256}  xcodegen.zip" | shasum -a 256 -c -
+          unzip -q xcodegen.zip -d "$RUNNER_TEMP" && rm xcodegen.zip
+          echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
+      - name: Boot a small and a large iPhone, with a fixed status bar
+        run: |
+          for device in "$SMALL" "$LARGE"; do
+            xcrun simctl boot "$device" || true
+            xcrun simctl bootstatus "$device" -b
+            xcrun simctl status_bar "$device" override --time 9:41 --dataNetwork wifi --wifiMode active \
+              --wifiBars 3 --cellularMode active --cellularBars 4 --batteryState charged --batteryLevel 100
+          done
+      - name: Shoot main, then this pull request
+        run: |
+          for side in base head; do
+            mkdir -p "shots/$side"
+            if [ ! -f "$side/App/FeatherwickUITests/ScreenshotTests.swift" ]; then
+              echo "No screenshot catalogue on $side yet."
+              continue
+            fi
+            (cd "$side/App" && xcodegen --quiet)
+            # A shot that fails to load is a missing shot in the comment, not a failed check.
+            xcodebuild test -project "$side/App/Featherwick.xcodeproj" -scheme Featherwick \
+              -destination "platform=iOS Simulator,name=${SMALL},OS=26.2" \
+              -destination "platform=iOS Simulator,name=${LARGE},OS=26.2" \
+              -only-testing:FeatherwickUITests/ScreenshotTests \
+              -derivedDataPath "build/$side" -resultBundlePath "build/$side.xcresult" \
+              CODE_SIGNING_ALLOWED=NO -quiet || echo "::warning::Some $side screenshots did not run."
+            python3 head/bin/screenshots-export "build/$side.xcresult" "shots/$side"
+          done
+      - name: Compare
+        run: |
+          python3 head/bin/compare-screenshots shots/base shots/head shots/changes.json
+          mkdir -p upload/before upload/after
+          cp shots/changes.json upload/
+          python3 - <<'PY'
+          import json, shutil
+          c = json.load(open("shots/changes.json"))
+          for name in c["changed"] + c["removed"]:
+              shutil.copy(f"shots/base/{name}", f"upload/before/{name}")
+          for name in c["changed"] + c["added"]:
+              shutil.copy(f"shots/head/{name}", f"upload/after/{name}")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: screenshots
+          path: upload
+          retention-days: 14
