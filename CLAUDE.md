@@ -95,6 +95,18 @@ components, screens 1a–9a). The painted farm and bird art come later; dashed b
   A new `GameEvent` needs a group in `MorningReport.group(of:)`. Settings has a switch (on by default).
 - Day or night follows game time, not the device clock, via `\.palette`. Morning and afternoon are day. Evening starts a 30-minute crossfade to night. Night lasts from Sleep until the morning report (or the farm) shows. Settings ▸ Time of day (`TimeOfDayPin`: Game, Day, Night) pins day or night for testing.
 - Fonts (Libre Caslon Display/Text, Figtree; OFL) are bundled in `Fonts/` and registered at launch.
+- UI tests (`App/FeatherwickUITests/`, XCTest) launch the app with `-uiTestState fresh|farm` (and
+  `-uiTestSeed`), which `UITestLaunch` turns into a known game on an empty save folder, Debug builds only.
+  `AccessibilityAuditTests` audits these screens four ways: welcome, the starter choice, the tour, the four
+  farm panels, the four place sheets, the market board, Books, Today and Settings. One exception: the Yard
+  sheet is not audited with doubled strings. With doubled strings the sheet stalls (#97). #98 adds the rest: the
+  bird card, the morning report, the breeding pen, show day, Books ▸ People and the village sheets.
+  - Find buttons by label prefix, not exact label. Doubled strings read "Settings Settings".
+  - `Farm.button` takes the first match. Where two controls share a prefix, use the helper for each.
+  - Use `Farm.placeButton` for the Yard place button.
+  - Use `Farm.show(panel:in:)` for a rail dot, including the Yard's.
+  - Move between panels with the rail dots, not swipes. Swipes go the other way right to left.
+  - The four variants take about 4 minutes in total. With two simulator runs at once, they take about 30 minutes.
 - ≡ → "Open test tools" shows the old plain screens (`TestTools/`), with every action and the full log.
 - `Beta/`: TestFlight questions after the first hatch and the first show (once per save slot). Compiled only with the `BETA` flag (Beta config, "Featherwick Beta" scheme) or `DEBUG`, and shown only on a sandbox receipt. Answers go to `beta-notes.json` (not the save); Settings ▸ Share beta notes.
 
@@ -163,7 +175,7 @@ Most new content is a table entry. See "Data layer" and the feature sections in 
   - `pull-request.yml`: "Tests change with code", "Changelog fragment" (passes with `no-changelog` when no fragment is added).
   - Job names are the required checks on `main`. Never rename one.
 - `.github/workflows/ios.yml` runs on macOS for every pull request and push to `main`:
-  - "iOS tests (latest)": macOS 15, Xcode 26.3, iPhone 17 Pro on iOS 26.2. The app's tests with coverage,
+  - "iOS tests (latest)": macOS 15, Xcode 26.3, an iPhone 17 Pro it creates on the newest iOS runtime. The app's tests with coverage,
     `bin/coverage-gate` against `.github/coverage-baseline-app`, and the simulator `.app` as an artifact.
   - "iOS tests (iOS 17)": macOS 15, Xcode 16.4, iPhone 15 on iOS 17.5, the minimum supported version. The
     macOS 14 image (the last with an iOS 17 simulator) retires on 2 November 2026, so the job downloads
