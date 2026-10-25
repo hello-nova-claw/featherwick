@@ -121,7 +121,7 @@ cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Fea
 
 ## Screenshots
 
-- Every pull request from this repository that touches UI or asset paths gets a **Screenshots** comment: before and after images of every shot that changed or is new, and a collapsed list of the ones that did not. Look at it before you approve. A visual change never fails the check, so nothing else will catch one.
+- Every pull request from this repository that changes what the app shows gets a **Screenshots** comment. That means a change under `App/Featherwick/` (which holds the bundled art), `App/FeatherwickUITests/`, `App/project.yml` or `Sources/FeatherwickText/`. The comment holds before and after images of every shot that changed or is new, and a collapsed list of the ones that did not. Look at it before you approve. A visual change never fails the check, so nothing else will catch one.
 - The shots cover the screens the accessibility audit covers. The rest follow in #98.
 - Each screen is shot by day and by night, in English, right to left and with doubled strings.
 - Each is shot on a small and a large iPhone.
