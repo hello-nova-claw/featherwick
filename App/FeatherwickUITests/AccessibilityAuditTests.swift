@@ -72,7 +72,7 @@ class AccessibilityAuditTests: XCTestCase {
             XCTAssertTrue(Farm.button("Close", in: app).waitForExistence(timeout: 5), "The \(place) sheet did not open")
             // TODO(#97): the Yard sheet never settles with doubled strings, so the audit times out.
             if place == "Yard" && Self.variant == Farm.Language.doubled.arguments {
-                print("Skipped the Yard sheet audit with doubled strings: #97")
+                XCTContext.runActivity(named: "Skipped the Yard sheet audit with doubled strings: #97") { _ in }
             } else {
                 try audit(app, screen: "place-\(Farm.slug(place))")
             }
@@ -96,14 +96,17 @@ class AccessibilityAuditTests: XCTestCase {
     }
 
     private func audit(_ app: XCUIApplication, screen: String) throws {
+        var skipped: [String] = []
         try app.performAccessibilityAudit(for: .all) { issue in
             let known = Self.knownIssue(issue)
-            if let known {
-                print(
-                    "Known accessibility issue on \(screen) (\(Self.variantName)), \(known): \(issue.compactDescription)"
-                )
-            }
+            if let known { skipped.append("\(known): \(issue.compactDescription)") }
             return known != nil
+        }
+        // Recorded in the test report, so a reader sees what each known issue still hides.
+        if !skipped.isEmpty {
+            XCTContext.runActivity(named: "Known issues on \(screen) (\(Self.variantName))") { activity in
+                activity.add(XCTAttachment(string: skipped.joined(separator: "\n")))
+            }
         }
     }
 
