@@ -14,13 +14,16 @@ import Testing
 
     @Test func theSeedDefaultsTo2026() {
         #expect(UITestLaunch(arguments: ["-uiTestState", "fresh"]) == UITestLaunch(start: .fresh, seed: 2026))
-        #expect(UITestLaunch(arguments: ["-uiTestState", "farm", "-uiTestSeed", "7"]) == UITestLaunch(start: .farm, seed: 7))
+        #expect(
+            UITestLaunch(arguments: ["-uiTestState", "farm", "-uiTestSeed", "7"]) == UITestLaunch(start: .farm, seed: 7)
+        )
     }
 
-    /// Screenshots compare runs, so the same arguments must give the same game every time.
+    /// Screenshots compare runs, so the same arguments must give the same game every time. The state is
+    /// compared, not the JSON: a `Set` encodes in hash order, which can differ between two encodes.
     @Test func theSameArgumentsGiveTheSameGame() throws {
         let launch = try #require(UITestLaunch(arguments: ["-uiTestState", "farm"]))
-        #expect(try SaveFormat.encode(launch.save()) == SaveFormat.encode(launch.save()))
+        #expect(launch.save().state == launch.save().state)
     }
 
     @Test func freshStartsBeforeTheKeeperIsNamed() throws {
