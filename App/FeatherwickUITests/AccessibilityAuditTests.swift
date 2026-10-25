@@ -19,6 +19,26 @@ class AccessibilityAuditTests: XCTestCase {
         try audit(app, screen: "welcome")
     }
 
+    /// Day 1: name the keeper, take a chick home, then the tour of the farm.
+    func testDayOne() throws {
+        let app = launch(.fresh)
+        let name = app.textFields.firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 10))
+        name.tap()
+        name.typeText("Robin")
+        Farm.button("That's me", in: app).tap()
+        let chick = app.textFields.firstMatch
+        XCTAssertTrue(chick.waitForExistence(timeout: 10))
+        try audit(app, screen: "starter")
+        chick.tap()
+        chick.typeText("Pip")
+        Farm.button("Take this chick home", in: app).tap()
+        let skip = Farm.button("Skip the tour", in: app)
+        XCTAssertTrue(skip.waitForExistence(timeout: 10), "The tour did not open")
+        try audit(app, screen: "tour")
+        skip.tap()
+    }
+
     func testFarmPanels() throws {
         let app = launch(.farm)
         XCTAssertTrue(Farm.button("Settings", in: app).waitForExistence(timeout: 10))
@@ -31,7 +51,7 @@ class AccessibilityAuditTests: XCTestCase {
     func testBottomRowSheets() throws {
         let app = launch(.farm)
         XCTAssertTrue(Farm.button("Settings", in: app).waitForExistence(timeout: 10))
-        for (button, screen) in [("Books", "books"), ("Settings", "settings")] {
+        for (button, screen) in [("Books", "books"), ("Today", "today"), ("Settings", "settings")] {
             Farm.button(button, in: app).tap()
             try audit(app, screen: screen)
             Farm.close(app)
@@ -43,12 +63,12 @@ class AccessibilityAuditTests: XCTestCase {
         XCTAssertTrue(Farm.button("Settings", in: app).waitForExistence(timeout: 10))
         for place in ["Yard", "Back fence", "Farm gate", "Coop"] {
             Farm.show(panel: Farm.panel(for: place), in: app)
-            let button = Farm.button(place, in: app)
-            guard button.waitForExistence(timeout: 5) else {
+            guard let button = Farm.placeButton(place, in: app) else {
                 XCTFail("No \(place) button on the farm")
                 continue
             }
             button.tap()
+            XCTAssertTrue(Farm.button("Close", in: app).waitForExistence(timeout: 5), "The \(place) sheet did not open")
             try audit(app, screen: "place-\(Farm.slug(place))")
             Farm.close(app)
         }

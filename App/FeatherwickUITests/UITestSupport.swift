@@ -62,6 +62,14 @@ enum Farm {
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
     }
 
+    /// The place button in the bottom row. The Yard's rail dot starts with the same name, so this one is
+    /// told apart by size: a dot is under 30 points wide.
+    static func placeButton(_ name: String, in app: XCUIApplication) -> XCUIElement? {
+        let named = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name))
+        guard named.firstMatch.waitForExistence(timeout: 5) else { return nil }
+        return named.allElementsBoundByIndex.first { $0.frame.width >= 30 }
+    }
+
     static func close(_ app: XCUIApplication) {
         let close = button("Close", in: app)
         if close.exists {
