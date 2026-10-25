@@ -83,7 +83,8 @@ jobs:
           echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
       - name: Install the iOS 17.5 simulator
         run: |
-          sudo xcodebuild -downloadPlatform iOS -buildVersion 17.5
+          # Not under sudo: the download must reach this user's simulator service.
+          xcodebuild -downloadPlatform iOS -buildVersion 17.5
           runtime=$(xcrun simctl list runtimes -j | python3 -c 'import json, sys; print(next(r["identifier"] for r in json.load(sys.stdin)["runtimes"] if r["version"].startswith("17.5")))')
           xcrun simctl create "iPhone 15 iOS 17" "iPhone 15" "$runtime"
       - name: Generate the Xcode project
