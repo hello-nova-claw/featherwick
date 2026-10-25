@@ -33,7 +33,6 @@ jobs:
 
   changelog:
     name: Changelog fragment
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-changelog') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -42,15 +41,25 @@ jobs:
           fetch-depth: 0
       - env:
           BASE_REF: ${{ github.base_ref }}
+          NO_CHANGELOG: ${{ contains(github.event.pull_request.labels.*.name, 'no-changelog') }}
         run: |
           # One pull request adds one fragment; editing an old one does not count.
-          fragments=$(git diff --name-only --diff-filter=A "origin/${BASE_REF}...HEAD" | grep -E '^changelog/[1-9][0-9]*-[^/]+\.txt$' || true)
-          count=$(printf '%s' "$fragments" | grep -c . || true)
+          git diff --name-only --diff-filter=A "origin/${BASE_REF}...HEAD" \
+            | grep -E '^changelog/[1-9][0-9]*-[^/]+\.txt$' > "$RUNNER_TEMP/fragments" || true
+          count=$(grep -c . "$RUNNER_TEMP/fragments" || true)
+          if [ "$NO_CHANGELOG" = true ]; then
+            if [ "$count" -ne 0 ]; then
+              echo "::error::This pull request has the no-changelog label but adds a changelog fragment. Remove one of them."
+              exit 1
+            fi
+            echo "No changelog: the no-changelog label is set."
+            exit 0
+          fi
           if [ "$count" -ne 1 ]; then
             echo "::error::Add exactly one changelog fragment, changelog/<issue>-<slug>.txt, with one line a player would understand (found $count), or ask the maintainer for the no-changelog label."
             exit 1
           fi
-          for f in $fragments; do
+          while IFS= read -r f; do
             lines=$(grep -c '' "$f" || true)
             # Text other than spaces and list markers, which bin/changelog strips.
             text=$(grep -c '[^[:space:]*-]' "$f" || true)
@@ -58,4 +67,4 @@ jobs:
               echo "::error file=$f::A changelog fragment holds exactly one line a player would understand, and nothing else; this one has $lines line(s)."
               exit 1
             fi
-          done
+          done < "$RUNNER_TEMP/fragments"
