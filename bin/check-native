@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""Fails when the app depends on a package that is not on the allowlist.
+
+The rest of "Use what Apple already has" (CONTRIBUTING.md) is checked by
+SwiftLint's custom rules in .swiftlint.yml: hard-coded colours, fixed font
+sizes and print. SwiftLint reads Swift through SourceKit, so comments and
+strings never confuse it; this script never parses Swift.
+
+Package.swift's dependencies come from `swift package dump-package`, so every
+form (URL, path, registry id, a URL in a variable) is seen. App/project.yml's
+come from its packages: section.
+
+Usage: bin/check-native [root]
+"""
+
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+# Swift packages with no Apple equivalent. Adding one is a review decision: it
+# happens in a pull request with a reason, a licence check and a notice.
+ALLOWED_PACKAGES: list[str] = []
+
+# XcodeGen's packages: section names each package by url, path or github. The
+# local package (path: ..) is this repository and needs no entry.
+PROJECT_PACKAGE = re.compile(r"^\s{4}(url|path|github):\s*(\S+)", re.MULTILINE)
+
+
+def manifest_packages(root: Path) -> list[str]:
+    dump = subprocess.run(
+        ["swift", "package", "--package-path", str(root), "dump-package"],
+        check=True, capture_output=True, text=True,
+    )
+    names = []
+    for dependency in json.loads(dump.stdout).get("dependencies", []):
+        for kind, details in dependency.items():
+            detail = details[0] if isinstance(details, list) and details else {}
+            location = detail.get("location", {})
+            url = next(iter(location.get("remote", [])), {}).get("urlString") if isinstance(location, dict) else None
+            names.append(url or detail.get("path") or detail.get("identity") or f"a {kind} dependency")
+    return names
+
+
+def project_packages(root: Path) -> list[str]:
+    project = root / "App" / "project.yml"
+    if not project.exists():
+        return []
+    # A final line with no newline still counts as a line.
+    text = project.read_text(encoding="utf-8") + "\n"
+    # A one-line (flow) mapping cannot be read here, so it is refused rather than let through.
+    if re.search(r"^packages:[ \t]*[^\s#]", text, re.MULTILINE):
+        return ["a packages: section written on one line (write it as an indented block)"]
+    # The header may carry a comment: "packages: # app dependencies".
+    section = re.search(r"^packages:[ \t]*(?:#.*)?\n((?:[ \t]+.*\n|\n)*)", text, re.MULTILINE)
+    return [
+        value for kind, value in PROJECT_PACKAGE.findall(section.group(1) if section else "")
+        if not (kind == "path" and value.strip("\"'") == "..")
+    ]
+
+
+def main() -> int:
+    root = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
+    errors = [
+        f"{where}: {name} is not on the allowlist in bin/check-native."
+        for where, names in (("Package.swift", manifest_packages(root)), ("App/project.yml", project_packages(root)))
+        for name in names
+        if name not in ALLOWED_PACKAGES
+    ]
+    for error in errors:
+        print(f"::error::{error}")
+    if errors:
+        print(f"{len(errors)} problem(s). See \"Use what Apple already has\" in CONTRIBUTING.md.")
+        return 1
+    print("No packages beyond the allowlist.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

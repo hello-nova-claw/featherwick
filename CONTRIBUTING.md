@@ -54,6 +54,7 @@ Prefixes: `Genetics`, `Gameplay`, `Story`, `Save`, `Text`, `Scene`, `UI`, `Art`,
 ## Code
 
 - Swift 6, formatted with `swift-format` using `.swift-format`. CI fails on unformatted code and on any warning. Fix warnings; do not silence them.
+- SwiftLint (`.swiftlint.yml`) checks force unwraps, `try!`, force casts and a few more. Old violations sit in `.swiftlint-baseline.json`. Fix one and it leaves the baseline; never add one to get a pull request through.
 - Rules live in `FeatherwickCore`, and only there. Words live in `FeatherwickText`, and only there. Views send commands and show state. See the core rules in [CLAUDE.md](CLAUDE.md).
 - Core builds on Linux: no Apple-only APIs in `FeatherwickCore` or `FeatherwickText`.
 - No force unwraps and no `try!` outside tests.
@@ -64,13 +65,13 @@ Prefixes: `Genetics`, `Gameplay`, `Story`, `Save`, `Text`, `Scene`, `UI`, `Art`,
 Featherwick should feel like an iPhone app. Before you write anything custom, use the system equivalent. If there isn't one, say so in the pull request.
 
 - **UI.** SwiftUI system components: `.sheet` with `presentationDetents`, `NavigationStack`, `Button`, `Toggle`, `Picker`, `List`. Build on the components in `App/Featherwick/Design/`, which wrap them. SF Symbols for icons.
-- **Colour.** Colours come only from the `Palette` tokens in `App/Featherwick/Design/`, which have day and night values. No `Color(red:…)`, `Color(hex:)` or `UIColor(red:…)` anywhere else.
+- **Colour.** Colours come only from the `Palette` tokens in `App/Featherwick/Design/`, which have day and night values. No `Color(red:…)`, `Color(hex:)` or `UIColor(red:…)` anywhere else. The known exceptions sit in `.swiftlint-baseline.json`: the scene shader's channel colours (data, not colour), the placeholder chicken's eye, and the farm panels' flat stand-ins until their paintings exist (#77).
 - **Type.** Fonts come only from the `Typeface` tokens, and every font scales with Dynamic Type (`relativeTo:`). No `.font(.system(size:))` and no fixed font sizes in screens.
-- **Logging.** `os.Logger` in the app. No `print` outside the CLI.
+- **Logging.** `os.Logger` in the app. No `print` in the app, Core or Text; the CLI prints, and a test may print what a failing run needs.
 - **Saves.** `Codable` and `FileManager`, through `SaveStore`. No other storage for game state.
 - **Feedback.** `UIFeedbackGenerator` through `Haptics`, and `AVAudioSession` (`.ambient`) through `Sound`.
 - **Game Center** through GameKit, if the game ever uses it.
-- **Dependencies.** None today. A new Swift package needs an MIT-compatible licence, a line in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and a reason in the pull request. Nothing may phone home (principle 4).
+- **Dependencies.** None today. A new Swift package needs an entry on the allowlist in `bin/check-native`, an MIT-compatible licence, a line in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and a reason in the pull request. Nothing may phone home (principle 4).
 
 ### Comments
 
@@ -79,11 +80,11 @@ Comments explain why. Delete any comment that restates the line below it. Each t
 ## Tests
 
 - Write the test first, and commit it first.
-- A pull request that changes `Sources/` or `App/Featherwick/` must also change a file under `Tests/` or `App/FeatherwickTests/`. The reviewer checks this now; a CI check follows (#83).
+- A pull request that changes `Sources/` or `App/Featherwick/` must also change a file under `Tests/`, `App/FeatherwickTests/` or `App/FeatherwickUITests/`. CI checks this ("Tests change with code").
 - Tests use Swift Testing (`import Testing`). No XCTest except for UI tests, which need it.
 - Game logic is tested without the app or the renderer. Pass a `SeededRNG` with a fixed seed. Never read the clock: game time is state.
 - No sleeps and no real network in tests.
-- Line coverage must not drop. Once `.github/coverage-baseline` exists (#83), CI fails below its figure; when your change raises coverage, raise the baseline in the same pull request.
+- Line coverage must not drop. CI fails below the figure in `.github/coverage-baseline` (Core and Text, on Linux); when your change raises coverage, raise the baseline in the same pull request.
 - `Fixtures/save-v0.json` must always load. A change to the save shape needs a migration and a test.
 
 Run everything locally:
@@ -91,7 +92,9 @@ Run everything locally:
 ```bash
 swift build --build-tests -Xswiftc -warnings-as-errors
 swift test
-swift format lint --strict --recursive Package.swift Sources Tests App
+swift format --in-place --recursive Package.swift Sources Tests App && git diff --exit-code   # from a clean tree
+swiftlint lint --strict --baseline .swiftlint-baseline.json
+bin/check-native && bin/check-licences
 cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Featherwick \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' CODE_SIGNING_ALLOWED=NO
 ```

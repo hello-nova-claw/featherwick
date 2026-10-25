@@ -153,12 +153,19 @@ Most new content is a table entry. See "Data layer" and the feature sections in 
 ## Workflow
 
 - Add or update tests in the matching suite for each change. Run `swift test` before a commit.
-- CI (`.github/workflows/swift.yml`) runs on Linux (`swift:6.0-noble`) for every pull request
-  and push to `main`: build with warnings as errors, tests, then the format check. Code must build on Linux too: no
-  Apple-only APIs in Core. Fix warnings; do not silence them.
+- CI runs on Linux (`swift:6.0-noble`, or plain Ubuntu) for every pull request and push to `main`.
+  Code must build on Linux too: no Apple-only APIs in Core. Fix warnings; do not silence them.
+  - `swift.yml`, "Build and test (Linux)": build with warnings as errors, tests with coverage, and
+    `bin/coverage-gate` against `.github/coverage-baseline`.
+  - `checks.yml`: "swift-format", "SwiftLint" (with the colour, font-size and print rules), "Use what Apple
+    already has" (`bin/check-native`, the package allowlist),
+    "Licence files intact" (`bin/check-licences`), "Gitleaks", "actionlint".
+  - `pull-request.yml`: "Tests change with code", "Changelog fragment" (passes with `no-changelog` when no fragment is added).
+  - Job names are the required checks on `main`. Never rename one.
 - `.github/workflows/apple.yml` builds and tests on macOS, builds the core for iOS, and builds the iOS app and its tests. It runs on
   `main` only (macOS minutes cost 10x); run it by hand before merging a change to platform code.
-- Dependabot (`.github/dependabot.yml`) opens weekly PRs for new GitHub Action versions.
+- Dependabot (`.github/dependabot.yml`) opens weekly PRs for GitHub Actions and Swift packages.
+- At release time, follow `docs/release-checklist.md`; `bin/changelog` folds `changelog/*.txt` into `CHANGELOG.md`.
 - After a `Rules` balance change, run `sim` and check `SimulationTests` still pass.
 - Prefer the standard library: `count(where:)`, tuple compares for sort tie-breaks, Hashable
   structs (not joined strings) as dictionary keys. A ranked enum with String raw values conforms
@@ -188,7 +195,9 @@ swift build --build-tests -Xswiftc -warnings-as-errors
 swift test                                   # about 7 minutes; the simulation tests are slow
 swift test --filter VillageDayTests          # one suite
 swift test --filter "ShowTests/standardsListTheBreedsOwnColours"  # one test
-swift format lint --strict --recursive Package.swift Sources Tests App
+swift format --in-place --recursive Package.swift Sources Tests App && git diff --exit-code   # from a clean tree
+swiftlint lint --strict --baseline .swiftlint-baseline.json
+bin/check-native && bin/check-licences
 cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Featherwick \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' CODE_SIGNING_ALLOWED=NO \
   -only-testing:FeatherwickTests/PartKitTests
