@@ -94,7 +94,7 @@ extension Engine {
         return ev + hatchAlongChickHome(&s)
     }
 
-    /// What a village day does. Each day's effect is its own small rule (see README "The village calendar").
+    /// What a village day does. Each day's effect is its own small rule (see "The village calendar" in docs/design.md).
     /// Gifts come every year. No day draws from the game RNG (the Longest Day skips one draw: see
     /// `GameState.foxStaysHome`).
     static func villageDayEffects<R: RandomNumberGenerator>(
