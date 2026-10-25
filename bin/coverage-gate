@@ -47,15 +47,16 @@ def main() -> int:
         print("::error::The coverage report lists no lines. Build it where the sources are.")
         return 1
 
-    coverage = round(100 * covered / total, 2)
+    # Compared unrounded: 94.515% rounds to 94.52% but is still below a 94.52 baseline.
+    coverage = 100 * covered / total
     baseline = float(Path(baseline_path).read_text(encoding="utf-8").strip())
-    print(f"Line coverage {coverage:.2f}%, baseline {baseline:.2f}% ({baseline_path})")
+    print(f"Line coverage {coverage:.3f}%, baseline {baseline:.2f}% ({baseline_path})")
 
     if coverage < baseline:
-        print(f"::error::Coverage went down from {baseline:.2f}% to {coverage:.2f}%. Add tests, or explain in the pull request why it must drop.")
+        print(f"::error::Coverage went down from {baseline:.2f}% to {coverage:.3f}%. Add tests, or explain in the pull request why it must drop.")
         return 1
     if coverage > baseline:
-        print(f"Coverage went up. Raise {baseline_path} to {coverage:.2f} in this pull request.")
+        print(f"Coverage went up. Raise {baseline_path} to {int(coverage * 100) / 100:.2f} in this pull request.")
     return 0
 
 
