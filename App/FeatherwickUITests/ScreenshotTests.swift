@@ -78,7 +78,9 @@ final class ScreenshotTests: XCTestCase {
             shoot(app, "place-\(Farm.slug(place))", light, language)
             if place == "Farm gate" {
                 Farm.button("Market board", in: app).tap()
-                if Farm.button("Close", in: app).waitForExistence(timeout: 5) {
+                // Its title, not a Close button: the farm gate sheet under it has a Close button too.
+                let title = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Market board"))
+                if title.firstMatch.waitForExistence(timeout: 5) {
                     shoot(app, "market-board", light, language)
                     Farm.close(app)
                 } else {
