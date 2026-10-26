@@ -146,7 +146,7 @@ jobs:
             const title = (name) => '`' + name.replace(/\.png$/, '') + '`';
             const marker = '<!-- featherwick-screenshots -->';
             const lines = [marker, '### Screenshots', '',
-              `This pull request at ${run.head_sha.slice(0, 7)}, compared with \`main\`: ${c.changed.length} changed, ${c.added.length} new, ` +
+              `This pull request at ${run.head_sha.slice(0, 7)}, compared with \`${run.pull_requests[0].base.ref}\`: ${c.changed.length} changed, ${c.added.length} new, ` +
               `${c.removed.length} gone, ${c.unchanged.length} unchanged. A change never fails the check; look before you approve.`, ''];
             const shown = 40;
             if (c.changed.length) {
