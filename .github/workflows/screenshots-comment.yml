@@ -75,6 +75,14 @@ jobs:
           for key in keys:
               if not isinstance(c[key], list) or not all(isinstance(n, str) and shot.fullmatch(n) for n in c[key]):
                   sys.exit(f"::error::changes.json {key} must be a list of shot file names")
+          # Every listed shot must have its image on the side the comment shows it from.
+          import os
+          sides = {"changed": ["before", "after"], "added": ["after"], "removed": ["before"]}
+          for key, needed in sides.items():
+              for name in c[key]:
+                  for side in needed:
+                      if not os.path.isfile(f"shots/{side}/{name}"):
+                          sys.exit(f"::error::changes.json lists {name} as {key}, but shots/{side}/{name} is missing")
           PY
       - name: Store the shots on the screenshots branch
         if: steps.current.outputs.publish == 'true'
