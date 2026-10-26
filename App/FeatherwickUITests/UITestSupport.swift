@@ -82,13 +82,15 @@ enum Farm {
         let close = closes.firstMatch
         guard close.waitForExistence(timeout: 2) else { return }
         let open = closes.count
-        if close.isHittable {
+        // On a slow runner the button can exist before it can be tapped, so wait for that first.
+        let hittable = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: close)
+        if XCTWaiter.wait(for: [hittable], timeout: 5) == .completed {
             close.tap()
         } else {
             app.swipeDown(velocity: .fast)
         }
         let gone = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in closes.count < open }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 3), .completed, "The sheet did not close")
+        XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "The sheet did not close")
     }
 
     static func slug(_ name: String) -> String {
