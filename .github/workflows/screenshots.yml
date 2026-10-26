@@ -71,11 +71,13 @@ jobs:
           tools=base/bin
           [ -x "$tools/screenshots-export" ] || tools=head/bin
           echo "TOOLS=$tools" >> "$GITHUB_ENV"
+          # One device at a time: two simulators at once overload the runner, and UI tests then miss taps.
           shoot() {
             xcodebuild test -project "$1/App/Featherwick.xcodeproj" -scheme Featherwick \
               -destination "platform=iOS Simulator,id=${SMALL_ID}" \
               -destination "platform=iOS Simulator,id=${LARGE_ID}" \
               -only-testing:FeatherwickUITests/ScreenshotTests \
+              -disable-concurrent-destination-testing \
               -derivedDataPath "build/$1" -resultBundlePath "$2" \
               CODE_SIGNING_ALLOWED=NO -quiet
           }
