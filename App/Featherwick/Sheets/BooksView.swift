@@ -460,6 +460,13 @@ struct SettingsSheet: View {
     var body: some View {
         SheetPage(context: "Settings") {
             Text("Henhaven").font(Typeface.title)
+            // DUMMY PR: breaks the rules on purpose. Never merge.
+            Button {
+                testTools = true
+            } label: {
+                Circle().fill(Color(red: 0.9, green: 0.1, blue: 0.1)).frame(width: 44, height: 44)
+            }
+            Text("You have " + String(store.state.day) + " days on the farm")
             KeeperNameField()
             DebtsSection()
             Button("Open test tools") { testTools = true }.buttonStyle(.secondary)
