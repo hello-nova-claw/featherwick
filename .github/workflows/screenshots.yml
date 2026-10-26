@@ -78,8 +78,12 @@ jobs:
               -destination "platform=iOS Simulator,id=${LARGE_ID}" \
               -only-testing:FeatherwickUITests/ScreenshotTests \
               -derivedDataPath "build/$side" -resultBundlePath "build/$side.xcresult" \
+              -retry-tests-on-failure -test-iterations 2 \
               CODE_SIGNING_ALLOWED=NO -quiet; then
+              # A test that fails once is tried again: UI tests on a busy runner can miss a tap. Only a
+              # test that fails twice gets here. Its messages are hidden by -quiet, so print them.
               echo "::error::The screenshot tests failed on $side."
+              xcrun xcresulttool get test-results summary --path "build/$side.xcresult" --compact || true
               failed="${failed:+$failed }$side"
             fi
             python3 head/bin/screenshots-export "build/$side.xcresult" "shots/$side"
