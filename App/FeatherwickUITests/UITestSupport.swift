@@ -74,16 +74,21 @@ enum Farm {
         return named.allElementsBoundByIndex.first { $0.frame.width >= 30 }
     }
 
-    /// Closes the sheet on top, then waits for its Close button to go, so the next tap lands on what is
-    /// under it. A Close button still sliding away is not tapped: tapping it can miss.
+    /// Closes the sheet on top, then waits until one fewer Close button is on screen, so the next tap lands
+    /// on what is under it. Counting matters: the market board opens over the farm gate sheet, so a Close
+    /// button is still there once the top sheet has gone. A Close button still sliding away is not tapped.
     static func close(_ app: XCUIApplication) {
-        let close = button("Close", in: app)
-        if close.waitForExistence(timeout: 2), close.isHittable {
+        let closes = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Close"))
+        let close = closes.firstMatch
+        guard close.waitForExistence(timeout: 2) else { return }
+        let open = closes.count
+        if close.isHittable {
             close.tap()
         } else {
             app.swipeDown(velocity: .fast)
         }
-        _ = close.waitForNonExistence(timeout: 3)
+        let gone = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in closes.count < open }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 3), .completed, "The sheet did not close")
     }
 
     static func slug(_ name: String) -> String {
