@@ -30,8 +30,10 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 120
     steps:
+      # The pull request's own commit, not the merge GitHub makes by default: the comment names this commit.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           path: head
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
