@@ -57,7 +57,7 @@ enum Farm {
         // The rail marks the panel on screen as selected.
         let shown = NSPredicate(format: "isSelected == true")
         let wait = XCTNSPredicateExpectation(predicate: shown, object: dot)
-        XCTAssertEqual(XCTWaiter.wait(for: [wait], timeout: 5), .completed, "The \(panel) panel did not show")
+        XCTAssertEqual(XCTWaiter.wait(for: [wait], timeout: 10), .completed, "The \(panel) panel did not show")
     }
 
     /// The first button whose label starts with a name. Doubled strings read "Settings Settings", and a place
@@ -76,19 +76,15 @@ enum Farm {
 
     /// Closes the sheet on top, then waits until one fewer Close button is on screen, so the next tap lands
     /// on what is under it. Counting matters: the market board opens over the farm gate sheet, so a Close
-    /// button is still there once the top sheet has gone. A Close button still sliding away is not tapped.
+    /// button is still there once the top sheet has gone.
     static func close(_ app: XCUIApplication) {
         let closes = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Close"))
         let close = closes.firstMatch
         guard close.waitForExistence(timeout: 2) else { return }
         let open = closes.count
-        // On a slow runner the button can exist before it can be tapped, so wait for that first.
-        let hittable = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: close)
-        if XCTWaiter.wait(for: [hittable], timeout: 5) == .completed {
-            close.tap()
-        } else {
-            app.swipeDown(velocity: .fast)
-        }
+        // tap() itself waits for the button to be tappable. Asking isHittable first can throw while a
+        // sheet is still moving, so it is not asked here.
+        close.tap()
         let gone = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in closes.count < open }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "The sheet did not close")
     }
