@@ -74,13 +74,16 @@ enum Farm {
         return named.allElementsBoundByIndex.first { $0.frame.width >= 30 }
     }
 
+    /// Closes the sheet on top, then waits for its Close button to go, so the next tap lands on what is
+    /// under it. A Close button still sliding away is not tapped: tapping it can miss.
     static func close(_ app: XCUIApplication) {
         let close = button("Close", in: app)
-        if close.exists {
+        if close.waitForExistence(timeout: 2), close.isHittable {
             close.tap()
         } else {
             app.swipeDown(velocity: .fast)
         }
+        _ = close.waitForNonExistence(timeout: 3)
     }
 
     static func slug(_ name: String) -> String {
