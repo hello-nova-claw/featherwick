@@ -119,6 +119,20 @@ cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Fea
 - **Every pull request that touches UI says how it was tested with VoiceOver**: what you focused, what was read out, what you activated, and where focus went afterwards.
 - The game does not support hardware keyboards, so Full Keyboard Access is not required.
 
+## Screenshots
+
+- Every pull request from this repository that changes what the app shows gets a **Screenshots** comment. That means a change under `App/Featherwick/` (which holds the bundled art), `App/FeatherwickUITests/`, `App/project.yml` or `Sources/FeatherwickText/`. The comment holds before and after images of every shot that changed or is new, and a collapsed list of the ones that did not. Look at it before you approve. A visual change never fails the check, so nothing else will catch one.
+- The shots cover the screens the accessibility audit covers. The rest follow in #98.
+- Each screen is shot by day and by night, in English, right to left and with doubled strings.
+- Each is shot on a small and a large iPhone.
+- Each shot is named `<screen>--<state>--<locale>--<device>.png`.
+- The Yard sheet is not shot with doubled strings, because it stalls (#97).
+- A visual change never fails the check. A shot that cannot be taken does.
+- The images are kept on the `screenshots` branch under `pr-<number>/before/` and `pr-<number>/after/`; each push adds a commit there, so the record stays after the pull request merges.
+- When you add a screen or a state, add it to `App/FeatherwickUITests/ScreenshotTests.swift`.
+- Pull requests from forks get no comment, because posting needs a write token.
+- For a fork's pull request, the maintainer runs the shots locally: `xcodebuild test ... -only-testing:FeatherwickUITests/ScreenshotTests`, then `bin/screenshots-export`.
+
 ## Security
 
 Report vulnerabilities privately as [SECURITY.md](SECURITY.md) says, never in a public issue. Follow the [code of conduct](CODE_OF_CONDUCT.md).

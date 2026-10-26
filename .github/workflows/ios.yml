@@ -51,6 +51,7 @@ jobs:
         run: |
           xcodebuild test -project App/Featherwick.xcodeproj -scheme Featherwick \
             -destination "platform=iOS Simulator,id=${LATEST_DEVICE}" \
+            -skip-testing:FeatherwickUITests/ScreenshotTests \
             -derivedDataPath build/dd -resultBundlePath build/tests.xcresult \
             -enableCodeCoverage YES CODE_SIGNING_ALLOWED=NO -quiet
       - name: App coverage is not below the baseline

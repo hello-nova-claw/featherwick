@@ -107,6 +107,9 @@ components, screens 1a–9a). The painted farm and bird art come later; dashed b
   - Use `Farm.show(panel:in:)` for a rail dot, including the Yard's.
   - Move between panels with the rail dots, not swipes. Swipes go the other way right to left.
   - The four variants take about 4 minutes in total. With two simulator runs at once, they take about 30 minutes.
+  - `ScreenshotTests` shoots the catalogue. `bin/screenshots-export` names the shots from the result bundle.
+    `bin/compare-screenshots` lists what changed.
+  - The shared helpers (launch, rail dots, label-prefix buttons) are in `UITestSupport.swift`.
 - ≡ → "Open test tools" shows the old plain screens (`TestTools/`), with every action and the full log.
 - `Beta/`: TestFlight questions after the first hatch and the first show (once per save slot). Compiled only with the `BETA` flag (Beta config, "Featherwick Beta" scheme) or `DEBUG`, and shown only on a sandbox receipt. Answers go to `beta-notes.json` (not the save); Settings ▸ Share beta notes.
 
