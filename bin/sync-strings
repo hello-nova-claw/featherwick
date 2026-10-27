@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Brings Sources/FeatherwickText/Resources/Localizable.xcstrings up to date with the code.
+#
+# The compiler writes a .stringsdata file for each Swift file it builds, listing every
+# String(localized:) call with its key, English value, typed placeholders and comment. Apple's
+# xcstringstool then adds new keys to the catalog, updates changed English and marks keys the code no
+# longer uses as stale. Run it after any change to the words and commit the catalog.
+#
+# Needs macOS with Xcode 26 or later. Usage: bin/sync-strings
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+catalog=Sources/FeatherwickText/Resources/Localizable.xcstrings
+sources=Sources/FeatherwickText
+
+swift build --target FeatherwickText >/dev/null
+# One .stringsdata per Swift file. A file that was deleted or renamed leaves an old one behind.
+data=()
+while IFS= read -r -d '' f; do
+    [ -e "$sources/$(basename "$f" .stringsdata).swift" ] && data+=("$f")
+done < <(find .build -path '*FeatherwickText*' -name '*.stringsdata' -print0)
+[ ${#data[@]} -gt 0 ] || { echo "No .stringsdata found: the build wrote none." >&2; exit 1; }
+
+xcrun xcstringstool sync "$catalog" --stringsdata "${data[@]}"
+# Strings the code no longer uses go, so the catalog holds only live words.
+python3 - "$catalog" <<'EOF'
+import json, sys
+path = sys.argv[1]
+with open(path) as f:
+    catalog = json.load(f)
+catalog["strings"] = {k: v for k, v in catalog["strings"].items() if v.get("extractionState") != "stale"}
+with open(path, "w") as f:
+    json.dump(catalog, f, ensure_ascii=False, indent=2, separators=(",", " : "), sort_keys=True)
+    f.write("\n")
+EOF
+echo "Synced $catalog from ${#data[@]} files."
