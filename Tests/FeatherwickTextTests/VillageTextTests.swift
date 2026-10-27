@@ -593,3 +593,12 @@ extension VillageTextTests {
         return out
     }
 }
+
+extension VillageTextTests {
+    /// A breed not in the game has no page in Dot's standard, and other events have no village words.
+    @Test func otherBreedsAndEventsHaveNoVillageWords() {
+        #expect(!BreedTable.inGame.contains { $0.id == .plymouthRock })
+        #expect(dotStandardText(.plymouthRock) == nil)
+        #expect(villageEventText(.delivered("okaforWindow"), Self.game()) == nil)
+    }
+}

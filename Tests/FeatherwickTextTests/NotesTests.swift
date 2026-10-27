@@ -635,3 +635,18 @@ extension NotesTests {
         return out
     }
 }
+
+extension NotesTests {
+    /// While the tamest bird still waits for a name, Teddy's notes say a general line.
+    @Test func teddysNotesNameNoBirdWhileItWaitsForAName() {
+        var s = Self.freshGame().0
+        var pip = Self.bird("Pip", revealed: true, id: 1)
+        pip.needsName = true
+        s.coop = [pip]
+        s.brooder = []
+        s.henChicks = []
+        #expect(poolNoteText("teddy.drawing", s) == "I drew your chickens! I gave everyone big feet.")
+        #expect(poolNoteText("teddy.handFed", s) == "One of your chickens ate from my hand! It tickled!")
+        #expect(poolNoteText("teddy.lap", s) == "A chicken sat on my lap for AGES! Best day ever!")
+    }
+}
