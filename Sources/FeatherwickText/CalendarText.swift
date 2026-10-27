@@ -249,25 +249,23 @@ func hatchAlongRefusalText(_ why: HatchAlongRefusal) -> String {
 /// The words for the notes the calendar sends (not from the post's pool). Nil for any other ID.
 func calendarNoteText(_ id: String, _ s: GameState) -> String? {
     // Words by the year the note came (it is in the ID). Rule 8: the drawing shows no bird in particular.
-    switch VillageDay.midwinterNoteYear(id) {
-    case .some(let year):
-        year == 0
-            ? String(
-                localized: "calendar.midwinterNote.first",
-                defaultValue: """
-                    "Mum says I can't have a chicken but I can draw one. This is yours. The yellow bit is the \
-                    lights." A crayon drawing of a very round bird under a very big moon.
-                    """,
-                bundle: .module, comment: "Teddy's first Midwinter note.")
-            : String(
-                localized: "calendar.midwinterNote.later",
-                defaultValue: """
-                    "I drew all of them this year. The one in the hat is you." A crayon drawing of a lot of \
-                    birds, a coop, and someone in a hat.
-                    """,
-                bundle: .module, comment: "Teddy's later Midwinter notes.")
-    case .none: nil
+    guard let year = VillageDay.midwinterNoteYear(id) else { return nil }
+    if year == 0 {
+        return String(
+            localized: "calendar.midwinterNote.first",
+            defaultValue: """
+                "Mum says I can't have a chicken but I can draw one. This is yours. The yellow bit is the \
+                lights." A crayon drawing of a very round bird under a very big moon.
+                """,
+            bundle: .module, comment: "Teddy's first Midwinter note.")
     }
+    return String(
+        localized: "calendar.midwinterNote.later",
+        defaultValue: """
+            "I drew all of them this year. The one in the hat is you." A crayon drawing of a lot of \
+            birds, a coop, and someone in a hat.
+            """,
+        bundle: .module, comment: "Teddy's later Midwinter notes.")
 }
 
 /// The Hatch-along lines for the calendar: a chick on its way, and the week while an egg can still go.
