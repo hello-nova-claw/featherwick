@@ -1,6 +1,438 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "bird.aBird" : {
+      "comment" : "In place of the name of a bird the game no longer knows.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a bird"
+          }
+        }
+      }
+    },
+    "bird.broody" : {
+      "comment" : "A bird's label.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "broody"
+          }
+        }
+      }
+    },
+    "bird.down.black" : {
+      "comment" : "A chick's down.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "black down"
+          }
+        }
+      }
+    },
+    "bird.down.darkWithHeadSpot" : {
+      "comment" : "A chick's down.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "dark down with a white head spot"
+          }
+        }
+      }
+    },
+    "bird.down.paleGrey" : {
+      "comment" : "A chick's down.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "pale grey down"
+          }
+        }
+      }
+    },
+    "bird.down.silver" : {
+      "comment" : "A chick's down.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "silvery down"
+          }
+        }
+      }
+    },
+    "bird.down.slate" : {
+      "comment" : "A chick's down.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "slate-grey down"
+          }
+        }
+      }
+    },
+    "bird.down.yellow" : {
+      "comment" : "A chick's down.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "yellow down"
+          }
+        }
+      }
+    },
+    "bird.friendliness.friendly" : {
+      "comment" : "How tame a bird is.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "friendly"
+          }
+        }
+      }
+    },
+    "bird.friendliness.lapChicken" : {
+      "comment" : "How tame a bird is: the tamest.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a lap chicken"
+          }
+        }
+      }
+    },
+    "bird.friendliness.skittish" : {
+      "comment" : "How tame a bird is.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "skittish"
+          }
+        }
+      }
+    },
+    "bird.friendliness.wild" : {
+      "comment" : "How tame a bird is.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "wild"
+          }
+        }
+      }
+    },
+    "bird.kind.cockerel" : {
+      "comment" : "A bird's label. The placeholder is its breed and colour variety.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ cockerel"
+          }
+        }
+      }
+    },
+    "bird.kind.hen" : {
+      "comment" : "A bird's label. The placeholder is its breed and colour variety.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ hen"
+          }
+        }
+      }
+    },
+    "bird.kind.henChick" : {
+      "comment" : "A bird's label. The placeholder is its breed and colour variety.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ hen chick"
+          }
+        }
+      }
+    },
+    "bird.kind.pullet" : {
+      "comment" : "A bird's label. The placeholder is its breed and colour variety.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ pullet"
+          }
+        }
+      }
+    },
+    "bird.kind.rooster" : {
+      "comment" : "A bird's label. The placeholder is its breed and colour variety.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ rooster"
+          }
+        }
+      }
+    },
+    "bird.kind.roosterChick" : {
+      "comment" : "A bird's label. The placeholder is its breed and colour variety.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ rooster chick"
+          }
+        }
+      }
+    },
+    "bird.label" : {
+      "comment" : "A bird's label. Placeholders: the name, a list of what it is (breed, colour, eggs), its age in days.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@ (day %3$lld)"
+          }
+        }
+      }
+    },
+    "bird.labelHidden" : {
+      "comment" : "A chick whose breed and sex do not show yet. Placeholders: the name, its down, how friendly it is, its age in days.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: chick, %2$@, breed ?, sex ?, %3$@ (day %4$lld)"
+          }
+        }
+      }
+    },
+    "bird.labelSeparator" : {
+      "comment" : "Between the parts of a bird's label: breed, colour, eggs, friendliness.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : ", "
+          }
+        }
+      }
+    },
+    "bird.lays" : {
+      "comment" : "A bird's label. The placeholder is the egg colour, such as brown.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "lays %@"
+          }
+        }
+      }
+    },
+    "bird.laysSpeckled" : {
+      "comment" : "A bird's label. The placeholder is the egg colour, such as brown.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "lays speckled %@"
+          }
+        }
+      }
+    },
+    "bird.retired" : {
+      "comment" : "A bird's label: the hen no longer lays.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "retired"
+          }
+        }
+      }
+    },
+    "bird.shaken" : {
+      "comment" : "A bird's label: a fright stopped her laying for a while.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "shaken, not laying yet"
+          }
+        }
+      }
+    },
+    "bird.toast.petted" : {
+      "comment" : "A short note after a cuddle made a bird tamer. The placeholder is the bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ liked that"
+          }
+        }
+      }
+    },
+    "bird.toast.treated" : {
+      "comment" : "A short note after a treat made a bird tamer. The placeholder is the bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ enjoyed the mealworm"
+          }
+        }
+      }
+    },
+    "bird.toast.unknownPetted" : {
+      "comment" : "A short note after a cuddle, when the bird is gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The bird liked that"
+          }
+        }
+      }
+    },
+    "bird.toast.unknownTreated" : {
+      "comment" : "A short note after a treat, when the bird is gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The bird enjoyed the mealworm"
+          }
+        }
+      }
+    },
+    "card.grade.disqualified" : {
+      "comment" : "A judging card's grade: the entry could not be judged.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "not judged"
+          }
+        }
+      }
+    },
+    "card.grade.excellent" : {
+      "comment" : "A judging card's grade.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Excellent"
+          }
+        }
+      }
+    },
+    "card.grade.fair" : {
+      "comment" : "A judging card's grade.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fair"
+          }
+        }
+      }
+    },
+    "card.grade.good" : {
+      "comment" : "A judging card's grade.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Good"
+          }
+        }
+      }
+    },
+    "card.grade.veryGood" : {
+      "comment" : "A judging card's grade.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Very good"
+          }
+        }
+      }
+    },
+    "card.line" : {
+      "comment" : "A judging card. Placeholders: the class (such as Pet chicken), the grade, the score out of 100, the judge's notes.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@ (%3$lld/100) · %4$@"
+          }
+        }
+      }
+    },
+    "card.noteSeparator" : {
+      "comment" : "Between the judge's notes on a judging card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : ", "
+          }
+        }
+      }
+    },
     "cli.heading" : {
       "comment" : "A heading in the text game, followed by its lines. The placeholder is the heading.",
       "extractionState" : "extracted_with_value",
@@ -9,6 +441,402 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%@:"
+          }
+        }
+      }
+    },
+    "hatch.blueSplitsThreeWays" : {
+      "comment" : "Why a chick looks like neither parent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Blue never breeds true: two blues hatch black, blue and splash, and black with splash hatches all blue!"
+          }
+        }
+      }
+    },
+    "hatch.look.buff" : {
+      "comment" : "A colour a bird can carry out of sight.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "buff"
+          }
+        }
+      }
+    },
+    "hatch.look.lavender" : {
+      "comment" : "A colour a bird can carry out of sight.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "lavender"
+          }
+        }
+      }
+    },
+    "hatch.look.thatColour" : {
+      "comment" : "In place of a colour a bird can carry out of sight.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "that colour"
+          }
+        }
+      }
+    },
+    "hatch.recessiveFromBothParents" : {
+      "comment" : "Why a chick looks like neither parent. The placeholder is a colour, such as lavender.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Both parents must carry %@ out of sight, and this one got a copy from each!"
+          }
+        }
+      }
+    },
+    "hatch.whiteHidIt" : {
+      "comment" : "Why a chick looks like neither parent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "White hides every other colour, so a white bird can pass on a colour it never shows!"
+          }
+        }
+      }
+    },
+    "home.deadlineNights" : {
+      "comment" : "A bird waiting for a perch. Placeholders: the number of nights (2 or more), then its name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "If no perch is free in %1$lld nights, Hazel will find %2$@ a new home."
+          }
+        }
+      }
+    },
+    "home.deadlineTomorrow" : {
+      "comment" : "A bird waiting for a perch. The placeholder is its name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "If no perch is free by tomorrow, Hazel will find %@ a new home."
+          }
+        }
+      }
+    },
+    "note.broody" : {
+      "comment" : "A judge's note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "broody and out of condition"
+          }
+        }
+      }
+    },
+    "note.featheringSilkie" : {
+      "comment" : "A judge's note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "true silkie feathering, soft as down"
+          }
+        }
+      }
+    },
+    "note.featheringSmooth" : {
+      "comment" : "A judge's note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "smooth, tight feathering"
+          }
+        }
+      }
+    },
+    "note.foraged" : {
+      "comment" : "A judge's note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "well-foraged"
+          }
+        }
+      }
+    },
+    "note.hungry" : {
+      "comment" : "A judge's note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "not fed today"
+          }
+        }
+      }
+    },
+    "note.inFineCondition" : {
+      "comment" : "A judge's note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "in fine condition"
+          }
+        }
+      }
+    },
+    "note.lacksVigour" : {
+      "comment" : "A judge's note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "lacks vigour (closely bred)"
+          }
+        }
+      }
+    },
+    "note.moulting" : {
+      "comment" : "A judge's note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "moulting"
+          }
+        }
+      }
+    },
+    "note.notAStandardColour" : {
+      "comment" : "A judge's note. The placeholder is the bird's colour, such as blue.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is not a standard colour for this breed"
+          }
+        }
+      }
+    },
+    "note.notMatched" : {
+      "comment" : "A judge's note on a plate of eggs.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "the eggs do not match"
+          }
+        }
+      }
+    },
+    "note.notPurebred" : {
+      "comment" : "A judge's note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a cross: crosses can enter the pet class"
+          }
+        }
+      }
+    },
+    "note.plateNeeds" : {
+      "comment" : "A judge's note. The placeholder is the number of eggs on a show plate.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a plate needs %lld eggs"
+          }
+        }
+      }
+    },
+    "note.shape" : {
+      "comment" : "A judge's note on eggs. The placeholder is the grade: poor, fair, good or excellent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "shape %@"
+          }
+        }
+      }
+    },
+    "note.shell" : {
+      "comment" : "A judge's note on eggs. The placeholder is the grade: poor, fair, good or excellent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "shells %@"
+          }
+        }
+      }
+    },
+    "note.staleEggs" : {
+      "comment" : "A judge's note: how many eggs on the plate are stale. The placeholder is the number.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld stale"
+          }
+        }
+      }
+    },
+    "note.standardColour" : {
+      "comment" : "A judge's note. The placeholder is the bird's colour, such as buff.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@, a standard colour"
+          }
+        }
+      }
+    },
+    "note.stressed" : {
+      "comment" : "A judge's note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "still nervous after a fright"
+          }
+        }
+      }
+    },
+    "note.tooYoung" : {
+      "comment" : "A judge's note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "too young to show"
+          }
+        }
+      }
+    },
+    "note.type" : {
+      "comment" : "A judge's note on body type. Placeholders: the grade (poor, fair, good or excellent), then what it looks like.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "type %1$@: %2$@"
+          }
+        }
+      }
+    },
+    "note.typeWords.excellent" : {
+      "comment" : "A bird's body type, judged excellent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a fine size and shape, carried proudly"
+          }
+        }
+      }
+    },
+    "note.typeWords.fair" : {
+      "comment" : "A bird's body type, judged fair.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a little small or narrow for the breed"
+          }
+        }
+      }
+    },
+    "note.typeWords.good" : {
+      "comment" : "A bird's body type, judged good.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a good size and shape"
+          }
+        }
+      }
+    },
+    "note.typeWords.poor" : {
+      "comment" : "A bird's body type, judged poor.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "small, and not the breed's shape"
+          }
+        }
+      }
+    },
+    "note.wrongBreedClass" : {
+      "comment" : "A judge's note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "wrong class for this bird"
+          }
+        }
+      }
+    },
+    "note.wrongFeathering" : {
+      "comment" : "A judge's note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "wrong feathering for the breed"
           }
         }
       }
@@ -409,6 +1237,1161 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Total"
+          }
+        }
+      }
+    },
+    "shop.special.cockerel" : {
+      "comment" : "The shop's daily special. Placeholders: the colour, the breed, the price in coins.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ cockerel %3$lld coins"
+          }
+        }
+      }
+    },
+    "shop.special.cockerelRare" : {
+      "comment" : "The shop's daily special. Placeholders: the colour, the breed, the price in coins.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ cockerel — rare! %3$lld coins"
+          }
+        }
+      }
+    },
+    "shop.special.pullet" : {
+      "comment" : "The shop's daily special. Placeholders: the colour, the breed, the price in coins.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ pullet %3$lld coins"
+          }
+        }
+      }
+    },
+    "shop.special.pulletRare" : {
+      "comment" : "The shop's daily special. Placeholders: the colour, the breed, the price in coins.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ pullet — rare! %3$lld coins"
+          }
+        }
+      }
+    },
+    "show.birdCock" : {
+      "comment" : "A rival's bird at the show. Placeholders: its colour, then its breed.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ cock"
+          }
+        }
+      }
+    },
+    "show.birdHen" : {
+      "comment" : "A rival's bird at the show. Placeholders: its colour, then its breed.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ hen"
+          }
+        }
+      }
+    },
+    "show.bonus.breed" : {
+      "comment" : "The class this season's show favours.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The breed classes pay extra coins."
+          }
+        }
+      }
+    },
+    "show.bonus.eggs" : {
+      "comment" : "The class this season's show favours.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The egg classes pay extra coins."
+          }
+        }
+      }
+    },
+    "show.bonus.pet" : {
+      "comment" : "The class this season's show favours.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The pet class pays extra coins."
+          }
+        }
+      }
+    },
+    "show.forecast.broody" : {
+      "comment" : "A worry for the next show day.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "broody: a broody hen loses condition"
+          }
+        }
+      }
+    },
+    "show.forecast.hungry" : {
+      "comment" : "A worry for the next show day.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "hungry unless you feed the flock today"
+          }
+        }
+      }
+    },
+    "show.forecast.lacksVigour" : {
+      "comment" : "A worry for the next show day.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "closely bred, so lacks a little vigour"
+          }
+        }
+      }
+    },
+    "show.forecast.stressed" : {
+      "comment" : "A worry for the next show day.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "still nervous after a fright"
+          }
+        }
+      }
+    },
+    "show.judged.breedColour" : {
+      "comment" : "A part of breed judging. The placeholder is its points out of 100.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a standard colour and feathering %lld"
+          }
+        }
+      }
+    },
+    "show.judged.breedCondition" : {
+      "comment" : "A part of breed judging. The placeholder is its points out of 100.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "condition %lld"
+          }
+        }
+      }
+    },
+    "show.judged.breedType" : {
+      "comment" : "A part of breed judging. The placeholder is its points out of 100.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "type (size, shape and carriage) %lld"
+          }
+        }
+      }
+    },
+    "show.judged.eggFreshness" : {
+      "comment" : "A part of egg judging. The placeholder is its points out of 100.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "freshness %lld"
+          }
+        }
+      }
+    },
+    "show.judged.eggMatch" : {
+      "comment" : "A part of egg judging. The placeholder is its points out of 100.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a matched plate %lld"
+          }
+        }
+      }
+    },
+    "show.judged.eggShape" : {
+      "comment" : "A part of egg judging. The placeholder is its points out of 100.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "shape %lld"
+          }
+        }
+      }
+    },
+    "show.judged.eggShell" : {
+      "comment" : "A part of egg judging. The placeholder is its points out of 100.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "shells %lld"
+          }
+        }
+      }
+    },
+    "show.judged.petCondition" : {
+      "comment" : "A part of pet judging. The placeholder is its points out of 100.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "condition %lld"
+          }
+        }
+      }
+    },
+    "show.judged.petFriendliness" : {
+      "comment" : "A part of pet judging. The placeholder is its points out of 100.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "friendliness %lld"
+          }
+        }
+      }
+    },
+    "show.judgedOn" : {
+      "comment" : "What a class is judged on. The placeholder is the parts with their points, split by \" · \".",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Judged on %@"
+          }
+        }
+      }
+    },
+    "show.keeper.ashdown" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mr Ashdown"
+          }
+        }
+      }
+    },
+    "show.keeper.bramble" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mrs Bramble"
+          }
+        }
+      }
+    },
+    "show.keeper.clover" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Auntie Clover"
+          }
+        }
+      }
+    },
+    "show.keeper.dimity" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mrs Dimity"
+          }
+        }
+      }
+    },
+    "show.keeper.fennel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Granny Fennel"
+          }
+        }
+      }
+    },
+    "show.keeper.furrow" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Old Tom Furrow"
+          }
+        }
+      }
+    },
+    "show.keeper.goodacre" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mrs Goodacre"
+          }
+        }
+      }
+    },
+    "show.keeper.hollyoak" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mr Hollyoak"
+          }
+        }
+      }
+    },
+    "show.keeper.honeysett" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mrs Honeysett"
+          }
+        }
+      }
+    },
+    "show.keeper.lark" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Farmer Lark"
+          }
+        }
+      }
+    },
+    "show.keeper.mossop" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mr Mossop"
+          }
+        }
+      }
+    },
+    "show.keeper.pennywhistle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mrs Pennywhistle"
+          }
+        }
+      }
+    },
+    "show.keeper.pippin" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mr Pippin"
+          }
+        }
+      }
+    },
+    "show.keeper.quince" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mr Quince"
+          }
+        }
+      }
+    },
+    "show.keeper.thistlewood" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Miss Thistlewood"
+          }
+        }
+      }
+    },
+    "show.keeper.wren" : {
+      "comment" : "Two sisters who show together. Starts a phrase such as \"the Misses Wren's buff Orpington hen\".",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "the Misses Wren"
+          }
+        }
+      }
+    },
+    "show.kind.breed" : {
+      "comment" : "A kind of show class.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "breed classes"
+          }
+        }
+      }
+    },
+    "show.kind.eggs" : {
+      "comment" : "A kind of show class.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "egg classes"
+          }
+        }
+      }
+    },
+    "show.kind.pet" : {
+      "comment" : "A kind of show class.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "pet class"
+          }
+        }
+      }
+    },
+    "show.notPlaced" : {
+      "comment" : "A show placing: outside the places.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "not placed"
+          }
+        }
+      }
+    },
+    "show.noteSeparator" : {
+      "comment" : "Between the judge's notes or worries in one line.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "; "
+          }
+        }
+      }
+    },
+    "show.placing.nd" : {
+      "comment" : "A show placing such as 2nd or 22nd. The placeholder is the place.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lldnd"
+          }
+        }
+      }
+    },
+    "show.placing.rd" : {
+      "comment" : "A show placing such as 3rd or 23rd. The placeholder is the place.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lldrd"
+          }
+        }
+      }
+    },
+    "show.placing.st" : {
+      "comment" : "A show placing such as 1st or 21st. The placeholder is the place.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lldst"
+          }
+        }
+      }
+    },
+    "show.placing.th" : {
+      "comment" : "A show placing such as 4th, 11th or 12th. The placeholder is the place.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lldth"
+          }
+        }
+      }
+    },
+    "show.podiumLine" : {
+      "comment" : "A podium place. Placeholders: the placing (such as 1st), who, the score out of 100, the judge's notes.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@, %3$lld of 100 — %4$@"
+          }
+        }
+      }
+    },
+    "show.prizeCoins.one" : {
+      "comment" : "A show prize. coins == 1.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld coin"
+          }
+        }
+      }
+    },
+    "show.prizeCoins.other" : {
+      "comment" : "A show prize. coins other than 1.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld coins"
+          }
+        }
+      }
+    },
+    "show.prizeCoinsAndTreats" : {
+      "comment" : "A show prize. Placeholders: the coins (such as 8 coins), then the treats (such as 3 treats).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ and %2$@"
+          }
+        }
+      }
+    },
+    "show.prizeTreats.one" : {
+      "comment" : "A show prize. treats == 1.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld treat"
+          }
+        }
+      }
+    },
+    "show.prizeTreats.other" : {
+      "comment" : "A show prize. treats other than 1.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld treats"
+          }
+        }
+      }
+    },
+    "show.readyFine" : {
+      "comment" : "A bird's readiness for the next show. The placeholder is the show's day.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "In fine condition for day %lld."
+          }
+        }
+      }
+    },
+    "show.readyWorries" : {
+      "comment" : "A bird's readiness for the next show. Placeholders: the show's day, then the worries.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On day %1$lld: %2$@."
+          }
+        }
+      }
+    },
+    "show.seasonNote.winterChampionship" : {
+      "comment" : "Said before the winter show.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The rivals are the strongest of the year."
+          }
+        }
+      }
+    },
+    "show.seenAt" : {
+      "comment" : "A Breed Book entry seen at a show. The placeholder is the show's name, such as Summer Fete.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Seen at the %@"
+          }
+        }
+      }
+    },
+    "show.theme.harvestShow" : {
+      "comment" : "The name of the autumn county show.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Harvest Show"
+          }
+        }
+      }
+    },
+    "show.theme.springEggFair" : {
+      "comment" : "The name of the spring county show.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Spring Egg Fair"
+          }
+        }
+      }
+    },
+    "show.theme.summerFete" : {
+      "comment" : "The name of the summer county show.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Summer Fete"
+          }
+        }
+      }
+    },
+    "show.theme.winterChampionship" : {
+      "comment" : "The name of the winter county show.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Winter Championship"
+          }
+        }
+      }
+    },
+    "show.themeLineWithNote" : {
+      "comment" : "Two sentences about the next show. Placeholders: the class that pays extra, then the season's note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "show.who.keeper" : {
+      "comment" : "The keeper's own bird on the podium. The placeholder is its name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "your %@"
+          }
+        }
+      }
+    },
+    "show.who.keeperPlate" : {
+      "comment" : "The keeper's own entry on the podium. The placeholder is the egg colour, such as brown.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "your plate of %@ eggs"
+          }
+        }
+      }
+    },
+    "show.who.rivalBird" : {
+      "comment" : "A rival's bird on the podium. Placeholders: the owner's name, then the bird, such as buff Orpington hen.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@'s %2$@"
+          }
+        }
+      }
+    },
+    "show.who.rivalPlate" : {
+      "comment" : "A rival's eggs on the podium. Placeholders: the owner's name, then the egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@'s plate of %2$@ eggs"
+          }
+        }
+      }
+    },
+    "show.who.rivalPlateSpeckled" : {
+      "comment" : "A rival's eggs on the podium. Placeholders: the owner's name, then the egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@'s plate of speckled %2$@ eggs"
+          }
+        }
+      }
+    },
+    "show.who.visitorBird" : {
+      "comment" : "A rival's bird on the podium. The placeholder is the bird, such as buff Orpington hen.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a visitor's %@"
+          }
+        }
+      }
+    },
+    "show.who.visitorPlate" : {
+      "comment" : "A rival's eggs on the podium. The placeholder is the egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a visitor's plate of %@ eggs"
+          }
+        }
+      }
+    },
+    "show.who.visitorPlateSpeckled" : {
+      "comment" : "A rival's eggs on the podium. The placeholder is the egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a visitor's plate of speckled %@ eggs"
+          }
+        }
+      }
+    },
+    "story.broodySilkie.sitting" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The Silkie settles onto your eggs with a happy grumble. Check back in a few days."
+          }
+        }
+      }
+    },
+    "story.broodySilkie.start" : {
+      "comment" : "Hazel's broody Silkie story. \"give eggs\" is the CLI command the player types.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hazel leans over the fence, laughing. \"My old Silkie has gone broody again. She's sitting on a golf ball! My mother hatched her whole lavender line under Silkies, you know. If you could spare 3 eggs you know are fertile, she'd hatch them for you.\" (Candle your eggs, then: give eggs)"
+          }
+        }
+      }
+    },
+    "story.heritageBreed.settling" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The Australorp hen is settling in. Give her a few days to find her feet."
+          }
+        }
+      }
+    },
+    "story.heritageBreed.start" : {
+      "comment" : "The heritage Australorp story. \"give eggs\" is the CLI command the player types.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A travelling keeper is retiring her heritage Australorp line. \"They're grand layers, gentle as anything. Bring me 4 eggs you know are fertile, so I know they'll be in good hands.\" Hazel nods. \"My mother found homes for her lavender birds the same way, when she retired.\" (candle, then: give eggs)"
+          }
+        }
+      }
+    },
+    "story.lacedGift.start" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The Wyandotte keeper two doors down stops to admire your flock over the fence. \"You've a proper little henhaven going. Give me a few days — I've a girl who'd be happier with you.\" Hazel smiles. \"That's how my mother's lavender line began: one hen, handed over a fence.\""
+          }
+        }
+      }
+    },
+    "story.marigold.decide" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hazel is home, and at the fence first thing. \"Has Marigold been good? She can come home with me, and I'll give you an egg from my flock to hatch. Or keep her, if you like. Pay me when you can.\""
+          }
+        }
+      }
+    },
+    "story.marigold.start" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hazel leans over the fence. \"I'm off to my sister's soon, for a few days. Could Marigold stay with you while I'm gone? She's your chick's mother, and a good layer. She brings her own box.\""
+          }
+        }
+      }
+    },
+    "story.marigold.staying" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hazel lifts Marigold over the fence, box and all. \"Her eggs are yours. Shut the door at night. I'll be back before you know it!\""
+          }
+        }
+      }
+    },
+    "story.unknown" : {
+      "comment" : "A story with no words of its own. \"story\" is the CLI command.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Something is happening in Featherwick. Type: story"
+          }
+        }
+      }
+    },
+    "tree.bird" : {
+      "comment" : "A bird in the family tree. Placeholders: its name, its breed and sex (such as araucana hen), the day it hatched.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@, hatched day %3$lld)"
+          }
+        }
+      }
+    },
+    "tree.birdFrom" : {
+      "comment" : "A bird from outside the flock in the family tree. Placeholders: its name, its breed and sex, the day it hatched, where it came from.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@, hatched day %3$lld, from %4$@)"
+          }
+        }
+      }
+    },
+    "tree.chickSeparator" : {
+      "comment" : "Between the names of a bird's chicks in the family tree.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : ", "
+          }
+        }
+      }
+    },
+    "tree.chicks" : {
+      "comment" : "The family tree. Placeholders: the number of chicks, then their names.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chicks (%1$lld): %2$@"
+          }
+        }
+      }
+    },
+    "tree.father" : {
+      "comment" : "A line of the family tree. The placeholder is the father.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Father: %@"
+          }
+        }
+      }
+    },
+    "tree.fatherFurtherBack" : {
+      "comment" : "A line of the family tree: the father is more generations back than it shows.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Father: further back"
+          }
+        }
+      }
+    },
+    "tree.fatherUnknown" : {
+      "comment" : "A line of the family tree.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Father: unknown"
+          }
+        }
+      }
+    },
+    "tree.lineWithCarries" : {
+      "comment" : "A family tree line in the CLI. Placeholders: the bird's line, then what it carries.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "tree.mother" : {
+      "comment" : "A line of the family tree. The placeholder is the mother.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mother: %@"
+          }
+        }
+      }
+    },
+    "tree.motherFurtherBack" : {
+      "comment" : "A line of the family tree: the mother is more generations back than it shows.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mother: further back"
+          }
+        }
+      }
+    },
+    "tree.motherUnknown" : {
+      "comment" : "A line of the family tree.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mother: unknown"
+          }
+        }
+      }
+    },
+    "tree.parents" : {
+      "comment" : "The last lines of the family tree. The placeholder says how related the parents are.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Parents: %@"
+          }
+        }
+      }
+    },
+    "tree.related.close" : {
+      "comment" : "How related a bird's parents are.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "closely related (like siblings, or parent and chick)"
+          }
+        }
+      }
+    },
+    "tree.related.cousins" : {
+      "comment" : "How related a bird's parents are.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "related like cousins"
+          }
+        }
+      }
+    },
+    "tree.related.distant" : {
+      "comment" : "How related a bird's parents are.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "distantly related"
+          }
+        }
+      }
+    },
+    "tree.related.halfSiblings" : {
+      "comment" : "How related a bird's parents are.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "related like half-siblings"
+          }
+        }
+      }
+    },
+    "tree.related.unrelated" : {
+      "comment" : "How related a bird's parents are.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "not related"
+          }
+        }
+      }
+    },
+    "tree.unnamed" : {
+      "comment" : "In the family tree, in place of a bird with no name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "unnamed"
           }
         }
       }
