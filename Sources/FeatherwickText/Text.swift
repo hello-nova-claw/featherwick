@@ -734,10 +734,32 @@ public func seenText(_ seen: SeenBreedBookEntry) -> String {
 public func shopSpecialText(_ special: ShopSpecial) -> String {
     let variety = ShopSpecial.variety(for: special.colour, on: special.breed)
     let colour = colourText(Phenotype(special.breed.purebred(special.sex, variety: variety)))
-    let kind = special.sex == .hen ? "pullet" : "cockerel"
-    let name = "\(colour) \(special.breed.definition.displayName) \(kind)"
-    let rare = special.isRare ? " — rare!" : ""
-    return name.prefix(1).uppercased() + String(name.dropFirst()) + "\(rare) \(special.price) coins"
+    let breed = special.breed.definition.displayName
+    let price = special.price
+    let line: String =
+        switch (special.sex, special.isRare) {
+        case (.hen, true):
+            String(
+                localized: "shop.special.pulletRare", defaultValue: "\(colour) \(breed) pullet — rare! \(price) coins",
+                bundle: .module,
+                comment: "The shop's daily special. Placeholders: the colour, the breed, the price in coins.")
+        case (.hen, false):
+            String(
+                localized: "shop.special.pullet", defaultValue: "\(colour) \(breed) pullet \(price) coins",
+                bundle: .module,
+                comment: "The shop's daily special. Placeholders: the colour, the breed, the price in coins.")
+        case (.rooster, true):
+            String(
+                localized: "shop.special.cockerelRare",
+                defaultValue: "\(colour) \(breed) cockerel — rare! \(price) coins", bundle: .module,
+                comment: "The shop's daily special. Placeholders: the colour, the breed, the price in coins.")
+        case (.rooster, false):
+            String(
+                localized: "shop.special.cockerel", defaultValue: "\(colour) \(breed) cockerel \(price) coins",
+                bundle: .module,
+                comment: "The shop's daily special. Placeholders: the colour, the breed, the price in coins.")
+        }
+    return line.prefix(1).uppercased() + String(line.dropFirst())
 }
 
 /// The neighbour's one-sentence "why" for a chick that looks like neither parent. It names only
@@ -747,20 +769,45 @@ public func hatchReasonText(_ r: HatchReason) -> String {
     case .recessiveFromBothParents(let locus):
         let look =
             switch locus {
-            case Lavender.locus: "lavender"
-            case BaseColour.locus: "buff"
-            default: "that colour"
+            case Lavender.locus:
+                String(
+                    localized: "hatch.look.lavender", defaultValue: "lavender", bundle: .module,
+                    comment: "A colour a bird can carry out of sight.")
+            case BaseColour.locus:
+                String(
+                    localized: "hatch.look.buff", defaultValue: "buff", bundle: .module,
+                    comment: "A colour a bird can carry out of sight.")
+            default:
+                String(
+                    localized: "hatch.look.thatColour", defaultValue: "that colour", bundle: .module,
+                    comment: "In place of a colour a bird can carry out of sight.")
             }
-        return "Both parents must carry \(look) out of sight, and this one got a copy from each!"
+        return String(
+            localized: "hatch.recessiveFromBothParents",
+            defaultValue: "Both parents must carry \(look) out of sight, and this one got a copy from each!",
+            bundle: .module,
+            comment: "Why a chick looks like neither parent. The placeholder is a colour, such as lavender.")
     case .blueSplitsThreeWays:
-        return "Blue never breeds true: two blues hatch black, blue and splash, and black with splash hatches all blue!"
+        return String(
+            localized: "hatch.blueSplitsThreeWays",
+            defaultValue:
+                "Blue never breeds true: two blues hatch black, blue and splash, and black with splash hatches all blue!",
+            bundle: .module, comment: "Why a chick looks like neither parent.")
     case .whiteHidIt:
-        return "White hides every other colour, so a white bird can pass on a colour it never shows!"
+        return String(
+            localized: "hatch.whiteHidIt",
+            defaultValue: "White hides every other colour, so a white bird can pass on a colour it never shows!",
+            bundle: .module, comment: "Why a chick looks like neither parent.")
     }
 }
 
 /// A bird's name. A bird that left the keeper's care (a loan gone home) keeps its family-tree name.
-public func birdName(_ id: UUID, _ s: GameState) -> String { s.bird(id)?.name ?? s.pedigree[id]?.name ?? "a bird" }
+public func birdName(_ id: UUID, _ s: GameState) -> String {
+    s.bird(id)?.name ?? s.pedigree[id]?.name
+        ?? String(
+            localized: "bird.aBird", defaultValue: "a bird", bundle: .module,
+            comment: "In place of the name of a bird the game no longer knows.")
+}
 
 /// "gold laced", "barred blue", "lavender"...
 public func colourText(_ p: Phenotype) -> String {
@@ -769,57 +816,172 @@ public func colourText(_ p: Phenotype) -> String {
 
 public func noteText(_ n: JudgeNote) -> String {
     switch n {
-    case .tooYoung: "too young to show"
-    case .notPurebred: "a cross: crosses can enter the pet class"
-    case .wrongBreedClass: "wrong class for this bird"
-    case .notAStandardColour(let c): "\(c) is not a standard colour for this breed"
-    case .wrongFeathering: "wrong feathering for the breed"
-    case .notMatched: "the eggs do not match"
-    case .plateNeeds(let n): "a plate needs \(n) eggs"
-    case .standardColour(let c): "\(c), a standard colour"
-    case .feathering(let silkie): silkie ? "true silkie feathering, soft as down" : "smooth, tight feathering"
-    case .type(let b): "type \(b.rawValue): \(typeWords(b))"
-    case .moulting: "moulting"
-    case .stressed: "still nervous after a fright"
-    case .broody: "broody and out of condition"
-    case .hungry: "not fed today"
-    case .inFineCondition: "in fine condition"
-    case .foraged: "well-foraged"
-    case .lacksVigour: "lacks vigour (closely bred)"
-    case .friendliness(let f): friendlyText(f)
-    case .shape(let b): "shape \(b.rawValue)"
-    case .shell(let b): "shells \(b.rawValue)"
-    case .staleEggs(let n): "\(n) stale"
+    case .tooYoung:
+        return String(
+            localized: "note.tooYoung", defaultValue: "too young to show", bundle: .module, comment: "A judge's note.")
+    case .notPurebred:
+        return String(
+            localized: "note.notPurebred", defaultValue: "a cross: crosses can enter the pet class", bundle: .module,
+            comment: "A judge's note.")
+    case .wrongBreedClass:
+        return String(
+            localized: "note.wrongBreedClass", defaultValue: "wrong class for this bird", bundle: .module,
+            comment: "A judge's note.")
+    case .notAStandardColour(let c):
+        return String(
+            localized: "note.notAStandardColour", defaultValue: "\(c) is not a standard colour for this breed",
+            bundle: .module, comment: "A judge's note. The placeholder is the bird's colour, such as blue.")
+    case .wrongFeathering:
+        return String(
+            localized: "note.wrongFeathering", defaultValue: "wrong feathering for the breed", bundle: .module,
+            comment: "A judge's note.")
+    case .notMatched:
+        return String(
+            localized: "note.notMatched", defaultValue: "the eggs do not match", bundle: .module,
+            comment: "A judge's note on a plate of eggs.")
+    case .plateNeeds(let count):
+        return String(
+            localized: "note.plateNeeds", defaultValue: "a plate needs \(count) eggs", bundle: .module,
+            comment: "A judge's note. The placeholder is the number of eggs on a show plate.")
+    case .standardColour(let c):
+        return String(
+            localized: "note.standardColour", defaultValue: "\(c), a standard colour", bundle: .module,
+            comment: "A judge's note. The placeholder is the bird's colour, such as buff.")
+    case .feathering(let silkie):
+        return silkie
+            ? String(
+                localized: "note.featheringSilkie", defaultValue: "true silkie feathering, soft as down",
+                bundle: .module, comment: "A judge's note.")
+            : String(
+                localized: "note.featheringSmooth", defaultValue: "smooth, tight feathering", bundle: .module,
+                comment: "A judge's note.")
+    case .type(let b):
+        let band = b.rawValue
+        let words = typeWords(b)
+        return String(
+            localized: "note.type", defaultValue: "type \(band): \(words)", bundle: .module,
+            comment:
+                "A judge's note on body type. Placeholders: the grade (poor, fair, good or excellent), then what it looks like."
+        )
+    case .moulting:
+        return String(
+            localized: "note.moulting", defaultValue: "moulting", bundle: .module, comment: "A judge's note.")
+    case .stressed:
+        return String(
+            localized: "note.stressed", defaultValue: "still nervous after a fright", bundle: .module,
+            comment: "A judge's note.")
+    case .broody:
+        return String(
+            localized: "note.broody", defaultValue: "broody and out of condition", bundle: .module,
+            comment: "A judge's note.")
+    case .hungry:
+        return String(
+            localized: "note.hungry", defaultValue: "not fed today", bundle: .module, comment: "A judge's note.")
+    case .inFineCondition:
+        return String(
+            localized: "note.inFineCondition", defaultValue: "in fine condition", bundle: .module,
+            comment: "A judge's note.")
+    case .foraged:
+        return String(
+            localized: "note.foraged", defaultValue: "well-foraged", bundle: .module, comment: "A judge's note.")
+    case .lacksVigour:
+        return String(
+            localized: "note.lacksVigour", defaultValue: "lacks vigour (closely bred)", bundle: .module,
+            comment: "A judge's note.")
+    case .friendliness(let f):
+        return friendlyText(f)
+    case .shape(let b):
+        let band = b.rawValue
+        return String(
+            localized: "note.shape", defaultValue: "shape \(band)", bundle: .module,
+            comment: "A judge's note on eggs. The placeholder is the grade: poor, fair, good or excellent.")
+    case .shell(let b):
+        let band = b.rawValue
+        return String(
+            localized: "note.shell", defaultValue: "shells \(band)", bundle: .module,
+            comment: "A judge's note on eggs. The placeholder is the grade: poor, fair, good or excellent.")
+    case .staleEggs(let count):
+        return String(
+            localized: "note.staleEggs", defaultValue: "\(count) stale", bundle: .module,
+            comment: "A judge's note: how many eggs on the plate are stale. The placeholder is the number.")
     }
 }
 
 /// What a type band looks like in the hand. Type is body size, shape and carriage.
 func typeWords(_ b: JudgeNote.Band) -> String {
     switch b {
-    case .poor: "small, and not the breed's shape"
-    case .fair: "a little small or narrow for the breed"
-    case .good: "a good size and shape"
-    case .excellent: "a fine size and shape, carried proudly"
+    case .poor:
+        String(
+            localized: "note.typeWords.poor", defaultValue: "small, and not the breed's shape", bundle: .module,
+            comment: "A bird's body type, judged poor.")
+    case .fair:
+        String(
+            localized: "note.typeWords.fair", defaultValue: "a little small or narrow for the breed", bundle: .module,
+            comment: "A bird's body type, judged fair.")
+    case .good:
+        String(
+            localized: "note.typeWords.good", defaultValue: "a good size and shape", bundle: .module,
+            comment: "A bird's body type, judged good.")
+    case .excellent:
+        String(
+            localized: "note.typeWords.excellent", defaultValue: "a fine size and shape, carried proudly",
+            bundle: .module, comment: "A bird's body type, judged excellent.")
     }
 }
 
 public func cardText(_ c: JudgeCard) -> String {
     let grade =
         switch c.grade {
-        case .disqualified: "not judged"
-        case .fair: "Fair"
-        case .good: "Good"
-        case .veryGood: "Very good"
-        case .excellent: "Excellent"
+        case .disqualified:
+            String(
+                localized: "card.grade.disqualified", defaultValue: "not judged", bundle: .module,
+                comment: "A judging card's grade: the entry could not be judged.")
+        case .fair:
+            String(
+                localized: "card.grade.fair", defaultValue: "Fair", bundle: .module, comment: "A judging card's grade.")
+        case .good:
+            String(
+                localized: "card.grade.good", defaultValue: "Good", bundle: .module, comment: "A judging card's grade.")
+        case .veryGood:
+            String(
+                localized: "card.grade.veryGood", defaultValue: "Very good", bundle: .module,
+                comment: "A judging card's grade.")
+        case .excellent:
+            String(
+                localized: "card.grade.excellent", defaultValue: "Excellent", bundle: .module,
+                comment: "A judging card's grade.")
         }
-    return "  \(c.showClass.name): \(grade) (\(c.score)/100) · " + c.notes.map(noteText).joined(separator: ", ")
+    let cls = c.showClass.name
+    let score = c.score
+    let notes = c.notes.map(noteText).joined(
+        separator: String(
+            localized: "card.noteSeparator", defaultValue: ", ", bundle: .module,
+            comment: "Between the judge's notes on a judging card."))
+    return "  "
+        + String(
+            localized: "card.line", defaultValue: "\(cls): \(grade) (\(score)/100) · \(notes)", bundle: .module,
+            comment:
+                "A judging card. Placeholders: the class (such as Pet chicken), the grade, the score out of 100, the judge's notes."
+        )
 }
 
 /// " If no perch is free in 2 nights, …" for a bird waiting for a perch.
 func homeDeadline(_ id: UUID, _ s: GameState) -> String {
     guard let nights = s.nightsUntilRehomed(id) else { return "" }
-    let when = nights <= 1 ? "by tomorrow" : "in \(nights) nights"
-    return " If no perch is free \(when), Hazel will find \(birdName(id, s)) a new home."
+    let name = birdName(id, s)
+    let sentence =
+        nights <= 1
+        ? String(
+            localized: "home.deadlineTomorrow",
+            defaultValue: "If no perch is free by tomorrow, Hazel will find \(name) a new home.", bundle: .module,
+            comment: "A bird waiting for a perch. The placeholder is its name.")
+        : String(
+            localized: "home.deadlineNights",
+            defaultValue: "If no perch is free in \(nights) nights, Hazel will find \(name) a new home.",
+            bundle: .module,
+            comment: "A bird waiting for a perch. Placeholders: the number of nights (2 or more), then its name.")
+    // The leading space joins it to the sentence before it.
+    return " " + sentence
 }
 
 public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
