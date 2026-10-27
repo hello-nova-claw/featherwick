@@ -37,10 +37,10 @@ Exceptions:
 | `paper` | `#FFFFFF` | All sheet and page backgrounds |
 | `ink` | `#2A2320` | Primary text, primary button fill, filled marks, outlines on swatches |
 | `inkSoft` | `#5A4D45` | Secondary body text, quiet actions (Rename, Later) |
-| `inkMuted` | `#7A6A5F` | Labels, captions, unselected tabs (4.6:1 on white) |
+| `inkMuted` | `#6F5F55` | Labels, captions, unselected tabs, the `?` of an unfound breed (6.1:1 on white; darkened from `#7A6A5F`, which Apple's accessibility audit failed on small text) |
 | `hairline` | `#E6DCCF` | Secondary button outline, dashed row dividers |
 | `hairlineSoft` | `#ECE5DB` | Sheet grabber (defined; the app uses the system grabber) |
-| `unknown` | `#C9BBAE` | Dashed "not yet" outlines, `?` glyph |
+| `unknown` | `#C9BBAE` | Dashed "not yet" outlines. Not for text: it is 1.9:1 on white. |
 | `unknownBox` | `#D8CDBF` | Dashed outline of unfound collection tiles and the egg carton |
 | `artPlaceholder` | `rgba(122,106,95,0.30)` | 1px dashed outline of art placeholders |
 | `coin` | `#D6A65E` | Coin disc, sun mark |
@@ -184,7 +184,7 @@ The text always carries the meaning; the dot only draws the eye.
 
 **Egg swatch (inline)** (`EggSwatch`): an egg shape 14×18 with a 1pt ink inset outline, filled with the egg colour, plus text ("Brown eggs").
 
-**Collection tile** (`BreedTile`): square art with a 1px dashed placeholder and radius 12, the name in Libre Caslon Text 15, and a row of 8pt colour dots: filled for colours found, dashed for colours still to find. Unfound breed: the tile shows a `?` in `unknown` in a dashed `unknownBox` square, with a one-line italic hint ("lays blue eggs").
+**Collection tile** (`BreedTile`): square art with a 1px dashed placeholder and radius 12, the name in Libre Caslon Text 15, and a row of 8pt colour dots: filled for colours found, dashed for colours still to find. Unfound breed: the tile shows a `?` in `inkMuted` in a dashed `unknownBox` square, with a one-line italic hint ("lays blue eggs").
 
 **Grade** (not built in the app yet; Show day writes the score as "72 of 100"): a 128pt circle drawn as a 1.3pt dashed ink ring, score in Caslon Display 48 with "of 100" underneath, grade word in italic, then a 4-step scale (Fair, Good, Very good, Excellent). Reached steps are solid 2pt ink lines and the current one is labelled in weight 500; unreached steps are dashed `unknown`.
 
