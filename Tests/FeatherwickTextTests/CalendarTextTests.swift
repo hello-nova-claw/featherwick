@@ -1,7 +1,8 @@
 import FeatherwickCore
-import FeatherwickText
 import Foundation
 import Testing
+
+@testable import FeatherwickText
 
 /// The village days' words: every event and refusal has words, later years read differently from the
 /// first, and nothing names a chick's sex or breed before it shows (rule 8).
@@ -137,6 +138,11 @@ struct CalendarTextTests {
         lines.append(villageNotice(s))
         let fingerprint = pin(lines)
         #expect(fingerprint == "d6fc6d23453fae1f")
+    }
+
+    /// An event that is not the calendar's has no calendar words.
+    @Test func otherEventsHaveNoCalendarWords() {
+        #expect(calendarEventText(.marketBuyerLeft(.orpington), Self.game()) == nil)
     }
 
     @Test func theFarmGateNoticeFollowsTheCalendar() {
