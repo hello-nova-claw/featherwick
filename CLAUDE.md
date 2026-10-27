@@ -33,7 +33,7 @@ The CLI writes `featherwick-save*.json` in the current folder (git-ignored). Do 
 | Path | What |
 | --- | --- |
 | `Sources/FeatherwickCore` | Pure game logic. All rules live here. |
-| `Sources/FeatherwickText` | The words players read (events, screens, milestones). Shared by CLI and app. `People.swift`: Hazel (neighbour), Wren (shop), the day-1 welcome and tour. `VillageText.swift`: every person's name and about line, choices, loans, debts, the post, the calendar. `VillagePeopleText.swift`: the arcs of Dot, Teddy, Mr Okafor and Bea. `MarketText.swift`: the market board. `Text.swift`: `eventText`, `storyText`, `milestoneText`, `introducedText`, `notYetText`. Also `NotesText`, `CalendarText`, `PlannerText`, `InheritanceText`, `RecordsText`, `BreedLore`. |
+| `Sources/FeatherwickText` | The words players read (events, screens, milestones). Shared by CLI and app. Each is a keyed `String(localized:)`; `Resources/Localizable.xcstrings` is the catalog (`bin/sync-strings` updates it), `Localized.swift` the Linux stand-in. `People.swift`: Hazel (neighbour), Wren (shop), the day-1 welcome and tour. `VillageText.swift`: every person's name and about line, choices, loans, debts, the post, the calendar. `VillagePeopleText.swift`: the arcs of Dot, Teddy, Mr Okafor and Bea. `MarketText.swift`: the market board. `Text.swift`: `eventText`, `storyText`, `milestoneText`, `introducedText`, `notYetText`. Also `NotesText`, `CalendarText`, `PlannerText`, `InheritanceText`, `RecordsText`, `BreedLore`. |
 | `Sources/FeatherwickCLI/main.swift` | Thin text front end. Parses input, prints text. No rules, no words. |
 | `App/` | iOS test app (SwiftUI, no art yet). `project.yml` is the XcodeGen spec. |
 | `Tests/FeatherwickCoreTests` | One suite per system. `Fixtures/save-v0.json` is a real old save. |
@@ -130,7 +130,8 @@ open Featherwick.xcodeproj
 1. **Core is pure.** No `print`, no input, no `Date()`/system clock, no `Int.random()` without
    `using:`. All randomness comes from the `SeededRNG` passed in. Same seed = same game.
 2. **Command in, events out.** The engine returns IDs and enums only. Words for the player live in
-   `FeatherwickText`. A new event or error needs its words in `eventText` (`Text.swift`).
+   `FeatherwickText`. A new event or error needs its words in `eventText` (`Text.swift`). Every new word is a keyed
+   `String(localized:)` (CONTRIBUTING, Localisation); run `bin/sync-strings` and commit the catalog.
 3. **Tunable numbers go in `Rules`**, never as literals in logic.
 4. **Append, never insert,** to `Loci`, `BreedTable.all`, `Storylines.all` and `Milestones.all`.
    Seeded breeding draws in list order; an insert changes every existing seed.
