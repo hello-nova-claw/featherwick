@@ -49,4 +49,15 @@ struct RecordsTextTests {
         #expect(lines.contains("  No ribbons yet. The county show gives them for 1st, 2nd and 3rd."))
         #expect(lines.contains("  First hatch: not yet"))
     }
+
+    /// The app's record book headings: the English the views show.
+    @Test func headingsReadInEnglish() {
+        #expect(RecordsWords.tab == "Records")
+        #expect(
+            [RecordsWords.hen, RecordsWords.bird, RecordsWords.total, RecordsWords.firstEgg]
+                == ["Hen", "Bird", "Total", "First egg"])
+        #expect([RecordsWords.first, RecordsWords.second, RecordsWords.third] == ["1st", "2nd", "3rd"])
+        #expect(RecordsWords.recent(14) == "Last 14 days")
+        #expect(RecordsWords.eggs == "Eggs" && RecordsWords.ribbons == "Ribbons")
+    }
 }
