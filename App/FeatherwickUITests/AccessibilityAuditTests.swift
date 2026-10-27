@@ -99,8 +99,9 @@ class AccessibilityAuditTests: XCTestCase {
 
     private func audit(_ app: XCUIApplication, screen: String) throws {
         var skipped: [String] = []
+        let screenFrame = app.frame
         try app.performAccessibilityAudit(for: .all) { issue in
-            let known = Self.knownIssue(issue)
+            let known = Self.knownIssue(issue) ?? Self.offScreenContrast(issue, screen: screenFrame)
             if let known { skipped.append("\(known): \(issue.compactDescription)") }
             return known != nil
         }
@@ -120,12 +121,19 @@ class AccessibilityAuditTests: XCTestCase {
     /// still fails at once.
     nonisolated static func knownIssue(_ issue: XCUIAccessibilityAuditIssue) -> String? {
         switch issue.auditType {
-        case .contrast: "#88"
         case .hitRegion: "#89"
         case .elementDetection: "#90"
         case .textClipped, .dynamicType: "#66"
         default: nil
         }
+    }
+
+    /// Text that runs off the screen, such as the last line under a sheet's medium detent. The audit reads it
+    /// against whatever lies past the edge (the farm behind a floating sheet), not the page it sits on. Once
+    /// it scrolls into view it is measured like any other text.
+    static func offScreenContrast(_ issue: XCUIAccessibilityAuditIssue, screen: CGRect) -> String? {
+        guard issue.auditType == .contrast, let element = issue.element else { return nil }
+        return screen.contains(element.frame) ? nil : "off screen"
     }
 }
 
