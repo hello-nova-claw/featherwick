@@ -69,6 +69,53 @@ struct MarketTextTests {
         for word in ["hen", "rooster", "cockerel", "pullet", " she ", " he "] { #expect(!words.contains(word)) }
     }
 
+    /// Every market line reads the same after the words moved into the String Catalog (#58).
+    @Test func theMarketWordsReadAsBefore() {
+        var s = Self.game()
+        var lines: [String?] = []
+        for friendliness in [nil, Friendliness.friendly, .lapChicken, .skittish] {
+            for sex in [nil, Sex.hen, .rooster] {
+                lines.append(marketWantText(.bird(MarketBirdAsk(sex: sex, friendliness: friendliness))))
+            }
+            lines.append(marketWantText(.bird(MarketBirdAsk(sex: .hen, friendliness: friendliness, laying: true))))
+        }
+        lines += [1, 3].map { marketWantText(.eggs(.olive, count: $0)) }
+        lines += MarketCards.pool.map { marketCardNote($0.id) }
+        let eggs = MarketCard(
+            id: "a", kind: "okafor-blue", from: .okafor, want: .eggs(.blue, count: 3), coins: 18, pinnedDay: s.day,
+            untilDay: s.day + 3)
+        let bird = MarketCard(
+            id: "b", kind: "teddy-calmHen", from: .teddy, want: .bird(MarketBirdAsk()), coins: 24,
+            pinnedDay: s.day, untilDay: s.day)
+        #expect(marketCardLine(eggs, s) == "3 blue eggs · until day \(s.day + 3)")
+        lines += [eggs, bird].flatMap { [marketCardText($0, s), marketCardLine($0, s)] }
+        let birdID = s.birdsAtHome[0].id
+        let events: [GameEvent] = [
+            .marketCardsPinned([eggs, bird]), .marketCardDown(eggs), .marketCardFilled(bird, coins: 24),
+            .marketCardPosted(.orpington), .marketBuyerCame(.orpington), .marketBuyerLeft(.orpington),
+            .soldToBuyer(birdID, coins: 12),
+        ]
+        let rejections: [Rejection] = [
+            .noSuchCard, .notEnoughEggsForCard(.blue, need: 3, have: 1),
+            .notEnoughEggsForCard(.brown, need: 1, have: 0),
+            .birdDoesNotFitCard, .tooYoungForCard, .keeperCardAlreadyUp, .noYoungBirdsForCard, .noBuyerYet,
+        ]
+        lines += (events + rejections.map { GameEvent.rejected($0) }).map { eventText($0, s) }
+        lines += marketBoardLines(s)
+        s.marketBoard.cards = [eggs, bird]
+        lines += marketBoardLines(s)
+        s.marketBoard.keeperCard = KeeperCard(
+            breed: .orpington, postedDay: s.day, buyerDay: s.day + 5, buyerLeavesDay: s.day + 8)
+        lines += marketBoardLines(s)
+        for leaves in [1, 2] {
+            s.marketBoard.keeperCard = KeeperCard(
+                breed: .silkie, postedDay: s.day, buyerDay: s.day, buyerLeavesDay: s.day + leaves)
+            lines += marketBoardLines(s)
+        }
+        let fingerprint = pin(lines)
+        #expect(fingerprint == "be42659ff9b2b7c4")
+    }
+
     @Test func theBoardPageListsCardsAndHowToFillThem() {
         var s = Self.game()
         s.marketBoard.cards = [
