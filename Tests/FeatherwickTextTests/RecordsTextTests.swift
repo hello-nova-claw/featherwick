@@ -1,7 +1,8 @@
-import FeatherwickCore
 import FeatherwickText
 import Foundation
 import Testing
+
+@testable import FeatherwickCore
 
 /// The record book reads the same words after they moved into the String Catalog (#58).
 struct RecordsTextTests {
@@ -59,5 +60,26 @@ struct RecordsTextTests {
         #expect([RecordsWords.first, RecordsWords.second, RecordsWords.third] == ["1st", "2nd", "3rd"])
         #expect(RecordsWords.recent(14) == "Last 14 days")
         #expect(RecordsWords.eggs == "Eggs" && RecordsWords.ribbons == "Ribbons")
+    }
+
+    /// A hen with no eggs on record reads "none yet", a rehomed hen keeps her row with a note, and a
+    /// bird's ribbons are counted by place.
+    @Test func rarerRowsReadInEnglish() throws {
+        var s = Self.keptGame()
+        let pip = try #require(s.ownedBirds.first)
+        var unlaid = s
+        unlaid.layRecords = []
+        #expect(recordsLines(unlaid).contains("  Pip — none yet"))
+
+        s.showResults = [
+            ShowResult(
+                day: s.day, showClass: .pet, entrantName: "Pip", placing: 1, fieldSize: 8, score: 70, prize: 10,
+                birdID: pip.id, treats: 0, notes: nil, theme: nil, podium: nil)
+        ]
+        // The engine keeps the last bird home, so the record says she went.
+        s.rehomed.append(pip)
+        let lines = recordsLines(s)
+        #expect(lines.contains("  Pip (rehomed) — 42, 7, day 21"))
+        #expect(lines.contains("  Pip — 1, 0, 0"))
     }
 }
