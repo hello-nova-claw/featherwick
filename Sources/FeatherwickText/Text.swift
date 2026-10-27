@@ -6,101 +6,212 @@ import Foundation
 
 public func downText(_ d: ChickDown) -> String {
     switch d {
-    case .black: "black down"
-    case .slate: "slate-grey down"
-    case .paleGrey: "pale grey down"
-    case .silver: "silvery down"
-    case .yellow: "yellow down"
-    case .darkWithHeadSpot: "dark down with a white head spot"
+    case .black:
+        String(localized: "bird.down.black", defaultValue: "black down", bundle: .module, comment: "A chick's down.")
+    case .slate:
+        String(
+            localized: "bird.down.slate", defaultValue: "slate-grey down", bundle: .module, comment: "A chick's down.")
+    case .paleGrey:
+        String(
+            localized: "bird.down.paleGrey", defaultValue: "pale grey down", bundle: .module, comment: "A chick's down."
+        )
+    case .silver:
+        String(localized: "bird.down.silver", defaultValue: "silvery down", bundle: .module, comment: "A chick's down.")
+    case .yellow:
+        String(localized: "bird.down.yellow", defaultValue: "yellow down", bundle: .module, comment: "A chick's down.")
+    case .darkWithHeadSpot:
+        String(
+            localized: "bird.down.darkWithHeadSpot", defaultValue: "dark down with a white head spot", bundle: .module,
+            comment: "A chick's down.")
     }
 }
 
 public func birdLabel(_ b: Bird, _ s: GameState) -> String {
     let stage = b.stage(onDay: s.day, rules: s.rules)
     let p = b.phenotype
-    let age = "day \(b.age(onDay: s.day))"
+    let age = b.age(onDay: s.day)
     guard b.revealed else {
-        return "\(b.name): chick, \(downText(p.chickDown)), breed ?, sex ?, \(friendlyText(b.friendliness)) (\(age))"
+        let down = downText(p.chickDown)
+        let friendly = friendlyText(b.friendliness)
+        return String(
+            localized: "bird.labelHidden",
+            defaultValue: "\(b.name): chick, \(down), breed ?, sex ?, \(friendly) (day \(age))", bundle: .module,
+            comment:
+                "A chick whose breed and sex do not show yet. Placeholders: the name, its down, how friendly it is, its age in days."
+        )
     }
+    let variety = b.varietyName
     let kind: String =
         switch (stage, b.sex) {
-        case (.chick, .hen): "hen chick"
-        case (.chick, .rooster): "rooster chick"
-        case (.grower, .hen): "pullet"
-        case (.grower, .rooster): "cockerel"
-        case (.adult, .hen): "hen"
-        case (.adult, .rooster): "rooster"
+        case (.chick, .hen):
+            String(
+                localized: "bird.kind.henChick", defaultValue: "\(variety) hen chick", bundle: .module,
+                comment: "A bird's label. The placeholder is its breed and colour variety.")
+        case (.chick, .rooster):
+            String(
+                localized: "bird.kind.roosterChick", defaultValue: "\(variety) rooster chick", bundle: .module,
+                comment: "A bird's label. The placeholder is its breed and colour variety.")
+        case (.grower, .hen):
+            String(
+                localized: "bird.kind.pullet", defaultValue: "\(variety) pullet", bundle: .module,
+                comment: "A bird's label. The placeholder is its breed and colour variety.")
+        case (.grower, .rooster):
+            String(
+                localized: "bird.kind.cockerel", defaultValue: "\(variety) cockerel", bundle: .module,
+                comment: "A bird's label. The placeholder is its breed and colour variety.")
+        case (.adult, .hen):
+            String(
+                localized: "bird.kind.hen", defaultValue: "\(variety) hen", bundle: .module,
+                comment: "A bird's label. The placeholder is its breed and colour variety.")
+        case (.adult, .rooster):
+            String(
+                localized: "bird.kind.rooster", defaultValue: "\(variety) rooster", bundle: .module,
+                comment: "A bird's label. The placeholder is its breed and colour variety.")
         }
-    var parts = ["\(b.varietyName) \(kind)", colourText(p)]
+    var parts = [kind, colourText(p)]
     let retired = b.isRetired(onDay: s.day, rules: s.rules)
     if stage == .adult, let egg = p.eggColour, b.sex == .hen, !retired {
-        parts.append("lays \(p.eggIsSpeckled ? "speckled " : "")\(egg.rawValue)")
+        let colour = egg.rawValue
+        parts.append(
+            p.eggIsSpeckled
+                ? String(
+                    localized: "bird.laysSpeckled", defaultValue: "lays speckled \(colour)", bundle: .module,
+                    comment: "A bird's label. The placeholder is the egg colour, such as brown.")
+                : String(
+                    localized: "bird.lays", defaultValue: "lays \(colour)", bundle: .module,
+                    comment: "A bird's label. The placeholder is the egg colour, such as brown."))
     }
-    if retired { parts.append("retired") }
-    if b.noLayUntilDay > s.day { parts.append("shaken, not laying yet") }
-    if b.isBroody(onDay: s.day) { parts.append("broody") }
+    if retired {
+        parts.append(
+            String(
+                localized: "bird.retired", defaultValue: "retired", bundle: .module,
+                comment: "A bird's label: the hen no longer lays."))
+    }
+    if b.noLayUntilDay > s.day {
+        parts.append(
+            String(
+                localized: "bird.shaken", defaultValue: "shaken, not laying yet", bundle: .module,
+                comment: "A bird's label: a fright stopped her laying for a while."))
+    }
+    if b.isBroody(onDay: s.day) {
+        parts.append(
+            String(localized: "bird.broody", defaultValue: "broody", bundle: .module, comment: "A bird's label."))
+    }
     parts.append(friendlyText(b.friendliness))
-    return "\(b.name): " + parts.joined(separator: ", ") + " (\(age))"
+    let attributes = parts.joined(
+        separator: String(
+            localized: "bird.labelSeparator", defaultValue: ", ", bundle: .module,
+            comment: "Between the parts of a bird's label: breed, colour, eggs, friendliness."))
+    return String(
+        localized: "bird.label", defaultValue: "\(b.name): \(attributes) (day \(age))", bundle: .module,
+        comment: "A bird's label. Placeholders: the name, a list of what it is (breed, colour, eggs), its age in days.")
 }
 
 public func friendlyText(_ f: Friendliness) -> String {
     switch f {
-    case .wild: "wild"
-    case .skittish: "skittish"
-    case .friendly: "friendly"
-    case .lapChicken: "a lap chicken"
+    case .wild:
+        String(
+            localized: "bird.friendliness.wild", defaultValue: "wild", bundle: .module, comment: "How tame a bird is.")
+    case .skittish:
+        String(
+            localized: "bird.friendliness.skittish", defaultValue: "skittish", bundle: .module,
+            comment: "How tame a bird is.")
+    case .friendly:
+        String(
+            localized: "bird.friendliness.friendly", defaultValue: "friendly", bundle: .module,
+            comment: "How tame a bird is.")
+    case .lapChicken:
+        String(
+            localized: "bird.friendliness.lapChicken", defaultValue: "a lap chicken", bundle: .module,
+            comment: "How tame a bird is: the tamest.")
     }
 }
 
 /// A small, gentle note when a cuddle or a treat made a bird a little tamer: "Juniper liked that".
 /// A move up a band has its own words (`.friendlierNow` in `eventText`).
 public func handledToastText(_ id: UUID, _ kind: Handling, _ s: GameState) -> String {
-    let name = s.bird(id)?.name ?? "The bird"
-    return kind == .pet ? "\(name) liked that" : "\(name) enjoyed the mealworm"
+    guard let name = s.bird(id)?.name else {
+        return kind == .pet
+            ? String(
+                localized: "bird.toast.unknownPetted", defaultValue: "The bird liked that", bundle: .module,
+                comment: "A short note after a cuddle, when the bird is gone.")
+            : String(
+                localized: "bird.toast.unknownTreated", defaultValue: "The bird enjoyed the mealworm", bundle: .module,
+                comment: "A short note after a treat, when the bird is gone.")
+    }
+    return kind == .pet
+        ? String(
+            localized: "bird.toast.petted", defaultValue: "\(name) liked that", bundle: .module,
+            comment: "A short note after a cuddle made a bird tamer. The placeholder is the bird's name.")
+        : String(
+            localized: "bird.toast.treated", defaultValue: "\(name) enjoyed the mealworm", bundle: .module,
+            comment: "A short note after a treat made a bird tamer. The placeholder is the bird's name.")
 }
 
 public func storyText(_ id: String, step: String?) -> String {
     switch (id, step) {
     case ("broodySilkie", nil):
-        return """
-            Hazel leans over the fence, laughing. "My old Silkie has gone broody again. She's sitting on a golf ball! \
-            My mother hatched her whole lavender line under Silkies, you know. \
-            If you could spare 3 eggs you know are fertile, she'd hatch them for you." (Candle your eggs, then: give eggs)
-            """
+        return String(
+            localized: "story.broodySilkie.start",
+            defaultValue: """
+                Hazel leans over the fence, laughing. "My old Silkie has gone broody again. She's sitting on a golf ball! \
+                My mother hatched her whole lavender line under Silkies, you know. \
+                If you could spare 3 eggs you know are fertile, she'd hatch them for you." (Candle your eggs, then: give eggs)
+                """, bundle: .module,
+            comment: "Hazel's broody Silkie story. \"give eggs\" is the CLI command the player types.")
     case ("broodySilkie", "sitting"):
-        return "The Silkie settles onto your eggs with a happy grumble. Check back in a few days."
+        return String(
+            localized: "story.broodySilkie.sitting",
+            defaultValue: "The Silkie settles onto your eggs with a happy grumble. Check back in a few days.",
+            bundle: .module)
     case ("lacedGift", nil):
-        return """
-            The Wyandotte keeper two doors down stops to admire your flock over the fence. "You've a proper \
-            little henhaven going. Give me a few days — I've a girl who'd be happier with you." \
-            Hazel smiles. "That's how my mother's lavender line began: one hen, handed over a fence."
-            """
+        return String(
+            localized: "story.lacedGift.start",
+            defaultValue: """
+                The Wyandotte keeper two doors down stops to admire your flock over the fence. "You've a proper \
+                little henhaven going. Give me a few days — I've a girl who'd be happier with you." \
+                Hazel smiles. "That's how my mother's lavender line began: one hen, handed over a fence."
+                """, bundle: .module)
     case ("heritageBreed", nil):
-        return """
-            A travelling keeper is retiring her heritage Australorp line. "They're grand layers, gentle as \
-            anything. Bring me 4 eggs you know are fertile, so I know they'll be in good hands." \
-            Hazel nods. "My mother found homes for her lavender birds the same way, when she retired." \
-            (candle, then: give eggs)
-            """
+        return String(
+            localized: "story.heritageBreed.start",
+            defaultValue: """
+                A travelling keeper is retiring her heritage Australorp line. "They're grand layers, gentle as \
+                anything. Bring me 4 eggs you know are fertile, so I know they'll be in good hands." \
+                Hazel nods. "My mother found homes for her lavender birds the same way, when she retired." \
+                (candle, then: give eggs)
+                """, bundle: .module,
+            comment: "The heritage Australorp story. \"give eggs\" is the CLI command the player types.")
     case ("heritageBreed", "settling"):
-        return "The Australorp hen is settling in. Give her a few days to find her feet."
+        return String(
+            localized: "story.heritageBreed.settling",
+            defaultValue: "The Australorp hen is settling in. Give her a few days to find her feet.", bundle: .module)
     case ("marigold", nil):
-        return """
-            Hazel leans over the fence. "I'm off to my sister's soon, for a few days. Could Marigold stay \
-            with you while I'm gone? She's your chick's mother, and a good layer. She brings her own box."
-            """
+        return String(
+            localized: "story.marigold.start",
+            defaultValue: """
+                Hazel leans over the fence. "I'm off to my sister's soon, for a few days. Could Marigold stay \
+                with you while I'm gone? She's your chick's mother, and a good layer. She brings her own box."
+                """, bundle: .module)
     case ("marigold", "staying"):
-        return """
-            Hazel lifts Marigold over the fence, box and all. "Her eggs are yours. Shut the door at night. \
-            I'll be back before you know it!"
-            """
+        return String(
+            localized: "story.marigold.staying",
+            defaultValue: """
+                Hazel lifts Marigold over the fence, box and all. "Her eggs are yours. Shut the door at night. \
+                I'll be back before you know it!"
+                """, bundle: .module)
     case ("marigold", "decide"):
-        return """
-            Hazel is home, and at the fence first thing. "Has Marigold been good? She can come home with me, \
-            and I'll give you an egg from my flock to hatch. Or keep her, if you like. Pay me when you can."
-            """
+        return String(
+            localized: "story.marigold.decide",
+            defaultValue: """
+                Hazel is home, and at the fence first thing. "Has Marigold been good? She can come home with me, \
+                and I'll give you an egg from my flock to hatch. Or keep her, if you like. Pay me when you can."
+                """, bundle: .module)
     default:
-        return peopleStoryText(id, step: step) ?? "Something is happening in Featherwick. Type: story"
+        return peopleStoryText(id, step: step)
+            ?? String(
+                localized: "story.unknown", defaultValue: "Something is happening in Featherwick. Type: story",
+                bundle: .module, comment: "A story with no words of its own. \"story\" is the CLI command.")
     }
 }
 
