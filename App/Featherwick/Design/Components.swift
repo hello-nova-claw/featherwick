@@ -47,7 +47,8 @@ struct SecondaryButtonStyle: ButtonStyle {
     }
 }
 
-/// Quiet text actions: Rename, Family tree, Later. 44pt hit area.
+/// Quiet text actions: Rename, Family tree, Later. 44pt hit area: the whole frame takes the tap, not
+/// only the letters.
 struct TextActionStyle: ButtonStyle {
     @Environment(\.palette) private var palette
     func makeBody(configuration: Configuration) -> some View {
@@ -55,6 +56,7 @@ struct TextActionStyle: ButtonStyle {
             .font(Typeface.sans(15))
             .foregroundStyle(palette.inkSoft)
             .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
             .opacity(configuration.isPressed ? 0.6 : 1)
     }
 }
@@ -81,6 +83,7 @@ struct CloseButton: View {
         } label: {
             Text("×").font(Typeface.sansLight(26)).foregroundStyle(palette.inkMuted)
                 .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
         }
         .accessibilityLabel("Close")
     }
@@ -143,7 +146,8 @@ struct UnderlinedName: View {
     }
 }
 
-/// Plain-word tabs. Selected: ink, medium, dashed underline. Unselected: muted.
+/// Plain-word tabs. Selected: ink, medium, dashed underline. Unselected: muted. Each tab takes taps over
+/// its full 44pt height, not only on its letters.
 struct WordTabs<Tab: Hashable>: View {
     @Environment(\.palette) private var palette
     let tabs: [(Tab, String)]
@@ -160,6 +164,7 @@ struct WordTabs<Tab: Hashable>: View {
                         .font(selected ? Typeface.action : Typeface.body)
                         .foregroundStyle(selected ? palette.ink : palette.inkMuted)
                         .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                         .overlay(alignment: .bottom) {
                             if selected {
                                 HLine().stroke(palette.ink.opacity(0.75), style: Stitch.underline)
