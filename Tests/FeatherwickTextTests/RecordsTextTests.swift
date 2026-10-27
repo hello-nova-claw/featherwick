@@ -1,0 +1,52 @@
+import FeatherwickCore
+import FeatherwickText
+import Foundation
+import Testing
+
+/// The record book reads the same words after they moved into the String Catalog (#58).
+struct RecordsTextTests {
+    /// Ninety days of the CLI's `day`: eggs laid, collected and sold, so every table has rows.
+    static func keptGame() -> GameState {
+        var rng = SeededRNG(seed: 7)
+        var s = Engine.newGame(earlyGame: false, using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        for _ in 0..<90 {
+            _ = Engine.apply(.feed, to: &s, using: &rng)
+            if !s.nest.isEmpty { _ = Engine.apply(.collectEggs, to: &s, using: &rng) }
+            if s.carton.count >= s.cartonCapacity { _ = Engine.apply(.sellEggs, to: &s, using: &rng) }
+            _ = Engine.apply(.closeCoop, to: &s, using: &rng)
+            Engine.restUntilEvening(&s, using: &rng)
+            _ = Engine.apply(.passNight, to: &s, using: &rng)
+        }
+        return s
+    }
+
+    /// The words as they read before the catalog, line for line.
+    @Test func cliRecordsReadTheSameWords() {
+        #expect(
+            recordsLines(Self.keptGame()) == [
+                "Record Book:",
+                "Eggs (total, last 14 days, first egg):",
+                "  Pip — 42, 7, day 21",
+                "Ribbons (1st, 2nd, 3rd):",
+                "  No ribbons yet. The county show gives them for 1st, 2nd and 3rd.",
+                "The flock:",
+                "  Birds now: 1",
+                "  Hatched here: 0",
+                "  Bought: 0",
+                "  Rehomed: 0",
+                "  Retired: 0",
+                "  First hatch: not yet",
+                "  First ribbon: not yet",
+                "  Days kept: 91",
+            ])
+    }
+
+    @Test func aNewGameHasNoHensAndNoRibbons() {
+        let s = CalendarTextTests.game()
+        let lines = recordsLines(s)
+        #expect(lines.contains("  No hens laying yet."))
+        #expect(lines.contains("  No ribbons yet. The county show gives them for 1st, 2nd and 3rd."))
+        #expect(lines.contains("  First hatch: not yet"))
+    }
+}
