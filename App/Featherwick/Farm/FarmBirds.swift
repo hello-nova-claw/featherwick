@@ -304,10 +304,10 @@ private struct RoostingBird: View {
 }
 
 /// A chick that potters about the brooder box: every few seconds it walks a little way, or stops to peck.
-/// With Reduce Motion on, it stands still.
+/// With Reduce Motion on, or frozen for a UI test, it stands still.
 private struct WanderingBird: View {
     @Environment(GameStore.self) private var store
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.sceneMotion) private var motion
     let bird: Bird
     let area: CGRect
     let open: (UUID) -> Void
@@ -330,12 +330,12 @@ private struct WanderingBird: View {
             .rotationEffect(.degrees(pecking ? 10 : 0), anchor: .bottom)
             .offset(y: pecking ? size * 0.08 : 0)
             .position(x: area.minX + spot.x * area.width, y: area.minY + spot.y * area.height)
-            .task(id: reduceMotion) { await wander() }
+            .task(id: motion.isStill) { await wander() }
     }
 
     /// One slow loop per bird. SwiftUI animates each walk, so the loop only wakes every 2–4 seconds.
     private func wander() async {
-        guard !reduceMotion else { return }
+        guard !motion.isStill else { return }
         while !Task.isCancelled {
             try? await Task.sleep(for: .seconds(Double.random(in: 2...4)))
             if Task.isCancelled { return }

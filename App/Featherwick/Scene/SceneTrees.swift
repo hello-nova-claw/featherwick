@@ -270,9 +270,9 @@ struct TreeDrawing: View {
 
 /// One tree in the scene: its drawing through the season ramp, mirrored if placed so, swaying slowly
 /// about its trunk base. The sway is one repeating animation (no timer and no redraw of the scene).
-/// With Reduce Motion on, the tree stands still.
+/// With Reduce Motion on, or frozen for a UI test, the tree stands still.
 struct SceneTree: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.sceneMotion) private var motion
     let tree: PlacedTree
     let season: Season
     let night: Bool
@@ -289,19 +289,19 @@ struct SceneTree: View {
             .animation(sway) { content in
                 content.rotationEffect(.degrees(angle), anchor: .bottom)
             }
-            .onAppear { swaying = !reduceMotion }
-            .onChange(of: reduceMotion) { _, still in swaying = !still }
+            .onAppear { swaying = !motion.isStill }
+            .onChange(of: motion.isStill) { _, still in swaying = !still }
             .allowsHitTesting(false)
             .accessibilityHidden(true)
     }
 
     private var angle: Double {
-        if reduceMotion { return 0 }
+        if motion.isStill { return 0 }
         return swaying ? tree.swayDegrees : -tree.swayDegrees
     }
 
     private var sway: Animation? {
-        if reduceMotion { return nil }
+        if motion.isStill { return nil }
         return .easeInOut(duration: tree.swaySeconds).repeatForever(autoreverses: true).delay(tree.swayDelay)
     }
 }
