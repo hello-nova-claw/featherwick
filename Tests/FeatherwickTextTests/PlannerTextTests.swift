@@ -106,6 +106,146 @@ import Testing
         #expect(pairLines(lines, s).first?.hasSuffix("(Bramble is blue. Blue birds always carry one of each.)") == true)
     }
 
+    /// The sentences built from parts read the same once each shape is one whole string (#58).
+    @Test func joinedFormsReadTheSame() {
+        var (s, hen, rooster, chick) = Self.flock()
+        let why = Reason.look(bird: rooster, locus: BlueDilution.locus)
+        let lavender = Reason.look(bird: hen, locus: Lavender.locus)
+        let eggs: [Forecast] = [
+            .ratio(.eggColour(.blue), numerator: 1, denominator: 2, why),
+            .ratio(.eggColour(.cream), numerator: 1, denominator: 2, lavender),
+        ]
+        #expect(
+            pairLines(eggs, s)
+                == [
+                    "Hens from this pair: about 1 in 2 blue, 1 in 2 white or cream eggs. "
+                        + "(Bramble is blue. Blue birds always carry one of each. "
+                        + "Clover is lavender. Lavender birds always pass lavender on.)"
+                ])
+        #expect(pairLines([], s) == ["Nothing to say about this pair yet."])
+        #expect(
+            plannerText(.eggColours([.blue, .green, .olive], sure: false, .unknownFamily(locus: Speckle.locus)), s)
+                == "Hens from this pair will lay blue, green or olive eggs, unless one of them carries speckles.")
+        #expect(
+            plannerText(.eggColours([.brown], sure: false, why), s)
+                == "Hens from this pair will lay brown eggs, unless one of them is hiding another egg colour.")
+        #expect(plannerText(.eggColours([], sure: true, why), s) == "Hens from this pair will lay plain eggs.")
+        #expect(plannerText(.likely(.silkieFeathered, why), s) == "Some chicks will likely have silkie feathers.")
+        #expect(
+            plannerText(.likely(.laced, .manyChicks(bird: hen, count: 3, locus: Lacing.locus)), s)
+                == "Likely no laced chicks.")
+        #expect(
+            plannerText(.possible(.speckledEggs, .unknownFamily(locus: Speckle.locus)), s)
+                == "If one of them carries speckled eggs, you'll find out.")
+        #expect(
+            plannerText(.possible(.silkieFeathered, .unknownFamily(locus: Feathering.locus)), s)
+                == "If one of them is hiding silkie feathers, you'll find out.")
+        #expect(plannerText(.notPossible(.speckledEggs, why), s) == "No hens from this pair will lay speckled eggs.")
+        #expect(
+            plannerText(.typeOutlook(.fair, .excellent, .grades(hen: hen, rooster: rooster)), s)
+                == "Clover judged fair for type, Bramble excellent. Some chicks should take after the better one.")
+        #expect(
+            plannerText(.typeOutlook(.poor, .fair, why), s)
+                == "The hen judged poor for type, the rooster fair. A partner judged better for type would help.")
+        #expect(
+            plannerText(.kinship(.close, why), s)
+                == "They are closely related (like siblings, or parent and chick).")
+
+        // Counts: one and many.
+        #expect(
+            plannerReasonText(.manyChicks(bird: hen, count: 1, locus: BlueShell.locus), s)
+                == "Clover has had 1 daughter, and she did not lay blue.")
+        #expect(
+            plannerReasonText(.manyChicks(bird: hen, count: 1, locus: Lavender.locus), s)
+                == "Clover has had 1 chick, and it did not show lavender.")
+        #expect(
+            plannerReasonText(.manyChicks(bird: hen, count: 3, locus: Speckle.locus), s)
+                == "Clover has had 3 daughters and none laid speckled eggs.")
+        #expect(
+            plannerReasonText(.manyChicks(bird: UUID(), count: 3, locus: Barring.locus), s)
+                == "A bird has had 3 chicks and none showed barring.")
+
+        // A bird's look, with he, she or a name.
+        #expect(
+            plannerReasonText(.look(bird: hen, locus: Barring.locus), s)
+                == "Clover is not barred, so she has no barring to pass on.")
+        #expect(
+            plannerReasonText(.look(bird: rooster, locus: DominantWhite.locus), s)
+                == "Bramble is not white, so he carries no white.")
+        #expect(plannerReasonText(.look(bird: UUID(), locus: Lavender.locus), s) == "A bird's look settles it.")
+        #expect(
+            plannerReasonText(.breed(bird: rooster, .silkie), s) == "Bramble came from Hazel as a Silkie.")
+
+        // Parents and chicks.
+        let stranger = UUID()
+        #expect(
+            plannerReasonText(.parent(bird: chick, parent: stranger, locus: Lavender.locus), s)
+                == "Lavender came down from Moss's parent.")
+        #expect(
+            plannerReasonText(.parent(bird: stranger, parent: hen, locus: Lavender.locus), s)
+                == "A bird's parent, Clover, is lavender.")
+        #expect(
+            plannerReasonText(.chick(bird: hen, chick: stranger, locus: Lavender.locus), s)
+                == "One of Clover's chicks shows that Clover carries lavender.")
+        #expect(
+            plannerReasonText(.chick(bird: hen, chick: chick, locus: Lavender.locus), s)
+                == "Clover's chick, Moss, shows that Clover carries lavender.")
+
+        // Carrier notes: a short list, and each kind of proof.
+        func note(_ locus: LocusID, _ allele: String, _ e: Evidence = .look) -> ProvenAllele {
+            ProvenAllele(locus: locus, allele: allele, copies: 1, isDefault: false, evidence: e)
+        }
+        let lav = note(Lavender.locus, "lav")
+        let bar = note(Barring.locus, "B")
+        let blueEggs = note(BlueShell.locus, BlueShell.blue.rawValue)
+        #expect(carrierShortText([lav]) == "carries lavender")
+        #expect(carrierShortText([lav, bar]) == "carries lavender and barring")
+        #expect(carrierShortText([lav, bar, blueEggs]) == "carries lavender, barring and blue eggs")
+        #expect(carrierReasonText(lav, bird: hen, s) == "Her own look shows it.")
+        #expect(carrierReasonText(lav, bird: stranger, s) == "This bird's own look shows it.")
+        #expect(
+            carrierReasonText(note(Lavender.locus, "lav", .origin(.orpington)), bird: rooster, s)
+                == "Bramble came from Hazel as an Orpington, and every one with that look carries it.")
+        #expect(
+            carrierReasonText(note(Lavender.locus, "lav", .outsideFlock), bird: rooster, s)
+                == "Bramble came from Hazel, and every bird from there with that look carries it.")
+        #expect(
+            carrierReasonText(note(Lavender.locus, "lav", .parent(stranger)), bird: chick, s)
+                == "It came from Moss's parent.")
+        #expect(
+            carrierReasonText(note(Lavender.locus, "lav", .parents(hen, rooster)), bird: chick, s)
+                == "It came from Moss's parents, Clover and Bramble.")
+        #expect(
+            carrierReasonText(note(Lavender.locus, "lav", .parents(stranger, rooster)), bird: chick, s)
+                == "It came from Moss's parents.")
+        #expect(
+            carrierReasonText(note(Lavender.locus, "lav", .child(chick)), bird: hen, s)
+                == "Her chick Moss proves it.")
+        #expect(
+            carrierReasonText(note(Lavender.locus, "lav", .child(stranger)), bird: rooster, s)
+                == "One of his chicks proves it.")
+        #expect(carrierReasonText(note(Lavender.locus, "lav", .family), bird: hen, s) == "Her family tree proves it.")
+        #expect(carrierNoneText(hen, s) == "Nothing hidden you can be sure of yet. Watch Clover's chicks.")
+
+        // Pairs that cannot be planned.
+        let birds = [hen, rooster, chick].compactMap { s.bird($0) }
+        #expect(plannerPairProblemText(hen: birds[0], rooster: birds[1]) == nil)
+        #expect(plannerPairProblemText(hen: birds[2], rooster: birds[1]) == "Moss is too young to tell yet.")
+        #expect(
+            plannerPairProblemText(hen: birds[1], rooster: birds[1])
+                == "Bramble is not a hen. Use: plan <hen> <rooster>")
+        #expect(
+            plannerPairProblemText(hen: birds[0], rooster: birds[0])
+                == "Clover is not a rooster. Use: plan <hen> <rooster>")
+
+        // The whole panel.
+        s.pen = [hen, rooster]
+        let panel = plannerLines(s)
+        #expect(panel.first == "What might hatch (rooster: Bramble)")
+        #expect(panel.dropFirst().first == "With Clover:")
+        #expect(panel.dropFirst(2).allSatisfy { $0.hasPrefix("  ") })
+    }
+
     @Test func reasonsSayWhatTheKeeperSaw() {
         let (s, hen, rooster, chick) = Self.flock()
         #expect(
