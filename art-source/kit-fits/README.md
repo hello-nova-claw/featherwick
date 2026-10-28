@@ -103,26 +103,45 @@ tail and the drumsticks), its own paint stays. `caps` work as in the hen fit. `m
 replaces those keys of the hen's motion. The script writes `parts/` (a whole kit) and `parts-preview.png`
 (each part in its own colour, bands and caps lighter, over the bones).
 
-hen-b's peck sends the throat forward (`peckReach` 0.45, -0.8) and tips the body 40°. With the hen's reach
-(throat straight down), the lower neck turns about 130° against the body at the bottom of the peck. Its
-neck part runs down the front of the breast, so that block flips up over the back as a box. With the throat
-forward, the lower neck turns about 55°, and the neck tips down in one line.
+hen-b's peck tips the body 50° and crouches 0.12, and sends the throat only a little forward (`peckReach`
+0.1, -0.6). So the lower neck turns about 22° against the body at the bottom of the peck, and the beak goes
+as low as the hen's. More reach turns the neck further: with the hen's reach (throat straight down) it turns
+about 130°, and with 0.45, -0.8 about 55°. A turning neck lifts its base out of the back line.
 
 `round` gives a part a rounded end: its cut becomes an arc round its own joint, from edge to edge, filled
 with the paint of the other part (`from`). As the part turns, its end slides along itself, so it never lifts
 out of the outline as a step. The radius reaches the far end of the cut, or `radius` (canvas pixels). A part
-in front (the neck over the body) grows to the arc. A part behind (the tail under the body) takes the body's
-paint inside the arc, and the body is cut back to the arc. hen-b rounds four ends, so it needs no caps:
+in front grows to the arc. A part behind (the tail under the body) takes the body's paint inside the arc, and
+the body is cut back to the arc. hen-b rounds three ends:
 
 | Part | Joint | From | Radius |
 | --- | --- | --- | --- |
-| `neck` | `neckLow` | `body` | 270 px |
-| `hackle` | `neckHigh` | `neck` | 182 px |
-| `head` | `head` | `hackle` | 170 px |
+| `hackle` | `neckHigh` | `neck` | 130 px |
+| `head` | `head` | `hackle` | 110 px |
 | `tail` | `tail` | `body` | 120 px |
 
 The tail's cut runs from the back (110 px from its joint) down to the rump (440 px). An arc that reaches the
 rump gives the tail half the body: it opens a step on the back in the peck and sways in the walk. So the
-tail's arc rounds only the top, where the back line is.
+tail's arc rounds only the top, where the back line is. A smaller arc on the hackle and the head keeps
+their turning ends inside the outline.
+
+The neck is drawn behind the body, and `caps` gives the body a disc round `neckLow` (120 source pixels),
+cut to the outline at rest. The base of the neck turns behind that disc, out of sight.
+
+`limbs` cuts a wide band of thigh fluff down to a drumstick: a rounded shape round the bone from `from` (the
+hip) to `to` (the hock), `top` canvas pixels each side at the hip and `bottom` at the hock. The thigh bone
+turns up to about 55° in a walk, so a whole band swings its far ends out below the body. The whole band
+also goes to `rest` (the body), so it stays put and the drumstick swings over it. hen-b's drumsticks are 140
+and 70 px (back) and 150 and 80 px (front).
+
+`knobs` gives a leg part a round top: a disc round its joint (`radius`, canvas pixels), and no paint above
+the joint outside it. As the hock bends, the top of the shank turns on itself and shows no corner. hen-b's
+shanks have knobs of 50 px (back) and 62 px (front).
+
+`feather` (canvas pixels) softens every edge inside the bird, so where one part turns over another no hard
+line shows. Edges near the outline at rest stay crisp, and so do the parts in `crisp` (hen-b: the comb,
+wattle and beak). Under a soft edge, each part behind runs on `feather` pixels, so two half-clear edges never
+leave a light line. hen-b uses 16 px. The comb is drawn over the head, so the head's soft edge does not
+blur it.
 
 Paint added under a join or in an arc takes the slices' own paper there, so it keeps the texture.

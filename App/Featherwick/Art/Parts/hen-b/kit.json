@@ -34,6 +34,13 @@
         "amount": 1
       }
     },
+    "neck": {
+      "bone": "neckLow",
+      "pivot": [
+        0.191,
+        0.665
+      ]
+    },
     "body": {
       "bone": "body",
       "pivot": [
@@ -51,13 +58,6 @@
         "amount": 0.25
       }
     },
-    "neck": {
-      "bone": "neckLow",
-      "pivot": [
-        0.191,
-        0.665
-      ]
-    },
     "hackle": {
       "bone": "neckHigh",
       "pivot": [
@@ -66,16 +66,16 @@
       ],
       "token": "hackle"
     },
-    "comb": {
-      "bone": "head",
-      "token": "comb"
-    },
     "head": {
       "bone": "head",
       "pivot": [
         0.315,
         0.861
       ]
+    },
+    "comb": {
+      "bone": "head",
+      "token": "comb"
     },
     "wattle": {
       "bone": "head",
@@ -121,12 +121,12 @@
     "shankBack",
     "toesBack",
     "tail",
+    "neck",
     "body",
     "thighBack",
-    "neck",
     "hackle",
-    "comb",
     "head",
+    "comb",
     "wattle",
     "beak",
     "shankFront",
@@ -134,13 +134,13 @@
     "thighFront"
   ],
   "motion": {
-    "peckBodyTilt": 40,
-    "peckCrouch": 0.08,
+    "peckBodyTilt": 50,
+    "peckCrouch": 0.12,
     "peckHeadDip": 80,
     "peckTail": -22,
     "peckReach": [
-      0.45,
-      -0.8
+      0.1,
+      -0.6
     ],
     "stride": 0.8,
     "footSpread": 0.06
