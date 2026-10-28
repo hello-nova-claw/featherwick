@@ -58,4 +58,106 @@ struct SaveStoreTests {
         let slots = SaveStore.slots(in: dir)
         #expect(slots == ["alpha", "beta"])  // backups excluded
     }
+
+    // MARK: - Loading and recovery (#59)
+
+    /// Every file in the folder and its bytes, to show a load changed nothing.
+    private func contents(of dir: URL) throws -> [String: Data] {
+        let names = try FileManager.default.contentsOfDirectory(atPath: dir.path)
+        return try Dictionary(
+            uniqueKeysWithValues: names.map { ($0, try Data(contentsOf: dir.appendingPathComponent($0))) })
+    }
+
+    @Test func aSaveFromANewerGameIsLeftExactlyAsItIs() throws {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = SaveStore(directory: dir, slot: "test")
+        let future = try SaveFormatTests.fixture("save-v99")
+        try future.write(to: store.url)
+        try future.write(to: store.backupURL(1))
+        try Data("an old quarantine".utf8).write(to: store.corruptURL())
+        let before = try contents(of: dir)
+        let (save, recovery) = store.load()
+        #expect(save == nil)
+        #expect(recovery == .tooNew(version: 99))
+        #expect(try contents(of: dir) == before)  // nothing moved, rotated or written
+    }
+
+    /// A newer game's backup is as precious as its main save: the unreadable main stays put too.
+    @Test func aNewerBackupStopsTheLoadBeforeAnyQuarantine() throws {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = SaveStore(directory: dir, slot: "test")
+        try Data("garbage".utf8).write(to: store.url)
+        try SaveFormatTests.fixture("save-v99").write(to: store.backupURL(2))
+        try sampleSave(4).write(to: store.backupURL(1))
+        let before = try contents(of: dir)
+        #expect(store.load().recovery == .tooNew(version: 99))
+        #expect(try contents(of: dir) == before)
+    }
+
+    @Test func aGoodMainSaveLoads() throws {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = SaveStore(directory: dir, slot: "test")
+        try store.write(try SaveFormatTests.fixture("save-v0"))  // the oldest save still loads
+        let (save, recovery) = store.load()
+        #expect(save != nil)
+        #expect(recovery == .loaded)
+    }
+
+    @Test func anEmptySlotHasNoSave() {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let (save, recovery) = SaveStore(directory: dir, slot: "test").load()
+        #expect(save == nil)
+        #expect(recovery == .noSave)
+    }
+
+    @Test func aMissingMainSaveComesBackFromTheBackup() throws {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = SaveStore(directory: dir, slot: "test")
+        try sampleSave(5).write(to: store.backupURL(2))
+        let (save, recovery) = store.load()
+        #expect(save != nil)
+        #expect(recovery == .restoredFromBackup)
+    }
+
+    @Test func anUnreadableSaveIsKeptAndTheBackupLoads() throws {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = SaveStore(directory: dir, slot: "test")
+        let good = try sampleSave(6)
+        try store.write(good)
+        try store.write(good)  // good copy in bak1
+        try Data("not a save".utf8).write(to: store.url)
+        let (save, recovery) = store.load()
+        #expect(try save?.state == SaveFormat.decode(good).state)
+        #expect(recovery == .unreadable(keptAs: store.corruptURL(), restoredFromBackup: true))
+        #expect(try Data(contentsOf: store.corruptURL()) == Data("not a save".utf8))
+    }
+
+    @Test func anUnreadableSaveWithNoBackupStartsANewGame() throws {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = SaveStore(directory: dir, slot: "test", backupCount: 0)
+        try Data("garbage".utf8).write(to: store.url)
+        let (save, recovery) = store.load()
+        #expect(save == nil)
+        #expect(recovery == .unreadable(keptAs: store.corruptURL(), restoredFromBackup: false))
+    }
+
+    @Test func twoUnreadableSavesLeaveTwoQuarantineFiles() throws {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = SaveStore(directory: dir, slot: "test")
+        try Data("first".utf8).write(to: store.url)
+        _ = store.load()
+        try Data("second".utf8).write(to: store.url)
+        #expect(store.load().recovery == .unreadable(keptAs: store.corruptURL(2), restoredFromBackup: false))
+        #expect(try Data(contentsOf: store.corruptURL()) == Data("first".utf8))
+        #expect(try Data(contentsOf: store.corruptURL(2)) == Data("second".utf8))
+        #expect(SaveStore.slots(in: dir).isEmpty)  // quarantines are not slots
+    }
 }
