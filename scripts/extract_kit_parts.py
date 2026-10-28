@@ -158,6 +158,75 @@ def start_guess(export_size, source_size):
     return [export_size / source_size * 0.96, math.radians(1.0), export_size * 0.025, export_size * 0.007]
 
 
+def add_splits(parts, fit, placement):
+    """A part painted into another one (the wattle in the head): `take` is its shape, in source pixels.
+    The other part loses only `leave`, so a band of it stays under the join and the swing shows no hole."""
+    for name, split in fit["pieces"].get("splits", {}).items():
+        colour, cover = parts[split["from"]]
+        take = soft_polygon(split["take"], placement, cover.shape)
+        leave = soft_polygon(split["leave"], placement, cover.shape)
+        parts[name] = (colour, cover * take)
+        parts[split["from"]] = (colour, cover * (1 - leave))
+
+
+def add_caps(parts, fit, placement):
+    """Joint caps: a part that turns a long way (the neck in a peck) gets a disc round its joint, in its own
+    colour, cut to the bird's outline at rest. A disc looks the same at any turn, so the joint never
+    opens. At rest it lies on parts of the same colour, so nothing shows."""
+    pieces = fit["pieces"]
+    if "caps" not in pieces:
+        return
+    outline_cover = np.maximum.reduce([c for _, c in parts.values()])
+    for name, cap in pieces["caps"].items():
+        colour, cover = parts[name]
+        centre = fit["joints"][cap["joint"]]
+        r = cap["radius"]
+        ring = [(centre[0] + r * math.cos(a), centre[1] + r * math.sin(a))
+                for a in np.linspace(0, 2 * math.pi, 48, endpoint=False)]
+        disc = soft_polygon(ring, placement, cover.shape) * outline_cover
+        mean = (colour * cover[..., None]).sum((0, 1)) / max(cover.sum(), 1)
+        add = disc * (1 - cover)
+        colour = (colour * cover[..., None] + mean * add[..., None]) / np.maximum(cover + add, 1e-6)[..., None]
+        parts[name] = (colour, cover + add)
+
+
+def write_kit(folder, out, parts, affine, kraft):
+    """Puts each part (colour and coverage) on the kit canvas through `affine` (kit canvas to the parts'
+    pixels), and writes parts/, parts-colour/ and parts-preview.png into `out`."""
+    for sub in ("parts", "parts-colour"):
+        os.makedirs(os.path.join(out, sub), exist_ok=True)
+    mean = (kraft * [0.299, 0.587, 0.114]).sum()
+    preview = Image.new("RGBA", (CANVAS, CANVAS), (0, 0, 0, 0))
+    for name, (colour, cover) in parts.items():
+        rgba = np.dstack([colour, cover * 255]).astype("uint8")
+        placed = Image.fromarray(rgba, "RGBA").transform(
+            (CANVAS, CANVAS), Image.AFFINE, affine, resample=Image.BICUBIC)
+        placed.save(os.path.join(out, "parts-colour", name + ".png"), optimize=True)
+        arr = np.asarray(placed).astype(float)
+        grey = arr[..., :3] @ [0.299, 0.587, 0.114] / mean * VALUE
+        kit = np.dstack([np.repeat(np.clip(grey, 0, 255)[..., None], 3, 2), arr[..., 3]]).astype("uint8")
+        Image.fromarray(kit, "RGBA").save(os.path.join(out, "parts", name + ".png"), optimize=True)
+        preview = Image.alpha_composite(preview, placed)
+
+    # parts/ is a whole kit: the fit's kit.json, cut down to the parts that have a PNG.
+    kit = json.load(open(os.path.join(folder, "kit.json")))
+    kit["parts"] = {n: p for n, p in kit["parts"].items() if n in parts}
+    kit["drawOrder"] = [n for n in kit["drawOrder"] if n in parts]
+    with open(os.path.join(out, "parts", "kit.json"), "w") as f:
+        json.dump(kit, f, indent=2)
+        f.write("\n")
+    missing = sorted(set(json.load(open(os.path.join(folder, "kit.json")))["parts"]) - set(parts))
+    if missing:
+        print("not cut yet (left out of parts/kit.json):", ", ".join(missing))
+
+    base = Image.open(os.path.join(folder, "template.png")).convert("RGBA")
+    veil = Image.new("RGBA", base.size, (246, 241, 231, 150))
+    page = Image.alpha_composite(Image.alpha_composite(base, veil), preview)
+    page.alpha_composite(Image.open(os.path.join(folder, "guide-bones.png")).convert("RGBA"))
+    page.save(os.path.join(out, "parts-preview.png"), optimize=True)
+    print("wrote", len(parts), "parts to", os.path.relpath(out))
+
+
 def main(folder):
     fit = json.load(open(os.path.join(folder, "fit.json")))
     pieces = fit["pieces"]
@@ -170,14 +239,7 @@ def main(folder):
     placement, err = fit_placement(points, edge_distance(mask), start_guess(size, mask.shape[0]))
     s, turn, tx, ty = placement
 
-    # A part painted into another one (the wattle in the head): `take` is its shape, in source pixels.
-    # The other part loses only `leave`, so a band of it stays under the join and the swing shows no hole.
-    for name, split in pieces.get("splits", {}).items():
-        colour, cover = parts[split["from"]]
-        take = soft_polygon(split["take"], placement, cover.shape)
-        leave = soft_polygon(split["leave"], placement, cover.shape)
-        parts[name] = (colour, cover * take)
-        parts[split["from"]] = (colour, cover * (1 - leave))
+    add_splits(parts, fit, placement)
 
     # A part cut out of another (a drumstick out of the body) leaves a hole there. `underfill` fills the
     # hole with the cut part's shape, pulled in by `inset` export pixels, so a swinging part never shows the
@@ -195,22 +257,7 @@ def main(folder):
             cover = cover + add
         parts[name] = (colour, cover)
 
-    # Joint caps: a part that turns a long way (the neck in a peck) gets a disc round its joint, in its own
-    # colour, cut to the bird's outline at rest. A disc looks the same at any turn, so the joint never
-    # opens. At rest it lies on parts of the same colour, so nothing shows.
-    if "caps" in pieces:
-        outline_cover = np.maximum.reduce([c for _, c in parts.values()])
-        for name, cap in pieces["caps"].items():
-            colour, cover = parts[name]
-            centre = fit["joints"][cap["joint"]]
-            r = cap["radius"]
-            ring = [(centre[0] + r * math.cos(a), centre[1] + r * math.sin(a))
-                    for a in np.linspace(0, 2 * math.pi, 48, endpoint=False)]
-            disc = soft_polygon(ring, placement, cover.shape) * outline_cover
-            mean = (colour * cover[..., None]).sum((0, 1)) / max(cover.sum(), 1)
-            add = disc * (1 - cover)
-            colour = (colour * cover[..., None] + mean * add[..., None]) / np.maximum(cover + add, 1e-6)[..., None]
-            parts[name] = (colour, cover + add)
+    add_caps(parts, fit, placement)
     print("placement: scale %.4f, turn %.2f°, shift (%.1f, %.1f), edge error %.2f px"
           % (s, math.degrees(turn), tx, ty, err))
 
@@ -223,38 +270,7 @@ def main(folder):
     ox, oy = gx - cx / k, gy - cy / k
     affine = (a, b, s * (c * ox - sn * oy) + tx, d, e, s * (sn * ox + c * oy) + ty)
 
-    for sub in ("parts", "parts-colour"):
-        os.makedirs(os.path.join(folder, sub), exist_ok=True)
-    mean = (kraft * [0.299, 0.587, 0.114]).sum()
-    preview = Image.new("RGBA", (CANVAS, CANVAS), (0, 0, 0, 0))
-    for name, (colour, cover) in parts.items():
-        rgba = np.dstack([colour, cover * 255]).astype("uint8")
-        placed = Image.fromarray(rgba, "RGBA").transform(
-            (CANVAS, CANVAS), Image.AFFINE, affine, resample=Image.BICUBIC)
-        placed.save(os.path.join(folder, "parts-colour", name + ".png"), optimize=True)
-        arr = np.asarray(placed).astype(float)
-        grey = arr[..., :3] @ [0.299, 0.587, 0.114] / mean * VALUE
-        kit = np.dstack([np.repeat(np.clip(grey, 0, 255)[..., None], 3, 2), arr[..., 3]]).astype("uint8")
-        Image.fromarray(kit, "RGBA").save(os.path.join(folder, "parts", name + ".png"), optimize=True)
-        preview = Image.alpha_composite(preview, placed)
-
-    # parts/ is a whole kit: the fit's kit.json, cut down to the parts that have a PNG.
-    kit = json.load(open(os.path.join(folder, "kit.json")))
-    kit["parts"] = {n: p for n, p in kit["parts"].items() if n in parts}
-    kit["drawOrder"] = [n for n in kit["drawOrder"] if n in parts]
-    with open(os.path.join(folder, "parts", "kit.json"), "w") as f:
-        json.dump(kit, f, indent=2)
-        f.write("\n")
-    missing = sorted(set(json.load(open(os.path.join(folder, "kit.json")))["parts"]) - set(parts))
-    if missing:
-        print("not cut yet (left out of parts/kit.json):", ", ".join(missing))
-
-    base = Image.open(os.path.join(folder, "template.png")).convert("RGBA")
-    veil = Image.new("RGBA", base.size, (246, 241, 231, 150))
-    page = Image.alpha_composite(Image.alpha_composite(base, veil), preview)
-    page.alpha_composite(Image.open(os.path.join(folder, "guide-bones.png")).convert("RGBA"))
-    page.save(os.path.join(folder, "parts-preview.png"), optimize=True)
-    print("wrote", len(parts), "parts to", os.path.relpath(folder))
+    write_kit(folder, folder, parts, affine, kraft)
 
 
 if __name__ == "__main__":
