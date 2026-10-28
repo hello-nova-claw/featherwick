@@ -587,7 +587,7 @@ This is not a migration: no data changes shape, so the version stays the same.
 Loading a slot is one function, `SaveStore.load()`, shared by the CLI and the app (#59). It returns the
 save and a `Recovery`, and the front end only turns the `Recovery` into words (`recoveryText`, `SaveWords`):
 
-- `loaded`: the main save loaded.
+- `loaded`: the main save loaded, and no backup is from a newer game.
 - `noSave`: the slot is empty. A new game starts.
 - `restoredFromBackup`: the main save is missing. The newest backup that loads is used.
 - `unreadable(keptAs:restoredFromBackup:)`: the main save cannot be read. It is moved aside, never

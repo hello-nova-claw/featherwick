@@ -92,12 +92,13 @@ public struct SaveStore: Sendable {
     /// unreadable save with no good backup.
     public func load() -> (save: SaveGame?, recovery: Recovery) {
         let main = attempt(url)
-        if case .loaded(let save) = main { return (save, .loaded) }
         let backups = backupCount > 0 ? (1...backupCount).map { attempt(backupURL($0)) } : []
-        // Checked before any quarantine, so a newer game's files stay exactly as they are.
+        // Checked before anything loads or moves: even with a good main save, the next write would rotate a
+        // newer backup out. So a newer game's files stay exactly as they are.
         if let version = ([main] + backups).compactMap(\.tooNewVersion).max() {
             return (nil, .tooNew(version: version))
         }
+        if case .loaded(let save) = main { return (save, .loaded) }
         let restored = backups.lazy.compactMap(\.save).first
         if case .missing = main { return (restored, restored == nil ? .noSave : .restoredFromBackup) }
         return (restored, .unreadable(keptAs: quarantine(), restoredFromBackup: restored != nil))
