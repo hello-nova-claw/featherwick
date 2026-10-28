@@ -78,6 +78,16 @@ import UniformTypeIdentifiers
         #expect(PartKit.kit(for: hen) === PartKit.load(.hen))
     }
 
+    /// hen-b pecks by tipping her body, with her lower neck nearly in line with it: a neck that turns far
+    /// against the body lifts its base out of her back line.
+    @MainActor @Test func henBPecksWithHerNeckInLine() {
+        PartKit.reload()
+        guard let henB = PartKit.load(.henB) else { return }
+        let bottom: ChickenPose = ChickenMotion.peck(henB.rig, progress: 0.5)
+        #expect(abs(bottom[.neckLow]) < 30)
+        #expect(bottom[.body] >= 45)
+    }
+
     /// Chicks keep the path rig, and so does a bird whose body shape has no kit.
     @MainActor @Test func chicksAndKitlessBuildsUseThePathRig() {
         PartKit.reload()
