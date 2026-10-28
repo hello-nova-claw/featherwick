@@ -11,8 +11,11 @@ PNG per part, in colour. The fit folder holds `fit.json` with the joints, in the
    that part is), so a part that turns never shows a gap. A part the slices already run on under (the body
    under the neck, tail and thighs) keeps its own paint there.
 3. Gives each part in `round` a rounded end: an arc round its joint, edge to edge, from the part behind.
-4. Gives each part in `caps` a disc round its joint, cut to the bird's outline at rest, as the hen fit does.
-5. Writes the kit:
+4. Cuts each part in `limbs` down to a rounded drumstick along its bone, and gives what lay outside it to a
+   part that does not turn with the leg. Gives each part in `knobs` a round end at its joint.
+5. Gives each part in `caps` a disc round its joint, cut to the bird's outline at rest, as the hen fit does.
+6. With `feather`, softens every edge inside the bird, so where one part turns over another no hard line shows.
+7. Writes the kit:
    - parts/<name>.png         grey value (the game adds the colour) and alpha coverage
    - parts/kit.json           the skeleton fit's kit.json, with this fit's build, draw order and motion
    - parts-preview.png        every part in colour, the bands and caps shown faintly behind
@@ -60,6 +63,18 @@ def disc(centre, r, shape):
     ys, xs = np.ogrid[: shape[0], : shape[1]]
     d = np.hypot(xs - centre[0], ys - centre[1])
     return np.clip(r + 1.5 - d, 0, 1)
+
+
+def segment(a, b, shape):
+    """Each pixel's distance to the segment a-b, and how far along it (0 at a, 1 at b) its nearest point is."""
+    ys, xs = np.ogrid[: shape[0], : shape[1]]
+    vx, vy = b[0] - a[0], b[1] - a[1]
+    t = np.clip(((xs - a[0]) * vx + (ys - a[1]) * vy) / (vx * vx + vy * vy), 0, 1)
+    return np.hypot(xs - (a[0] + t * vx), ys - (a[1] + t * vy)), t
+
+
+def blur(mask, r):
+    return np.asarray(Image.fromarray((mask * 255).astype("uint8")).filter(ImageFilter.GaussianBlur(r))) / 255
 
 
 def main(folder):
@@ -138,14 +153,61 @@ def main(folder):
         cover[name] |= take
         print("round end: %s, %.0f px round %s" % (name, radius, end["joint"]))
 
-    alpha = {n: np.asarray(Image.fromarray((cover[n] * 255).astype("uint8")).filter(
-        ImageFilter.GaussianBlur(SOFT))) / 255 for n in order}
+    # A limb: a wide band of thigh fluff turned with the leg swings its far ends out of the outline. So the
+    # part keeps only a drumstick round its bone, from its joint (`from`) to the next one down (`to`), `top`
+    # canvas pixels each side at the top and `bottom` at the bottom, with round ends. The drumstick runs up
+    # inside the body to the hip, so its top turns out of sight. The whole band also goes to `rest`, a part
+    # that does not turn with the leg: it stays put, and the drumstick swings over it with no hole behind.
+    for name, limb in sl.get("limbs", {}).items():
+        d, t = segment(canvas(bones["joints"][limb["from"]]), canvas(bones["joints"][limb["to"]]), shape)
+        core = d <= limb["top"] + (limb["bottom"] - limb["top"]) * t
+        rest = limb["rest"]
+        band_only = solid[name] & ~solid[rest]
+        colour[rest][band_only] = colour[name][band_only]
+        solid[rest] |= solid[name]
+        cover[rest] |= cover[name]
+        solid[name] &= core
+        cover[name] = core
+        print("limb: %s, %s to %s, the rest to %s" % (name, limb["from"], limb["to"], rest))
+
+    # A knob: a leg part's top becomes a disc round its joint, `radius` canvas pixels, so as the joint bends
+    # the top turns on itself and no corner shows. Its paint above the joint, outside the disc, goes. (A leg
+    # part hangs down from its joint, so "above" is up the canvas.)
+    rows = np.arange(shape[0])[:, None]
+    for name, knob in sl.get("knobs", {}).items():
+        jx, jy = canvas(bones["joints"][knob["joint"]])
+        ball = disc((jx, jy), knob["radius"], shape) > 0.5
+        cut = (rows < jy) & ~ball
+        solid[name] &= ~cut
+        cover[name] = (cover[name] & ~cut) | ball
+        print("knob: %s, %d px round %s" % (name, knob["radius"], knob["joint"]))
+
+    # Under a soft join the part behind must stay solid, or two half-clear edges leave a light line: each
+    # part runs on `feather` canvas pixels under every part in front of it.
+    feather = sl.get("feather", 0)
+    if feather:
+        for i, back in enumerate(order[:-1]):
+            front = np.maximum.reduce([cover[n] for n in order[i + 1:]])
+            cover[back] |= dilate(cover[back], feather) & front
+
+    alpha = {n: blur(cover[n], SOFT) for n in order}
 
     # 3. Joint caps, cut to the outline at rest.
     outline = np.maximum.reduce([alpha[n] for n in order])
     for name, cap in sl.get("caps", {}).items():
         d = disc(canvas(bones["joints"][cap["joint"]]), cap["radius"] * k, shape) * outline
         alpha[name] = np.maximum(alpha[name], d)
+
+    # Soft joins: inside the bird, each part's edge fades over about `feather` canvas pixels, so where one
+    # part turns over another no hard line or step shows. Near the bird's outline at rest the edge stays as
+    # crisp as the slice, and so do the parts in `crisp` (a comb or wattle is drawn with a hard edge).
+    if feather:
+        bird = np.maximum.reduce([cover[n] for n in order])
+        crisp = blur(dilate(~bird, feather), feather / 2)
+        for n in order:
+            if n in sl.get("crisp", []):
+                continue
+            alpha[n] = alpha[n] * crisp + blur(cover[n], feather / 2) * (1 - crisp)
 
     # Where a band or a cap adds paint, it takes the slices' own paper there (whichever slice shows at that
     # spot), so it keeps the texture; outside every slice, the part's mean colour.
