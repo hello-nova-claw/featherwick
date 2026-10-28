@@ -4,7 +4,7 @@ import Testing
 @testable import FeatherwickCore
 
 /// The four village days: dates, the Hatch-along egg and chick, the Longest Day's quiet night, and the
-/// Moult Week and Midwinter Lights gifts. See README "The village calendar".
+/// Moult Week and Midwinter Lights gifts. See "The village calendar" in docs/design.md.
 struct VillageDayTests {
     static func game(seed: UInt64 = 5, rules: Rules = calmRules()) -> (GameState, SeededRNG) {
         var r = rules
@@ -59,7 +59,7 @@ struct VillageDayTests {
             if case .hatchAlongChickArrived(let id) = e { id } else { nil }
         }
         #expect(arrived.count == 1)
-        let chick = try? #require(s.brooder.first { !brooder.contains($0.id) })
+        let chick = s.brooder.first { !brooder.contains($0.id) }
         #expect(chick?.id == arrived.first)
         // A new chick: a surprise starter breed, its sex and breed not yet shown, waiting for a name.
         #expect(chick.map { Breed.starters.contains($0.breed) } == true)

@@ -1,7 +1,28 @@
-# Opens a PR when a GitHub Action used in .github/workflows has a new version.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 2
+    # No player sees a dependency update, so these never need a changelog fragment.
+    labels: [dependencies, no-changelog]
+    commit-message:
+      prefix: "Build/Test Tools:"
+    groups:
+      actions-minor-patch:
+        update-types: [minor, patch]
+
+  # No Swift packages today; this watches Package.swift for when one is added.
+  - package-ecosystem: swift
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 2
+    # No player sees a dependency update, so these never need a changelog fragment.
+    labels: [dependencies, no-changelog]
+    commit-message:
+      prefix: "Build/Test Tools:"
+    groups:
+      swift-minor-patch:
+        update-types: [minor, patch]

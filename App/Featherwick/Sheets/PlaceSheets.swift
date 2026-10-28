@@ -14,11 +14,23 @@ struct CoopSheet: View {
     /// The eggs the player has tapped. Hatch and sell act on exactly these.
     @State private var selected: Set<UUID> = []
 
-    enum EggFilter: Hashable { case all, fertile, clear, notCandled }
+    enum EggFilter: Hashable {
+        case all, fertile, clear, notCandled
+
+        /// Fertile and clear show only what candling has found out; an uncandled egg is neither yet.
+        func matches(candled: Bool, fertile: Bool) -> Bool {
+            switch self {
+            case .all: true
+            case .fertile: candled && fertile
+            case .clear: candled && !fertile
+            case .notCandled: !candled
+            }
+        }
+    }
 
     var body: some View {
         let s = store.state
-        let shown = s.carton.filter(matches)
+        let shown = s.carton.filter { filter.matches(candled: $0.isCandled, fertile: $0.isFertile) }
         SheetPage(context: "From the nest boxes") {
             Text("Today's eggs").font(Typeface.title)
             if !s.nest.isEmpty {
@@ -64,15 +76,6 @@ struct CoopSheet: View {
             }
         }
         .presentationDetents([.large])
-    }
-
-    private func matches(_ egg: Egg) -> Bool {
-        switch filter {
-        case .all: true
-        case .fertile: egg.isCandled && egg.isFertile
-        case .clear: egg.isCandled && !egg.isFertile
-        case .notCandled: !egg.isCandled
-        }
     }
 
     private func eggDetail(_ egg: Egg, _ s: GameState) -> some View {

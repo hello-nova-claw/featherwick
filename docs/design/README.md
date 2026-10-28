@@ -8,9 +8,7 @@ This package covers the **menu layer only**: type, colour, spacing, components, 
 Architecture: **SwiftUI menus over a SwiftUI farm scene** (the 2.5D scene with a Metal colour shader, see Farm scene). The farm is 4 painted panels side by side; swipe left or right between them. Left to right: Barn (Coop), Yard (Yard), Far yard (Back fence), Shop (Farm gate). The game opens on the Yard. Each place opens a SwiftUI bottom sheet. The tokens and components are built in `App/Featherwick/Design/`.
 
 ## About the design files
-The `.dc.html` file in this bundle is a **design reference built in HTML**. It is not production code. Recreate the designs natively in **SwiftUI** using its own patterns (`.sheet` with `presentationDetents`, `Font.custom(_:size:relativeTo:)`, colour tokens with day and night values, and so on). Do not embed the HTML.
-
-Open `Featherwick UI System v4.dc.html` in a browser; it renders on its own. It is a single scrolling canvas with: intro, Pigments (colour), Type, Marks & components, Screens (1a, 1b, 2a, 2b) and Screens continued (3a–8a).
+This file and `screenshots/` are the design reference. The design was drawn as an HTML canvas in a design tool. That canvas is not in the repository, because the tool's runtime has no licence to publish it. Build the designs natively in **SwiftUI** with its own patterns (`.sheet` with `presentationDetents`, `Font.custom(_:size:relativeTo:)`, colour tokens with day and night values, and so on).
 
 ## Fidelity
 **High fidelity** for colour, type, spacing, radii, line styles and layout. Treat hex values, sizes and spacing as final.
@@ -427,7 +425,5 @@ The designers' model. The app reads Core's `GameState` instead.
 - **Sounds:** none yet. `App/Featherwick/Sounds/README.md` lists the files to add.
 
 ## Files
-- `Featherwick UI System v4.dc.html`: **the current design.** Open it directly in a browser.
 - `screenshots/`: one PNG per mocked screen (1a, 1b, 2a, 2b, 3a, 4a, 4b, 5a, 6a, 7a, 8a), named to match the screen IDs above. Screens 4c–4e and 9a have none.
-- `support.js`: runtime needed to open the `.dc.html` file. It is not part of the design.
 - In the app: tokens in `App/Featherwick/Design/Theme.swift`, components in `Design/Components.swift` and `Design/Marks.swift`, screens in `Farm/` and `Sheets/`.

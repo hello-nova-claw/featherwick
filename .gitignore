@@ -8,3 +8,16 @@ featherwick-save*.json
 .claude/
 # iOS app: generated project and personal signing settings
 App/Config/Local.xcconfig
+# Signing material, keys and local secrets: these live only in the keychain or in repo secrets
+*.p12
+*.cer
+*.p8
+*.pem
+*.key
+*.mobileprovision
+*.provisionprofile
+AuthKey_*.p8
+GoogleService-Info.plist
+.env
+.env.*
+!.env.example

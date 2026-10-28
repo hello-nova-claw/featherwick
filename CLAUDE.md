@@ -3,8 +3,17 @@
 Featherwick: a cozy chicken-keeping game with real chicken genetics. Swift 6 package.
 Game logic first. The iOS app (`App/`, SwiftUI) uses the same core. Its art comes later.
 
-`README.md` is the full design doc (genes, breeds, shows, storylines, night order). Read the
-section for the system you change. Keep it current: a change to behaviour updates its README section.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before any change. It holds the process, commit style, code, test,
+localisation and accessibility rules, and this file does not repeat them.
+
+`docs/design.md` is the design record. Section 2 holds the design principles: they are not negotiable.
+Section 4 records rejected options. The rest is the design of each system (genes, breeds, shows,
+storylines, night order). `docs/design/README.md` is a different file: the UI system spec (tokens,
+screens, the farm scene, painted parts, the frame budget). Each path below names the one it means. Read the section for the system you change. Keep it current: a change to
+behaviour updates its section.
+
+**The repository is public.** Nothing secret or personal goes into an issue, a pull request, a commit
+message, a comment or a file: no keys, no team IDs, no email addresses, no private links, no personal notes.
 
 ## Commands
 
@@ -24,7 +33,7 @@ The CLI writes `featherwick-save*.json` in the current folder (git-ignored). Do 
 | Path | What |
 | --- | --- |
 | `Sources/FeatherwickCore` | Pure game logic. All rules live here. |
-| `Sources/FeatherwickText` | The words players read (events, screens, milestones). Shared by CLI and app. `People.swift`: Hazel (neighbour), Wren (shop), the day-1 welcome and tour. `VillageText.swift`: every person's name and about line, choices, loans, debts, the post, the calendar. `VillagePeopleText.swift`: the arcs of Dot, Teddy, Mr Okafor and Bea. `MarketText.swift`: the market board. `Text.swift`: `eventText`, `storyText`, `milestoneText`, `introducedText`, `notYetText`. Also `NotesText`, `CalendarText`, `PlannerText`, `InheritanceText`, `RecordsText`, `BreedLore`. |
+| `Sources/FeatherwickText` | The words players read (events, screens, milestones). Shared by CLI and app. Each is a keyed `String(localized:)`; `Resources/Localizable.xcstrings` is the catalog (`bin/sync-strings` updates it), `Localized.swift` the Linux stand-in. `People.swift`: Hazel (neighbour), Wren (shop), the day-1 welcome and tour. `VillageText.swift`: every person's name and about line, choices, loans, debts, the post, the calendar. `VillagePeopleText.swift`: the arcs of Dot, Teddy, Mr Okafor and Bea. `MarketText.swift`: the market board. `Text.swift`: `eventText`, `storyText`, `milestoneText`, `introducedText`, `notYetText`. Also `NotesText`, `CalendarText`, `PlannerText`, `InheritanceText`, `RecordsText`, `BreedLore`. |
 | `Sources/FeatherwickCLI/main.swift` | Thin text front end. Parses input, prints text. No rules, no words. |
 | `App/` | iOS test app (SwiftUI, no art yet). `project.yml` is the XcodeGen spec. |
 | `Tests/FeatherwickCoreTests` | One suite per system. `Fixtures/save-v0.json` is a real old save. |
@@ -90,6 +99,21 @@ components, screens 1a–9a). The painted farm and bird art come later; dashed b
   A new `GameEvent` needs a group in `MorningReport.group(of:)`. Settings has a switch (on by default).
 - Day or night follows game time, not the device clock, via `\.palette`. Morning and afternoon are day. Evening starts a 30-minute crossfade to night. Night lasts from Sleep until the morning report (or the farm) shows. Settings ▸ Time of day (`TimeOfDayPin`: Game, Day, Night) pins day or night for testing.
 - Fonts (Libre Caslon Display/Text, Figtree; OFL) are bundled in `Fonts/` and registered at launch.
+- UI tests (`App/FeatherwickUITests/`, XCTest) launch the app with `-uiTestState fresh|farm` (and
+  `-uiTestSeed`), which `UITestLaunch` turns into a known game on an empty save folder, Debug builds only.
+  `AccessibilityAuditTests` audits these screens four ways: welcome, the starter choice, the tour, the four
+  farm panels, the four place sheets, the market board, Books, Today and Settings. One exception: the Yard
+  sheet is not audited with doubled strings. With doubled strings the sheet stalls (#97). #98 adds the rest: the
+  bird card, the morning report, the breeding pen, show day, Books ▸ People and the village sheets.
+  - Find buttons by label prefix, not exact label. Doubled strings read "Settings Settings".
+  - `Farm.button` takes the first match. Where two controls share a prefix, use the helper for each.
+  - Use `Farm.placeButton` for the Yard place button.
+  - Use `Farm.show(panel:in:)` for a rail dot, including the Yard's.
+  - Move between panels with the rail dots, not swipes. Swipes go the other way right to left.
+  - The four variants take about 4 minutes in total. With two simulator runs at once, they take about 30 minutes.
+  - `ScreenshotTests` shoots the catalogue. `bin/screenshots-export` names the shots from the result bundle.
+    `bin/compare-screenshots` lists what changed.
+  - The shared helpers (launch, rail dots, label-prefix buttons) are in `UITestSupport.swift`.
 - ≡ → "Open test tools" shows the old plain screens (`TestTools/`), with every action and the full log.
 - `Beta/`: TestFlight questions after the first hatch and the first show (once per save slot). Compiled only with the `BETA` flag (Beta config, "Featherwick Beta" scheme) or `DEBUG`, and shown only on a sandbox receipt. Answers go to `beta-notes.json` (not the save); Settings ▸ Share beta notes.
 
@@ -103,14 +127,15 @@ open Featherwick.xcodeproj
   (Application Support, same `SaveStore` as the CLI).
 - Views only send commands and show state. No game rules in the app.
 - To run on a device: copy `App/Config/Local.xcconfig.example` to `Local.xcconfig` and set your team ID.
-- CI builds the app in `apple.yml` (on `main`, or run it by hand).
+- CI builds and tests the app in `ios.yml` on every pull request (see Workflow).
 
 ## Core rules (do not break)
 
 1. **Core is pure.** No `print`, no input, no `Date()`/system clock, no `Int.random()` without
    `using:`. All randomness comes from the `SeededRNG` passed in. Same seed = same game.
 2. **Command in, events out.** The engine returns IDs and enums only. Words for the player live in
-   `FeatherwickText`. A new event or error needs its words in `eventText` (`Text.swift`).
+   `FeatherwickText`. A new event or error needs its words in `eventText` (`Text.swift`). Every new word is a keyed
+   `String(localized:)` (CONTRIBUTING, Localisation); run `bin/sync-strings` and commit the catalog.
 3. **Tunable numbers go in `Rules`**, never as literals in logic.
 4. **Append, never insert,** to `Loci`, `BreedTable.all`, `Storylines.all` and `Milestones.all`.
    Seeded breeding draws in list order; an insert changes every existing seed.
@@ -118,7 +143,7 @@ open Featherwick.xcodeproj
    - A new `GameState` or `Rules` field needs a starting value in `SaveFormat.fillNewSettings`.
    - A new gene needs no migration: missing genes are the default allele.
    - A change to the shape of existing data needs a new step in `SaveFormat.migrations`.
-6. **Cozy design.** No death, no lethal genes, every egg hatches, the fox scares and never kills,
+6. **Cozy design.** No death, no lethal genes, every fertile egg hatches, the fox scares and never kills,
    milestones are reached and never failed, neglect never lowers tameness.
 7. **Genetics stay real.** A bird's colour comes from its genes (`Phenotype`), never from a variety
    name. `GeneticsRealismTests` must pass.
@@ -127,7 +152,7 @@ open Featherwick.xcodeproj
 
 ## Adding content
 
-Most new content is a table entry. See README "Data layer" and the feature sections.
+Most new content is a table entry. See "Data layer" and the feature sections in `docs/design.md`.
 
 - Breed: a `BreedDefinition` in `BreedTable.all` (status `.planned` until art is ready) + a static id on `Breed`.
 - Colour: a `ColourVariety`, then list it on its breeds.
@@ -140,7 +165,7 @@ Most new content is a table entry. See README "Data layer" and the feature secti
   choice option's words in `choiceText` (`VillageText.swift`).
 - Note: a `Note` at the end of `Notes.added`, the last list in `Notes.pool` (with its `NoteCondition`) + its words in `poolNoteText` (`NotesText.swift`).
 - Milestone: a `Milestone` in `Milestones.all` (order = ladder) + its words in `milestoneText`.
-- Night step: add it to `passNight` in order and update the "Night order" line in README.
+- Night step: add it to `passNight` in order and update the "Night order" line in `docs/design.md`.
 - Early-game step: a `Feature` case (timeline order), its day in `Rules.featureDays`, its gate in
   `Engine.feature(for:)`, and its words in `introducedText` and `notYetText`. Tests that are not about
   the timeline start with `Engine.newGame(earlyGame: false)` (see `startedGame`).
@@ -148,15 +173,92 @@ Most new content is a table entry. See README "Data layer" and the feature secti
 ## Workflow
 
 - Add or update tests in the matching suite for each change. Run `swift test` before a commit.
-- CI (`.github/workflows/swift.yml`) runs on Linux (`swift:6.0-noble`) for every pull request
-  and push to `main`: build with warnings as errors, tests, then the format check. Code must build on Linux too: no
-  Apple-only APIs in Core. Fix warnings; do not silence them.
-- `.github/workflows/apple.yml` builds and tests on macOS, builds the core for iOS, and builds the iOS app and its tests. It runs on
-  `main` only (macOS minutes cost 10x); run it by hand before merging a change to platform code.
-- Dependabot (`.github/dependabot.yml`) opens weekly PRs for new GitHub Action versions.
+- CI runs on Linux (`swift:6.0-noble`, or plain Ubuntu) for every pull request and push to `main`.
+  Code must build on Linux too: no Apple-only APIs in Core. Fix warnings; do not silence them.
+  - `swift.yml`, "Build and test (Linux)": build with warnings as errors, tests with coverage, and
+    `bin/coverage-gate` against `.github/coverage-baseline`.
+  - `checks.yml`: "swift-format", "SwiftLint" (with the colour, font-size and print rules), "Use what Apple
+    already has" (`bin/check-native`, the package allowlist),
+    "Licence files intact" (`bin/check-licences`), "Gitleaks", "actionlint".
+  - `pull-request.yml`: "Tests change with code", "Changelog fragment" (passes with `no-changelog` when no fragment is added).
+  - Job names are the required checks on `main`. Never rename one.
+- `.github/workflows/ios.yml` runs on macOS for every pull request and push to `main`:
+  - "iOS tests (latest)": macOS 15, Xcode 26.3, an iPhone 17 Pro it creates on the newest iOS runtime. The app's tests with coverage,
+    `bin/coverage-gate` against `.github/coverage-baseline-app`, and the simulator `.app` as an artifact.
+  - "iOS tests (iOS 17)": macOS 15, Xcode 16.4, iPhone 15 on iOS 17.5, the minimum supported version. The
+    macOS 14 image (the last with an iOS 17 simulator) retires on 2 November 2026, so the job downloads
+    the iOS 17.5 runtime from Apple on each run.
+  - `build-preview.yml` then comments on the pull request with how to install that `.app`. It runs from
+    `main`'s copy after the iOS workflow, never runs pull request code, and skips forks.
+- Dependabot (`.github/dependabot.yml`) opens weekly PRs for GitHub Actions and Swift packages.
+- At release time, follow `docs/release-checklist.md`; `bin/changelog` folds `changelog/*.txt` into `CHANGELOG.md`.
 - After a `Rules` balance change, run `sim` and check `SimulationTests` still pass.
 - Prefer the standard library: `count(where:)`, tuple compares for sort tie-breaks, Hashable
   structs (not joined strings) as dictionary keys. A ranked enum with String raw values conforms
   to `CaseOrdered` instead of writing its own `<`.
 - Code style: short doc comments in plain English that say *why*. Match the file you are in.
-- Docs (README, this file) use Simplified Technical English: short sentences, one idea each.
+- Docs (`docs/design.md`, CONTRIBUTING, this file) use Simplified Technical English: short sentences, one idea each.
+
+## How it fits together
+
+- **The loop.** A front end sends a `Command`. `Engine.apply` changes `GameState` and returns `GameEvent`s.
+  The front end turns events into words with `FeatherwickText`. The keeper's day is a few slots of care
+  and errands; `.passNight` runs the night steps in order and starts the next day.
+- **The app.** `GameStore` owns the state and the `SeededRNG`. `GameStore.run` applies a command, logs
+  the words, plays feedback, builds the morning report after `.passNight`, and saves. Views read
+  `GameStore` and send commands; nothing else changes state.
+- **Saves.** `SaveStore` writes a slot atomically with rolling backups and quarantines an unreadable
+  file. `SaveFormat` versions and migrates. The CLI saves in the current folder; the app in
+  Application Support.
+- **Scenes.** `FarmView` holds four panels. The Yard and Far yard draw `FarmScene` (depth from ground Y,
+  the walk mask, the season shader) with `YardScene` birds on `ChickenSkeleton`. Scene numbers live in
+  `Scene/SceneConstants.swift`; game numbers live in `Rules`.
+
+## Running checks locally
+
+```sh
+swift build --build-tests -Xswiftc -warnings-as-errors
+swift test                                   # about 7 minutes; the simulation tests are slow
+swift test --filter VillageDayTests          # one suite
+swift test --filter "ShowTests/standardsListTheBreedsOwnColours"  # one test
+swift format --in-place --recursive Package.swift Sources Tests App && git diff --exit-code   # from a clean tree
+swiftlint lint --strict --baseline .swiftlint-baseline.json
+bin/check-native && bin/check-licences
+cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Featherwick \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' CODE_SIGNING_ALLOWED=NO \
+  -only-testing:FeatherwickTests/PartKitTests
+```
+
+## Traps
+
+- **Newer Swift finds new warnings.** CI builds with Swift 6.0. Xcode's newer Swift (6.4 on 25 October
+  2026) flags `#require` calls in `VillageDayTests` and others as redundant, so a local
+  `-warnings-as-errors` build fails where CI passes. Fix such warnings in their own pull request; do
+  not change the CI toolchain to hide them.
+- **Worktrees.** Worktrees live under `.claude/worktrees/`, and `.claude/` is git-ignored. No lint or
+  format config may exclude `.claude/`: every check is given explicit paths (`Sources Tests App`),
+  so it reads the worktree's own files. Run checks from inside the worktree, not the main checkout.
+- **A worktree has its own `.build/`.** The first build in a new worktree takes several minutes.
+- **The Xcode project is generated.** Run `xcodegen` again after any change to `App/project.yml` or a
+  new folder under `App/`.
+
+## Pull requests
+
+- Every PR needs an issue with all five template fields, a branch named `<issue>-<slug>`, and a changelog
+  fragment `changelog/<issue>-<slug>.txt`, or the `no-changelog` label for docs and tooling only.
+- Commits use the repo-local Novaclaw git identity, in WordPress core style (see CONTRIBUTING.md).
+- CodeRabbit's approval is the required review. It allows about 10 reviews an hour per repository, so
+  batch fixes into one push. When it says "Review paused", comment `@coderabbitai resume`, then
+  `@coderabbitai review`.
+- Auto-merge (`gh pr merge <n> --auto --merge`) can land a PR while you are still fixing it. Run
+  `gh pr view <n> --json state` and confirm it is `OPEN` before every push to its branch.
+- Merge `main` into a branch only when it conflicts (GitHub says DIRTY). Being behind is not a reason:
+  every push dismisses the approval and restarts CI. Don't rebase.
+- Each push queues every CI job. GitHub Free runs 20 jobs at once, only 5 of them on macOS. A push queues
+  2 macOS jobs (the two iOS tests), plus Screenshots when it touches UI. So keep at most 2 open PRs that
+  touch the app; Linux-only PRs (docs, Core, tooling) are not limited by the macOS slots.
+- When several sessions work at once, give each a lane: an ordered list of issues in one area, one PR
+  at a time, so they never edit the same files.
+- Only `main` is protected. Never enable auto-merge on a PR whose base is another feature branch: it
+  merges into that base at once.
+- Never enable auto-merge on a PR from outside. Outside PRs wait for the maintainer.

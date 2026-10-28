@@ -1,0 +1,130 @@
+name: Screenshots
+
+# Shoots the screenshot catalogue for main and for the pull request, and lists what changed. It only reads:
+# the comment is posted by screenshots-comment.yml, which runs no pull request code. A visual change never
+# fails this check. It runs only when UI or asset paths change, to keep the macOS slots free.
+on:
+  pull_request:
+    paths:
+      - "App/Featherwick/**"
+      - "App/FeatherwickUITests/**"
+      - "App/project.yml"
+      - "Sources/FeatherwickText/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODEGEN_VERSION: 2.46.0
+  XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
+  SMALL: iPhone 16e
+  LARGE: iPhone 17 Pro Max
+
+jobs:
+  shots:
+    name: Screenshots
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      # The pull request's own commit, not the merge GitHub makes by default: the comment names this commit.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: head
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+      - name: Select Xcode 26.3
+        run: sudo xcode-select -s /Applications/Xcode_26.3.app
+      - name: Install XcodeGen
+        run: |
+          curl -fsSL -o xcodegen.zip "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
+          echo "${XCODEGEN_SHA256}  xcodegen.zip" | shasum -a 256 -c -
+          unzip -q xcodegen.zip -d "$RUNNER_TEMP" && rm xcodegen.zip
+          echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
+      # Our own devices on the newest runtime this Xcode can run, by ID: a named device can vanish when GitHub
+      # updates the image. Their names are the device part of each shot's file name.
+      - name: Create a small and a large iPhone, with a fixed status bar
+        run: |
+          sdk=$(xcrun --sdk iphonesimulator --show-sdk-version)
+          runtime=$(xcrun simctl list runtimes -j | SDK="$sdk" python3 -c 'import json, os, sys; v = lambda s: [int(x) for x in s.split(".")]; rs = [r for r in json.load(sys.stdin)["runtimes"] if r["platform"] == "iOS" and r["isAvailable"] and v(r["version"]) <= v(os.environ["SDK"])]; print(max(rs, key=lambda r: v(r["version"]))["identifier"])')
+          echo "Runtime: $runtime"
+          for kind in SMALL LARGE; do
+            device=$(xcrun simctl create "${!kind}" "${!kind}" "$runtime")
+            echo "${kind}_ID=$device" >> "$GITHUB_ENV"
+            xcrun simctl boot "$device"
+            xcrun simctl bootstatus "$device" -b
+            xcrun simctl status_bar "$device" override --time 9:41 --dataNetwork wifi --wifiMode active \
+              --wifiBars 3 --cellularMode active --cellularBars 4 --batteryState charged --batteryLevel 100
+          done
+      - name: Shoot main, then this pull request
+        run: |
+          # The scripts that read the shots come from main, so a pull request cannot change how its own
+          # shots are judged. The first pull request with a catalogue has none on main, so it uses its own.
+          tools=base/bin
+          [ -x "$tools/screenshots-export" ] || tools=head/bin
+          echo "TOOLS=$tools" >> "$GITHUB_ENV"
+          # One device at a time: two simulators at once overload the runner, and UI tests then miss taps.
+          shoot() {
+            xcodebuild test -project "$1/App/Featherwick.xcodeproj" -scheme Featherwick \
+              -destination "platform=iOS Simulator,id=${SMALL_ID}" \
+              -destination "platform=iOS Simulator,id=${LARGE_ID}" \
+              -only-testing:FeatherwickUITests/ScreenshotTests \
+              -disable-concurrent-destination-testing \
+              -derivedDataPath "build/$1" -resultBundlePath "$2" \
+              CODE_SIGNING_ALLOWED=NO -quiet
+          }
+          for side in base head; do
+            mkdir -p "shots/$side"
+            if [ ! -f "$side/App/FeatherwickUITests/ScreenshotTests.swift" ]; then
+              echo "No screenshot catalogue on $side yet."
+              continue
+            fi
+            (cd "$side/App" && xcodegen --quiet)
+            bundle="build/$side.xcresult"
+            # A run that fails is tried once more, into a new result bundle: UI tests on a busy runner can
+            # miss a tap. Shots come only from the last run, so none from a failed attempt leak in.
+            if ! shoot "$side" "$bundle"; then
+              echo "::warning::The screenshot tests failed once on $side; trying again."
+              bundle="build/$side-retry.xcresult"
+              if ! shoot "$side" "$bundle"; then
+                # The shots that were taken are still exported, compared and uploaded. The last step then
+                # fails the check. A visual change never does. -quiet hides the messages, so print them.
+                echo "::error::The screenshot tests failed twice on $side."
+                xcrun xcresulttool get test-results summary --path "$bundle" --compact || true
+                failed="${failed:+$failed }$side"
+              fi
+            fi
+            python3 "$tools/screenshots-export" "$bundle" "shots/$side"
+          done
+          echo "SHOTS_FAILED=${failed:-}" >> "$GITHUB_ENV"
+      - name: Compare
+        run: |
+          python3 "$TOOLS/compare-screenshots" shots/base shots/head shots/changes.json
+          mkdir -p upload/before upload/after
+          cp shots/changes.json upload/
+          python3 - <<'PY'
+          import json, shutil
+          c = json.load(open("shots/changes.json"))
+          for name in c["changed"] + c["removed"]:
+              shutil.copy(f"shots/base/{name}", f"upload/before/{name}")
+          for name in c["changed"] + c["added"]:
+              shutil.copy(f"shots/head/{name}", f"upload/after/{name}")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: screenshots
+          path: upload
+          retention-days: 14
+      - name: The screenshot tests ran
+        if: env.SHOTS_FAILED != ''
+        run: |
+          echo "::error::The screenshot tests failed on: ${SHOTS_FAILED}. A shot that cannot be taken fails; a visual change does not."
+          exit 1

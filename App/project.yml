@@ -88,6 +88,27 @@ targets:
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: dev.featherwick.app.tests
+  # UI tests (XCTest, which UI tests need): the accessibility audit and, later, the screenshots. They launch
+  # the app with -uiTestState, so every screen opens in a known game (App/Featherwick/UITestLaunch.swift).
+  FeatherwickUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: FeatherwickUITests
+    configFiles:
+      Debug: Config/Signing.xcconfig
+      Release: Config/Signing.xcconfig
+      Beta: Config/Signing.xcconfig
+    dependencies:
+      - target: Featherwick
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: dev.featherwick.app.uitests
+        TEST_TARGET_NAME: Featherwick
 # Shared schemes for the app. Without them, Xcode lists only the package's schemes (the
 # `featherwick` CLI among them), and running that on an iPhone fails with "not codesigned".
 # Each config is named here, because with two release-type configs XcodeGen could pick Beta for an archive.
@@ -103,6 +124,7 @@ schemes:
       config: Debug
       targets:
         - FeatherwickTests
+        - FeatherwickUITests
     profile:
       config: Release
     analyze:
