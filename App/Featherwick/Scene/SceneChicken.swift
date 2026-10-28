@@ -14,7 +14,7 @@ import SwiftUI
 struct YardScene: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.sceneMotion) private var motion
     let panel: FarmPanel
     let open: (UUID) -> Void
     /// Where each chicken in this scene is heading, so a hen's chicks can follow her.
@@ -23,7 +23,7 @@ struct YardScene: View {
     @State private var ripple: SceneRipple?
 
     var body: some View {
-        if reduceMotion {
+        if motion.isStill {
             // Nothing strolls: no clock at all.
             scene(now: nil)
         } else {
@@ -36,7 +36,7 @@ struct YardScene: View {
 
     private var spot: BirdSpot { panel == .farYard ? .farYard : .yard }
 
-    /// `now` is the stroll clock. Nil (Reduce Motion): the birds stay put.
+    /// `now` is the stroll clock. Nil (Reduce Motion, or frozen for a UI test): the birds stay put.
     private func scene(now: Date?) -> some View {
         let s: GameState = store.state
         let inside: Bool = palette.isNight || !s.coopDoorOpen
@@ -255,14 +255,14 @@ enum SceneFlock {
 /// Touch is as for every bird (`PettableBird`): tap for the card, press and rub to pet.
 struct SceneChicken: View {
     @Environment(GameStore.self) private var store
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.sceneMotion) private var motion
     let bird: Bird
     /// Rig height at full (nearest) size.
     let height: CGFloat
     let panel: FarmPanel
     let depth: SceneDepth
     let size: CGSize
-    /// Its stay on this panel. Nil with Reduce Motion: the bird stays.
+    /// Its stay on this panel. Nil in a still scene (`SceneMotion.isStill`): the bird stays.
     let stroll: Stroll?
     /// Set for a hen chick drawn with its mother: it trails her.
     let follow: ChickFollow?
@@ -332,13 +332,13 @@ struct SceneChicken: View {
         // position animates in step with the scale.
         .frame(width: box.width, height: box.height, alignment: .bottom)
         .position(x: spot.x * size.width, y: groundY - box.height / 2)
-        .task(id: Cue(reduceMotion: reduceMotion, size: size, follow: follow, ripple: ripple?.id)) { await wander() }
+        .task(id: Cue(still: motion.isStill, size: size, follow: follow, ripple: ripple?.id)) { await wander() }
         .zIndex(depth.zIndex(forGroundY: sortY * size.height))
     }
 
     /// The wander loop restarts when any of these changes (a first layout pass can be zero size).
     private struct Cue: Equatable {
-        let reduceMotion: Bool
+        let still: Bool
         let size: CGSize
         /// A weaned chick keeps its view but stops following: the loop restarts with its own stroll.
         let follow: ChickFollow?
@@ -356,9 +356,9 @@ struct SceneChicken: View {
         let colours = ChickenColours(bird: bird, state: store.state)
         // While the keeper rests, a bird standing about stops to peck: the yard moves on with the day.
         let resting: Bool = store.restSeconds != nil && activity == .idle
-        // Reduce Motion: no walk cycle or peck. A lap chicken's sit by a ripple is a pose, so it stays.
+        // A still scene: no walk cycle or peck. A lap chicken's sit by a ripple is a pose, so it stays.
         let still: ChickenActivity = activity == .sitting ? .sitting : .idle
-        let acting: ChickenActivity = reduceMotion ? still : (resting ? .pecking : activity)
+        let acting: ChickenActivity = motion.isStill ? still : (resting ? .pecking : activity)
         return AnimatedChicken(colours: colours, height: height, facingRight: facingRight, activity: acting)
             .scaleEffect(scale, anchor: .bottom)
             .frame(width: drawn.width, height: drawn.height, alignment: .bottom)
@@ -376,7 +376,7 @@ struct SceneChicken: View {
     /// One slow loop per bird. SwiftUI animates each walk, so the loop only wakes every 2–4 seconds,
     /// at the middle and end of a walk, or when it is time to set off for the next panel.
     private func wander() async {
-        guard !reduceMotion else {
+        guard !motion.isStill else {
             spot = standingSpot()
             sortY = spot.y
             activity = .idle
