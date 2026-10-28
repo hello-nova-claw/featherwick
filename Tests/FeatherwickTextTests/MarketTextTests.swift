@@ -63,6 +63,16 @@ struct MarketTextTests {
         #expect(!notYetText(.marketBoard, s).isEmpty)
     }
 
+    /// A buyer who stays one day says "1 day", not "1 days".
+    @Test func aOneDayBuyerReadsInTheSingular() {
+        var s = Self.game()
+        s.rules.marketBuyerWaitDays = 1
+        let one = eventText(.marketBuyerCame(.orpington), s) ?? ""
+        #expect(one.contains("for 1 day. (see: board)"))
+        s.rules.marketBuyerWaitDays = 2
+        #expect(eventText(.marketBuyerCame(.orpington), s)?.contains("for 2 days.") == true)
+    }
+
     /// Rule 8: the refusal for a chick is about age, and names no sex.
     @Test func theTooYoungRefusalNamesNoSex() {
         let words = eventText(.rejected(.tooYoungForCard), Self.game()) ?? ""
@@ -120,9 +130,11 @@ struct MarketTextTests {
     /// for the keeper's own card with the birds it would take.
     @Test func theBoardReadsItsRarerLines() {
         var s = Self.game()
-        s.brooder = ["Clover", "Dulcie"].map { name in
+        let ids = ["00000000-0000-0000-0000-00000000C10E", "00000000-0000-0000-0000-00000000D01C"]
+        s.brooder = zip(["Clover", "Dulcie"], ids).map { name, id in
             Bird(
-                id: UUID(), name: name, breed: .orpington, genome: Breed.orpington.purebred(.hen, variety: .buff),
+                id: UUID(uuidString: id)!, name: name, breed: .orpington,
+                genome: Breed.orpington.purebred(.hen, variety: .buff),
                 hatchDay: s.day, origin: "Speckle & Down", revealed: true)
         }
         s.coop = []

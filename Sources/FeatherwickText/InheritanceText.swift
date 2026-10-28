@@ -51,7 +51,7 @@ public func inheritanceLines(_ s: GameState) -> [String] {
     return heading + rules.map { "  " + inheritanceText($0) }
 }
 
-/// "hen × rooster → what hatches".
+/// One rule as one sentence, so a language can put the parents and what hatches in its own order.
 private func ruleText(_ hen: String, _ rooster: String, _ outcome: String) -> String {
     String(
         localized: "inheritance.rule", defaultValue: "\(hen) × \(rooster) → \(outcome)", bundle: .module,
@@ -77,14 +77,14 @@ private func colourShares(_ shares: [ColourShare], _ d: Int) -> String {
     return shares.map { someColour($0.count, d, $0.colour) }.joined(separator: ", ")
 }
 
-/// "all lavender".
+/// Its own sentence, not "all" joined to a colour: a language may agree "all" with the colour.
 private func allColour(_ c: FeatherColour) -> String {
     String(
         localized: "inheritance.allColour", defaultValue: "all \(c.rawValue)", bundle: .module,
         comment: "Books ▸ Inheritance: every chick hatches one colour. The placeholder is the colour.")
 }
 
-/// "1 in 4 splash".
+/// One sentence for the count, the whole and the colour, so a language can reorder them.
 private func someColour(_ n: Int, _ d: Int, _ c: FeatherColour) -> String {
     String(
         localized: "inheritance.someColour", defaultValue: "\(n) in \(d) \(c.rawValue)", bundle: .module,

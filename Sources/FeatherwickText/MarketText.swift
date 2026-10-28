@@ -226,11 +226,26 @@ func marketEventText(_ e: GameEvent, _ s: GameState) -> String? {
                 "s"), and the fewest and most days until a buyer comes.
                 """)
     case .marketBuyerCame(let breed):
+        let name = breed.definition.displayName
+        let days = s.rules.marketBuyerWaitDays
+        if days == 1 {
+            return String(
+                localized: "market.buyerCame.one",
+                defaultValue: """
+                    Someone saw your card at the bakery. They'd like a young \(name), \
+                    and they'll be in the village for 1 day. (see: board)
+                    """,
+                bundle: .module,
+                comment: """
+                    A buyer comes for the keeper's card and stays one day. The placeholder is the breed's name. \
+                    "board" is a CLI command.
+                    """)
+        }
         return String(
-            localized: "market.buyerCame",
+            localized: "market.buyerCame.other",
             defaultValue: """
-                Someone saw your card at the bakery. They'd like a young \(breed.definition.displayName), \
-                and they'll be in the village for \(s.rules.marketBuyerWaitDays) days. (see: board)
+                Someone saw your card at the bakery. They'd like a young \(name), \
+                and they'll be in the village for \(days) days. (see: board)
                 """,
             bundle: .module,
             comment: """
