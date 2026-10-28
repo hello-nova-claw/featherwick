@@ -29,6 +29,13 @@ import Testing
         }
     }
 
+    /// The UI test reads a bird's identifier to see how its scene moves.
+    @Test func eachMotionHasItsOwnIdentifier() {
+        #expect(SceneMotion.full.accessibilityID == "scene-motion-full")
+        #expect(SceneMotion.reduced.accessibilityID == "scene-motion-reduced")
+        #expect(SceneMotion.frozen.accessibilityID == "scene-motion-frozen")
+    }
+
     @Test func aUITestLaunchFreezesTheScene() {
         #expect(UITestLaunch.freezesScene(arguments: ["Featherwick", "-uiTestState", "farm"]))
         #expect(UITestLaunch.freezesScene(arguments: ["Featherwick", "-uiTestState", "fresh", "-uiTestSeed", "7"]))
