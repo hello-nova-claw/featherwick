@@ -429,7 +429,7 @@ extension VillageTextTests {
     static func villageWords() -> [String] {
         var out: [String] = []
         func add(_ x: String?) { out.append(x ?? "nil") }
-        var s = game()
+        let s = game()
         for p in Person.allCases { out += [People.name(p), People.about(p), People.role(p)] }
         for story in Storylines.all {
             add(storyTitle(story.id))
@@ -588,8 +588,6 @@ extension VillageTextTests {
             t.day = v.date - 1
             out += calendarLines(t, count: 1)
         }
-        _ = s.day
-        s.day += 0
         return out
     }
 }
