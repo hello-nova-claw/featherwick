@@ -102,7 +102,10 @@ cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Fea
 ## Localisation
 
 - Every word the player reads lives in `FeatherwickText`, never in `FeatherwickCore` or a view.
-- The words are moving into a String Catalog (#58). After that, every user-facing string goes in the catalog, with a translator comment on every string that has a placeholder.
+- The words live in a String Catalog, `Sources/FeatherwickText/Resources/Localizable.xcstrings`. They are moving in a file at a time (#58); a file that has moved holds no bare words.
+- Write each word as `String(localized: "area.name", defaultValue: "The English \(value)", bundle: .module, comment: "...")`. The key never changes once a word ships; the default value is the English. Every string with a placeholder has a comment that says what each placeholder is.
+- After you change the words, run `bin/sync-strings` (macOS, Xcode 26) and commit the catalog. It uses Apple's `xcstringstool` to add new keys, update changed English and drop keys the code no longer uses.
+- On Linux there is no `String(localized:)`. `Localized.swift` gives the same call there, and it returns the English. `swift build` does not compile the catalog either, so the CLI and the tests read the English default everywhere; only the app reads the catalog.
 - Never build a sentence by joining fragments. Write the whole sentence, with the values in it.
 - Numbers, dates and durations use `FormatStyle`, never hand-built strings.
 - Layouts survive right-to-left languages and strings twice as long as English.

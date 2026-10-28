@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "Featherwick",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "FeatherwickCore", targets: ["FeatherwickCore"]),
@@ -13,7 +14,8 @@ let package = Package(
         // Pure game logic. No printing, no input, no system clock, no global random.
         .target(name: "FeatherwickCore"),
         // The words players read, shared by every front end (CLI and app).
-        .target(name: "FeatherwickText", dependencies: ["FeatherwickCore"]),
+        // Its String Catalog is in Resources; Xcode compiles it for the app.
+        .target(name: "FeatherwickText", dependencies: ["FeatherwickCore"], resources: [.process("Resources")]),
         // Thin text front end over the core.
         .executableTarget(name: "FeatherwickCLI", dependencies: ["FeatherwickCore", "FeatherwickText"]),
         .testTarget(
