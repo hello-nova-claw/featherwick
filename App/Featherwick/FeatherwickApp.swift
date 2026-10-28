@@ -39,6 +39,8 @@ struct FeatherwickApp: App {
             RootView()
                 .environment(store)
                 .sceneMotion(frozen: Self.freezesScene)
+                // The system shows the home indicator in some runs and not others, which changes every shot.
+                .persistentSystemOverlays(Self.freezesScene ? .hidden : .automatic)
                 // Painted part kits load off the main thread, before the first painted bird shows.
                 .task { await PartKit.preload() }
         }
