@@ -101,9 +101,10 @@ enum Farm {
         let top = page.frame.minY
         guard top > app.frame.height / 3 else { return }
         // Drag by the distance from the sheet's top to the large detent's, so the sheet grows and the page
-        // does not scroll on past it.
+        // does not scroll on past it. Start at the middle of the sheet's top edge, by the grabber: nothing
+        // there takes a tap. Lower down, the press can land on a button (it fed the flock once).
         let origin = app.coordinate(withNormalizedOffset: .zero)
-        let startY = top + 120
+        let startY = top + 16
         let start = origin.withOffset(CGVector(dx: app.frame.midX, dy: startY))
         let end = origin.withOffset(CGVector(dx: app.frame.midX, dy: startY - (top - 70)))
         start.press(forDuration: 0.1, thenDragTo: end)
