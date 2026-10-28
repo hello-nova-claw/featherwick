@@ -96,6 +96,20 @@ struct SaveStoreTests {
         #expect(try contents(of: dir) == before)
     }
 
+    /// A good main save does not hide a newer backup: the next write would rotate that backup out.
+    @Test func aNewerBackupStopsTheLoadEvenWithAGoodMainSave() throws {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = SaveStore(directory: dir, slot: "test")
+        try sampleSave(7).write(to: store.url)
+        try SaveFormatTests.fixture("save-v99").write(to: store.backupURL(1))
+        let before = try contents(of: dir)
+        let (save, recovery) = store.load()
+        #expect(save == nil)
+        #expect(recovery == .tooNew(version: 99))
+        #expect(try contents(of: dir) == before)
+    }
+
     @Test func aGoodMainSaveLoads() throws {
         let dir = tempDir()
         defer { try? FileManager.default.removeItem(at: dir) }
