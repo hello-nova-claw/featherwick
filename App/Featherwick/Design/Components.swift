@@ -147,7 +147,7 @@ struct UnderlinedName: View {
 }
 
 /// Plain-word tabs. Selected: ink, medium, dashed underline. Unselected: muted. Each tab takes taps over
-/// its full 44pt height, not only on its letters.
+/// at least 44×44pt, not only on its letters.
 struct WordTabs<Tab: Hashable>: View {
     @Environment(\.palette) private var palette
     let tabs: [(Tab, String)]
@@ -164,13 +164,15 @@ struct WordTabs<Tab: Hashable>: View {
                         .font(selected ? Typeface.action : Typeface.body)
                         .foregroundStyle(selected ? palette.ink : palette.inkMuted)
                         .frame(minHeight: 44)
-                        .contentShape(Rectangle())
                         .overlay(alignment: .bottom) {
                             if selected {
                                 HLine().stroke(palette.ink.opacity(0.75), style: Stitch.underline)
                                     .frame(height: 2).offset(y: -8)
                             }
                         }
+                        // After the underline, so a short word such as "Day" keeps its own underline width.
+                        .frame(minWidth: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(selected ? .isSelected : [])
