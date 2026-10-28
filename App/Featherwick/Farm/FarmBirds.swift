@@ -399,6 +399,7 @@ struct BirdBlob: View {
 struct PettableBird<Art: View>: View {
     @Environment(GameStore.self) private var store
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.sceneMotion) private var motion
     let bird: Bird
     /// The drawn bird's size on screen. The touch area is at least 44 pt each way, feet at the bottom.
     let touch: CGSize
@@ -441,6 +442,7 @@ struct PettableBird<Art: View>: View {
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(bird.name)
+            .accessibilityIdentifier(motion.accessibilityID)
             .accessibilityAddTraits(.isButton)
             .accessibilityHint("Opens the bird card")
             .accessibilityAction(.default) { openCard() }

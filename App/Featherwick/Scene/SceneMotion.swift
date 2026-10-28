@@ -2,7 +2,7 @@ import SwiftUI
 
 /// How much the farm scene moves. Set once at the root (`sceneMotion(frozen:)`) and read by every view in
 /// the scene that moves on its own: the trees, the yard birds and the brooder chicks.
-enum SceneMotion: Equatable, Sendable {
+enum SceneMotion: String, Equatable, Sendable {
     /// Trees sway. Birds stroll between the yards, walk, peck, blink and glance.
     case full
     /// Reduce Motion: the trees and birds stand still. Blinks stay.
@@ -23,6 +23,9 @@ enum SceneMotion: Equatable, Sendable {
 
     /// The birds still blink now and then.
     var blinks: Bool { self != .frozen }
+
+    /// Each bird's accessibility identifier, so a UI test can see how its scene moves. VoiceOver never reads it.
+    var accessibilityID: String { "scene-motion-\(rawValue)" }
 }
 
 extension EnvironmentValues {
