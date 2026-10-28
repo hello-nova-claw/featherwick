@@ -56,6 +56,7 @@ class AccessibilityAuditTests: XCTestCase {
         for (button, screen) in [("Books", "books"), ("Today", "today"), ("Settings", "settings")] {
             Farm.button(button, in: app).tap()
             XCTAssertTrue(Farm.button("Close", in: app).waitForExistence(timeout: 5), "\(button) did not open")
+            Farm.expandSheet(app)
             try audit(app, screen: screen)
             Farm.close(app)
         }
@@ -76,6 +77,7 @@ class AccessibilityAuditTests: XCTestCase {
             if place == "Yard" && Self.variant == Farm.Language.doubled.arguments {
                 XCTContext.runActivity(named: "Skipped the Yard sheet audit with doubled strings: #97") { _ in }
             } else {
+                Farm.expandSheet(app)
                 try audit(app, screen: "place-\(Farm.slug(place))")
             }
             // The Market board opens from the farm gate.
@@ -99,9 +101,8 @@ class AccessibilityAuditTests: XCTestCase {
 
     private func audit(_ app: XCUIApplication, screen: String) throws {
         var skipped: [String] = []
-        let screenFrame = app.frame
         try app.performAccessibilityAudit(for: .all) { issue in
-            let known = Self.knownIssue(issue) ?? Self.offScreenContrast(issue, screen: screenFrame)
+            let known = Self.knownIssue(issue)
             if let known { skipped.append("\(known): \(issue.compactDescription)") }
             return known != nil
         }
@@ -126,14 +127,6 @@ class AccessibilityAuditTests: XCTestCase {
         case .textClipped, .dynamicType: "#66"
         default: nil
         }
-    }
-
-    /// Text that runs off the screen, such as the last line under a sheet's medium detent. The audit reads it
-    /// against whatever lies past the edge (the farm behind a floating sheet), not the page it sits on. Once
-    /// it scrolls into view it is measured like any other text.
-    static func offScreenContrast(_ issue: XCUIAccessibilityAuditIssue, screen: CGRect) -> String? {
-        guard issue.auditType == .contrast, let element = issue.element else { return nil }
-        return screen.contains(element.frame) ? nil : "off screen"
     }
 }
 
