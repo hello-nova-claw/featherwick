@@ -49,4 +49,10 @@ enum SceneConstants {
 
     /// A walk cut short (a ripple, a resize) eases to a stop where the bird is drawn over this long, in seconds.
     static let settleSeconds: Double = 0.15
+
+    // MARK: - Painted birds
+
+    /// The margin round a painted bird's frame where its skinned parts may bend to, in bird heights each
+    /// side. A deep peck tips the head and the tail past the frame.
+    static let skinMargin: CGFloat = 0.4
 }

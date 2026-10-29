@@ -74,6 +74,15 @@ struct KitSpec: Decodable, Sendable {
     var overlays: [String: Overlay]?
     var landmarks: [String: [Double]]?
     var motion: Motion?
+    /// The bones whose parts bend as one image (`ChickenSkin`), each with its hand-over `radius` and its
+    /// reach either side of its line (`width`), in rig units. The body is always the root. Missing: every
+    /// part turns rigidly with its bone.
+    var skin: [String: SkinReach]?
+
+    struct SkinReach: Decodable, Sendable {
+        var radius: Double
+        var width: Double
+    }
 
     /// A loose part sways at most twice the spring: more would whip.
     static let maxFollow: Double = 2
@@ -115,6 +124,16 @@ struct KitSpec: Decodable, Sendable {
             for target in overlay.on where parts[target] == nil {
                 found.append("overlay \(name) is on \(target), which is not a part")
             }
+        }
+        for (name, reach) in (skin ?? [:]).sorted(by: { $0.key < $1.key }) {
+            guard let bone = Bone(kitName: name) else {
+                found.append("skin names unknown bone \(name)")
+                continue
+            }
+            if bone == .body { found.append("skin names body, which is always its root") }
+            if skeleton.joints[bone] == nil { found.append("skin names \(name), which has no joint") }
+            if reach.radius <= 0 { found.append("skin radius of \(name) is not above 0") }
+            if reach.width <= 0 { found.append("skin width of \(name) is not above 0") }
         }
         for (name, point) in (landmarks ?? [:]).sorted(by: { $0.key < $1.key }) {
             if let problem = pointProblem(point) { found.append("landmark \(name) \(problem)") }
@@ -197,6 +216,17 @@ struct KitSpec: Decodable, Sendable {
         return SkeletonRig(joints: joints, feet: feet, motion: motion)
     }
 
+    /// How each skinned bone bends, ready for `ChickenSkin`. Unknown names are left out (`problems` names them).
+    var skinReaches: [Bone: ChickenSkin.Reach] {
+        var out: [Bone: ChickenSkin.Reach] = [:]
+        for (name, reach) in skin ?? [:] {
+            if let bone = Bone(kitName: name), bone != .body {
+                out[bone] = ChickenSkin.Reach(radius: reach.radius, width: reach.width)
+            }
+        }
+        return out
+    }
+
     /// How a part sways after its bone, ready for the skeleton. Nil: it moves with its bone exactly.
     func follow(of name: String) -> Follow? {
         guard let f = parts[name]?.follow else { return nil }
@@ -218,6 +248,10 @@ struct KitSpec: Decodable, Sendable {
 /// The colour a part takes. A kit names comb, beak, eye or legs; other parts take a feather token.
 enum KitToken: String, Sendable {
     case feathers, hackle, tail, comb, beak, eye, legs
+
+    /// A feathered part bends with its kit's skin. A comb, wattle, beak or eye stays a crisp, rigid part on
+    /// its bone, as the face of a cut-out puppet does.
+    var isFeather: Bool { self == .feathers || self == .hackle || self == .tail }
 
     /// With no token in the kit: the bare leg takes the leg token (a bird's legs follow its genes, not its
     /// feathers). That is a part on a shank or toes, or on the thigh of a one-piece leg (a kit with no shank

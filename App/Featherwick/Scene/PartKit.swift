@@ -70,14 +70,20 @@ final class PartKit: @unchecked Sendable {
     let eyeBounds: CGRect?
     /// The comb part's painted bounds, in rig units: the comb grows from their bottom centre.
     let combBounds: CGRect?
-    /// The kit's skeleton: the shared bones at this kit's joint positions (`KitSpec.skeleton`).
+    /// The kit's skeleton: the shared bones at this kit's joint positions (`KitSpec.skeleton`). It sits
+    /// with its belly (the body's lowest paint) on the ground.
     let rig: SkeletonRig
+    /// The bones that bend the soft parts as one image. Nil: every part turns rigidly.
+    let skin: ChickenSkin?
 
     private init(
         name: KitName, spec: KitSpec, folder: URL, layers: [KitLayer], lacing: CGImage?, barring: CGImage?,
-        eyeBounds: CGRect?, combBounds: CGRect?
+        eyeBounds: CGRect?, combBounds: CGRect?, belly: Double?
     ) {
-        self.rig = spec.skeleton
+        var rig: SkeletonRig = spec.skeleton
+        if let belly { rig.sitHeight = max(0, belly) }
+        self.rig = rig
+        self.skin = ChickenSkin(rig: rig, radii: spec.skinReaches)
         self.name = name
         self.spec = spec
         self.folder = folder
@@ -240,7 +246,8 @@ final class PartKit: @unchecked Sendable {
         }
         return PartKit(
             name: name, spec: spec, folder: folder, layers: layers, lacing: lacing, barring: barring,
-            eyeBounds: paintedBounds("eye"), combBounds: paintedBounds("comb"))
+            eyeBounds: paintedBounds("eye"), combBounds: paintedBounds("comb"),
+            belly: paintedBounds("body").map { Double($0.minY) })
     }
 
     /// A working-size part's painted bounds (`alphaBounds`) in rig units, origin at the bottom left.

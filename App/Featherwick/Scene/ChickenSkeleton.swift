@@ -107,6 +107,9 @@ struct SkeletonRig: Equatable, Sendable {
     /// The foot (the top of the toes) of each leg at rest. Leg targets are set for this point.
     var feet: [Leg: CGPoint]
     var motion: SkeletonMotion
+    /// How far the hip drops to sit (rig units). Nil: `sitDrop` of the hip's height (the path rig). A
+    /// painted kit sets the height of its belly, so the belly rests on the ground.
+    var sitHeight: Double? = nil
 
     /// The body's joint: the hip, where the body tilts.
     var hip: CGPoint { joints[.body] ?? .zero }
@@ -316,13 +319,13 @@ enum ChickenMotion {
         return pose
     }
 
-    /// Sitting (`amount` 1) or part way down: the hip drops by `sitDrop` of its height and the legs fold
-    /// under it, feet where they stood. A stiff leg squashes instead (see `Skeleton.transform`).
+    /// Sitting (`amount` 1) or part way down: the hip drops by `sitHeight` (or `sitDrop` of its height) and
+    /// the legs fold under it, feet where they stood. A stiff leg squashes instead (see `Skeleton.transform`).
     static func sitting(_ rig: SkeletonRig, amount: Double = 1) -> ChickenPose {
         let s: Double = min(1, max(0, amount))
         var pose = ChickenPose()
         pose.sit = s
-        pose.rise = -s * M.sitDrop * Double(rig.hip.y)
+        pose.rise = -s * (rig.sitHeight ?? M.sitDrop * Double(rig.hip.y))
         for leg in Leg.allCases {
             guard let foot = rig.feet[leg] else { continue }
             solve(leg, target: foot, curl: 0, rig: rig, pose: &pose)

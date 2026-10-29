@@ -59,15 +59,34 @@ struct PaintedChickenRig: View {
         let space = ChickenSpace(height: height)
         let eyelidAfter: String? = eyelidLayer
         ZStack {
-            ForEach(kit.layers) { layer in
-                part(layer, space)
-                    .scaleEffect(growth(layer), anchor: growthAnchor(layer))
-                    .scaleEffect(x: face(layer), y: 1, anchor: headAnchor)
-                    .riding(layer.bone, rig: kit.rig, pose: pose, height: height, follow: layer.follow)
-                if layer.id == eyelidAfter {
-                    eyelid(space)
-                        .scaleEffect(x: faceScale, y: 1, anchor: headAnchor)
-                        .riding(kit.eyelidBone, rig: kit.rig, pose: pose, height: height)
+            ForEach(runs) { run in
+                if run.skinned, let skin = kit.skin {
+                    // The run's parts, drawn at rest as one picture, then bent by the skin.
+                    ZStack {
+                        ForEach(run.layers) { layer in
+                            restPart(layer, space)
+                            if layer.id == eyelidAfter {
+                                eyelid(space).scaleEffect(x: faceScale, y: 1, anchor: headAnchor)
+                            }
+                        }
+                    }
+                    .frame(width: height * M.widthRatio, height: height)
+                    .modifier(
+                        SkinEffect(
+                            skin: skin, rig: kit.rig, follows: skinFollows,
+                            order: skin.order(drawing: run.layers.map(\.bone)),
+                            pose: pose, height: height))
+                } else {
+                    ForEach(run.layers) { layer in
+                        restPart(layer, space)
+                            .riding(layer.bone, rig: kit.rig, pose: pose, height: height, follow: layer.follow)
+                            .opacity(legShown(layer))
+                        if layer.id == eyelidAfter {
+                            eyelid(space)
+                                .scaleEffect(x: faceScale, y: 1, anchor: headAnchor)
+                                .riding(kit.eyelidBone, rig: kit.rig, pose: pose, height: height)
+                        }
+                    }
                 }
             }
             if showJoints {
@@ -80,6 +99,51 @@ struct PaintedChickenRig: View {
     }
 
     // MARK: - Parts
+
+    /// A run of layers next to each other in the draw order: all skinned (drawn bent as one picture), or all
+    /// rigid (each riding its bone). Feathers on a skinned bone are skinned; the face and legs stay rigid.
+    /// With no skin, the whole kit is one rigid run.
+    private struct LayerRun: Identifiable {
+        let id: String
+        let skinned: Bool
+        let layers: [KitLayer]
+    }
+
+    private var runs: [LayerRun] {
+        var out: [LayerRun] = []
+        for layer in kit.layers {
+            let skinned: Bool = layer.token.isFeather && (kit.skin?.skins(layer.bone) ?? false)
+            if let last = out.last, last.skinned == skinned {
+                out[out.count - 1] = LayerRun(id: last.id, skinned: skinned, layers: last.layers + [layer])
+            } else {
+                out.append(LayerRun(id: layer.id, skinned: skinned, layers: [layer]))
+            }
+        }
+        return out
+    }
+
+    /// Each skinned bone's sway: that of the first part on it that has one (the tail).
+    private var skinFollows: [Bone: Follow] {
+        var out: [Bone: Follow] = [:]
+        for layer in kit.layers {
+            if let bone = layer.bone, let follow = layer.follow, out[bone] == nil { out[bone] = follow }
+        }
+        return out
+    }
+
+    /// A part as drawn at rest, before any bone moves it: its colour, a comb's growth, a turned face.
+    private func restPart(_ layer: KitLayer, _ space: ChickenSpace) -> some View {
+        part(layer, space)
+            .scaleEffect(growth(layer), anchor: growthAnchor(layer))
+            .scaleEffect(x: face(layer), y: 1, anchor: headAnchor)
+    }
+
+    /// A sitting hen tucks her legs under her: each leg part fades as she settles, so no leg pokes
+    /// through her belly on the ground.
+    private func legShown(_ layer: KitLayer) -> Double {
+        guard layer.bone?.leg != nil else { return 1 }
+        return 1 - min(1, max(0, pose.sit))
+    }
 
     /// One part, coloured by its token. A laced or barred bird gets its overlay too, on the listed parts
     /// only, clipped to the part's own coverage. Only the overlays are masked: masking the part by its own
