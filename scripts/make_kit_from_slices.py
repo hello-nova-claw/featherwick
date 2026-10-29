@@ -75,8 +75,8 @@ def main(folder):
     # 1. Each slice on the canvas: colour, and hard coverage softened at its edge.
     colour, solid = {}, {}
     for name, p in meta["pieces"].items():
-        img = np.asarray(Image.open(os.path.join(slice_dir, name + ".png")).convert("RGBA")).astype(float)
-        rgb = np.zeros(shape + (3,))
+        img = np.asarray(Image.open(os.path.join(slice_dir, name + ".png")).convert("RGBA"))
+        rgb = np.zeros((*shape, 3), dtype=np.uint8)
         a = np.zeros(shape, bool)
         rgb[p["y"]:p["y"] + p["h"], p["x"]:p["x"] + p["w"]] = img[..., :3]
         a[p["y"]:p["y"] + p["h"], p["x"]:p["x"] + p["w"]] = img[..., 3] > 127
@@ -120,7 +120,7 @@ def main(folder):
         front, back = (donor, name) if behind else (name, donor)
         cut = dilate(solid[front], 1) & ~solid[front] & solid[back] & outside
         ys, xs = np.nonzero(cut)
-        radius = end.get("radius", np.hypot(xs - jx, ys - jy).max())
+        radius = end["radius"] if "radius" in end else np.hypot(xs - jx, ys - jy).max()
         inside = disc((jx, jy), radius, shape) > 0.5
         take = inside & solid[donor] & ~solid[name]
         if behind:
