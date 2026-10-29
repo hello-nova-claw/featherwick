@@ -99,6 +99,18 @@ import UniformTypeIdentifiers
         #expect(KitName.preloaded == KitName.all.filter { $0 != .henB })
     }
 
+    /// Drawing never reads a kit: a hen drawn before the hen kit is read gets the path rig, and the kit is
+    /// read off the main thread. Once it is in, she gets it.
+    @MainActor @Test func drawingNeverReadsAKit() async throws {
+        PartKit.reload()
+        var hen: ChickenColours = ChickenColours.sample
+        hen.isGrownHen = true
+        #expect(PartKit.kit(for: hen) == nil)
+        await PartKit.preload()
+        let henKit: PartKit = try #require(PartKit.kit(for: hen), "the hen kit does not load")
+        #expect(henKit.name == .hen)
+    }
+
     /// Chicks keep the path rig, and so does a bird whose body shape has no kit.
     @MainActor @Test func chicksAndKitlessBuildsUseThePathRig() {
         PartKit.reload()
