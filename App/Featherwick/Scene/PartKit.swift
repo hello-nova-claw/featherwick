@@ -126,6 +126,8 @@ final class PartKit: @unchecked Sendable {
         /// Kits being read off the main thread now. Every caller waits on the one read, so each kit is
         /// read once.
         @ObservationIgnored var reading: [KitName: Task<PartKit?, Never>] = [:]
+        /// Goes up on each reload, so a read started before it is thrown away.
+        @ObservationIgnored var generation: Int = 0
     }
 
     @MainActor fileprivate static let shelf = Shelf()
@@ -181,6 +183,7 @@ final class PartKit: @unchecked Sendable {
     /// Reads one kit off the main thread and shelves it.
     @MainActor private static func read(_ name: KitName) async {
         guard shelf.kits[name] == nil, !shelf.missing.contains(name) else { return }
+        let generation: Int = shelf.generation
         guard let root = partsRoot else {
             shelf.missing.insert(name)
             return
@@ -194,6 +197,7 @@ final class PartKit: @unchecked Sendable {
             shelf.reading[name] = task
         }
         let kit: PartKit? = await task.value
+        guard generation == shelf.generation else { return }
         shelf.reading[name] = nil
         guard shelf.kits[name] == nil, !shelf.missing.contains(name) else { return }
         if let kit { shelf.kits[name] = kit } else { shelf.missing.insert(name) }
@@ -208,6 +212,8 @@ final class PartKit: @unchecked Sendable {
 
     /// Forgets every kit, so the next draw reads the folders again (the rig lab's "Reload kit").
     @MainActor static func reload() {
+        shelf.generation &+= 1
+        shelf.reading = [:]
         shelf.kits = [:]
         shelf.missing = []
     }
