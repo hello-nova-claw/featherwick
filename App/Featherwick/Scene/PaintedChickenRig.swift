@@ -74,7 +74,7 @@ struct PaintedChickenRig: View {
                     .modifier(
                         SkinEffect(
                             skin: skin, rig: kit.rig, follows: skinFollows,
-                            order: skin.order(drawing: run.layers.map(\.bone)),
+                            order: skin.order(drawing: run.layers.map(\.bone)), paint: paint(of: run, space),
                             pose: pose, height: height))
                 } else {
                     ForEach(run.layers) { layer in
@@ -124,6 +124,18 @@ struct PaintedChickenRig: View {
             }
         }
         return out
+    }
+
+    /// Where a run has paint at rest, in the frame, with a margin for what grows or turns at rest (a comb, a
+    /// turned face). The whole frame if no part says.
+    private func paint(of run: LayerRun, _ space: ChickenSpace) -> CGRect {
+        let bounds: [CGRect] = run.layers.compactMap(\.bounds)
+        guard let first = bounds.first else {
+            return CGRect(x: 0, y: 0, width: height * M.widthRatio, height: height)
+        }
+        let rig: CGRect = bounds.dropFirst().reduce(first) { $0.union($1) }
+        let slack: CGFloat = SceneConstants.skinPaintSlack
+        return space.rect(rig.insetBy(dx: -slack, dy: -slack))
     }
 
     /// Each skinned bone's sway: that of the first part on it that has one (the tail).

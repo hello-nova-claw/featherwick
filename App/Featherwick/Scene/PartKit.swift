@@ -23,6 +23,8 @@ struct KitLayer: Identifiable {
     let follow: Follow?
     let lacing: Bool
     let barring: Bool
+    /// The part's painted bounds, in rig units, as `eyeBounds`. Nil: it has no paint.
+    let bounds: CGRect?
 }
 
 private let log = Logger(subsystem: "dev.featherwick.app", category: "PartKit")
@@ -239,12 +241,12 @@ final class PartKit: @unchecked Sendable {
                     id: part, image: image, token: token, tokenScale: entry.tokenScale ?? 1,
                     bone: spec.bone(of: part), follow: spec.follow(of: part),
                     lacing: overlay("lacing", isOn: part, in: spec),
-                    barring: overlay("barring", isOn: part, in: spec)))
+                    barring: overlay("barring", isOn: part, in: spec), bounds: rigBounds(of: image, in: spec)))
         }
         let lacing: CGImage? = spec.overlays?["lacing"] == nil ? nil : working("lacing.png")
         let barring: CGImage? = spec.overlays?["barring"] == nil ? nil : working("barring.png").flatMap(lightMap)
         func paintedBounds(_ name: String) -> CGRect? {
-            layers.first(where: { $0.id == name }).flatMap { rigBounds(of: $0.image, in: spec) }
+            layers.first(where: { $0.id == name })?.bounds
         }
         return PartKit(
             name: name, spec: spec, folder: folder, layers: layers, lacing: lacing, barring: barring,

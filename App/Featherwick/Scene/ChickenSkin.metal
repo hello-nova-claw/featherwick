@@ -1,8 +1,8 @@
 // Skinning for a painted kit's soft parts (see ChickenSkin.swift, which does the same maths and is tested).
 //
-// A distortion shader: for each pixel on screen it returns the place in the rest drawing to take the
-// colour from. Paint at rest point q lands at the blend of its bones' transforms of q, so the shader
-// solves that backwards with Newton steps from each bone, and keeps the start that lands nearest.
+// A layer shader: for each pixel on screen it finds the places in the rest drawing whose paint lands there.
+// Paint at rest point q lands at the blend of its bones' transforms of q, so the shader solves that
+// backwards with Newton steps from each start the CPU sends, and draws what each finds, top first.
 
 #include <metal_stdlib>
 #include <SwiftUI/SwiftUI_Metal.h>
@@ -11,6 +11,16 @@ using namespace metal;
 constant int floatsPerBone = 13;
 constant int maxBones = 6;
 constant int steps = 14;
+constant int floatsPerStart = 7;
+constant int maxStarts = 2 * maxBones;
+// As `ChickenSkin.reachSlack`.
+constant float reachSlack = 2.0;
+// As `ChickenSkin.slowStep`.
+constant float slowStep = 0.5;
+// As `ChickenSkin.landed`.
+constant float landed = 0.02;
+// As `ChickenSkin.startReach`.
+constant float startReach = 0.2;
 
 struct SkinBone {
     float2 joint;
@@ -36,8 +46,9 @@ static SkinBone readBone(device const float *skin, int i) {
     return bone;
 }
 
-/// Where the skin puts rest point `q`. Weights as `ChickenSkin.weights(at:)`.
-static float2 place(float2 q, thread const SkinBone *bones, int n) {
+/// Where the skin puts rest point `q`, and in `slope` the blend of the bones' matrices there: the slope the
+/// solve steps by. Weights as `ChickenSkin.weights(at:)`.
+static float2 place(float2 q, thread const SkinBone *bones, int n, thread float2x2 &slope) {
     float f[maxBones];
     for (int i = 0; i < n; i++) {
         if (bones[i].parent < 0) { f[i] = 1.0; continue; }
@@ -48,6 +59,7 @@ static float2 place(float2 q, thread const SkinBone *bones, int n) {
         f[i] = smoothstep(-r, r, along) * (1.0 - smoothstep(bones[i].width, bones[i].width + r, across));
     }
     float2 sum = float2(0.0);
+    float2x2 linear = float2x2(0.0);
     float total = 0.0;
     for (int i = 0; i < n; i++) {
         float share = 1.0;
@@ -64,36 +76,40 @@ static float2 place(float2 q, thread const SkinBone *bones, int n) {
             if (bones[c].parent == i) { share *= 1.0 - f[c]; }
         }
         sum += share * (bones[i].linear * q + bones[i].shift);
+        linear += share * bones[i].linear;
         total += share;
     }
-    return total > 1e-6 ? sum / total : bones[0].linear * q + bones[0].shift;
+    if (total <= 1e-6) {
+        slope = bones[0].linear;
+        return bones[0].linear * q + bones[0].shift;
+    }
+    slope = linear * (1.0 / total);
+    return sum / total;
 }
 
-/// Solves for the rest point that the skin puts at `position`, from bone `start`'s own inverse. `miss` is
-/// how far from `position` the answer lands.
-/// With `halfway`, it starts halfway between the bone's transform and its parent's: where a bend folds three
-/// deep (the throat in a peck), the middle layer lies between the two.
-static float2 solve(float2 position, int start, bool halfway, thread const SkinBone *bones, int n, float nudge,
-                    float longest, thread float &miss) {
+/// Solves for the rest point that the skin puts at `position`, from a first guess `q` (a start's inverse of
+/// it), as `ChickenSkin.solve`: each step goes by the blend of the bones' matrices at `q`, and where that
+/// stops closing in (a bend, where the weights change fast), by the true slope, found by nudging `q`.
+/// `miss` is how far from `position` the answer lands.
+static float2 solve(float2 position, float2 q, thread const SkinBone *bones, int n, float nudge, float longest,
+                    thread float &miss) {
     miss = 1.0e9;
-    float2x2 m = bones[start].linear;
-    float2 shift = bones[start].shift;
-    if (halfway) {
-        int parent = bones[start].parent;
-        if (parent < 0) { return float2(-1.0e5); }
-        m = (m + bones[parent].linear) * 0.5;
-        shift = (shift + bones[parent].shift) * 0.5;
-    }
-    float det = determinant(m);
-    if (abs(det) < 1e-6) { return float2(-1.0e5); }
-    float2 q = float2x2(float2(m[1][1], -m[0][1]), float2(-m[1][0], m[0][0])) * (position - shift) / det;
+    float last = 1.0e9;
     for (int k = 0; k < steps; k++) {
-        float2 at = place(q, bones, n);
-        // Landed: a tenth of a point is well under a pixel.
-        if (length(position - at) < 0.1) { break; }
-        float2 dx = (place(q + float2(nudge, 0.0), bones, n) - at) / nudge;
-        float2 dy = (place(q + float2(0.0, nudge), bones, n) - at) / nudge;
-        float2x2 j = float2x2(dx, dy);
+        float2x2 j;
+        float2 at = place(q, bones, n, j);
+        float off = length(position - at);
+        // Landed: a fiftieth of a point, so a soft edge holds still from frame to frame.
+        if (off < landed) { miss = off; return q; }
+        // Too far to reach in the steps left, even at the longest step: no paint here.
+        if (off > longest * float(steps - k) * reachSlack) { return q; }
+        if (off > last * slowStep) {
+            float2x2 unused;
+            float2 dx = (place(q + float2(nudge, 0.0), bones, n, unused) - at) / nudge;
+            float2 dy = (place(q + float2(0.0, nudge), bones, n, unused) - at) / nudge;
+            j = float2x2(dx, dy);
+        }
+        last = off;
         float dj = determinant(j);
         if (abs(dj) < 1e-6) { break; }
         float2 move = float2x2(float2(j[1][1], -j[0][1]), float2(-j[1][0], j[0][0])) * (position - at) / dj;
@@ -101,27 +117,44 @@ static float2 solve(float2 position, int start, bool halfway, thread const SkinB
         if (size > longest) { move *= longest / size; }
         q += move;
     }
-    miss = length(position - place(q, bones, n));
+    float2x2 j;
+    miss = length(position - place(q, bones, n, j));
     return q;
 }
 
-/// `skin`: `count` floats, `floatsPerBone` per bone. `order`: bone indices, the bone of the run's top part
-/// first. Where the bend folds, more than one rest point lands on a pixel; each is drawn, in that order, top
-/// over bottom, as the parts would be. `nudge` finds the slope and `longest` caps a step, in points.
+/// `skin`: `count` floats, `floatsPerBone` per bone. `starts`: `startCount` floats, `floatsPerStart` per start,
+/// each a start's inverse and its bone, top part's first (`ChickenSkin.starts`). Where the bend folds, more than one rest
+/// point lands on a pixel; each is drawn, in that order, top over bottom, as the parts would be. `nudge` finds
+/// the true slope and `longest` caps a step, in points; `height` is the bird's. Outside `reach` (min x, min y, max x, max y) no paint can
+/// land, so those pixels are clear at once.
 [[ stitchable ]] half4 chickenSkin(float2 position, SwiftUI::Layer layer, device const float *skin, int count,
-                                   device const float *order, int orderCount, float nudge, float longest) {
+                                   device const float *starts, int startCount, float nudge, float longest,
+                                   float4 reach, float height) {
+    if (position.x < reach.x || position.y < reach.y || position.x > reach.z || position.y > reach.w) {
+        return half4(0.0h);
+    }
     int n = min(count / floatsPerBone, maxBones);
     if (n < 1) { return layer.sample(position); }
     SkinBone bones[maxBones];
     for (int i = 0; i < n; i++) { bones[i] = readBone(skin, i); }
     half4 out = half4(0.0h);
-    float2 found[2 * maxBones];
+    float2 found[maxStarts];
     int foundCount = 0;
-    for (int o = 0; o < 2 * min(orderCount, maxBones); o++) {
-        int start = int(order[o / 2]);
-        if (start < 0 || start >= n) { continue; }
+    int m = min(startCount / floatsPerStart, maxStarts);
+    for (int o = 0; o < m; o++) {
+        device const float *t = starts + o * floatsPerStart;
+        float2 guess = float2x2(float2(t[0], t[1]), float2(t[2], t[3])) * position + float2(t[4], t[5]);
+        // As `ChickenSkin.mayHold`: a guess well clear of its bone's paint would only find another bone's.
+        int bone = int(t[6]);
+        if (bone >= 0 && bone < n) {
+            float2 d = guess - bones[bone].joint;
+            float along = dot(d, bones[bone].direction);
+            float across = abs(d.y * bones[bone].direction.x - d.x * bones[bone].direction.y);
+            float slack = bones[bone].radius + startReach * height;
+            if (along <= -slack || across >= bones[bone].width + slack) { continue; }
+        }
         float miss;
-        float2 q = solve(position, start, (o % 2) == 1, bones, n, nudge, longest, miss);
+        float2 q = solve(position, guess, bones, n, nudge, longest, miss);
         if (miss > 1.0) { continue; }
         // Two starts that find the same paint draw it once.
         bool seen = false;

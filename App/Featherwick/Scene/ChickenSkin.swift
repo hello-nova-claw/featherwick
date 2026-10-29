@@ -129,59 +129,134 @@ struct ChickenSkin: Equatable, Sendable {
     /// `transforms` is one per bone, in `bones` order, in the rig's frame (points, y down); `p` is in that
     /// frame too. `height` turns frame points into rig units for the weights.
     func place(_ p: CGPoint, transforms: [Affine], height: Double) -> CGPoint {
+        blend(p, transforms: transforms, height: height).at
+    }
+
+    /// `place`, and the blend of the bones' matrices at `p` by the same weights: the slope the solve steps by.
+    /// It leaves out how the weights themselves change, so it is cheap but slow where they change fast.
+    private func blend(_ p: CGPoint, transforms: [Affine], height: Double) -> (at: CGPoint, slope: Affine) {
         let w: [Double] = weights(at: Self.rigPoint(p, height: height))
         var x: Double = 0
         var y: Double = 0
+        var slope = Affine(a: 0, b: 0, c: 0, d: 0)
         for (i, t) in transforms.enumerated() where i < w.count {
             let q: CGPoint = t.apply(p)
             x += w[i] * Double(q.x)
             y += w[i] * Double(q.y)
+            slope = Affine(
+                a: slope.a + w[i] * t.a, b: slope.b + w[i] * t.b, c: slope.c + w[i] * t.c, d: slope.d + w[i] * t.d)
         }
-        return CGPoint(x: x, y: y)
+        return (CGPoint(x: x, y: y), slope)
+    }
+
+    /// Where a solve starts: a transform to invert, and the bone whose paint it looks for. Nil: it is tried
+    /// for every pixel.
+    struct Start {
+        var transform: Affine
+        var bone: Int?
+    }
+
+    /// Where the solve starts for one pose, top first: each bone's own transform, in `order` (indices into
+    /// `bones`, top first), then halfway to its parent's. Where a bend folds three deep (the throat in a peck),
+    /// the middle layer lies between the two. A start that moves every corner of the frame within `sameStart`
+    /// heights of an earlier start is left out: from there both find the same paint. The earlier one then
+    /// looks for both bones' paint, so it is tried everywhere, as the body's is. A still or walking bird bends
+    /// little, so most of its starts go.
+    func starts(order: [Int], transforms: [Affine], height: Double) -> [Start] {
+        let width: Double = height * Double(ChickenRigMetrics.widthRatio)
+        let corners: [CGPoint] = [
+            CGPoint(x: 0, y: 0), CGPoint(x: width, y: 0), CGPoint(x: 0, y: height), CGPoint(x: width, y: height),
+        ]
+        let near: Double = Self.sameStart * height
+        var out: [Start] = []
+        for i in order where i < transforms.count {
+            var candidates: [Affine] = [transforms[i]]
+            if let parent = bones[i].parent, parent < transforms.count {
+                candidates.append(transforms[i].halfway(to: transforms[parent]))
+            }
+            for start in candidates where start.inverted != nil {
+                let same: Int? = out.firstIndex { earlier in
+                    corners.allSatisfy { c in
+                        let a: CGPoint = earlier.transform.apply(c)
+                        let b: CGPoint = start.apply(c)
+                        return hypot(Double(a.x - b.x), Double(a.y - b.y)) < near
+                    }
+                }
+                if let same {
+                    out[same].bone = nil
+                } else {
+                    out.append(Start(transform: start, bone: bones[i].parent == nil ? nil : i))
+                }
+            }
+        }
+        return out
+    }
+
+    /// Whether a start for `bone` is worth solving from rest point `p` (rig units), its first guess: `p` is
+    /// within `startReach` heights of where the bone has any paint. Further out, the solve would only find paint
+    /// another bone's start finds, so the pixel skips it.
+    func mayHold(_ bone: Int, at p: CGPoint) -> Bool {
+        let b: SkinBone = bones[bone]
+        let dx: Double = Double(p.x - b.joint.x)
+        let dy: Double = Double(p.y - b.joint.y)
+        let along: Double = dx * Double(b.direction.x) + dy * Double(b.direction.y)
+        let across: Double = abs(dy * Double(b.direction.x) - dx * Double(b.direction.y))
+        return along > -b.radius - Self.startReach && across < b.width + b.radius + Self.startReach
     }
 
     /// The rest points that the skin puts at `target` (both in the frame): what the shader draws for a
-    /// pixel, top first. Each is solved by Newton steps (the slope found by nudging the point) from one
-    /// bone's own inverse, taking the bones in `order` (indices into `bones`, top first; nil: last bone
-    /// first). Where the bend folds, two rest points land on one pixel, and both are kept: the shader draws
-    /// them top over bottom, as the parts would be. A start that lands further than `tolerance` points away
-    /// finds nothing.
+    /// pixel, top first. Each is solved by steps (`blend`) from one of
+    /// `starts(order:transforms:height:)` (nil `order`: last bone first). Where the bend folds, two rest points
+    /// land on one pixel, and both are kept: the shader draws them top over bottom, as the parts would be. A
+    /// start that lands further than `tolerance` points away finds nothing.
     func sources(
         of target: CGPoint, transforms: [Affine], height: Double, order: [Int]? = nil, tolerance: Double = 1
     ) -> [CGPoint] {
         var found: [CGPoint] = []
-        for start in order ?? Array(transforms.indices.reversed()) where start < transforms.count {
-            // Each bone's own transform, then halfway to its parent's: where a bend folds three deep (the throat
-            // in a peck), the middle layer lies between the two.
-            var starts: [Affine] = [transforms[start]]
-            if let parent = bones[start].parent, parent < transforms.count {
-                starts.append(transforms[start].halfway(to: transforms[parent]))
+        let order: [Int] = order ?? Array(transforms.indices.reversed())
+        for start in starts(order: order, transforms: transforms, height: height) {
+            if let bone = start.bone, let guess = start.transform.inverted?.apply(target),
+                !mayHold(bone, at: Self.rigPoint(guess, height: height))
+            {
+                continue
             }
-            for from in starts {
-                guard let q = solve(target, from: from, transforms: transforms, height: height) else { continue }
-                let at: CGPoint = place(q, transforms: transforms, height: height)
-                guard hypot(Double(target.x - at.x), Double(target.y - at.y)) <= tolerance else { continue }
-                if found.contains(where: { hypot(Double($0.x - q.x), Double($0.y - q.y)) < 0.5 }) { continue }
-                found.append(q)
+            guard let q = solve(target, from: start.transform, transforms: transforms, height: height) else {
+                continue
             }
+            let at: CGPoint = place(q, transforms: transforms, height: height)
+            guard hypot(Double(target.x - at.x), Double(target.y - at.y)) <= tolerance else { continue }
+            if found.contains(where: { hypot(Double($0.x - q.x), Double($0.y - q.y)) < 0.5 }) { continue }
+            found.append(q)
         }
         return found
     }
 
+    /// Steps from `start`'s inverse of `target`. Each goes by the blend of the bones' matrices (`blend`): one
+    /// weighing a step. Where that stops closing in (a bend, where the weights change fast), the step goes by
+    /// the true slope instead, found by nudging the point: three weighings.
     private func solve(_ target: CGPoint, from start: Affine, transforms: [Affine], height: Double) -> CGPoint? {
         guard let inverse = start.inverted else { return nil }
         let nudge: Double = height * Self.nudge
         let longest: Double = height * Self.longestStep
         var q: CGPoint = inverse.apply(target)
-        for _ in 0..<Self.steps {
-            let at: CGPoint = place(q, transforms: transforms, height: height)
-            // Landed: a tenth of a point is well under a pixel.
-            if hypot(Double(target.x - at.x), Double(target.y - at.y)) < 0.1 { break }
-            let ax: CGPoint = place(CGPoint(x: q.x + nudge, y: q.y), transforms: transforms, height: height)
-            let ay: CGPoint = place(CGPoint(x: q.x, y: q.y + nudge), transforms: transforms, height: height)
-            let slope = Affine(
-                a: Double(ax.x - at.x) / nudge, b: Double(ax.y - at.y) / nudge,
-                c: Double(ay.x - at.x) / nudge, d: Double(ay.y - at.y) / nudge)
+        var last: Double = .infinity
+        for done in 0..<Self.steps {
+            let blended = blend(q, transforms: transforms, height: height)
+            let at: CGPoint = blended.at
+            var slope: Affine = blended.slope
+            let miss: Double = hypot(Double(target.x - at.x), Double(target.y - at.y))
+            // Landed: a fiftieth of a point, so a soft edge holds still from frame to frame.
+            if miss < Self.landed { break }
+            // Too far to reach in the steps left, even at the longest step: no paint here.
+            if miss > longest * Double(Self.steps - done) * Self.reachSlack { return nil }
+            if miss > last * Self.slowStep {
+                let ax: CGPoint = place(CGPoint(x: q.x + nudge, y: q.y), transforms: transforms, height: height)
+                let ay: CGPoint = place(CGPoint(x: q.x, y: q.y + nudge), transforms: transforms, height: height)
+                slope = Affine(
+                    a: Double(ax.x - at.x) / nudge, b: Double(ax.y - at.y) / nudge,
+                    c: Double(ay.x - at.x) / nudge, d: Double(ay.y - at.y) / nudge)
+            }
+            last = miss
             guard let step = slope.inverted else { break }
             var move: CGPoint = step.apply(CGPoint(x: target.x - at.x, y: target.y - at.y))
             let length: Double = hypot(Double(move.x), Double(move.y))
@@ -191,11 +266,38 @@ struct ChickenSkin: Equatable, Sendable {
         return q
     }
 
+    /// Where the skin can put any paint of a run whose rest paint is `paint` (frame points): the box round
+    /// every bone's transform of it. Skinned paint is a blend of its bones' transforms of it, so it lands
+    /// inside that box. The shader draws nothing outside it.
+    func reach(of paint: CGRect, transforms: [Affine]) -> CGRect {
+        let corners: [CGPoint] = [
+            CGPoint(x: paint.minX, y: paint.minY), CGPoint(x: paint.maxX, y: paint.minY),
+            CGPoint(x: paint.minX, y: paint.maxY), CGPoint(x: paint.maxX, y: paint.maxY),
+        ]
+        let moved: [CGPoint] = transforms.flatMap { t in corners.map { t.apply($0) } }
+        let xs: [CGFloat] = moved.map(\.x)
+        let ys: [CGFloat] = moved.map(\.y)
+        guard let minX = xs.min(), let maxX = xs.max(), let minY = ys.min(), let maxY = ys.max() else { return paint }
+        return CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+    }
+
     /// Newton steps per start, here and in the shader.
     static let steps: Int = 14
-    /// The nudge that finds the slope, and the longest step, in bird heights.
+    /// The nudge that finds the true slope, and the longest step, in bird heights.
     static let nudge: Double = 0.001
     static let longestStep: Double = 0.1
+    /// A step that leaves more than this share of the miss is slow: the next goes by the true slope.
+    static let slowStep: Double = 0.5
+    /// How far past a bone's reach, in bird heights, a first guess may lie and still be solved from.
+    static let startReach: Double = 0.2
+    /// How close a solve must land, in points.
+    static let landed: Double = 0.02
+    /// Two starts closer than this everywhere on the frame, in bird heights, find the same paint.
+    static let sameStart: Double = 0.05
+    /// A step lands up to this much further on screen than it moves at rest (the skin stretches a little).
+    static let reachSlack: Double = 2
+    /// At most this many starts reach the shader: each bone's own and its halfway one.
+    static let maxStarts: Int = 2 * maxBones
 
     private static func rigPoint(_ p: CGPoint, height: Double) -> CGPoint {
         let ground: Double = height * Double(ChickenRigMetrics.widthRatio) / 2
@@ -225,6 +327,22 @@ struct ChickenSkin: Equatable, Sendable {
         }
         return out
     }
+
+    /// The starts as the shader reads them, `floatsPerStart` floats each: the inverse (a, b, c, d, tx, ty),
+    /// about the layer as in `packed`, then the bone (-1: every pixel). The shader applies the inverse to a
+    /// pixel to get its first guess.
+    func packed(starts: [Start], offset: CGPoint) -> [Float] {
+        let ox: Double = Double(offset.x)
+        let oy: Double = Double(offset.y)
+        return starts.prefix(Self.maxStarts).flatMap { start -> [Float] in
+            guard let t = start.transform.inverted else { return [] }
+            let tx: Double = t.tx + ox - (t.a * ox + t.c * oy)
+            let ty: Double = t.ty + oy - (t.b * ox + t.d * oy)
+            return [Float(t.a), Float(t.b), Float(t.c), Float(t.d), Float(tx), Float(ty), Float(start.bone ?? -1)]
+        }
+    }
+
+    static let floatsPerStart: Int = 7
 
     /// Joint x, y, direction x, y, radius, width, parent, then the transform's a, b, c, d, tx, ty.
     static let floatsPerBone: Int = 13

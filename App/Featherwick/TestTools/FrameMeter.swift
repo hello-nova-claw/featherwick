@@ -67,3 +67,26 @@ private final class Ticker: NSObject {
         meter?.tick(at: link.targetTimestamp - link.duration)
     }
 }
+
+/// The meter's numbers in a corner of a stage. A view of its own, so each second's update redraws only
+/// these lines, not the stage under them.
+struct FrameReadout: View {
+    let meter: FrameMeter
+
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            Text("\(meter.fps) / \(meter.target) fps")
+            Text(String(format: "longest %.1f ms", meter.worstMilliseconds))
+            Text("dropped \(meter.dropped)")
+        }
+        .font(Typeface.caption.monospacedDigit())
+        .foregroundStyle(palette.ink)
+        .padding(Space.xs)
+        .background(palette.paper.opacity(0.85), in: RoundedRectangle(cornerRadius: Radius.control))
+        .padding(Space.s)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("frameReadout")
+    }
+}

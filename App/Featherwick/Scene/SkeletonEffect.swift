@@ -49,10 +49,12 @@ extension View {
 /// (`ChickenSkin`, `ChickenSkin.metal`). Animatable like `BoneEffect`, so a pose set inside `withAnimation`
 /// bends smoothly, and a still bird does not redraw.
 ///
-/// A layer effect draws only inside its view, so the frame gets a margin first (`SceneConstants.skinMargin`
-/// heights on each side): a peck tips the head and tail past the frame. Every rest point the shader samples
-/// lies inside that padded view, so it needs no sample offset. An offset grows the layer SwiftUI draws first
-/// by that much on every side: the whole frame's worth made a large hen stall each frame (#116).
+/// A layer effect draws only inside its view, and SwiftUI draws that view to a surface of its own each
+/// frame. So the view is cut to just what the shader needs: where the run has paint at rest (it samples
+/// there) and where this pose can take that paint (it draws there). A peck tips the head and tail past the
+/// frame; a small part bends in a small layer. Every sample lies inside that view, so it needs no sample
+/// offset: an offset grows the surface by that much on every side. A frame-sized margin round every run made
+/// a large hen stall each frame (#116).
 struct SkinEffect: ViewModifier, Animatable {
     let skin: ChickenSkin
     let rig: SkeletonRig
@@ -60,6 +62,9 @@ struct SkinEffect: ViewModifier, Animatable {
     let follows: [Bone: Follow]
     /// Which bone's paint is on top where the bend folds: indices into the skin's bones, top first.
     let order: [Int]
+    /// Where the run has paint at rest, in the frame (points, y down). The shader draws only where the pose
+    /// can take it.
+    let paint: CGRect
     var pose: ChickenPose
     let height: CGFloat
 
@@ -69,22 +74,30 @@ struct SkinEffect: ViewModifier, Animatable {
     }
 
     func body(content: Content) -> some View {
-        let margin: CGFloat = height * SceneConstants.skinMargin
         let transforms: [Affine] = skin.bones.map { bone in
             Skeleton.transform(
                 of: bone.bone, rig: rig, pose: pose, height: Double(height), follow: follows[bone.bone])
         }
-        let floats: [Float] = skin.packed(
-            transforms: transforms, height: Double(height), offset: CGPoint(x: margin, y: margin))
+        // A point of slack keeps the edge pixels' soft paint.
+        let reach: CGRect = skin.reach(of: paint, transforms: transforms).insetBy(dx: -1, dy: -1)
+        let layer: CGRect = paint.union(reach).integral
+        // Frame points to the layer's.
+        let offset = CGPoint(x: -layer.minX, y: -layer.minY)
+        let floats: [Float] = skin.packed(transforms: transforms, height: Double(height), offset: offset)
+        let starts: [ChickenSkin.Start] = skin.starts(order: order, transforms: transforms, height: Double(height))
+        let box: CGRect = reach.offsetBy(dx: offset.x, dy: offset.y)
         return
             content
-            .padding(margin)
+            .offset(x: offset.x, y: offset.y)
+            .frame(width: layer.width, height: layer.height, alignment: .topLeading)
             .layerEffect(
                 ShaderLibrary.chickenSkin(
-                    .floatArray(floats), .floatArray(order.map(Float.init)), .float(height * ChickenSkin.nudge),
-                    .float(height * ChickenSkin.longestStep)),
+                    .floatArray(floats), .floatArray(skin.packed(starts: starts, offset: offset)),
+                    .float(height * ChickenSkin.nudge), .float(height * ChickenSkin.longestStep),
+                    .float4(Float(box.minX), Float(box.minY), Float(box.maxX), Float(box.maxY)), .float(height)),
                 maxSampleOffset: .zero
             )
-            .padding(-margin)
+            .offset(x: layer.minX, y: layer.minY)
+            .frame(width: height * ChickenRigMetrics.widthRatio, height: height, alignment: .topLeading)
     }
 }

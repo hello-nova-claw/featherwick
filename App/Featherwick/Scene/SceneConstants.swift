@@ -52,7 +52,7 @@ enum SceneConstants {
 
     // MARK: - Painted birds
 
-    /// The margin round a painted bird's frame where its skinned parts may bend to, in bird heights each
-    /// side. A deep peck tips the head and the tail past the frame.
-    static let skinMargin: CGFloat = 0.4
+    /// Slack round a skinned run's painted bounds, in bird heights: the shader draws nothing outside them,
+    /// so this keeps a part that grows or turns at rest.
+    static let skinPaintSlack: CGFloat = 0.05
 }

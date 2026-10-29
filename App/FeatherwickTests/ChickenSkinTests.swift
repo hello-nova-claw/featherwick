@@ -114,6 +114,50 @@ import Testing
         #expect(ChickenSkin(rig: stiff, radii: [.neckLow: .init(radius: 0.1, width: 0.1)]) == nil)
     }
 
+    /// At rest every start is the same, so the shader solves once a pixel, from a start it tries everywhere.
+    /// A peck bends enough to need more.
+    @Test func theRestPoseNeedsOneStart() {
+        let order: [Int] = skin.order(drawing: [.tail, .body])
+        let rest: [ChickenSkin.Start] = skin.starts(order: order, transforms: transforms(.rest), height: height)
+        #expect(rest.count == 1)
+        #expect(rest.first?.bone == nil)
+        let peck: [Affine] = transforms(ChickenMotion.peck(rig, progress: 0.4))
+        #expect(skin.starts(order: order, transforms: peck, height: height).count > 3)
+    }
+
+    /// Bent paint lands inside the reach box of its rest bounds, so the shader may clear every pixel outside.
+    @Test func bentPaintStaysInsideItsReach() {
+        let paint = CGRect(x: 20, y: 10, width: 70, height: 80)
+        for progress in [0.1, 0.3, 0.5] {
+            let t: [Affine] = transforms(ChickenMotion.peck(rig, progress: progress))
+            let reach: CGRect = skin.reach(of: paint, transforms: t).insetBy(dx: -1e-6, dy: -1e-6)
+            for x in stride(from: paint.minX, through: paint.maxX, by: 5) {
+                for y in stride(from: paint.minY, through: paint.maxY, by: 5) {
+                    #expect(reach.contains(skin.place(CGPoint(x: x, y: y), transforms: t, height: height)))
+                }
+            }
+        }
+    }
+
+    /// The packed starts are what the shader reads: `floatsPerStart` floats a start, the inverse moved by the
+    /// margin, then its bone (-1 for one tried everywhere).
+    @Test func packedStartsMatchTheShader() {
+        let offset = CGPoint(x: 10, y: 20)
+        let rest: [ChickenSkin.Start] = skin.starts(order: [0], transforms: transforms(.rest), height: height)
+        let floats: [Float] = skin.packed(starts: rest, offset: offset)
+        #expect(floats == [1, 0, 0, 1, 0, 0, -1])
+        let peck: [Affine] = transforms(ChickenMotion.peck(rig, progress: 0.4))
+        let starts: [ChickenSkin.Start] = skin.starts(order: [4, 3, 2, 1, 0], transforms: peck, height: height)
+        let packed: [Float] = skin.packed(starts: starts, offset: offset)
+        #expect(packed.count == starts.count * ChickenSkin.floatsPerStart)
+        // The first start's inverse takes its own move of a point back to the point.
+        let p = CGPoint(x: 60, y: 30)
+        let moved: CGPoint = starts[0].transform.apply(p)
+        let x: Double = Double(packed[0]) * (moved.x + 10) + Double(packed[2]) * (moved.y + 20) + Double(packed[4])
+        let y: Double = Double(packed[1]) * (moved.x + 10) + Double(packed[3]) * (moved.y + 20) + Double(packed[5])
+        #expect(abs(x - (p.x + 10)) < 1e-3 && abs(y - (p.y + 20)) < 1e-3)
+    }
+
     /// The packed skin is what the shader reads: `floatsPerBone` floats a bone, each joint moved by the margin.
     @Test func packedFloatsMatchTheShader() {
         let floats: [Float] = skin.packed(transforms: transforms(.rest), height: height, offset: CGPoint(x: 10, y: 20))

@@ -34,7 +34,7 @@ struct RigStressView: View {
             }
             .id(run)
             .background(palette.paper)
-            .overlay(alignment: .topTrailing) { readout }
+            .overlay(alignment: .topTrailing) { FrameReadout(meter: meter) }
         }
         .onAppear { meter.start() }
         .onDisappear { meter.stop() }
@@ -74,21 +74,6 @@ struct RigStressView: View {
                 PaintedChickenRig.skinOn = on
                 run += 1
             })
-    }
-
-    /// The live frame rate (`FrameMeter`), over the stage.
-    private var readout: some View {
-        VStack(alignment: .trailing, spacing: 0) {
-            Text("\(meter.fps) / \(meter.target) fps")
-            Text(String(format: "longest %.1f ms", meter.worstMilliseconds))
-            Text("dropped \(meter.dropped)")
-        }
-        .font(Typeface.caption.monospacedDigit())
-        .foregroundStyle(palette.ink)
-        .padding(Space.xs)
-        .background(palette.paper.opacity(0.85), in: RoundedRectangle(cornerRadius: Radius.control))
-        .padding(Space.s)
-        .accessibilityElement(children: .combine)
     }
 
     /// Feather tones and patterns in turn: every third bird laced, every fourth barred.

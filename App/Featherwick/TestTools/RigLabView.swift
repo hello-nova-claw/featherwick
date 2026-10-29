@@ -43,6 +43,8 @@ struct RigLabView: View {
     @State private var headTurn: Double = 0
     @State private var blink: Double = 0
     @State private var sit: Double = 0
+    /// The frame rate while a motion plays: a large painted hen is the heaviest bird to draw.
+    @State private var meter = FrameMeter()
 
     private let rigHeight: CGFloat = 240
 
@@ -55,6 +57,8 @@ struct RigLabView: View {
             Section("Bird") { birdControls }
         }
         .navigationTitle("Rig lab")
+        .onAppear { meter.start() }
+        .onDisappear { meter.stop() }
         .onChange(of: pose) { mode = .manual }
         .onChange(of: birdID) { chick = birdColours?.isChick ?? false }
     }
@@ -124,6 +128,7 @@ struct RigLabView: View {
         .frame(height: rigHeight + Space.xxl)
         .padding(.vertical, Space.m)
         .id(kitVersion)
+        .overlay(alignment: .topTrailing) { FrameReadout(meter: meter) }
     }
 
     @ViewBuilder
