@@ -123,8 +123,9 @@ final class PartKit: @unchecked Sendable {
         var kits: [KitName: PartKit] = [:]
         /// Kits that are not there, or are broken: asked once, then remembered, so the log says it once.
         var missing: Set<KitName> = []
-        /// Kits being read off the main thread now, so each is read once.
-        @ObservationIgnored var reading: Set<KitName> = []
+        /// Kits being read off the main thread now. Every caller waits on the one read, so each kit is
+        /// read once.
+        @ObservationIgnored var reading: [KitName: Task<PartKit?, Never>] = [:]
     }
 
     @MainActor fileprivate static let shelf = Shelf()
@@ -171,7 +172,7 @@ final class PartKit: @unchecked Sendable {
     /// A kit already read, or nil. A kit not read yet starts reading off the main thread.
     @MainActor private static func shelved(_ name: KitName) -> PartKit? {
         if let kit = shelf.kits[name] { return kit }
-        if !shelf.missing.contains(name) && !shelf.reading.contains(name) {
+        if !shelf.missing.contains(name) && shelf.reading[name] == nil {
             Task { await read(name) }
         }
         return nil
@@ -179,13 +180,21 @@ final class PartKit: @unchecked Sendable {
 
     /// Reads one kit off the main thread and shelves it.
     @MainActor private static func read(_ name: KitName) async {
-        guard let root = partsRoot, shelf.kits[name] == nil, !shelf.missing.contains(name) else { return }
-        shelf.reading.insert(name)
-        defer { shelf.reading.remove(name) }
-        let folder: URL = root.appendingPathComponent(name.folder)
-        let kit: PartKit? = await Task.detached(priority: .utility) {
-            PartKit.load(name, from: folder)
-        }.value
+        guard shelf.kits[name] == nil, !shelf.missing.contains(name) else { return }
+        guard let root = partsRoot else {
+            shelf.missing.insert(name)
+            return
+        }
+        let task: Task<PartKit?, Never>
+        if let running = shelf.reading[name] {
+            task = running
+        } else {
+            let folder: URL = root.appendingPathComponent(name.folder)
+            task = Task.detached(priority: .utility) { PartKit.load(name, from: folder) }
+            shelf.reading[name] = task
+        }
+        let kit: PartKit? = await task.value
+        shelf.reading[name] = nil
         guard shelf.kits[name] == nil, !shelf.missing.contains(name) else { return }
         if let kit { shelf.kits[name] = kit } else { shelf.missing.insert(name) }
     }
