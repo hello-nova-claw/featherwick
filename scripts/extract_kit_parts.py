@@ -162,6 +162,8 @@ def add_splits(parts, fit, placement):
     """A part painted into another one (the wattle in the head): `take` is its shape, in source pixels.
     The other part loses only `leave`, so a band of it stays under the join and the swing shows no hole."""
     for name, split in fit["pieces"].get("splits", {}).items():
+        if split["from"] not in parts:
+            continue  # Not cut yet: a partial kit leaves the split out too.
         colour, cover = parts[split["from"]]
         take = soft_polygon(split["take"], placement, cover.shape)
         leave = soft_polygon(split["leave"], placement, cover.shape)
@@ -178,6 +180,8 @@ def add_caps(parts, fit, placement):
         return
     outline_cover = np.maximum.reduce([c for _, c in parts.values()])
     for name, cap in pieces["caps"].items():
+        if name not in parts:
+            continue
         colour, cover = parts[name]
         centre = fit["joints"][cap["joint"]]
         r = cap["radius"]
