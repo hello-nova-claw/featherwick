@@ -50,7 +50,9 @@ extension View {
 /// bends smoothly, and a still bird does not redraw.
 ///
 /// A layer effect draws only inside its view, so the frame gets a margin first (`SceneConstants.skinMargin`
-/// heights on each side): a peck tips the head and tail past the frame.
+/// heights on each side): a peck tips the head and tail past the frame. Every rest point the shader samples
+/// lies inside that padded view, so it needs no sample offset. An offset grows the layer SwiftUI draws first
+/// by that much on every side: the whole frame's worth made a large hen stall each frame (#116).
 struct SkinEffect: ViewModifier, Animatable {
     let skin: ChickenSkin
     let rig: SkeletonRig
@@ -74,9 +76,6 @@ struct SkinEffect: ViewModifier, Animatable {
         }
         let floats: [Float] = skin.packed(
             transforms: transforms, height: Double(height), offset: CGPoint(x: margin, y: margin))
-        let reach = CGSize(
-            width: height * (ChickenRigMetrics.widthRatio + 2 * SceneConstants.skinMargin),
-            height: height * (1 + 2 * SceneConstants.skinMargin))
         return
             content
             .padding(margin)
@@ -84,7 +83,7 @@ struct SkinEffect: ViewModifier, Animatable {
                 ShaderLibrary.chickenSkin(
                     .floatArray(floats), .floatArray(order.map(Float.init)), .float(height * ChickenSkin.nudge),
                     .float(height * ChickenSkin.longestStep)),
-                maxSampleOffset: reach
+                maxSampleOffset: .zero
             )
             .padding(-margin)
     }
