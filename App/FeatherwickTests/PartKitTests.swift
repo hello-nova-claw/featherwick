@@ -88,6 +88,95 @@ import UniformTypeIdentifiers
         #expect(bottom[.body] >= 45)
     }
 
+    /// The hen pecks the same way: by tipping her body, with her lower neck nearly in line with it.
+    @MainActor @Test func henPecksWithHerNeckInLine() {
+        PartKit.reload()
+        guard let hen = PartKit.load(.hen) else { return }
+        let bottom: ChickenPose = ChickenMotion.peck(hen.rig, progress: 0.5)
+        #expect(abs(bottom[.neckLow]) < 30)
+        #expect(bottom[.body] >= 45)
+    }
+
+    /// Both hen kits bend their body, neck, head and tail as one image, and sit with the belly (the
+    /// body's lowest paint) on the ground.
+    @MainActor @Test func henKitsBendAndSitOnTheirBelly() throws {
+        PartKit.reload()
+        for name in [KitName.hen, .henB] {
+            guard let kit = PartKit.load(name) else { continue }
+            let skin: ChickenSkin = try #require(kit.skin, "\(name)")
+            #expect(skin.bones.map(\.bone) == [.body, .tail, .neckLow, .neckHigh, .head], "\(name)")
+            let belly: Double = try #require(kit.rig.sitHeight)
+            let body: KitLayer = try #require(kit.layers.first { $0.id == "body" })
+            let lowest = CGPoint(x: Double(kit.rig.hip.x), y: belly)
+            let sat: CGPoint = Skeleton.place(lowest, on: body.bone, rig: kit.rig, pose: ChickenMotion.sitting(kit.rig))
+            #expect(abs(sat.y) < 1e-6, "\(name)")
+            #expect(belly > 0.05 && belly < Double(kit.rig.hip.y), "\(name)")
+        }
+    }
+
+    /// Through a whole peck, wherever the skin puts paint from each hen kit's bent feathers, the shader finds
+    /// paint for that pixel, even where the bend folds over itself at the throat: no hole and no speck. (In
+    /// a deep fold it may miss a layer under other paint, which does not show.)
+    @MainActor @Test func henKitsLoseNoPaintInAPeck() throws {
+        PartKit.reload()
+        for name in [KitName.hen, .henB] {
+            guard let kit = PartKit.load(name), let skin = kit.skin else { continue }
+            let painted: (CGPoint) -> Bool = try Self.paint(
+                of: kit.layers.filter { $0.token.isFeather && skin.skins($0.bone) }, in: kit)
+            let height: Double = 100
+            var lost: Int = 0
+            var checked: Int = 0
+            for progress in [0.1, 0.2, 0.3, 0.4, 0.5] {
+                let pose: ChickenPose = ChickenMotion.peck(kit.rig, progress: progress)
+                let t: [Affine] = skin.bones.map {
+                    Skeleton.transform(of: $0.bone, rig: kit.rig, pose: pose, height: height)
+                }
+                for x in stride(from: -0.6, through: 0.6, by: 0.02) {
+                    for y in stride(from: 0.0, through: 1.0, by: 0.02) where painted(CGPoint(x: x, y: y)) {
+                        checked += 1
+                        let p: CGPoint = Skeleton.frame(CGPoint(x: x, y: y), height: height)
+                        let at: CGPoint = skin.place(p, transforms: t, height: height)
+                        let found: [CGPoint] = skin.sources(of: at, transforms: t, height: height)
+                        let shown: Bool = found.contains { q in
+                            let rest = CGPoint(
+                                x: (Double(q.x) - height * Double(ChickenRigMetrics.widthRatio) / 2) / height,
+                                y: (height - Double(q.y)) / height)
+                            return painted(rest)
+                        }
+                        if !shown { lost += 1 }
+                    }
+                }
+            }
+            #expect(checked > 1000, "\(name)")
+            #expect(lost == 0, "\(name): \(lost) of \(checked) painted pixels come out clear")
+        }
+    }
+
+    /// Whether any of `layers` has paint at a rig point (alpha above a tenth).
+    private static func paint(of layers: [KitLayer], in kit: PartKit) throws -> (CGPoint) -> Bool {
+        let first: CGImage = try #require(layers.first?.image)
+        let w: Int = first.width
+        let h: Int = first.height
+        var alpha = [UInt8](repeating: 0, count: w * h)
+        let context: CGContext = try #require(
+            CGContext(
+                data: &alpha, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                space: CGColorSpaceCreateDeviceGray(),
+                bitmapInfo: CGImageAlphaInfo.alphaOnly.rawValue))
+        for layer in layers { context.draw(layer.image, in: CGRect(x: 0, y: 0, width: w, height: h)) }
+        let scale: Double = Double(w) / kit.spec.canvas[0]
+        let unit: Double = kit.spec.unit
+        let ground = CGPoint(x: kit.spec.groundPoint[0], y: kit.spec.groundPoint[1])
+        let snapshot: [UInt8] = alpha
+        return { p in
+            // Rig units to canvas pixels (y down), then to working pixels. The context's rows run top down.
+            let px = Int(((Double(ground.x) + Double(p.x) * unit) * scale).rounded())
+            let py = Int(((Double(ground.y) - Double(p.y) * unit) * scale).rounded())
+            guard px >= 0, px < w, py >= 0, py < h else { return false }
+            return snapshot[py * w + px] > 25
+        }
+    }
+
     /// Chicks keep the path rig, and so does a bird whose body shape has no kit.
     @MainActor @Test func chicksAndKitlessBuildsUseThePathRig() {
         PartKit.reload()
@@ -139,6 +228,16 @@ import UniformTypeIdentifiers
         #expect(problems.contains("overlay lacing is on wing, which is not a part"))
         #expect(problems.contains("overlay lacing has no lacing.png"))
         #expect(problems.contains("eye has a pivot but no bone"))
+        spec.skin = [
+            "wing": .init(radius: 0.1, width: 0.1), "body": .init(radius: 0.1, width: 0.1),
+            "neckLow": .init(radius: 0.1, width: 0.1), "tail": .init(radius: 0, width: 0.1),
+        ]
+        let skinProblems: [String] = spec.problems(files: files)
+        #expect(skinProblems.contains("skin names unknown bone wing"))
+        #expect(skinProblems.contains("skin names body, which is always its root"))
+        #expect(skinProblems.contains("skin names neckLow, which has no joint"))
+        #expect(skinProblems.contains("skin radius of tail is not above 0"))
+        spec.skin = nil
         spec.parts["body"]?.pivot = nil
         #expect(spec.problems(files: files).contains("no part sets the joint of body"))
     }
