@@ -103,7 +103,7 @@ tail and the drumsticks), its own paint stays. `caps` work as in the hen fit. `m
 replaces those keys of the hen's motion. The script writes `parts/` (a whole kit) and `parts-preview.png`
 (each part in its own colour, bands and caps lighter, over the bones).
 
-hen-b's peck tips the body 50° and crouches 0.12, and sends the throat only a little forward (`peckReach`
+The hen and hen-b peck alike: the body tips 50° and crouches 0.12, and sends the throat only a little forward (`peckReach`
 0.1, -0.6). So the lower neck turns about 22° against the body at the bottom of the peck, and the beak goes
 as low as the hen's. More reach turns the neck further: with the hen's reach (throat straight down) it turns
 about 130°, and with 0.45, -0.8 about 55°. A turning neck lifts its base out of the back line.
@@ -138,10 +138,9 @@ and 70 px (back) and 150 and 80 px (front).
 the joint outside it. As the hock bends, the top of the shank turns on itself and shows no corner. hen-b's
 shanks have knobs of 50 px (back) and 62 px (front).
 
-`feather` (canvas pixels) softens every edge inside the bird, so where one part turns over another no hard
-line shows. Edges near the outline at rest stay crisp, and so do the parts in `crisp` (hen-b: the comb,
-wattle and beak). Under a soft edge, each part behind runs on `feather` pixels, so two half-clear edges never
-leave a light line. hen-b uses 16 px. The comb is drawn over the head, so the head's soft edge does not
-blur it.
+hen-b has no soft edges: blurred joins read as mushy. The body, neck, head and tail bend as one image instead
+(`skin`, from the hen fit's `kit.json`; see "Painted parts" in `docs/design/README.md`), so their joins never
+open. The rounded ends and drumsticks above still matter for the legs, which stay rigid. The script still
+reads `feather` and `crisp` for a fit that wants them.
 
 Paint added under a join or in an arc takes the slices' own paper there, so it keeps the texture.

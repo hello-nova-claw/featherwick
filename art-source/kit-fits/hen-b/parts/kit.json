@@ -144,5 +144,23 @@
     ],
     "stride": 0.8,
     "footSpread": 0.06
+  },
+  "skin": {
+    "tail": {
+      "radius": 0.12,
+      "width": 0.3
+    },
+    "neckLow": {
+      "radius": 0.072,
+      "width": 0.13
+    },
+    "neckHigh": {
+      "radius": 0.048,
+      "width": 0.15
+    },
+    "head": {
+      "radius": 0.04,
+      "width": 0.2
+    }
   }
 }
