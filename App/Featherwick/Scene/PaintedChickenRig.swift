@@ -100,6 +100,9 @@ struct PaintedChickenRig: View {
 
     // MARK: - Parts
 
+    /// Off draws every part rigid, as before the skin. Only the frame budget stage turns it off, to compare.
+    @MainActor static var skinOn: Bool = true
+
     /// A run of layers next to each other in the draw order: all skinned (drawn bent as one picture), or all
     /// rigid (each riding its bone). Feathers on a skinned bone are skinned; the face and legs stay rigid.
     /// With no skin, the whole kit is one rigid run.
@@ -112,7 +115,8 @@ struct PaintedChickenRig: View {
     private var runs: [LayerRun] {
         var out: [LayerRun] = []
         for layer in kit.layers {
-            let skinned: Bool = layer.token.isFeather && (kit.skin?.skins(layer.bone) ?? false)
+            let skinned: Bool =
+                Self.skinOn && layer.token.isFeather && (kit.skin?.skins(layer.bone) ?? false)
             if let last = out.last, last.skinned == skinned {
                 out[out.count - 1] = LayerRun(id: last.id, skinned: skinned, layers: last.layers + [layer])
             } else {
