@@ -73,7 +73,7 @@ prints a score for each part.
 The cuts are hard: no part is painted on under the next one yet. A hand-cut part on top runs past its
 line with a soft edge. The auto cut stops on the line.
 
-Hen, first run: 91.5% of the silhouette matches the hand cut. Past a 24 px band each side of the cuts,
+Hen, first run: 91.2% of the silhouette matches the hand cut. Past a 24 px band each side of the cuts,
 96.8% matches. The remaining misses are hand parts painted far past their line (the back thigh up toward
 the hip, the neck down over the body).
 

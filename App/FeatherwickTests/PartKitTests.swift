@@ -49,9 +49,9 @@ import UniformTypeIdentifiers
     }
 
     /// Every grown hen shares the hen kit, whatever her body shape. A rooster (not a hen) does not use it.
-    @MainActor @Test func grownHensShareTheHenKit() {
+    @MainActor @Test func grownHensShareTheHenKit() throws {
         PartKit.reload()
-        guard let henKit = PartKit.load(.hen) else { return }
+        let henKit: PartKit = try #require(PartKit.load(.hen), "the hen kit does not load")
         var hen: ChickenColours = ChickenColours.sample
         hen.isGrownHen = true
         for shape in BodyShape.allCases {
@@ -68,9 +68,9 @@ import UniformTypeIdentifiers
 
     /// The test tools' kit override wins over the bird's own kit: a grown hen can be drawn with `hen-b`.
     /// Without it, she keeps the hen kit.
-    @MainActor @Test func theKitOverrideDrawsHenB() {
+    @MainActor @Test func theKitOverrideDrawsHenB() throws {
         PartKit.reload()
-        guard let henB = PartKit.load(.henB) else { return }
+        let henB: PartKit = try #require(PartKit.load(.henB), "the hen-b kit does not load")
         var hen: ChickenColours = ChickenColours.sample
         hen.use(kit: .henB)
         #expect(PartKit.kit(for: hen) === henB)
@@ -86,6 +86,12 @@ import UniformTypeIdentifiers
         let bottom: ChickenPose = ChickenMotion.peck(henB.rig, progress: 0.5)
         #expect(abs(bottom[.neckLow]) < 30)
         #expect(bottom[.body] >= 45)
+    }
+
+    /// Launch reads only the kits a bird can draw. `hen-b` is for the test tools, so it loads when picked.
+    @Test func launchPreloadsOnlyTheKitsBirdsUse() {
+        #expect(!KitName.preloaded.contains(.henB))
+        #expect(KitName.preloaded == KitName.all.filter { $0 != .henB })
     }
 
     /// Chicks keep the path rig, and so does a bird whose body shape has no kit.

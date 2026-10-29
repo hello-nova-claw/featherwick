@@ -62,6 +62,12 @@ import Testing
         #expect(abs(rig.motion.stepLength - 2 * 0.113 * tan(22 * Double.pi / 180)) < 1e-12)
         #expect(KitToken.implied(for: "leg", in: kit) == .legs)
         #expect(KitToken.implied(for: "body", in: kit) == .feathers)
+        // With one foot there is no pair to spread: it steps around where it is drawn.
+        let xs: [Double] = (0..<24).map { i in
+            let pose: ChickenPose = ChickenMotion.walk(rig, phase: Double(i) / 24)
+            return Double(Skeleton.place(CGPoint(x: 0.032, y: 0), on: .thighFront, rig: rig, pose: pose).x)
+        }
+        #expect(abs((xs.min()! + xs.max()!) / 2 - 0.032) < 0.002)
     }
 
     /// A kit drawn mid-stride, feet wide apart, still walks: its feet step around their middle, so they pass
@@ -95,6 +101,10 @@ import Testing
         let slow: SkeletonRig = try spec(parts, order: order, motion: #"{"stride": 0.9}"#).skeleton
         #expect(slow.motion.stride == 0.9)
         #expect(abs(slow.motion.stepLength - rig.motion.stepLength * 0.9 / rig.motion.stride) < 1e-12)
+        // A leg swing sets the step; a stride then scales it, whatever order the keys are in.
+        let both: SkeletonRig = try spec(parts, order: order, motion: #"{"legSwing": 20, "stride": 0.9}"#).skeleton
+        let swung: Double = 2 * 0.35 * tan(20 * Double.pi / 180)
+        #expect(abs(both.motion.stepLength - swung * 0.9 / rig.motion.stride) < 1e-12)
     }
 
     /// An old kit (joints by `rotates`, parts by `ridesOn`) names no bones. It has no body joint, so it
