@@ -144,7 +144,7 @@ def compare(folder, out):
         return
     order = json.load(open(os.path.join(hand_dir, "kit.json")))["drawOrder"]
     hand, auto = top_part(hand_dir, order), top_part(auto_dir, order)
-    both = (hand >= 0) & (auto >= 0)
+    both = hand >= 0
     edge = np.zeros(auto.shape, bool)
     for shift in ((1, 0), (0, 1)):
         edge |= auto != np.roll(auto, shift, (0, 1))

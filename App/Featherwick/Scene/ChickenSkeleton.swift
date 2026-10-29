@@ -341,7 +341,9 @@ enum ChickenMotion {
         let m: SkeletonMotion = rig.motion
         let feet: [CGPoint] = Leg.allCases.compactMap { rig.feet[$0] }
         let middle: Double = feet.map { Double($0.x) }.reduce(0, +) / Double(feet.count)
-        let foot = CGPoint(x: middle + (leg == .back ? -m.footSpread : m.footSpread), y: Double(drawn.y))
+        // One foot has no pair to step apart from, so it steps around where it is drawn.
+        let spread: Double = feet.count > 1 ? m.footSpread : 0
+        let foot = CGPoint(x: middle + (leg == .back ? -spread : spread), y: Double(drawn.y))
         let half: Double = m.stepLength / 2
         let lift: Double = m.liftShare * Double(rig.hip.y)
         let target: CGPoint

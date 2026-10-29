@@ -203,14 +203,14 @@ struct KitSpec: Decodable, Sendable {
             if let v = m.peckHeadDip { motion.peckHeadDip = v }
             if let v = m.peckCrouch { motion.peckCrouch = v }
             if let v = m.footSpread { motion.footSpread = v }
+            let legHeight: Double = Leg.allCases.compactMap { joints[$0.thigh].map { Double($0.y) } }.max() ?? 0
+            if let swing = m.legSwing, legHeight > 0 {
+                motion.stepLength = 2 * legHeight * tan(swing * Double.pi / 180)
+            }
             if let v = m.stride, v > 0 {
                 // The bird walks at the scene's speed, so a slower stride slides each foot further.
                 motion.stepLength *= v / motion.stride
                 motion.stride = v
-            }
-            let legHeight: Double = Leg.allCases.compactMap { joints[$0.thigh].map { Double($0.y) } }.max() ?? 0
-            if let swing = m.legSwing, legHeight > 0 {
-                motion.stepLength = 2 * legHeight * tan(swing * Double.pi / 180)
             }
         }
         return SkeletonRig(joints: joints, feet: feet, motion: motion)

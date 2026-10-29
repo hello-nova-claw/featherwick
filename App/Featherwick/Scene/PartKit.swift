@@ -46,6 +46,8 @@ enum KitName: Hashable, Sendable {
     }
 
     static let all: [KitName] = [.hen, .henB] + BodyShape.allCases.map(KitName.build)
+    /// The kits launch reads. `hen-b` is only for the test tools, so it loads when picked.
+    static let preloaded: [KitName] = all.filter { $0 != .henB }
 }
 
 final class PartKit: @unchecked Sendable {
@@ -156,7 +158,7 @@ final class PartKit: @unchecked Sendable {
     /// (eleven 2048 px PNGs and two pixel passes). A bird drawn before this ends loads its kit itself.
     @MainActor static func preload() async {
         guard let root = partsRoot else { return }
-        for name in KitName.all where cache[name] == nil && !missing.contains(name) {
+        for name in KitName.preloaded where cache[name] == nil && !missing.contains(name) {
             let folder: URL = root.appendingPathComponent(name.folder)
             let kit: PartKit? = await Task.detached(priority: .utility) {
                 PartKit.load(name, from: folder)
