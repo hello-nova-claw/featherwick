@@ -9,7 +9,8 @@ import UniformTypeIdentifiers
 
 /// The painted part kits in the app bundle, and the loader. No kit ships now (the skeleton's path rig draws
 /// every bird), so the loader is checked on a small kit these tests write to a temporary folder.
-@Suite struct PartKitTests {
+/// Serialised: the kit shelf is shared by the whole app, and `drawingNeverReadsAKit` waits on it.
+@Suite(.serialized) struct PartKitTests {
     /// Every kit folder in the bundle: `kit.json` reads and has no problems, and names its own folder (the
     /// hen kit, or a body shape).
     /// No kits at all is fine: the path rig draws every bird.
