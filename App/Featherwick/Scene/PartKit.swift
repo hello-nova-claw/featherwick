@@ -138,14 +138,24 @@ final class PartKit: @unchecked Sendable {
     @MainActor static func load(build: BodyShape) -> PartKit? { load(.build(build)) }
 
     /// The kit a grown bird is drawn with: a grown hen's is the hen kit, whatever her body shape; any
-    /// other grown bird's is its body shape's. Chicks keep the path rig: there is no chick kit yet. Nil:
-    /// the path rig draws it.
+    /// other grown bird's is its body shape's. Chicks keep the path rig: there is no chick kit yet. A kit
+    /// with no map for the bird's pattern is passed over, so the pattern still shows. Nil: the path rig
+    /// draws it.
     @MainActor static func kit(for colours: ChickenColours) -> PartKit? {
         guard !colours.isChick else { return nil }
         if let name = colours.kitOverride { return load(name) }
-        if colours.isGrownHen, let kit = load(.hen) { return kit }
-        guard let build = colours.build else { return nil }
-        return load(.build(build))
+        if colours.isGrownHen, let kit = load(.hen), kit.draws(colours.pattern) { return kit }
+        guard let build = colours.build, let kit = load(.build(build)), kit.draws(colours.pattern) else { return nil }
+        return kit
+    }
+
+    /// Whether this kit can show the pattern: lacing and barring need their overlay map.
+    func draws(_ pattern: FeatherwickCore.Pattern?) -> Bool {
+        switch pattern {
+        case .lacing: lacing != nil
+        case .barring: barring != nil
+        case .headSpot, nil: true
+        }
     }
 
     /// Reads every kit off the main thread, at launch, so the first painted bird does not stall a frame
