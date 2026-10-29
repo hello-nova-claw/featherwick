@@ -66,6 +66,21 @@ import UniformTypeIdentifiers
         #expect(PartKit.kit(for: chick) == nil)
     }
 
+    /// A laced or barred hen keeps the path rig while the hen kit has no map for her pattern, so her
+    /// pattern still shows: her look comes from her genes.
+    @MainActor @Test func patternedHensWaitForTheirPatternMap() throws {
+        PartKit.reload()
+        let henKit: PartKit = try #require(PartKit.load(.hen), "the hen kit does not load")
+        var hen: ChickenColours = ChickenColours.sample
+        hen.isGrownHen = true
+        hen.pattern = nil
+        #expect(PartKit.kit(for: hen) === henKit)
+        hen.pattern = .lacing
+        #expect(PartKit.kit(for: hen) === (henKit.lacing == nil ? nil : henKit))
+        hen.pattern = .barring
+        #expect(PartKit.kit(for: hen) === (henKit.barring == nil ? nil : henKit))
+    }
+
     /// The test tools' kit override wins over the bird's own kit: a grown hen can be drawn with `hen-b`.
     /// Without it, she keeps the hen kit.
     @MainActor @Test func theKitOverrideDrawsHenB() throws {
