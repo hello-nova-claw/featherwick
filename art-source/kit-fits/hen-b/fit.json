@@ -1,0 +1,123 @@
+{
+  "build": "hen-b",
+  "slices": {
+    "folder": "slices",
+    "from": "hen",
+    "band": 40,
+    "round": {
+      "neck": {
+        "joint": "neckLow",
+        "from": "body"
+      },
+      "tail": {
+        "joint": "tail",
+        "from": "body",
+        "radius": 120
+      },
+      "hackle": {
+        "joint": "neckHigh",
+        "from": "neck"
+      },
+      "head": {
+        "joint": "head",
+        "from": "hackle"
+      }
+    },
+    "caps": {},
+    "previewColours": {
+      "tail": [
+        127,
+        210,
+        148
+      ],
+      "body": [
+        76,
+        163,
+        172
+      ],
+      "neck": [
+        66,
+        103,
+        178
+      ],
+      "hackle": [
+        166,
+        141,
+        106
+      ],
+      "head": [
+        206,
+        158,
+        68
+      ],
+      "comb": [
+        106,
+        92,
+        200
+      ],
+      "beak": [
+        90,
+        178,
+        190
+      ],
+      "wattle": [
+        64,
+        80,
+        140
+      ],
+      "thighBack": [
+        94,
+        160,
+        168
+      ],
+      "thighFront": [
+        150,
+        218,
+        218
+      ],
+      "shankBack": [
+        100,
+        112,
+        142
+      ],
+      "shankFront": [
+        172,
+        96,
+        128
+      ],
+      "toesBack": [
+        60,
+        176,
+        104
+      ],
+      "toesFront": [
+        202,
+        202,
+        172
+      ]
+    }
+  },
+  "drawOrder": [
+    "shankBack",
+    "toesBack",
+    "tail",
+    "body",
+    "thighBack",
+    "neck",
+    "hackle",
+    "comb",
+    "head",
+    "wattle",
+    "beak",
+    "shankFront",
+    "toesFront",
+    "thighFront"
+  ],
+  "motion": {
+    "peckBodyTilt": 40,
+    "peckReach": [
+      0.45,
+      -0.8
+    ]
+  }
+}
