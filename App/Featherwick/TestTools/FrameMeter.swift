@@ -20,6 +20,8 @@ import SwiftUI
 
     private var link: CADisplayLink?
     private var last: CFTimeInterval = 0
+    /// The link's frame time for the interval now ending: the screen may change rate from one to the next.
+    private var lastExpected: CFTimeInterval = 0
     private var windowStart: CFTimeInterval = 0
     private var frames: Int = 0
     private var worst: CFTimeInterval = 0
@@ -31,6 +33,7 @@ import SwiftUI
         link.add(to: .main, forMode: .common)
         self.link = link
         last = 0
+        lastExpected = 0
         dropped = 0
     }
 
@@ -41,7 +44,10 @@ import SwiftUI
 
     /// `expected` is the link's own frame time: a 120 Hz screen may run the link at 60.
     fileprivate func tick(at time: CFTimeInterval, frame expected: CFTimeInterval) {
-        defer { last = time }
+        defer {
+            last = time
+            lastExpected = expected
+        }
         guard last > 0 else {
             windowStart = time
             return
@@ -49,7 +55,7 @@ import SwiftUI
         let frame: CFTimeInterval = time - last
         frames += 1
         worst = max(worst, frame)
-        if expected > 0, frame > 1.5 * expected { dropped += Int((frame / expected).rounded()) - 1 }
+        if lastExpected > 0, frame > 1.5 * lastExpected { dropped += Int((frame / lastExpected).rounded()) - 1 }
         if time - windowStart >= 1 {
             fps = Int((Double(frames) / (time - windowStart)).rounded())
             worstMilliseconds = worst * 1000
