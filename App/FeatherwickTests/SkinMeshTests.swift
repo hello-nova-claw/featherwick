@@ -153,12 +153,4 @@ import Testing
         }
         #expect(Affine(from: [.zero, CGPoint(x: 1, y: 1), CGPoint(x: 2, y: 2)], to: to) == nil)
     }
-
-    private func lexical(_ a: [CGPoint], _ b: [CGPoint]) -> Bool {
-        for (p, q) in zip(a, b) {
-            if p.x != q.x { return p.x < q.x }
-            if p.y != q.y { return p.y < q.y }
-        }
-        return false
-    }
 }
