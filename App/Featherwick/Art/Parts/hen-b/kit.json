@@ -136,10 +136,10 @@
   "motion": {
     "peckBodyTilt": 50,
     "peckCrouch": 0.12,
-    "peckHeadDip": 80,
+    "peckHeadDip": 55,
     "peckTail": -22,
     "peckReach": [
-      0.1,
+      0.15,
       -0.6
     ],
     "stride": 0.8,
