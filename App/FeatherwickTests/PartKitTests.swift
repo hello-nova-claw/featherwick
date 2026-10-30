@@ -112,7 +112,40 @@ import UniformTypeIdentifiers
         #expect(placed.y < 0.15)
         #expect(placed.x > throat.x)
         #expect(try Self.lowest("beak", of: henB, pose: bottom) < 0.08)
-        #expect(try Self.lowest("body", of: henB, pose: bottom) > 0)
+        #expect(try Self.lowestSkinned("body", of: henB, pose: bottom) > 0)
+    }
+
+    /// The lowest point of a kit's bent part in a pose, moved by the skin's mesh as the renderer moves it
+    /// (rig units above the ground).
+    @MainActor private static func lowestSkinned(_ part: String, of kit: PartKit, pose: ChickenPose) throws -> Double {
+        let skin: ChickenSkin = try #require(kit.skin)
+        var run: [KitLayer] = []
+        for layer in kit.layers {
+            if kit.isSkinned(layer) {
+                run.append(layer)
+            } else if run.contains(where: { $0.id == part }) {
+                break
+            } else {
+                run = []
+            }
+        }
+        let layer: KitLayer = try #require(run.first { $0.id == part }, "\(part) is not bent")
+        let mesh: SkinMesh = try #require(kit.meshes[run[0].id])
+        let height: Double = 240
+        let transforms: [Affine] = skin.bones.map {
+            Skeleton.transform(of: $0.bone, rig: kit.rig, pose: pose, height: height)
+        }
+        let moved: [CGPoint] = mesh.moved(transforms: transforms, height: height)
+        let painted: (CGPoint) -> Bool = try paint(of: [layer], in: kit)
+        var low: Double = .infinity
+        for x in stride(from: -0.6, through: 0.6, by: 0.005) {
+            for y in stride(from: 0.0, through: 1.0, by: 0.005) where painted(CGPoint(x: x, y: y)) {
+                // The frame's y runs down from the top, and the ground is its bottom edge.
+                guard let at = mesh.place(CGPoint(x: x, y: y), moved: moved) else { continue }
+                low = min(low, (height - Double(at.y)) / height)
+            }
+        }
+        return low
     }
 
     /// The lowest point of a kit's painted part in a pose, moved by its bone (rig units above the ground).
