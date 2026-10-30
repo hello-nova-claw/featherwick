@@ -3,7 +3,7 @@ import SwiftUI
 
 /// A live frame rate for the frame budget stage, so a phone can be checked without Instruments. It counts
 /// display frames each second and the longest frame in that second. A frame that takes more than one and a
-/// half of the screen's frame times is a dropped frame. Instruments (Animation Hitches) stays the real
+/// half of the display link's frame times is a dropped frame. Instruments (Animation Hitches) stays the real
 /// measure: this sees the main thread's frames, not the render server's.
 @MainActor @Observable final class FrameMeter {
     /// Frames in the last whole second.
@@ -39,7 +39,8 @@ import SwiftUI
         link = nil
     }
 
-    fileprivate func tick(at time: CFTimeInterval) {
+    /// `expected` is the link's own frame time: a 120 Hz screen may run the link at 60.
+    fileprivate func tick(at time: CFTimeInterval, frame expected: CFTimeInterval) {
         defer { last = time }
         guard last > 0 else {
             windowStart = time
@@ -48,7 +49,7 @@ import SwiftUI
         let frame: CFTimeInterval = time - last
         frames += 1
         worst = max(worst, frame)
-        if frame > 1.5 / Double(target) { dropped += Int((frame * Double(target)).rounded()) - 1 }
+        if expected > 0, frame > 1.5 * expected { dropped += Int((frame / expected).rounded()) - 1 }
         if time - windowStart >= 1 {
             fps = Int((Double(frames) / (time - windowStart)).rounded())
             worstMilliseconds = worst * 1000
@@ -67,7 +68,7 @@ private final class Ticker: NSObject {
     init(meter: FrameMeter) { self.meter = meter }
 
     @MainActor @objc func tick(_ link: CADisplayLink) {
-        meter?.tick(at: link.targetTimestamp - link.duration)
+        meter?.tick(at: link.timestamp, frame: link.targetTimestamp - link.timestamp)
     }
 }
 
