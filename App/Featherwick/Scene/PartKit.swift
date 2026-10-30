@@ -2,6 +2,7 @@ import CoreGraphics
 import FeatherwickCore
 import Foundation
 import ImageIO
+import Observation
 import os
 
 // A painted parts kit: `Art/Parts/<name>/kit.json` and one PNG per part. A grown hen uses the `hen` kit;
@@ -215,20 +216,30 @@ final class PartKit: @unchecked Sendable {
 
     // MARK: - Loading
 
-    @MainActor private static var cache: [KitName: PartKit] = [:]
-    /// Kits that are not there, or are broken: asked once, then remembered, so the log says it once.
-    @MainActor private static var missing: Set<KitName> = []
+    /// The kits read so far. Observed, so a bird drawn before its kit was read draws again once it is.
+    @MainActor @Observable fileprivate final class Shelf {
+        var kits: [KitName: PartKit] = [:]
+        /// Kits that are not there, or are broken: asked once, then remembered, so the log says it once.
+        var missing: Set<KitName> = []
+        /// Kits being read off the main thread now. Every caller waits on the one read, so each kit is
+        /// read once.
+        @ObservationIgnored var reading: [KitName: Task<PartKit?, Never>] = [:]
+        /// Goes up on each reload, so a read started before it is thrown away.
+        @ObservationIgnored var generation: Int = 0
+    }
 
-    /// A kit by name, or nil (no kit yet, or a broken kit: then the path rig draws the bird). Read once,
-    /// then cached.
+    @MainActor fileprivate static let shelf = Shelf()
+
+    /// A kit by name, read now if it is not read yet, or nil (no kit, or a broken kit). Drawing never
+    /// calls this: it reads a 2048 px PNG for each part. The test tools and tests do.
     @MainActor static func load(_ name: KitName) -> PartKit? {
-        if let kit = cache[name] { return kit }
-        if missing.contains(name) { return nil }
+        if let kit = shelf.kits[name] { return kit }
+        if shelf.missing.contains(name) { return nil }
         guard let root = partsRoot, let kit = load(name, from: root.appendingPathComponent(name.folder)) else {
-            missing.insert(name)
+            shelf.missing.insert(name)
             return nil
         }
-        cache[name] = kit
+        shelf.kits[name] = kit
         return kit
     }
 
@@ -236,34 +247,73 @@ final class PartKit: @unchecked Sendable {
     @MainActor static func load(build: BodyShape) -> PartKit? { load(.build(build)) }
 
     /// The kit a grown bird is drawn with: a grown hen's is the hen kit, whatever her body shape; any
-    /// other grown bird's is its body shape's. Chicks keep the path rig: there is no chick kit yet. Nil:
-    /// the path rig draws it.
+    /// other grown bird's is its body shape's. Chicks keep the path rig: there is no chick kit yet. A kit
+    /// with no map for the bird's pattern is passed over, so the pattern still shows. Nil: the path rig
+    /// draws it. A kit not read yet is read off the main thread, and the bird draws again when it is in.
     @MainActor static func kit(for colours: ChickenColours) -> PartKit? {
         guard !colours.isChick else { return nil }
         if let name = colours.kitOverride { return load(name) }
-        if colours.isGrownHen, let kit = load(.hen) { return kit }
-        guard let build = colours.build else { return nil }
-        return load(.build(build))
+        if colours.isGrownHen, let kit = shelved(.hen), kit.draws(colours.pattern) { return kit }
+        guard let build = colours.build, let kit = shelved(.build(build)), kit.draws(colours.pattern) else {
+            return nil
+        }
+        return kit
     }
 
-    /// Reads every kit off the main thread, at launch, so the first painted bird does not stall a frame
-    /// (eleven 2048 px PNGs and two pixel passes). A bird drawn before this ends loads its kit itself.
-    @MainActor static func preload() async {
-        guard let root = partsRoot else { return }
-        for name in KitName.preloaded where cache[name] == nil && !missing.contains(name) {
-            let folder: URL = root.appendingPathComponent(name.folder)
-            let kit: PartKit? = await Task.detached(priority: .utility) {
-                PartKit.load(name, from: folder)
-            }.value
-            guard cache[name] == nil, !missing.contains(name) else { continue }
-            if let kit { cache[name] = kit } else { missing.insert(name) }
+    /// Whether this kit can show the pattern: lacing and barring need their overlay map.
+    func draws(_ pattern: FeatherwickCore.Pattern?) -> Bool {
+        switch pattern {
+        case .lacing: lacing != nil
+        case .barring: barring != nil
+        case .headSpot, nil: true
         }
+    }
+
+    /// A kit already read, or nil. A kit not read yet starts reading off the main thread.
+    @MainActor private static func shelved(_ name: KitName) -> PartKit? {
+        if let kit = shelf.kits[name] { return kit }
+        if !shelf.missing.contains(name) && shelf.reading[name] == nil {
+            Task { await read(name) }
+        }
+        return nil
+    }
+
+    /// Reads one kit off the main thread and shelves it.
+    @MainActor private static func read(_ name: KitName) async {
+        guard shelf.kits[name] == nil, !shelf.missing.contains(name) else { return }
+        let generation: Int = shelf.generation
+        guard let root = partsRoot else {
+            shelf.missing.insert(name)
+            return
+        }
+        let task: Task<PartKit?, Never>
+        if let running = shelf.reading[name] {
+            task = running
+        } else {
+            let folder: URL = root.appendingPathComponent(name.folder)
+            task = Task.detached(priority: .utility) { PartKit.load(name, from: folder) }
+            shelf.reading[name] = task
+        }
+        let kit: PartKit? = await task.value
+        guard generation == shelf.generation else { return }
+        shelf.reading[name] = nil
+        guard shelf.kits[name] == nil, !shelf.missing.contains(name) else { return }
+        if let kit { shelf.kits[name] = kit } else { shelf.missing.insert(name) }
+    }
+
+    /// Reads every kit a bird can use off the main thread, at launch, so the first painted bird is
+    /// ready soon (eleven 2048 px PNGs and two pixel passes). A bird drawn before this ends gets the path
+    /// rig, and draws again when its kit is in.
+    @MainActor static func preload() async {
+        for name in KitName.preloaded { await read(name) }
     }
 
     /// Forgets every kit, so the next draw reads the folders again (the rig lab's "Reload kit").
     @MainActor static func reload() {
-        cache = [:]
-        missing = []
+        shelf.generation &+= 1
+        shelf.reading = [:]
+        shelf.kits = [:]
+        shelf.missing = []
     }
 
     /// The `Parts` folder in the app bundle (a folder reference, so each kit keeps its own folder).
