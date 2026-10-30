@@ -1,0 +1,1 @@
+Large numbers show with the separators of your language, such as "1,179 coins".

@@ -1,6 +1,462 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "calendar.chicksComing.one" : {
+      "comment" : "Calendar: one Hatch-along chick on its way. The placeholder is Hazel's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your Hatch-along chick is coming from %@'s."
+          }
+        }
+      }
+    },
+    "calendar.chicksComing.other" : {
+      "comment" : "Calendar: Hatch-along chicks on their way, a number other than 1. The placeholders are the number of chicks and Hazel's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld Hatch-along chicks are coming from %2$@'s, one as each finds room."
+          }
+        }
+      }
+    },
+    "calendar.effect.hatchAlong" : {
+      "comment" : "Calendar: what the Hatch-along does.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bring an egg you know is fertile in its week, and a surprise chick comes back."
+          }
+        }
+      }
+    },
+    "calendar.effect.longestDay" : {
+      "comment" : "Calendar: what the Longest Day does.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The fox stays home that night."
+          }
+        }
+      }
+    },
+    "calendar.effect.midwinterLights" : {
+      "comment" : "Calendar: what Midwinter Lights does.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The village gives its keepers a gift."
+          }
+        }
+      }
+    },
+    "calendar.effect.moultWeek" : {
+      "comment" : "Calendar: what Moult Week does. The placeholder is Hazel's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ brings mealworms for the moult."
+          }
+        }
+      }
+    },
+    "calendar.gift.coins" : {
+      "comment" : "A village day's gift. The placeholder is the coins.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The village gives you %lld coins."
+          }
+        }
+      }
+    },
+    "calendar.gift.coinsAndMealworms" : {
+      "comment" : "A village day's gift. The placeholders are the coins and the mealworms.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The village gives you %1$lld coins and %2$lld mealworms."
+          }
+        }
+      }
+    },
+    "calendar.gift.mealworms" : {
+      "comment" : "A village day's gift. The placeholder is the mealworms.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The village gives you %lld mealworms."
+          }
+        }
+      }
+    },
+    "calendar.hatchAlong" : {
+      "comment" : "A village day's short name: the spring egg swap.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hatch-along"
+          }
+        }
+      }
+    },
+    "calendar.hatchAlongChickArrived" : {
+      "comment" : "The Hatch-along chick comes home. The placeholders are Hazel's name and the chick's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ brings a chick home from the village hatch, cupped in her hands, and settles it under the heat lamp. What breed is it? You'll see when its feathers come in. %2$@ needs a name."
+          }
+        }
+      }
+    },
+    "calendar.hatchAlongChickWaiting" : {
+      "comment" : "The Hatch-along chick waits with Hazel. The placeholder is Hazel's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ calls over the fence. \"Your Hatch-along chick is ready, but there's no room for it yet. It needs a place in the brooder, and a perch for when it's grown. It can stay with me until then. No hurry.\""
+          }
+        }
+      }
+    },
+    "calendar.hatchAlongEggGiven" : {
+      "comment" : "The keeper brings a Hatch-along egg. The placeholders are Hazel's name and the nights until the chick comes.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You hand %1$@ an egg you know is fertile. She pencils your name on the tray and tucks it in with the village's eggs. \"%2$lld nights, and a chick comes back to you.\""
+          }
+        }
+      }
+    },
+    "calendar.hatchAlongWeek" : {
+      "comment" : "Calendar: the Hatch-along week is on. The placeholder is Hazel's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It's Hatch-along week. Bring %@ an egg you know is fertile."
+          }
+        }
+      }
+    },
+    "calendar.hatchAlongWeekNoEgg" : {
+      "comment" : "Calendar: the Hatch-along week is on, and no egg is known fertile.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It's Hatch-along week. You need an egg you know is fertile to bring one."
+          }
+        }
+      }
+    },
+    "calendar.lineWithEffect" : {
+      "comment" : "Calendar: one village day. The placeholders are its date line and what the day does.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "calendar.longestDay" : {
+      "comment" : "A village day's short name: midsummer.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Longest Day"
+          }
+        }
+      }
+    },
+    "calendar.midwinterLights" : {
+      "comment" : "A village day's short name: the winter festival.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Midwinter Lights"
+          }
+        }
+      }
+    },
+    "calendar.midwinterNote.first" : {
+      "comment" : "Teddy's first Midwinter note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "\"Mum says I can't have a chicken but I can draw one. This is yours. The yellow bit is the lights.\" A crayon drawing of a very round bird under a very big moon."
+          }
+        }
+      }
+    },
+    "calendar.midwinterNote.later" : {
+      "comment" : "Teddy's later Midwinter notes.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "\"I drew all of them this year. The one in the hat is you.\" A crayon drawing of a lot of birds, a coop, and someone in a hat."
+          }
+        }
+      }
+    },
+    "calendar.moultGift.one" : {
+      "comment" : "Moult Week: Hazel's gift, when treats == 1. The placeholders are the mealworms given and the treats now held.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You're given %1$lld mealworm. You have %2$lld treats."
+          }
+        }
+      }
+    },
+    "calendar.moultGift.other" : {
+      "comment" : "Moult Week: Hazel's gift, a number of mealworms other than 1. The placeholders are the mealworms given and the treats now held.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You're given %1$lld mealworms. You have %2$lld treats."
+          }
+        }
+      }
+    },
+    "calendar.moultWeek" : {
+      "comment" : "A village day's short name: the autumn moult.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Moult Week"
+          }
+        }
+      }
+    },
+    "calendar.notice.hatchAlong" : {
+      "comment" : "Farm gate notice in the Hatch-along week.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hatch-along: bring an egg"
+          }
+        }
+      }
+    },
+    "calendar.notice.inDays" : {
+      "comment" : "Farm gate notice: a village day soon. The placeholders are its short name and the days (2 or more).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ in %2$lld days"
+          }
+        }
+      }
+    },
+    "calendar.notice.today" : {
+      "comment" : "Farm gate notice: a village day is today. The placeholder is its short name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ today"
+          }
+        }
+      }
+    },
+    "calendar.notice.tomorrow" : {
+      "comment" : "Farm gate notice: a village day is tomorrow. The placeholder is its short name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ tomorrow"
+          }
+        }
+      }
+    },
+    "calendar.refusal.alreadyGiven" : {
+      "comment" : "The Hatch-along can't take an egg: one is given this year. The placeholder is Hazel's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You've brought your Hatch-along egg this year. One each, %@ says. There's next spring."
+          }
+        }
+      }
+    },
+    "calendar.refusal.noFertileEgg" : {
+      "comment" : "The Hatch-along can't take an egg: none is known fertile.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The Hatch-along needs an egg you KNOW is fertile. Candle your eggs to find one, or buy a fertile egg at Speckle & Down: they come candled."
+          }
+        }
+      }
+    },
+    "calendar.refusal.notThisWeek" : {
+      "comment" : "The Hatch-along can't take an egg: it is not its week.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The Hatch-along is in spring. Bring an egg in its week: the village calendar says when."
+          }
+        }
+      }
+    },
+    "calendar.scene.hatchAlong.first" : {
+      "comment" : "The first Hatch-along. The placeholders are Hazel's name and the nights until the chick comes.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ has her big incubator set up in the village hall. \"Everyone brings one egg they know is fertile, and everyone gets a chick back in %2$lld nights. Not your own egg's chick, mind: whichever the hatch sends you. That's the fun of it. You've all week.\""
+          }
+        }
+      }
+    },
+    "calendar.scene.hatchAlong.later" : {
+      "comment" : "A later Hatch-along. The placeholders are Hazel's name and the nights until the chick comes.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The Hatch-along again. %1$@'s incubator hums in the village hall, and the children have drawn name cards for the trays. One known-fertile egg this week, and a surprise chick comes home %2$lld nights later."
+          }
+        }
+      }
+    },
+    "calendar.scene.longestDay.first" : {
+      "comment" : "The first Longest Day. The placeholder is Hazel's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The longest day of the year. The whole village is out on the green until the light goes. \"The fox never stirs tonight,\" %@ says. \"Too many people about. Leave the door open if you like: they can forage in peace.\""
+          }
+        }
+      }
+    },
+    "calendar.scene.longestDay.later" : {
+      "comment" : "A later Longest Day.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Midsummer again. The lanes smell of elderflower, and the fox keeps to its den tonight. A safe night to leave the door open, if you like."
+          }
+        }
+      }
+    },
+    "calendar.scene.midwinterLights.first" : {
+      "comment" : "The first Midwinter Lights. The placeholder is Wren's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Midwinter Lights. There's a lantern in every window down the lane, and %@ hangs a paper star over the shop door. The village keeps a little fund for its keepers, and this year you're one of them."
+          }
+        }
+      }
+    },
+    "calendar.scene.midwinterLights.later" : {
+      "comment" : "A later Midwinter Lights.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Midwinter Lights again. You know the way to the green now. The lanterns are lit, the kettle's on in the hall, and the keepers' fund comes round."
+          }
+        }
+      }
+    },
+    "calendar.scene.moultWeek.first" : {
+      "comment" : "The first Moult Week. The placeholder is Hazel's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ leans on the fence. \"Don't fret if the coop looks like a pillow burst. It's the moult. Every autumn they drop their old feathers and grow new ones. They look a fright for a week or two, but nobody's poorly, and the judges know what season it is. Feathers are nearly all protein, so here: these help.\""
+          }
+        }
+      }
+    },
+    "calendar.scene.moultWeek.later" : {
+      "comment" : "A later Moult Week. The placeholder is Hazel's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Moult Week again. Feathers drift round the yard like snow. %@ passes a bag over the fence. \"Same as last year, love. Protein in, new coats out.\""
+          }
+        }
+      }
+    },
     "cli.heading" : {
       "comment" : "A heading in the text game, followed by its lines. The placeholder is the heading.",
       "extractionState" : "extracted_with_value",
@@ -9,6 +465,2034 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%@:"
+          }
+        }
+      }
+    },
+    "inheritance.allBarred" : {
+      "comment" : "Books ▸ Inheritance: what hatches.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "all barred"
+          }
+        }
+      }
+    },
+    "inheritance.allColour" : {
+      "comment" : "Books ▸ Inheritance: every chick hatches one colour. The placeholder is the colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "all %@"
+          }
+        }
+      }
+    },
+    "inheritance.allDaughtersLay" : {
+      "comment" : "Books ▸ Inheritance: what the daughters lay. The placeholder is the egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "every daughter lays %@ eggs"
+          }
+        }
+      }
+    },
+    "inheritance.allDaughtersLaySpeckled" : {
+      "comment" : "Books ▸ Inheritance: what the daughters lay.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "every daughter lays speckled eggs"
+          }
+        }
+      }
+    },
+    "inheritance.allLaced" : {
+      "comment" : "Books ▸ Inheritance: what hatches.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "all laced"
+          }
+        }
+      }
+    },
+    "inheritance.allSilkieFeathered" : {
+      "comment" : "Books ▸ Inheritance: what hatches.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "all silkie-feathered"
+          }
+        }
+      }
+    },
+    "inheritance.empty" : {
+      "comment" : "Books ▸ Inheritance, before the first rule.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set eggs from a pair in the pen and what you learn ends up here."
+          }
+        }
+      }
+    },
+    "inheritance.parent.barredHen" : {
+      "comment" : "Books ▸ Inheritance: a parent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "barred hen"
+          }
+        }
+      }
+    },
+    "inheritance.parent.barredRooster" : {
+      "comment" : "Books ▸ Inheritance: a parent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "barred rooster"
+          }
+        }
+      }
+    },
+    "inheritance.parent.colourHen" : {
+      "comment" : "Books ▸ Inheritance: a hen of a colour. The placeholder is the colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ hen"
+          }
+        }
+      }
+    },
+    "inheritance.parent.colourRooster" : {
+      "comment" : "Books ▸ Inheritance: a rooster of a colour. The placeholder is the colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ rooster"
+          }
+        }
+      }
+    },
+    "inheritance.parent.eggHen" : {
+      "comment" : "Books ▸ Inheritance: a hen by the eggs she lays. The placeholder is the egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@-egg hen"
+          }
+        }
+      }
+    },
+    "inheritance.parent.eggRooster" : {
+      "comment" : "Books ▸ Inheritance: a rooster by the egg colour of his line. The placeholder is the egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@-egg rooster"
+          }
+        }
+      }
+    },
+    "inheritance.parent.hen" : {
+      "comment" : "Books ▸ Inheritance: a parent whose look does not say.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "hen"
+          }
+        }
+      }
+    },
+    "inheritance.parent.lacedHen" : {
+      "comment" : "Books ▸ Inheritance: a parent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "laced hen"
+          }
+        }
+      }
+    },
+    "inheritance.parent.lacedRooster" : {
+      "comment" : "Books ▸ Inheritance: a parent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "laced rooster"
+          }
+        }
+      }
+    },
+    "inheritance.parent.nonColourHen" : {
+      "comment" : "Books ▸ Inheritance: a hen not of a colour. The placeholder is the colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "non-%@ hen"
+          }
+        }
+      }
+    },
+    "inheritance.parent.nonColourRooster" : {
+      "comment" : "Books ▸ Inheritance: a rooster not of a colour. The placeholder is the colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "non-%@ rooster"
+          }
+        }
+      }
+    },
+    "inheritance.parent.plainEggHen" : {
+      "comment" : "Books ▸ Inheritance: a parent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "plain-egg hen"
+          }
+        }
+      }
+    },
+    "inheritance.parent.plainEggRooster" : {
+      "comment" : "Books ▸ Inheritance: a parent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "plain-egg rooster"
+          }
+        }
+      }
+    },
+    "inheritance.parent.plainFeatheredHen" : {
+      "comment" : "Books ▸ Inheritance: a parent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "plain-feathered hen"
+          }
+        }
+      }
+    },
+    "inheritance.parent.plainFeatheredRooster" : {
+      "comment" : "Books ▸ Inheritance: a parent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "plain-feathered rooster"
+          }
+        }
+      }
+    },
+    "inheritance.parent.plainHen" : {
+      "comment" : "Books ▸ Inheritance: a parent with no barring or lacing.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "plain hen"
+          }
+        }
+      }
+    },
+    "inheritance.parent.plainRooster" : {
+      "comment" : "Books ▸ Inheritance: a parent with no barring or lacing.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "plain rooster"
+          }
+        }
+      }
+    },
+    "inheritance.parent.rooster" : {
+      "comment" : "Books ▸ Inheritance: a parent whose look does not say.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "rooster"
+          }
+        }
+      }
+    },
+    "inheritance.parent.silkieFeatheredHen" : {
+      "comment" : "Books ▸ Inheritance: a parent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "silkie-feathered hen"
+          }
+        }
+      }
+    },
+    "inheritance.parent.silkieFeatheredRooster" : {
+      "comment" : "Books ▸ Inheritance: a parent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "silkie-feathered rooster"
+          }
+        }
+      }
+    },
+    "inheritance.parent.speckledEggHen" : {
+      "comment" : "Books ▸ Inheritance: a parent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "speckled-egg hen"
+          }
+        }
+      }
+    },
+    "inheritance.parent.speckledEggRooster" : {
+      "comment" : "Books ▸ Inheritance: a parent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "speckled-egg rooster"
+          }
+        }
+      }
+    },
+    "inheritance.rule" : {
+      "comment" : "Books ▸ Inheritance: one rule. The placeholders are the first parent (a colour, or a hen by her look), the second parent (a colour, or a rooster by his look) and what hatches.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ × %2$@ → %3$@"
+          }
+        }
+      }
+    },
+    "inheritance.sexLink" : {
+      "comment" : "Books ▸ Inheritance: the rule that barring shows which chicks are cockerels.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "barred hen × plain rooster → barred chicks are cockerels"
+          }
+        }
+      }
+    },
+    "inheritance.shareCount" : {
+      "comment" : "Books ▸ Inheritance: one part of a ratio. The placeholders are the share and the colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@"
+          }
+        }
+      }
+    },
+    "inheritance.someBarred" : {
+      "comment" : "Books ▸ Inheritance: what hatches. The placeholders are the count and out of how many.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld in %2$lld barred"
+          }
+        }
+      }
+    },
+    "inheritance.someColour" : {
+      "comment" : "Books ▸ Inheritance: some chicks hatch a colour. The placeholders are the count, out of how many, and the colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld in %2$lld %3$@"
+          }
+        }
+      }
+    },
+    "inheritance.someDaughtersLay" : {
+      "comment" : "Books ▸ Inheritance: what the daughters lay. The placeholders are the count, out of how many, and the egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld in %2$lld daughters lay %3$@ eggs"
+          }
+        }
+      }
+    },
+    "inheritance.someDaughtersLaySpeckled" : {
+      "comment" : "Books ▸ Inheritance: what the daughters lay. The placeholders are the count and out of how many.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld in %2$lld daughters lay speckled eggs"
+          }
+        }
+      }
+    },
+    "inheritance.someLaced" : {
+      "comment" : "Books ▸ Inheritance: what hatches. The placeholders are the count and out of how many.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld in %2$lld laced"
+          }
+        }
+      }
+    },
+    "inheritance.someSilkieFeathered" : {
+      "comment" : "Books ▸ Inheritance: what hatches. The placeholders are the count and out of how many.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld in %2$lld silkie-feathered"
+          }
+        }
+      }
+    },
+    "inheritance.subtitle" : {
+      "comment" : "Books ▸ Inheritance, under the heading.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "What your pairs have shown"
+          }
+        }
+      }
+    },
+    "inheritance.title" : {
+      "comment" : "Books tab and page heading: the rules learned from penned pairs.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Inheritance"
+          }
+        }
+      }
+    },
+    "lore.araucana.bredFor" : {
+      "comment" : "Breed Book, Araucana: what keepers bred it for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Its blue eggs, which very few breeds lay. Breeders joined two local fowl: one laid blue eggs and had no tail, and the other had ear tufts."
+          }
+        }
+      }
+    },
+    "lore.araucana.eggs" : {
+      "comment" : "Breed Book, Araucana: the eggs real hens of the breed lay.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Blue."
+          }
+        }
+      }
+    },
+    "lore.araucana.judge" : {
+      "comment" : "Breed Book, Araucana: what a show judge looks for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A light, lively bird of the size its standard asks for, and a clean, even colour, such as black."
+          }
+        }
+      }
+    },
+    "lore.araucana.oddity" : {
+      "comment" : "Breed Book, Araucana: one true, odd fact.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Many Araucanas have no tail at all, and some grow tufts of feathers beside their ears. Not every bird shows them."
+          }
+        }
+      }
+    },
+    "lore.araucana.origin" : {
+      "comment" : "Breed Book, Araucana: where and when the breed was made.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "From the Araucanía region of Chile, where the breed took shape in the 20th century from fowl kept by the Mapuche people."
+          }
+        }
+      }
+    },
+    "lore.araucana.temperament" : {
+      "comment" : "Breed Book, Araucana: the breed's temperament.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Active, alert and curious. A keen forager."
+          }
+        }
+      }
+    },
+    "lore.australorp.bredFor" : {
+      "comment" : "Breed Book, Australorp: what keepers bred it for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Eggs. Australian breeders kept the Orpington's size and bred for more eggs and less broodiness."
+          }
+        }
+      }
+    },
+    "lore.australorp.eggs" : {
+      "comment" : "Breed Book, Australorp: the eggs real hens of the breed lay.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Light to medium brown, often 250 or more a year."
+          }
+        }
+      }
+    },
+    "lore.australorp.judge" : {
+      "comment" : "Breed Book, Australorp: what a show judge looks for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A deep, broad body with a full, rounded breast. Black birds should have a bright green sheen."
+          }
+        }
+      }
+    },
+    "lore.australorp.oddity" : {
+      "comment" : "Breed Book, Australorp: one true, odd fact.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The name joins Australian and Orpington. In the laying contests of the 1920s, Australorp hens set world records for the most eggs in a year. Orders for the birds soon came from England, the United States and other countries."
+          }
+        }
+      }
+    },
+    "lore.australorp.origin" : {
+      "comment" : "Breed Book, Australorp: where and when the breed was made.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Made in Australia in the early 20th century, from Black Orpingtons brought from England."
+          }
+        }
+      }
+    },
+    "lore.australorp.temperament" : {
+      "comment" : "Breed Book, Australorp: the breed's temperament.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Calm, gentle and friendly."
+          }
+        }
+      }
+    },
+    "lore.foundOnDay" : {
+      "comment" : "Breed Book: the first day a look of the breed was found. The placeholder is the day number.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Found on day %lld"
+          }
+        }
+      }
+    },
+    "lore.heading.bredFor" : {
+      "comment" : "Breed Book lore page heading: what keepers bred the breed for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bred for"
+          }
+        }
+      }
+    },
+    "lore.heading.eggs" : {
+      "comment" : "Breed Book lore page heading: the breed's eggs.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Eggs"
+          }
+        }
+      }
+    },
+    "lore.heading.judge" : {
+      "comment" : "Breed Book lore page heading: what a show judge looks for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "What the judge looks for"
+          }
+        }
+      }
+    },
+    "lore.heading.oddity" : {
+      "comment" : "Breed Book lore page heading: one true, odd fact.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Did you know?"
+          }
+        }
+      }
+    },
+    "lore.heading.origin" : {
+      "comment" : "Breed Book lore page heading: where and when the breed was made.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Where it comes from"
+          }
+        }
+      }
+    },
+    "lore.heading.temperament" : {
+      "comment" : "Breed Book lore page heading: the breed's temperament.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Temperament"
+          }
+        }
+      }
+    },
+    "lore.leghorn.bredFor" : {
+      "comment" : "Breed Book, Leghorn: what keepers bred it for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Eggs. The early Italian birds were small, laid well and needed little feed. White Leghorns became the main breed behind commercial white-egg layers."
+          }
+        }
+      }
+    },
+    "lore.leghorn.eggs" : {
+      "comment" : "Breed Book, Leghorn: the eggs real hens of the breed lay.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "White, about 280 a year from a good hen."
+          }
+        }
+      }
+    },
+    "lore.leghorn.judge" : {
+      "comment" : "Breed Book, Leghorn: what a show judge looks for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A slim, upright, streamlined body with the tail held high, and clean white feathers with no cream or yellow tint."
+          }
+        }
+      }
+    },
+    "lore.leghorn.oddity" : {
+      "comment" : "Breed Book, Leghorn: one true, odd fact.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Leghorn is the old English name for Livorno. In America, the first white birds were sold as Italian fowls."
+          }
+        }
+      }
+    },
+    "lore.leghorn.origin" : {
+      "comment" : "Breed Book, Leghorn: where and when the breed was made.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "From Tuscany in Italy. Ships took the birds to America from the port of Livorno in the 19th century."
+          }
+        }
+      }
+    },
+    "lore.leghorn.temperament" : {
+      "comment" : "Breed Book, Leghorn: the breed's temperament.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Very active and easily startled."
+          }
+        }
+      }
+    },
+    "lore.marans.bredFor" : {
+      "comment" : "Breed Book, Marans: what keepers bred it for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A farm bird for eggs and the table. Breeders crossed the local marsh fowl with Langshans."
+          }
+        }
+      }
+    },
+    "lore.marans.eggs" : {
+      "comment" : "Breed Book, Marans: the eggs real hens of the breed lay.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Very dark brown, from mahogany to chocolate."
+          }
+        }
+      }
+    },
+    "lore.marans.judge" : {
+      "comment" : "Breed Book, Marans: what a show judge looks for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A sturdy, active farm bird of good size, and a clean, even colour, such as black."
+          }
+        }
+      }
+    },
+    "lore.marans.oddity" : {
+      "comment" : "Breed Book, Marans: one true, odd fact.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The hen adds the dark brown last, in the final hours before the egg is laid. The breed nearly died out in the 1940s, and French breeders brought it back."
+          }
+        }
+      }
+    },
+    "lore.marans.origin" : {
+      "comment" : "Breed Book, Marans: where and when the breed was made.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "From the marshes around the port town of Marans in western France. It took its modern form in the early 20th century."
+          }
+        }
+      }
+    },
+    "lore.marans.temperament" : {
+      "comment" : "Breed Book, Marans: the breed's temperament.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Calm and easy-going."
+          }
+        }
+      }
+    },
+    "lore.orpington.bredFor" : {
+      "comment" : "Breed Book, Orpington: what keepers bred it for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A hardy farm bird, good for both eggs and the table."
+          }
+        }
+      }
+    },
+    "lore.orpington.eggs" : {
+      "comment" : "Breed Book, Orpington: the eggs real hens of the breed lay.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Light to medium brown."
+          }
+        }
+      }
+    },
+    "lore.orpington.judge" : {
+      "comment" : "Breed Book, Orpington: what a show judge looks for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A deep, broad, heavy body with a curved back and a low stance, full but smooth feathers, and an even colour."
+          }
+        }
+      }
+    },
+    "lore.orpington.oddity" : {
+      "comment" : "Breed Book, Orpington: one true, odd fact.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cook was a coachman. His first Orpingtons were black; buff, white and blue came later. Within ten years the breed was sent to other countries."
+          }
+        }
+      }
+    },
+    "lore.orpington.origin" : {
+      "comment" : "Breed Book, Orpington: where and when the breed was made.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Made in the town of Orpington in Kent, England, by William Cook, who showed it in 1886."
+          }
+        }
+      }
+    },
+    "lore.orpington.temperament" : {
+      "comment" : "Breed Book, Orpington: the breed's temperament.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Calm, docile and easy to handle. The hens often go broody."
+          }
+        }
+      }
+    },
+    "lore.plymouthRock.bredFor" : {
+      "comment" : "Breed Book, Plymouth Rock: what keepers bred it for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A farm bird for both eggs and meat."
+          }
+        }
+      }
+    },
+    "lore.plymouthRock.eggs" : {
+      "comment" : "Breed Book, Plymouth Rock: the eggs real hens of the breed lay.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Brown, and plenty of them."
+          }
+        }
+      }
+    },
+    "lore.plymouthRock.judge" : {
+      "comment" : "Breed Book, Plymouth Rock: what a show judge looks for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A long, broad back and a deep, full breast. On barred birds, the black and white bars should be crisp, straight and even."
+          }
+        }
+      }
+    },
+    "lore.plymouthRock.oddity" : {
+      "comment" : "Breed Book, Plymouth Rock: one true, odd fact.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Barred was the first colour. Until the Second World War it was the most common farm chicken in the United States, and in the 1920s it helped to found the broiler industry."
+          }
+        }
+      }
+    },
+    "lore.plymouthRock.origin" : {
+      "comment" : "Breed Book, Plymouth Rock: where and when the breed was made.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "From Massachusetts, in the United States: made in the 1860s, and in the American standard by 1874."
+          }
+        }
+      }
+    },
+    "lore.plymouthRock.temperament" : {
+      "comment" : "Breed Book, Plymouth Rock: the breed's temperament.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Docile, hardy and easy to keep."
+          }
+        }
+      }
+    },
+    "lore.silkie.bredFor" : {
+      "comment" : "Breed Book, Silkie: what keepers bred it for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Gentle company, and sitting: keepers set other birds' eggs under Silkie hens to hatch."
+          }
+        }
+      }
+    },
+    "lore.silkie.eggs" : {
+      "comment" : "Breed Book, Silkie: the eggs real hens of the breed lay.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Small cream or tinted eggs, about three a week."
+          }
+        }
+      }
+    },
+    "lore.silkie.judge" : {
+      "comment" : "Breed Book, Silkie: what a show judge looks for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A broad, stout body with a short back that rises to a short, round, fluffy tail, and soft fluff of one clear, even colour."
+          }
+        }
+      }
+    },
+    "lore.silkie.oddity" : {
+      "comment" : "Breed Book, Silkie: one true, odd fact.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Its feathers do not lock together, so they feel like fur. Under them, the skin and bones are black, and each foot has five toes."
+          }
+        }
+      }
+    },
+    "lore.silkie.origin" : {
+      "comment" : "Breed Book, Silkie: where and when the breed was made.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "An old breed from China, written about by Western travellers as early as the 13th century."
+          }
+        }
+      }
+    },
+    "lore.silkie.temperament" : {
+      "comment" : "Breed Book, Silkie: the breed's temperament.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "One of the calmest and most docile breeds there is."
+          }
+        }
+      }
+    },
+    "lore.wyandotte.bredFor" : {
+      "comment" : "Breed Book, Wyandotte: what keepers bred it for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A dual-purpose farm bird: a steady layer and a good table bird."
+          }
+        }
+      }
+    },
+    "lore.wyandotte.eggs" : {
+      "comment" : "Breed Book, Wyandotte: the eggs real hens of the breed lay.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Light to rich brown, about 150 to 200 a year."
+          }
+        }
+      }
+    },
+    "lore.wyandotte.judge" : {
+      "comment" : "Breed Book, Wyandotte: what a show judge looks for.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A medium-sized bird with a round, curved body, and an even colour. On laced birds, each feather has a clean, even edge."
+          }
+        }
+      }
+    },
+    "lore.wyandotte.oddity" : {
+      "comment" : "Breed Book, Wyandotte: one true, odd fact.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The first birds were called American Sebrights. The silver laced birds came first, and joined the American standard in 1883."
+          }
+        }
+      }
+    },
+    "lore.wyandotte.origin" : {
+      "comment" : "Breed Book, Wyandotte: where and when the breed was made.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Made in New York State, in the United States, in the 1870s."
+          }
+        }
+      }
+    },
+    "lore.wyandotte.temperament" : {
+      "comment" : "Breed Book, Wyandotte: the breed's temperament.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mostly calm and friendly, though some birds like to be in charge of the flock."
+          }
+        }
+      }
+    },
+    "market.board.buyerHere.one" : {
+      "comment" : "CLI board page: the keeper's card, when left == 1. The placeholders are the breed's name (made plural with \"s\") and the days the buyer stays.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your card: young %1$@s. A buyer is here for %2$lld more day."
+          }
+        }
+      }
+    },
+    "market.board.buyerHere.other" : {
+      "comment" : "CLI board page: the keeper's card, when left is other than 1. The placeholders are the breed's name (made plural with \"s\") and the days the buyer stays.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your card: young %1$@s. A buyer is here for %2$lld more days."
+          }
+        }
+      }
+    },
+    "market.board.canFill" : {
+      "comment" : "CLI board page: after a card the keeper can fill.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "✓ you can fill this"
+          }
+        }
+      }
+    },
+    "market.board.empty" : {
+      "comment" : "CLI board page: no cards.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No cards up just now. New ones come each week."
+          }
+        }
+      }
+    },
+    "market.board.fits" : {
+      "comment" : "CLI board page: the birds that fit a card. The placeholder is their names, comma-separated.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fits: %@"
+          }
+        }
+      }
+    },
+    "market.board.forSale" : {
+      "comment" : "CLI board page: a bird the buyer would take. The placeholders are the bird's name, the price and the bird's name again. \"sell\" is a CLI command.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$lld coins (sell %3$@)"
+          }
+        }
+      }
+    },
+    "market.board.help" : {
+      "comment" : "CLI board page: the commands. \"fill\", \"post\" and \"sell\" are CLI commands.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fill a card: fill <number> [bird name] · Pin your own: post <breed> · Sell to your buyer: sell <name>"
+          }
+        }
+      }
+    },
+    "market.board.noBuyer" : {
+      "comment" : "CLI board page: the keeper's card. The placeholder is the breed's name (made plural with \"s\").",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your card: young %@s. No buyer yet."
+          }
+        }
+      }
+    },
+    "market.board.quotedNote" : {
+      "comment" : "CLI board page: the person's line, in quotes. The placeholder is the line.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "\"%@\""
+          }
+        }
+      }
+    },
+    "market.board.title" : {
+      "comment" : "CLI board page heading.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The market board by the bakery:"
+          }
+        }
+      }
+    },
+    "market.buyerCame.one" : {
+      "comment" : "A buyer comes for the keeper's card and stays one day. The placeholder is the breed's name. \"board\" is a CLI command.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Someone saw your card at the bakery. They'd like a young %@, and they'll be in the village for 1 day. (see: board)"
+          }
+        }
+      }
+    },
+    "market.buyerCame.other" : {
+      "comment" : "A buyer comes for the keeper's card. The placeholders are the breed's name and the days the buyer stays. \"board\" is a CLI command.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Someone saw your card at the bakery. They'd like a young %1$@, and they'll be in the village for %2$lld days. (see: board)"
+          }
+        }
+      }
+    },
+    "market.buyerLeft" : {
+      "comment" : "The buyer leaves. The placeholder is the breed's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The buyer for a young %@ has gone home. Your card comes down. Pin another any time."
+          }
+        }
+      }
+    },
+    "market.cardDown" : {
+      "comment" : "A market card comes down. The placeholders are the person and what they wanted.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@'s card for %2$@ has come down. Someone else had some. There'll be new cards next week."
+          }
+        }
+      }
+    },
+    "market.cardFilled" : {
+      "comment" : "The keeper fills a market card. The placeholders are the person, what they wanted and the coins.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You bring %1$@ %2$@. \"Just what I hoped for!\" You're paid %3$lld coins."
+          }
+        }
+      }
+    },
+    "market.cardLine" : {
+      "comment" : "The app's market card. The placeholders are what the card wants (market.want.*, first letter capitalised) and until when (market.untilTonight or market.untilDay).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "market.cardPosted" : {
+      "comment" : "The keeper pins a card for young birds. The placeholders are the breed's name (made plural with \"s\"), and the fewest and most days until a buyer comes.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You pin a card on the board: \"Young %1$@s, from my own flock.\" A buyer may come in %2$lld to %3$lld days."
+          }
+        }
+      }
+    },
+    "market.cardText" : {
+      "comment" : "One market card. The placeholders are the person, what they want (market.want.*), the coins paid, and until when (market.untilTonight or market.untilDay).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ wants %2$@. %3$lld coins, %4$@."
+          }
+        }
+      }
+    },
+    "market.cardsPinned" : {
+      "comment" : "New market cards. The placeholder is the cards, one a line. \"board\" is a CLI command.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New cards on the market board by the bakery:\n%@\n(see: board)"
+          }
+        }
+      }
+    },
+    "market.note.beaYoungBird" : {
+      "comment" : "Bea's line on a market card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A young bird for a new keeper on the hill. Any breed at all."
+          }
+        }
+      }
+    },
+    "market.note.dotBlue" : {
+      "comment" : "Dot's line on a market card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Blue eggs for the show tea. Six, if you can spare them."
+          }
+        }
+      }
+    },
+    "market.note.dotLapChicken" : {
+      "comment" : "Dot's line on a market card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A lap chicken for the children's corner at the show."
+          }
+        }
+      }
+    },
+    "market.note.hazelRooster" : {
+      "comment" : "Hazel's line on a market card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "My hens have no rooster this year. Any boy who's grown his feathers."
+          }
+        }
+      }
+    },
+    "market.note.okaforBlue" : {
+      "comment" : "Mr Okafor's line on a market card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "For the window. Blue sells the brown loaves, somehow."
+          }
+        }
+      }
+    },
+    "market.note.okaforBrown" : {
+      "comment" : "Mr Okafor's line on a market card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Brown eggs for the Saturday buns."
+          }
+        }
+      }
+    },
+    "market.note.okaforChocolate" : {
+      "comment" : "Mr Okafor's line on a market card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dark eggs for the window. They look like little loaves."
+          }
+        }
+      }
+    },
+    "market.note.okaforCream" : {
+      "comment" : "Mr Okafor's line on a market card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cream eggs for a custard tart. A big one."
+          }
+        }
+      }
+    },
+    "market.note.okaforGreen" : {
+      "comment" : "Mr Okafor's line on a market card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Green eggs for the window. The children love them."
+          }
+        }
+      }
+    },
+    "market.note.okaforOlive" : {
+      "comment" : "Mr Okafor's line on a market card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Olive eggs! The window needs a bit of green."
+          }
+        }
+      }
+    },
+    "market.note.okaforWhite" : {
+      "comment" : "Mr Okafor's line on a market card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "White eggs for meringues. They must be white."
+          }
+        }
+      }
+    },
+    "market.note.teddyBrown" : {
+      "comment" : "Teddy's line on a market card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Gran's baking a cake for Mum. She needs brown eggs."
+          }
+        }
+      }
+    },
+    "market.note.teddyCalmHen" : {
+      "comment" : "Teddy's line on a market card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A calm hen for my cousin Ivy. She's six and very gentle."
+          }
+        }
+      }
+    },
+    "market.note.wrenLayingHen" : {
+      "comment" : "Wren's line on a market card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A laying hen for a customer whose old girl has retired."
+          }
+        }
+      }
+    },
+    "market.refusal.birdDoesNotFit" : {
+      "comment" : "Refusal: the bird does not fit the card.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "That bird isn't quite what the card asks for."
+          }
+        }
+      }
+    },
+    "market.refusal.keeperCardUp" : {
+      "comment" : "Refusal: the keeper's own card is up already.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your card is already on the board. One at a time."
+          }
+        }
+      }
+    },
+    "market.refusal.noBuyerYet" : {
+      "comment" : "Refusal: no buyer yet. \"board\" is a CLI command.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No buyer has come for your card yet. Type: board"
+          }
+        }
+      }
+    },
+    "market.refusal.noSuchCard" : {
+      "comment" : "Refusal: no such market card. \"board\" is a CLI command.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "There's no card like that on the board. Type: board"
+          }
+        }
+      }
+    },
+    "market.refusal.noYoungBirds" : {
+      "comment" : "Refusal: no young bird of the breed to offer.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You need a young purebred of that breed, feathers in and free to go, to pin a card for it."
+          }
+        }
+      }
+    },
+    "market.refusal.notEnoughEggs.one" : {
+      "comment" : "Refusal: too few eggs for a card, when need == 1. The placeholders are the eggs needed, their colour and the eggs in the carton. \"collect\" is a CLI command.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "That card needs %1$lld %2$@ egg. Your carton has %3$lld. Collect first: collect"
+          }
+        }
+      }
+    },
+    "market.refusal.notEnoughEggs.other" : {
+      "comment" : "Refusal: too few eggs for a card, when need is other than 1. The placeholders are the eggs needed, their colour and the eggs in the carton. \"collect\" is a CLI command.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "That card needs %1$lld %2$@ eggs. Your carton has %3$lld. Collect first: collect"
+          }
+        }
+      }
+    },
+    "market.refusal.tooYoung" : {
+      "comment" : "Refusal: the bird is too young for the card. Never name its sex.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "That bird is too young. Wait until its feathers come in."
+          }
+        }
+      }
+    },
+    "market.soldToBuyer" : {
+      "comment" : "A bird is sold to the buyer. The placeholders are the bird's name and the coins.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ goes to a new home with the buyer, who pays %2$lld coins. \"We'll take good care.\""
+          }
+        }
+      }
+    },
+    "market.untilDay" : {
+      "comment" : "A market card stays up until a day. The placeholder is the day number.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "until day %lld"
+          }
+        }
+      }
+    },
+    "market.untilTonight" : {
+      "comment" : "A market card comes down tonight.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "until tonight"
+          }
+        }
+      }
+    },
+    "market.want.eggs.one" : {
+      "comment" : "A market card's ask, count == 1. The placeholders are the count and the egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@ egg"
+          }
+        }
+      }
+    },
+    "market.want.eggs.other" : {
+      "comment" : "A market card's ask, count other than 1. The placeholders are the count and the egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@ eggs"
+          }
+        }
+      }
+    },
+    "market.want.friendlyHen" : {
+      "comment" : "A market card's ask: a bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a friendly hen"
+          }
+        }
+      }
+    },
+    "market.want.friendlyLayingHen" : {
+      "comment" : "A market card's ask: a bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a friendly laying hen"
+          }
+        }
+      }
+    },
+    "market.want.friendlyRooster" : {
+      "comment" : "A market card's ask: a bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a friendly rooster"
+          }
+        }
+      }
+    },
+    "market.want.friendlyYoungBird" : {
+      "comment" : "A market card's ask: a bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a friendly young bird"
+          }
+        }
+      }
+    },
+    "market.want.hen" : {
+      "comment" : "A market card's ask: a bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a hen"
+          }
+        }
+      }
+    },
+    "market.want.lapChicken" : {
+      "comment" : "A market card's ask: a bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a lap chicken"
+          }
+        }
+      }
+    },
+    "market.want.lapChickenHen" : {
+      "comment" : "A market card's ask: a bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a lap chicken hen"
+          }
+        }
+      }
+    },
+    "market.want.lapChickenLayingHen" : {
+      "comment" : "A market card's ask: a bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a lap chicken laying hen"
+          }
+        }
+      }
+    },
+    "market.want.lapChickenRooster" : {
+      "comment" : "A market card's ask: a bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a lap chicken rooster"
+          }
+        }
+      }
+    },
+    "market.want.layingHen" : {
+      "comment" : "A market card's ask: a bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a laying hen"
+          }
+        }
+      }
+    },
+    "market.want.rooster" : {
+      "comment" : "A market card's ask: a bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a rooster"
+          }
+        }
+      }
+    },
+    "market.want.youngBird" : {
+      "comment" : "A market card's ask: a bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a young bird"
+          }
+        }
+      }
+    },
+    "people.chickOffer" : {
+      "comment" : "Day 1: Hazel offers a chick. The placeholder is the keeper's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Lovely to meet you, %@. My hens hatched a clutch yesterday. Take whichever chick you like."
+          }
+        }
+      }
+    },
+    "people.neighbour" : {
+      "comment" : "The neighbour's name, over the back fence.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hazel"
+          }
+        }
+      }
+    },
+    "people.neighbourAbout" : {
+      "comment" : "Who Hazel, the neighbour, is, in one line.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hazel has kept hens over the back fence for forty years, and she has a story for every breed."
+          }
+        }
+      }
+    },
+    "people.shopkeeper" : {
+      "comment" : "The shop keeper's name, at Speckle & Down.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Wren"
+          }
+        }
+      }
+    },
+    "people.shopkeeperAbout" : {
+      "comment" : "Who Wren, the shop keeper, is, in one line.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Wren took over her gran's feed shop, Speckle & Down. She knows all the village news."
+          }
+        }
+      }
+    },
+    "people.tour.backFence" : {
+      "comment" : "Day 1 tour: Hazel at the back fence.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "That's my garden over the fence. Come to me for lessons and news. I'll leave you a note when there's something new."
+          }
+        }
+      }
+    },
+    "people.tour.backFenceTitle" : {
+      "comment" : "Day 1 tour: the third stop's title.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The back fence"
+          }
+        }
+      }
+    },
+    "people.tour.coop" : {
+      "comment" : "Day 1 tour: Hazel at the coop. The placeholder is the chick's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ sleeps in the brooder here, under the heat lamp. Grown birds get a perch. Feed the flock every day and collect the eggs."
+          }
+        }
+      }
+    },
+    "people.tour.coopNoChick" : {
+      "comment" : "Day 1 tour: Hazel at the coop, before a chick is chosen.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "your chick sleeps in the brooder here, under the heat lamp. Grown birds get a perch. Feed the flock every day and collect the eggs."
+          }
+        }
+      }
+    },
+    "people.tour.coopTitle" : {
+      "comment" : "Day 1 tour: the first stop's title.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The coop"
+          }
+        }
+      }
+    },
+    "people.tour.farmGate" : {
+      "comment" : "Day 1 tour: Hazel at the farm gate. The placeholder is Wren's about line (people.shopkeeperAbout).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The lane goes down to Speckle & Down. %@ She's only got feed in for now, but she'll have more soon."
+          }
+        }
+      }
+    },
+    "people.tour.farmGateTitle" : {
+      "comment" : "Day 1 tour: the last stop's title.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The farm gate"
+          }
+        }
+      }
+    },
+    "people.tour.yard" : {
+      "comment" : "Day 1 tour: Hazel at the yard.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your birds scratch about here in the day. Tap a bird to see it, and pick it up to make friends."
+          }
+        }
+      }
+    },
+    "people.tour.yardTitle" : {
+      "comment" : "Day 1 tour: the second stop's title.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The yard"
+          }
+        }
+      }
+    },
+    "people.welcome.askName" : {
+      "comment" : "Day 1: Hazel asks the keeper's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "What do I call you?"
+          }
+        }
+      }
+    },
+    "people.welcome.hello" : {
+      "comment" : "Day 1: Hazel says hello.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hello there! I'm Hazel, from over the back fence. You must be the new keeper at Henhaven."
           }
         }
       }
