@@ -50,9 +50,12 @@ struct RigLabView: View {
 
     var body: some View {
         List {
-            Section { stage }
+            // The play buttons sit right under the hen, so they stay on screen with her.
+            Section {
+                stage
+                playButtons
+            }
             Section("Rig") { rigControls }
-            Section("Play") { playButtons }
             Section("Joints") { jointSliders }
             Section("Bird") { birdControls }
         }
