@@ -97,16 +97,16 @@ import UniformTypeIdentifiers
     /// hen-b pecks to the ground: she tips her body far, her throat comes down near the ground in front of
     /// her, and her upper neck stays nearly straight, so the neck reaches rather than folds under her chin.
     ///
-    /// Her beak reaches lower than with the hen's peck (0.16 above the ground then, 0.05 now). To get there her
-    /// lower neck turns about 55° against the body, not under 30° as #116 first asked: a neck that stayed in
-    /// line left her head tucked in above the ground.
+    /// She tips further than the hen (70°) and sends her throat forward and down, so her lower neck stays
+    /// within 30° of her body (#116) and her beak still reaches the ground: about 0.05 above it, where the
+    /// hen's peck stops at 0.16.
     @MainActor @Test func henBPecksToTheGround() throws {
         PartKit.reload()
         let henB: PartKit = try #require(PartKit.load(.henB), "the hen-b kit does not load")
         let throat: CGPoint = try #require(henB.rig.joints[.head])
         let bottom: ChickenPose = ChickenMotion.peck(henB.rig, progress: 0.5)
         #expect(bottom[.body] >= 45)
-        #expect(abs(bottom[.neckLow]) < 60)
+        #expect(abs(bottom[.neckLow]) < 30)
         #expect(abs(bottom[.neckHigh]) < 30)
         let placed: CGPoint = Skeleton.place(throat, on: .head, rig: henB.rig, pose: bottom)
         #expect(placed.y < 0.15)
