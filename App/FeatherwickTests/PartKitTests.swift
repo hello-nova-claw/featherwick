@@ -97,9 +97,9 @@ import UniformTypeIdentifiers
     /// hen-b pecks to the ground: she tips her body far, her throat comes down near the ground in front of
     /// her, and her upper neck stays nearly straight, so the neck reaches rather than folds under her chin.
     ///
-    /// She tips further than the hen (70°) and sends her throat forward and down, so her lower neck stays
-    /// within 30° of her body (#116) and her beak still reaches the ground: about 0.05 above it, where the
-    /// hen's peck stops at 0.16.
+    /// She tips further than the hen (65°), sends her throat forward and down and dips her head, so her lower
+    /// neck stays within 30° of her body (#116) and her beak still reaches the ground: about 0.05 above it,
+    /// where the hen's peck stops at 0.16. She tips no further, or her chest goes below the ground.
     @MainActor @Test func henBPecksToTheGround() throws {
         PartKit.reload()
         let henB: PartKit = try #require(PartKit.load(.henB), "the hen-b kit does not load")
@@ -111,20 +111,36 @@ import UniformTypeIdentifiers
         let placed: CGPoint = Skeleton.place(throat, on: .head, rig: henB.rig, pose: bottom)
         #expect(placed.y < 0.15)
         #expect(placed.x > throat.x)
-        #expect(try Self.beakLow(henB, pose: bottom) < 0.08)
+        #expect(try Self.lowest("beak", of: henB, pose: bottom) < 0.08)
+        #expect(try Self.lowest("body", of: henB, pose: bottom) > 0)
     }
 
-    /// The lowest point of a kit's painted beak in a pose (rig units above the ground).
-    @MainActor private static func beakLow(_ kit: PartKit, pose: ChickenPose) throws -> Double {
-        let beak: KitLayer = try #require(kit.layers.first { $0.id == "beak" })
-        let painted: (CGPoint) -> Bool = try paint(of: [beak], in: kit)
+    /// The lowest point of a kit's painted part in a pose, moved by its bone (rig units above the ground).
+    @MainActor private static func lowest(_ part: String, of kit: PartKit, pose: ChickenPose) throws -> Double {
+        let layer: KitLayer = try #require(kit.layers.first { $0.id == part })
+        let painted: (CGPoint) -> Bool = try paint(of: [layer], in: kit)
         var low: Double = .infinity
         for x in stride(from: -0.6, through: 0.6, by: 0.005) {
             for y in stride(from: 0.0, through: 1.0, by: 0.005) where painted(CGPoint(x: x, y: y)) {
-                low = min(low, Double(Skeleton.place(CGPoint(x: x, y: y), on: .head, rig: kit.rig, pose: pose).y))
+                let at: CGPoint = Skeleton.place(CGPoint(x: x, y: y), on: layer.bone, rig: kit.rig, pose: pose)
+                low = min(low, Double(at.y))
             }
         }
         return low
+    }
+
+    /// hen-b's toes stay level all through her walk. Her legs are drawn nearly straight, so a lifted foot
+    /// that curled its toes turned the back toe up out of the ankle and the front toes into the ground.
+    @MainActor @Test func henBKeepsHerToesLevelWhenWalking() throws {
+        PartKit.reload()
+        let henB: PartKit = try #require(PartKit.load(.henB), "the hen-b kit does not load")
+        for i in 0..<64 {
+            let pose: ChickenPose = ChickenMotion.walk(henB.rig, phase: Double(i) / 64)
+            for leg in Leg.allCases {
+                let turn: Double = pose[leg.thigh] + pose[leg.shank] + pose[leg.toes]
+                #expect(abs(turn) < 1e-6, "\(leg) toes turn \(turn)° at \(i)/64")
+            }
+        }
     }
 
     /// The hen pecks the same way: by tipping her body, with her lower neck nearly in line with it.
@@ -216,9 +232,9 @@ import UniformTypeIdentifiers
                     run.append(layer)
                 }
                 let painted: (CGPoint) -> Bool = try Self.paint(of: run, in: kit)
-                // Any paint at all, as the shader counts it (`clear`), at the nearest pixels: a found point a hair
-                // from its rest point can round to the pixel past a hard painted edge.
-                let any: (CGPoint) -> Bool = try Self.paint(of: run, in: kit, above: 0)
+                // Any paint the shader counts (above `clear`, 0.004, so over 1 of 255), at the nearest pixels: a found
+                // point a hair from its rest point can round to the pixel past a hard painted edge.
+                let any: (CGPoint) -> Bool = try Self.paint(of: run, in: kit, above: 1)
                 let pixel: Double = 1 / Double(PartKit.workingHeight)
                 let touched: (CGPoint) -> Bool = { p in
                     [(-1.0, 0.0), (1, 0), (0, -1), (0, 1), (0, 0)].contains { dx, dy in

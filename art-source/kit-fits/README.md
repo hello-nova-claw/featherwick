@@ -106,9 +106,13 @@ replaces those keys of the hen's motion. The script writes `parts/` (a whole kit
 The hen pecks by tipping her body 50° and crouching 0.12, with the throat sent only a little forward
 (`peckReach` 0.1, -0.6). Her lower neck turns about 22° against the body at the bottom of the peck, and her
 beak stops about 0.16 above the ground. hen-b reaches further, so her beak comes down to the ground in front
-of her chest. Her body tips 70° and crouches 0.08, her head dips 40°, and her throat goes forward and down
-(`peckReach` 0.3, -0.8). Her lower neck turns about 14°, and her beak stops about 0.05 above the ground.
-Tipping the body further, rather than sending the throat further down, keeps the neck in line. More reach turns the neck further: with the throat straight down it turns about 130°. A turning neck lifts its base out of the back line.
+of her chest. Her body tips 65° and crouches 0.04, her head dips 80°, and her throat goes forward and down
+(`peckReach` 0.4, -0.8). Her lower neck turns about 23°, her beak stops about 0.05 above the ground, and her
+chest stays just above it. Tipping the body further keeps the neck in line, but at 70° her chest goes below
+the ground, so the head dips more instead. More reach turns the neck further: with the throat straight down it turns about 130°. A turning neck lifts its base out of the back line.
+
+hen-b's legs are drawn nearly straight. She steps low (`stepLift` 0.07) and keeps her toes level (`toeCurl`
+0): a higher step kicked her shank out flat, and curled toes turned the back toe up out of the ankle.
 
 `round` gives a part a rounded end: its cut becomes an arc round its own joint, from edge to edge, filled
 with the paint of the other part (`from`). As the part turns, its end slides along itself, so it never lifts
