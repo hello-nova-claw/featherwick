@@ -78,14 +78,17 @@ import UniformTypeIdentifiers
         #expect(PartKit.kit(for: hen) === PartKit.load(.hen))
     }
 
-    /// hen-b pecks by tipping her body, with her lower neck nearly in line with it: a neck that turns far
-    /// against the body lifts its base out of her back line.
-    @MainActor @Test func henBPecksWithHerNeckInLine() {
+    /// hen-b pecks to the ground: she tips her body far, her throat comes down near the ground in front of
+    /// her, and her upper neck stays nearly straight, so the neck reaches rather than folds under her chin.
+    @MainActor @Test func henBPecksToTheGround() {
         PartKit.reload()
-        guard let henB = PartKit.load(.henB) else { return }
+        guard let henB = PartKit.load(.henB), let throat = henB.rig.joints[.head] else { return }
         let bottom: ChickenPose = ChickenMotion.peck(henB.rig, progress: 0.5)
-        #expect(abs(bottom[.neckLow]) < 30)
         #expect(bottom[.body] >= 45)
+        #expect(abs(bottom[.neckHigh]) < 30)
+        let placed: CGPoint = Skeleton.place(throat, on: .head, rig: henB.rig, pose: bottom)
+        #expect(placed.y < 0.15)
+        #expect(placed.x > throat.x)
     }
 
     /// The hen pecks the same way: by tipping her body, with her lower neck nearly in line with it.
