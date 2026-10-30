@@ -89,6 +89,27 @@ enum Farm {
         XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "The sheet did not close")
     }
 
+    /// Drags a sheet at its medium detent up to its large one, so the audit sees the whole page. At the medium
+    /// detent the last line runs under the floating sheet's edge, and the audit reads it against the farm
+    /// behind. A sheet that is already large is left alone: a drag would scroll its title under the clock.
+    static func expandSheet(_ app: XCUIApplication) {
+        // The sheet's page is the scroll view that holds its Close button. Its top is the sheet's top; the
+        // Close button can sit lower, under a portrait.
+        let closeLabel = NSPredicate(format: "label BEGINSWITH %@", "Close")
+        let page = app.scrollViews.containing(closeLabel).firstMatch
+        guard page.waitForExistence(timeout: 2) else { return }
+        let top = page.frame.minY
+        guard top > app.frame.height / 3 else { return }
+        // Drag by the distance from the sheet's top to the large detent's, so the sheet grows and the page
+        // does not scroll on past it. Start at the middle of the sheet's top edge, by the grabber: nothing
+        // there takes a tap. Lower down, the press can land on a button (it fed the flock once).
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        let startY = top + 16
+        let start = origin.withOffset(CGVector(dx: app.frame.midX, dy: startY))
+        let end = origin.withOffset(CGVector(dx: app.frame.midX, dy: startY - (top - 70)))
+        start.press(forDuration: 0.1, thenDragTo: end)
+    }
+
     static func slug(_ name: String) -> String {
         name.lowercased().replacingOccurrences(of: " ", with: "-")
     }

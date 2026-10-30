@@ -185,33 +185,61 @@ struct FarmView: View {
     /// Books, Today, the place of the panel on screen, Rest or Sleep, and settings. Books waits until the
     /// neighbour shows the keeper the Breed Book (the early game's `breedBook` lesson). Rest and Sleep wait
     /// for the daylight lesson; before it, Sleep is in the Coop sheet. Settings is always there.
+    /// One row when it fits. On a narrow phone, with long words or large text, Rest and settings move up a
+    /// row: squeezed into one row, the words broke a letter per line.
     private var bottomBar: some View {
-        HStack(alignment: .bottom) {
-            if store.state.isOpen(.breedBook) {
-                FloatingBox {
-                    Button("Books") { sheet = .books }
-                        .font(Typeface.display(23, relativeTo: .title2))
-                        .frame(minWidth: 72, minHeight: 56)
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .bottom) {
+                farmButtons
+                Spacer()
+                dayButtons
+            }
+            VStack(alignment: .trailing, spacing: Space.m) {
+                HStack(alignment: .bottom) { dayButtons }
+                HStack(alignment: .bottom) {
+                    farmButtons
+                    Spacer(minLength: 0)
                 }
             }
+            VStack(alignment: .leading, spacing: Space.m) {
+                HStack(alignment: .bottom) { dayButtons }
+                farmButtons
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// Books, Today and the place of the panel on screen: the left of the bottom row.
+    @ViewBuilder
+    private var farmButtons: some View {
+        if store.state.isOpen(.breedBook) {
             FloatingBox {
-                Button {
-                    sheet = .jobs
-                } label: {
-                    TodayButtonLabel()
-                }
+                Button("Books") { sheet = .books }
+                    .font(Typeface.display(23, relativeTo: .title2))
+                    .frame(minWidth: 72, minHeight: 56)
             }
-            panelPlaces
-            Spacer()
-            if store.state.isOpen(.daylight) { restOrSleep }
-            FloatingBox {
-                Button {
-                    sheet = .settings
-                } label: {
-                    Text("≡").font(Typeface.sans(24)).frame(width: 56, height: 56)
-                }
-                .accessibilityLabel("Settings")
+        }
+        FloatingBox {
+            Button {
+                sheet = .jobs
+            } label: {
+                TodayButtonLabel()
             }
+        }
+        panelPlaces
+    }
+
+    /// Rest or Sleep, and settings: the right of the bottom row.
+    @ViewBuilder
+    private var dayButtons: some View {
+        if store.state.isOpen(.daylight) { restOrSleep }
+        FloatingBox {
+            Button {
+                sheet = .settings
+            } label: {
+                Text("≡").font(Typeface.sans(24)).frame(width: 56, height: 56)
+            }
+            .accessibilityLabel("Settings")
         }
     }
 
