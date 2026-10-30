@@ -221,7 +221,7 @@ struct KitSpec: Decodable, Sendable {
                 motion.stride = v
             }
         }
-        return SkeletonRig(joints: joints, feet: feet, motion: motion)
+        return SkeletonRig(joints: joints, feet: feet, motion: motion, painted: true)
     }
 
     /// How each skinned bone bends, ready for `ChickenSkin`. Unknown names are left out (`problems` names them).

@@ -110,6 +110,9 @@ struct SkeletonRig: Equatable, Sendable {
     /// How far the hip drops to sit (rig units). Nil: `sitDrop` of the hip's height (the path rig). A
     /// painted kit sets the height of its belly, so the belly rests on the ground.
     var sitHeight: Double? = nil
+    /// Drawn with a painted kit. Only a painted bird drops its hip to walk, swings a bent leg forward and
+    /// eases into and out of a walk; the path rig walks as it always has (#116).
+    var painted: Bool = false
 
     /// The body's joint: the hip, where the body tilts.
     var hip: CGPoint { joints[.body] ?? .zero }
@@ -278,7 +281,8 @@ enum ChickenMotion {
         let p: Double = fraction(phase)
         var pose = ChickenPose()
         // Two bumps a stride, at the middle of each foot's stance (the back foot's is at 0.3).
-        pose.rise = m.bounce * 0.5 * (1 + cos(4 * Double.pi * (p - M.stance / 2))) - walkingSink(rig)
+        pose.rise =
+            m.bounce * 0.5 * (1 + cos(4 * Double.pi * (p - M.stance / 2))) - (rig.painted ? walkingSink(rig) : 0)
         pose[.body] = m.bodyBob * sin(4 * Double.pi * p)
         pose[.tail] = m.tailFlick * sin(4 * Double.pi * p + 1)
         for (leg, offset) in [(Leg.back, 0.0), (Leg.front, 0.5)] {
@@ -383,7 +387,7 @@ enum ChickenMotion {
         let arc: Double = sin(Double.pi * s)
         let curl: Double = m.toeCurl * arc
         let target = CGPoint(x: Double(foot.x) - half + 2 * half * ease(s), y: Double(foot.y) + lift * arc)
-        guard rig.bends(leg) else {
+        guard rig.painted, rig.bends(leg) else {
             solve(leg, target: target, curl: curl, rig: rig, pose: &pose)
             return
         }
