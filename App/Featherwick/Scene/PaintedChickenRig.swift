@@ -60,7 +60,7 @@ struct PaintedChickenRig: View {
         let eyelidAfter: String? = eyelidLayer
         ZStack {
             ForEach(runs) { run in
-                if run.skinned, let skin = kit.skin {
+                if run.skinned, let skin = kit.skin, let mesh = kit.meshes[run.id] {
                     // The run's parts, drawn at rest as one picture, then bent by the skin.
                     ZStack {
                         ForEach(run.layers) { layer in
@@ -73,9 +73,7 @@ struct PaintedChickenRig: View {
                     .frame(width: height * M.widthRatio, height: height)
                     .modifier(
                         SkinEffect(
-                            skin: skin, rig: kit.rig, follows: skinFollows,
-                            order: skin.order(drawing: run.layers.map(\.bone)), paint: paint(of: run, space),
-                            pose: pose, height: height))
+                            skin: skin, mesh: mesh, rig: kit.rig, follows: skinFollows, pose: pose, height: height))
                 } else {
                     ForEach(run.layers) { layer in
                         restPart(layer, space)
@@ -115,8 +113,7 @@ struct PaintedChickenRig: View {
     private var runs: [LayerRun] {
         var out: [LayerRun] = []
         for layer in kit.layers {
-            let skinned: Bool =
-                Self.skinOn && layer.token.isFeather && (kit.skin?.skins(layer.bone) ?? false)
+            let skinned: Bool = Self.skinOn && kit.isSkinned(layer)
             if let last = out.last, last.skinned == skinned {
                 out[out.count - 1] = LayerRun(id: last.id, skinned: skinned, layers: last.layers + [layer])
             } else {
@@ -124,18 +121,6 @@ struct PaintedChickenRig: View {
             }
         }
         return out
-    }
-
-    /// Where a run has paint at rest, in the frame, with a margin for what grows or turns at rest (a comb, a
-    /// turned face). The whole frame if no part says.
-    private func paint(of run: LayerRun, _ space: ChickenSpace) -> CGRect {
-        let bounds: [CGRect] = run.layers.compactMap(\.bounds)
-        guard let first = bounds.first else {
-            return CGRect(x: 0, y: 0, width: height * M.widthRatio, height: height)
-        }
-        let rig: CGRect = bounds.dropFirst().reduce(first) { $0.union($1) }
-        let slack: CGFloat = SceneConstants.skinPaintSlack
-        return space.rect(rig.insetBy(dx: -slack, dy: -slack))
     }
 
     /// Each skinned bone's sway: that of the first part on it that has one (the tail).

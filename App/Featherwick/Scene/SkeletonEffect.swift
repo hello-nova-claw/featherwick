@@ -46,25 +46,22 @@ extension View {
 }
 
 /// Bends a run of a kit's soft parts (drawn at rest, filling the rig's frame) by its skin for a pose
-/// (`ChickenSkin`, `ChickenSkin.metal`). Animatable like `BoneEffect`, so a pose set inside `withAnimation`
-/// bends smoothly, and a still bird does not redraw.
+/// (`ChickenSkin`, `SkinMesh`, `ChickenSkin.metal`). Animatable like `BoneEffect`, so a pose set inside
+/// `withAnimation` bends smoothly, and a still bird does not redraw.
+///
+/// The CPU moves the mesh's few hundred corners; the shader draws each pixel from the triangle that holds
+/// it, with one transform and one sample. A shader that searched backwards for every pixel's paint made a
+/// large hen stall (#116).
 ///
 /// A layer effect draws only inside its view, and SwiftUI draws that view to a surface of its own each
-/// frame. So the view is cut to just what the shader needs: where the run has paint at rest (it samples
-/// there) and where this pose can take that paint (it draws there). A peck tips the head and tail past the
-/// frame; a small part bends in a small layer. Every sample lies inside that view, so it needs no sample
-/// offset: an offset grows the surface by that much on every side. A frame-sized margin round every run made
-/// a large hen stall each frame (#116).
+/// frame. So the view is cut to just what the shader needs: the run's rest paint (it samples there) and
+/// where this pose puts it (it draws there). Every sample lies inside, so it needs no sample offset.
 struct SkinEffect: ViewModifier, Animatable {
     let skin: ChickenSkin
+    let mesh: SkinMesh
     let rig: SkeletonRig
     /// A bone's sway after it moves (the tail). Bones not listed move exactly.
     let follows: [Bone: Follow]
-    /// Which bone's paint is on top where the bend folds: indices into the skin's bones, top first.
-    let order: [Int]
-    /// Where the run has paint at rest, in the frame (points, y down). The shader draws only where the pose
-    /// can take it.
-    let paint: CGRect
     var pose: ChickenPose
     let height: CGFloat
 
@@ -74,27 +71,31 @@ struct SkinEffect: ViewModifier, Animatable {
     }
 
     func body(content: Content) -> some View {
+        let h: Double = Double(height)
         let transforms: [Affine] = skin.bones.map { bone in
-            Skeleton.transform(
-                of: bone.bone, rig: rig, pose: pose, height: Double(height), follow: follows[bone.bone])
+            Skeleton.transform(of: bone.bone, rig: rig, pose: pose, height: h, follow: follows[bone.bone])
         }
+        let moved: [CGPoint] = mesh.moved(transforms: transforms, height: h)
+        let rest: CGRect = mesh.restBounds(height: h)
         // A point of slack keeps the edge pixels' soft paint.
-        let reach: CGRect = skin.reach(of: paint, transforms: transforms).insetBy(dx: -1, dy: -1)
-        let layer: CGRect = paint.union(reach).integral
-        // Frame points to the layer's.
+        let layer: CGRect = rest.union(mesh.reach(moved: moved)).insetBy(dx: -1, dy: -1).integral
         let offset = CGPoint(x: -layer.minX, y: -layer.minY)
-        let floats: [Float] = skin.packed(transforms: transforms, height: Double(height), offset: offset)
-        let starts: [ChickenSkin.Start] = skin.starts(order: order, transforms: transforms, height: Double(height))
-        let box: CGRect = reach.offsetBy(dx: offset.x, dy: offset.y)
+        let packed: SkinMesh.Packed = mesh.packed(moved: moved, height: h, layer: layer, offset: offset)
+        let corner: CGPoint = mesh.rest(0, height: h)
         return
             content
             .offset(x: offset.x, y: offset.y)
             .frame(width: layer.width, height: layer.height, alignment: .topLeading)
             .layerEffect(
                 ShaderLibrary.chickenSkin(
-                    .floatArray(floats), .floatArray(skin.packed(starts: starts, offset: offset)),
-                    .float(height * ChickenSkin.nudge), .float(height * ChickenSkin.longestStep),
-                    .float4(Float(box.minX), Float(box.minY), Float(box.maxX), Float(box.maxY)), .float(height)),
+                    .floatArray(packed.triangles), .floatArray(packed.tiles), .floatArray(packed.items),
+                    .float4(
+                        Float(corner.x + offset.x), Float(corner.y + offset.y), Float(mesh.cell * h),
+                        Float(mesh.columns)),
+                    .float4(
+                        Float(packed.tileOrigin.x), Float(packed.tileOrigin.y), Float(packed.tile),
+                        Float(packed.across)),
+                    .float(Float(packed.down))),
                 maxSampleOffset: .zero
             )
             .offset(x: layer.minX, y: layer.minY)

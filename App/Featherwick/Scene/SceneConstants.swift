@@ -52,7 +52,9 @@ enum SceneConstants {
 
     // MARK: - Painted birds
 
-    /// Slack round a skinned run's painted bounds, in bird heights: the shader draws nothing outside them,
-    /// so this keeps a part that grows or turns at rest.
+    /// Slack round a skinned run's painted bounds, in bird heights: the skin's mesh covers nothing outside
+    /// them, so this keeps a part that grows or turns at rest.
     static let skinPaintSlack: CGFloat = 0.05
+    /// The side of a skin mesh's cell, in bird heights. Smaller bends more smoothly and costs more work a frame.
+    static let skinCell: Double = 0.03
 }

@@ -114,46 +114,118 @@ import UniformTypeIdentifiers
         }
     }
 
-    /// Through a whole peck, wherever the skin puts paint from each hen kit's bent feathers, the shader finds
-    /// paint for that pixel, even where the bend folds over itself at the throat: no hole and no speck. (In
-    /// a deep fold it may miss a layer under other paint, which does not show.)
-    @MainActor @Test func henKitsLoseNoPaintInAPeck() throws {
+    /// Every painted point of each hen kit's bent feathers lies in a kept cell of its run's mesh, so no
+    /// paint is left out of the bend.
+    @MainActor @Test func henKitsMeshesHoldAllTheirPaint() throws {
         PartKit.reload()
         for name in [KitName.hen, .henB] {
-            guard let kit = PartKit.load(name), let skin = kit.skin else { continue }
-            let painted: (CGPoint) -> Bool = try Self.paint(
-                of: kit.layers.filter { $0.token.isFeather && skin.skins($0.bone) }, in: kit)
-            let height: Double = 100
-            var lost: Int = 0
+            guard let kit = PartKit.load(name), kit.skin != nil else { continue }
+            #expect(!kit.meshes.isEmpty, "\(name)")
+            var runs: [[KitLayer]] = []
+            var last: Bool = false
+            for layer in kit.layers {
+                let skinned: Bool = kit.isSkinned(layer)
+                if skinned, last { runs[runs.count - 1].append(layer) } else if skinned { runs.append([layer]) }
+                last = skinned
+            }
             var checked: Int = 0
-            for progress in [0.1, 0.2, 0.3, 0.4, 0.5] {
-                let pose: ChickenPose = ChickenMotion.peck(kit.rig, progress: progress)
-                let t: [Affine] = skin.bones.map {
-                    Skeleton.transform(of: $0.bone, rig: kit.rig, pose: pose, height: height)
-                }
-                for x in stride(from: -0.6, through: 0.6, by: 0.02) {
-                    for y in stride(from: 0.0, through: 1.0, by: 0.02) where painted(CGPoint(x: x, y: y)) {
+            for run in runs {
+                let mesh: SkinMesh = try #require(kit.meshes[run[0].id], "\(name) \(run[0].id)")
+                let kept = Set(mesh.triangles.map { $0.corners[0] })
+                let painted: (CGPoint) -> Bool = try Self.paint(of: run, in: kit)
+                for x in stride(from: -0.6, through: 0.6, by: 0.01) {
+                    for y in stride(from: 0.0, through: 1.0, by: 0.01) where painted(CGPoint(x: x, y: y)) {
                         checked += 1
-                        let p: CGPoint = Skeleton.frame(CGPoint(x: x, y: y), height: height)
-                        let at: CGPoint = skin.place(p, transforms: t, height: height)
-                        let found: [CGPoint] = skin.sources(of: at, transforms: t, height: height)
-                        let shown: Bool = found.contains { q in
-                            let rest = CGPoint(
-                                x: (Double(q.x) - height * Double(ChickenRigMetrics.widthRatio) / 2) / height,
-                                y: (height - Double(q.y)) / height)
-                            return painted(rest)
-                        }
-                        if !shown { lost += 1 }
+                        let column = Int(((x - Double(mesh.origin.x)) / mesh.cell).rounded(.down))
+                        let row = Int(((y - Double(mesh.origin.y)) / mesh.cell).rounded(.down))
+                        let inside: Bool = column >= 0 && column < mesh.columns && row >= 0 && row < mesh.rows
+                        #expect(
+                            inside && kept.contains(row * (mesh.columns + 1) + column),
+                            "\(name): paint at \(x), \(y) is outside the mesh")
                     }
                 }
             }
             #expect(checked > 1000, "\(name)")
-            #expect(lost == 0, "\(name): \(lost) of \(checked) painted pixels come out clear")
         }
     }
 
-    /// Whether any of `layers` has paint at a rig point (alpha above a tenth).
-    private static func paint(of layers: [KitLayer], in kit: PartKit) throws -> (CGPoint) -> Bool {
+    /// Through a whole peck, each hen kit's bent paint is drawn where the mesh puts it: the shader's lookup
+    /// (`SkinMesh.sources`) finds every painted rest point at its moved place, unless `maxFolds` layers of
+    /// paint already lie over it there. So no hole opens, even where the bend folds over itself at the throat.
+    @MainActor @Test func henKitsLoseNoPaintInAPeck() throws {
+        PartKit.reload()
+        let height: Double = 240
+        let ground: Double = height * Double(ChickenRigMetrics.widthRatio) / 2
+        for name in [KitName.hen, .henB] {
+            guard let kit = PartKit.load(name), let skin = kit.skin else { continue }
+            var lost: Int = 0
+            var checked: Int = 0
+            for (id, mesh) in kit.meshes {
+                var run: [KitLayer] = []
+                for layer in kit.layers.drop(while: { $0.id != id }) {
+                    guard kit.isSkinned(layer) else { break }
+                    run.append(layer)
+                }
+                let painted: (CGPoint) -> Bool = try Self.paint(of: run, in: kit)
+                // Any paint at all, as the shader counts it (`clear`), at the nearest pixels: a found point a hair
+                // from its rest point can round to the pixel past a hard painted edge.
+                let any: (CGPoint) -> Bool = try Self.paint(of: run, in: kit, above: 0)
+                let pixel: Double = 1 / Double(PartKit.workingHeight)
+                let touched: (CGPoint) -> Bool = { p in
+                    [(-1.0, 0.0), (1, 0), (0, -1), (0, 1), (0, 0)].contains { dx, dy in
+                        any(CGPoint(x: Double(p.x) + dx * pixel, y: Double(p.y) + dy * pixel))
+                    }
+                }
+                for progress in [0.1, 0.2, 0.3, 0.4, 0.5] {
+                    let pose: ChickenPose = ChickenMotion.peck(kit.rig, progress: progress)
+                    let t: [Affine] = skin.bones.map {
+                        Skeleton.transform(of: $0.bone, rig: kit.rig, pose: pose, height: height)
+                    }
+                    let moved: [CGPoint] = mesh.moved(transforms: t, height: height)
+                    let layer: CGRect = mesh.restBounds(height: height).union(mesh.reach(moved: moved))
+                        .insetBy(dx: -1, dy: -1)
+                    let offset = CGPoint(x: -layer.minX, y: -layer.minY)
+                    let packed = mesh.packed(moved: moved, height: height, layer: layer, offset: offset)
+                    let corner: CGPoint = mesh.rest(0, height: height)
+                    let grid = CGPoint(x: corner.x + offset.x, y: corner.y + offset.y)
+                    // A layer point back to rig units.
+                    func rig(_ q: CGPoint) -> CGPoint {
+                        CGPoint(
+                            x: (Double(q.x - offset.x) - ground) / height, y: (height - Double(q.y - offset.y)) / height
+                        )
+                    }
+                    // About a point apart: a hole in a fold can be a few points across.
+                    for x in stride(from: -0.6, through: 0.6, by: 0.005) {
+                        for y in stride(from: 0.0, through: 1.0, by: 0.005) where painted(CGPoint(x: x, y: y)) {
+                            let rest = CGPoint(x: x, y: y)
+                            guard let at = mesh.place(rest, moved: moved) else {
+                                lost += 1
+                                continue
+                            }
+                            checked += 1
+                            let found: [CGPoint] = mesh.sources(
+                                of: CGPoint(x: at.x + offset.x, y: at.y + offset.y), packed: packed, grid: grid,
+                                height: height
+                            ) { touched(rig($0)) }
+                            let shown: Bool = found.contains { q in
+                                let r: CGPoint = rig(q)
+                                return hypot(Double(r.x - rest.x), Double(r.y - rest.y)) * height < 0.5
+                            }
+                            // Hidden only under `maxFolds` layers that hold paint.
+                            if !shown && found.count(where: { touched(rig($0)) }) < SkinMesh.maxFolds {
+                                lost += 1
+                            }
+                        }
+                    }
+                }
+            }
+            #expect(checked > 1000, "\(name)")
+            #expect(lost == 0, "\(name): \(lost) of \(checked) painted points come out clear")
+        }
+    }
+
+    /// Whether any of `layers` has paint at a rig point (alpha above a tenth, or above `above` of 255).
+    private static func paint(of layers: [KitLayer], in kit: PartKit, above: UInt8 = 25) throws -> (CGPoint) -> Bool {
         let first: CGImage = try #require(layers.first?.image)
         let w: Int = first.width
         let h: Int = first.height
@@ -173,7 +245,7 @@ import UniformTypeIdentifiers
             let px = Int(((Double(ground.x) + Double(p.x) * unit) * scale).rounded())
             let py = Int(((Double(ground.y) - Double(p.y) * unit) * scale).rounded())
             guard px >= 0, px < w, py >= 0, py < h else { return false }
-            return snapshot[py * w + px] > 25
+            return snapshot[py * w + px] > above
         }
     }
 

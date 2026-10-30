@@ -128,7 +128,7 @@ struct RigLabView: View {
         .frame(height: rigHeight + Space.xxl)
         .padding(.vertical, Space.m)
         .id(kitVersion)
-        .overlay(alignment: .topTrailing) { FrameReadout(meter: meter) }
+        .overlay(alignment: .topLeading) { FrameReadout(meter: meter) }
     }
 
     @ViewBuilder
