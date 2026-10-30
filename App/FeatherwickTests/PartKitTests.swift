@@ -94,6 +94,16 @@ import UniformTypeIdentifiers
         #expect(PartKit.kit(for: hen) === PartKit.load(.hen))
     }
 
+    /// hen-b pecks by tipping her body, with her lower neck nearly in line with it: a neck that turns far
+    /// against the body lifts its base out of her back line.
+    @MainActor @Test func henBPecksWithHerNeckInLine() {
+        PartKit.reload()
+        guard let henB = PartKit.load(.henB) else { return }
+        let bottom: ChickenPose = ChickenMotion.peck(henB.rig, progress: 0.5)
+        #expect(abs(bottom[.neckLow]) < 30)
+        #expect(bottom[.body] >= 45)
+    }
+
     /// Launch reads only the kits a bird can draw. `hen-b` is for the test tools, so it loads when picked.
     @Test func launchPreloadsOnlyTheKitsBirdsUse() {
         #expect(!KitName.preloaded.contains(.henB))
