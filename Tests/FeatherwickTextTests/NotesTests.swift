@@ -413,3 +413,240 @@ struct NotesTests {
         #expect(named >= 8)  // Bea's notes and Teddy's name these birds
     }
 }
+
+// MARK: - The words, pinned before they move into the String Catalog (#58)
+
+extension NotesTests {
+    /// Every pool note, general and named, reads as it did before the catalog.
+    @Test func thePoolNotesReadTheSame() {
+        let words = Self.poolNoteWords()
+        let expected = [
+            "Fresh mealworms in at the shop this week. A treat a day makes a tame bird.",
+            "Fresh mealworms in at the shop this week. A treat a day makes a tame bird.",
+            "Premium feed is back on the shelf. A scoop in the morning lifts the day's laying.",
+            "Premium feed is back on the shelf. A scoop in the morning lifts the day's laying.",
+            "There's a new bird in the special pen every morning. Come and look, even if you don't buy.",
+            "There's a new bird in the special pen every morning. Come and look, even if you don't buy.",
+            "The surprise boxes are popular this week. Nobody knows the breed till the lid comes off.",
+            "The surprise boxes are popular this week. Nobody knows the breed till the lid comes off.",
+            "The big incubator is in at the shop. It holds a good many more eggs than a small one.",
+            "The big incubator is in at the shop. It holds a good many more eggs than a small one.",
+            "The timber cart came by. If your coop feels tight, I have perches in stock.",
+            "The timber cart came by. If your coop feels tight, I have perches in stock.",
+            "Rain all week, they say. Chickens don't mind it. They just look cross.",
+            "Rain all week, they say. Chickens don't mind it. They just look cross.",
+            "Hot days ahead. A dish of water in the shade keeps a flock content.",
+            "Hot days ahead. A dish of water in the shade keeps a flock content.",
+            "The leaves are coming down. Chickens love to scratch through them for beetles.",
+            "The leaves are coming down. Chickens love to scratch through them for beetles.",
+            "Frost on the lane this morning. Everyone at the shop is in two jumpers.",
+            "Frost on the lane this morning. Everyone at the shop is in two jumpers.",
+            "The whole village is talking about the show. Dot has been seen measuring tables.",
+            "The whole village is talking about the show. Dot has been seen measuring tables.",
+            "Hazel was in for twine. She says your flock is coming on nicely.",
+            "Hazel was in for twine. She says your flock is coming on nicely.",
+            "Mr Okafor has a new loaf in his window. He says it's the eggs that make it.",
+            "Mr Okafor has a new loaf in his window. He says it's the eggs that make it.",
+            "I hear your Breed Book has 0 pages now. That's more than mine, and I sell the birds.",
+            "I hear your Breed Book has 3 pages now. That's more than mine, and I sell the birds.",
+            "A word on the pecking order. Every flock sorts itself out. Give it a few days and all is calm.",
+            "A word on the pecking order. Every flock sorts itself out. Give it a few days and all is calm.",
+            "Pick them up while they're small, love. A chick learns trust faster than any grown bird.",
+            "Pick them up while they're small, love. A chick learns trust faster than any grown bird.",
+            "A shut door is a quiet night. An open one is a fed flock in the morning. Your choice, love.",
+            "A shut door is a quiet night. An open one is a fed flock in the morning. Your choice, love.",
+            "Feathers everywhere? That's the moult. They'll be in new clothes before winter.",
+            "Feathers everywhere? That's the moult. They'll be in new clothes before winter.",
+            "Hens lay less in the short days. Don't fret. They pick up again in spring.",
+            "Hens lay less in the short days. Don't fret. They pick up again in spring.",
+            "If a hen sits tight and fluffs up at you, she's broody. She's the best incubator there is.",
+            "If a hen sits tight and fluffs up at you, she's broody. She's the best incubator there is.",
+            "Every egg hatches if you give it time. I still go soft at the first peep.",
+            "Every egg hatches if you give it time. I still go soft at the first peep.",
+            "Keep notes on who you pair. A colour can hide for a generation and turn up later.",
+            "Keep notes on who you pair. A colour can hide for a generation and turn up later.",
+            "A cross can be as fine a bird as any purebred. The pet class takes crosses, and judges them fairly.",
+            "A cross can be as fine a bird as any purebred. The pet class takes crosses, and judges them fairly.",
+            "I keep thinking about your flock. A lovely mix of looks.",
+            "I keep thinking about your black orpington. A lovely look.",
+            "Old hens stop laying in time. They still earn their keep: they keep the young ones in line.",
+            "Old hens stop laying in time. They still earn their keep: they keep the young ones in line.",
+            "Spring again. The best time to set eggs, my mother always said.",
+            "Spring again. The best time to set eggs, my mother always said.",
+            "A borrowed bird is a guest. Treat a guest well, and the stories go home with them.",
+            "A borrowed bird is a guest. Treat a guest well, and the stories go home with them.",
+            "Your birds come to the gate when you call. That's patience, that is.",
+            "Your birds come to the gate when you call. That's patience, that is.",
+            "I noticed your entry at the show. Well kept.",
+            "I noticed your Clover at the Summer Fete. Second place. Well earned.",
+            "The pet class is a pleasure to judge. Calm birds, kind hands.",
+            "Clover stood so calmly on my table. That comes from kind hands.",
+            "A good breed bird is bred, not bought. Keep at it.",
+            "Your Clover showed good type in the Wyandotte class. That is bred, not bought.",
+            "A plate of eggs that match is harder than it looks.",
+            "Your plate in the blue eggs class matched well. Harder than it looks.",
+            "Thank you for bringing your birds to the show. Every keeper starts somewhere.",
+            "Thank you for bringing your birds to the show. Every keeper starts somewhere.",
+            "A hint for show week: shut the coop at night. A fox fright still shows on the judging table.",
+            "A hint for show week: shut the coop at night. A fox fright still shows on the judging table.",
+            "The pet class is half friendliness. A bird that sits still for me scores well.",
+            "The pet class is half friendliness. A bird that sits still for me scores well.",
+            "The Spring Egg Fair is my favourite for eggs. Three that match, clean and fresh.",
+            "The Spring Egg Fair is my favourite for eggs. Three that match, clean and fresh.",
+            "At the Summer Fete the pet class is the star. Bring your calmest bird.",
+            "At the Summer Fete the pet class is the star. Bring your calmest bird.",
+            "The Harvest Show favours the breed classes. Type and colour count most.",
+            "The Harvest Show favours the breed classes. Type and colour count most.",
+            "The Winter Championship draws the strongest field of the year. Don't let that stop you.",
+            "The Winter Championship draws the strongest field of the year. Don't let that stop you.",
+            "I hear you have a lap chicken. The pet class judges friendliness. Just saying.",
+            "I hear you have a lap chicken. The pet class judges friendliness. Just saying.",
+            "I drew your chickens! The one in the middle is Pip. I gave everyone big feet.",
+            "I drew your chickens! The one in the middle is Pip. I gave everyone big feet.",
+            "Do chickens know which egg is theirs? I think they do. I asked Mum and she doesn't know.",
+            "Do chickens know which egg is theirs? I think they do. I asked Mum and she doesn't know.",
+            "Pip ate from my hand today! It tickled! Mum says I can come back on Saturday.",
+            "Tame101 ate from my hand today! It tickled! Mum says I can come back on Saturday.",
+            "Pip sat on my lap for AGES! Best day ever!",
+            "Tame101 sat on my lap for AGES! Best day ever!",
+            "Your chickens come running when I say hello! I counted!",
+            "3 of your chickens came running when I said hello! I counted twice!",
+            "Where do chickens sleep? Do they dream? I think they dream about worms.",
+            "Where do chickens sleep? Do they dream? I think they dream about worms.",
+            "It snowed! Do chickens get cold feet? I drew them a picture of the sun.",
+            "It snowed! Do chickens get cold feet? I drew them a picture of the sun.",
+            "Can I name a chick one day? I have a list! Number one is Captain Fluff.",
+            "Can I name a chick one day? I have a list! Number one is Captain Fluff.",
+            "You won a ribbon at the show! I told everyone at school!",
+            "You won a ribbon at the show! I told everyone at school!",
+            "I found a feather by your gate! I'm keeping it in my best book.",
+            "I found a feather by your gate! I'm keeping it in my best book.",
+            "Your chickens were rolling in the dirt! I thought they were broken! Gran says it's a bath.",
+            "Your chickens were rolling in the dirt! I thought they were broken! Gran says it's a bath.",
+            "You had a visitor chicken! Can I say hello next time?",
+            "Goldie is visiting! Can I say hello to Goldie? I'll be very quiet!",
+            "Word reached the bakery that your flock is laying. Fresh eggs make the best bread.",
+            "Word reached the bakery that your flock is laying. Fresh eggs make the best bread.",
+            "A blue egg, I hear. There is a space in my window for one, if you ever have a spare.",
+            "A blue egg, I hear. There is a space in my window for one, if you ever have a spare.",
+            "Olive eggs. My grandmother kept a hen that laid them. You have brought back a memory.",
+            "Olive eggs. My grandmother kept a hen that laid them. You have brought back a memory.",
+            "A chocolate egg, dark as a crust. I would like to bake with one, one day.",
+            "A chocolate egg, dark as a crust. I would like to bake with one, one day.",
+            "Green eggs in Featherwick. The children at my counter will not believe me.",
+            "Green eggs in Featherwick. The children at my counter will not believe me.",
+            "A white egg, plain and clean. Good for meringue, and for painting at Easter.",
+            "A white egg, plain and clean. Good for meringue, and for painting at Easter.",
+            "Brown eggs, warm as toast. The colour is only on the outside, but I like it all the same.",
+            "Brown eggs, warm as toast. The colour is only on the outside, but I like it all the same.",
+            "My window has fine eggs this week, thanks to you. There is room for more colours.",
+            "My window has fine eggs this week, thanks to you. There is room for more colours.",
+            "In winter the eggs come slower and the oven stays on longer. We manage.",
+            "In winter the eggs come slower and the oven stays on longer. We manage.",
+            "Spring, and every basket is full. I am making custard tarts this week.",
+            "Spring, and every basket is full. I am making custard tarts this week.",
+            "Your birds have settled in well at their new homes.",
+            "Rehomed101 has settled in well. She found the sunny corner on the first day.",
+            "One of your birds has a new garden with an apple tree.",
+            "Rehomed101 has a new garden with an apple tree. She spends the afternoons under it.",
+            "Your birds' new families read to them after school.",
+            "Rehomed101's new family has two small girls. They read to her after school.",
+            "Your birds have made friends in their new homes.",
+            "Rehomed102 has a friend at the new place. The two of them dust-bathe side by side.",
+            "I have a photo of your birds on my fridge.",
+            "I have a photo of Rehomed101 on my fridge. She looks very pleased in it.",
+            "0 of your birds have found new homes now. Every one is loved.",
+            "3 of your birds have found new homes now. Every one is loved.",
+            "Winter check on your birds: warm coops and deep straw.",
+            "Winter check on Rehomed101: a warm coop, deep straw and a family who fusses.",
+            "I visited your birds today. They're doing well.",
+            "I visited Rehomed102 today. She came straight to the fence to see me.",
+            "The rescue is quiet this week. I sit with the old birds and drink my tea.",
+            "The rescue is quiet this week. I sit with the old birds and drink my tea.",
+            "Cream eggs, the colour of good butter. They sell first in my window, every time.",
+            "Cream eggs, the colour of good butter. They sell first in my window, every time.",
+            "nil",
+            "I noticed your Clover at the Summer Fete. First place. Well earned.",
+            "I noticed your Clover at the Summer Fete. Second place. Well earned.",
+            "I noticed your Clover at the Summer Fete. Third place. Well earned.",
+            "I noticed your plate of blue eggs at the Summer Fete. First place. Well earned.",
+            "Your plate in the blue eggs class matched well. Harder than it looks.",
+            "I noticed your pip at the county show. Second place. Well earned.",
+            "Pip stood so calmly on my table. That comes from kind hands.",
+            "My window has fine eggs this week, thanks to you. There is room for more colours.",
+            "My window has blue eggs this week, thanks to you. There is room for more colours.",
+            "My window has cream and blue eggs this week, thanks to you. There is room for more colours.",
+            "My window has cream, brown and blue eggs this week, thanks to you. There is room for more colours.",
+            "Hidden0 has settled in well. Hidden0 found the sunny corner on the first day.",
+            "Hidden1 has a new garden with an apple tree. Hidden1 spends the afternoons under it.",
+            "Hidden2's new family has two small girls. They read to Hidden2 after school.",
+            "Hidden3 has a friend at the new place. The two of them dust-bathe side by side.",
+            "I have a photo of Hidden4 on my fridge. Hidden4 looks very pleased in it.",
+            "8 of your birds have found new homes now. Every one is loved.",
+            "Winter check on Hidden6: a warm coop, deep straw and a family who fusses.",
+            "I visited Hidden7 today. Hidden7 came straight to the fence to see me.",
+            "Roo0 has settled in well. He found the sunny corner on the first day.",
+            "Roo2's new family has two small girls. They read to him after school.",
+            "I visited Roo7 today. He came straight to the fence to see me.",
+        ]
+        #expect(words.count == expected.count)
+        for (i, (got, want)) in zip(words, expected).enumerated() { #expect(got == want, "line \(i)") }
+    }
+
+    /// Every shape of the words: each line the functions can give, with a sample state for each.
+    static func poolNoteWords() -> [String] {
+        var out: [String] = []
+        func add(_ x: String?) { out.append(x ?? "nil") }
+        let fresh = NotesTests.freshGame().0
+        for note in Notes.pool {
+            add(poolNoteText(note.id, fresh))
+            add(poolNoteText(note.id, NotesTests.stateWhereHolds(note)))
+        }
+        add(poolNoteText("nope", fresh))
+        // Dot's ribbons: each place, an egg plate, and an older save's show with no theme.
+        var s = fresh
+        for placing in [1, 2, 3] {
+            s.showResults = [NotesTests.ribbon(.breed(.wyandotte), placing: placing)]
+            add(poolNoteText("dot.ribbon", s))
+        }
+        s.showResults = [NotesTests.ribbon(.eggs(.blue), placing: 1)]
+        add(poolNoteText("dot.ribbon", s))
+        add(poolNoteText("dot.eggClass", s))
+        s.showResults = [
+            ShowResult(
+                day: 28, showClass: .pet, entrantName: "pip", placing: 2, fieldSize: 8, score: 70, prize: 0,
+                birdID: nil, treats: 0, notes: nil, theme: nil, podium: nil)
+        ]
+        add(poolNoteText("dot.ribbon", s))
+        add(poolNoteText("dot.petClass", s))
+        // Mr Okafor's window: no colours, one, two, three.
+        for colours in [[], [EggColour.blue], [.cream, .blue], [.cream, .blue, .brown]] {
+            s.eggBook = Set(colours.map { EggBookEntry(colour: $0, speckled: false) })
+            add(poolNoteText("okafor.window", s))
+        }
+        // Bea's notes name a bird whose sex is hidden by name, never by pronoun.
+        s.rehomed = (0..<8).map { NotesTests.bird("Hidden\($0)", revealed: false, id: 300 + $0) }
+        for id in [
+            "bea.settled", "bea.appleTree", "bea.storyTime", "bea.newFriend", "bea.fridge", "bea.thanks",
+            "bea.winterCheck", "bea.fence",
+        ] { add(poolNoteText(id, s)) }
+        s.rehomed = (0..<8).map { NotesTests.bird("Roo\($0)", sex: .rooster, revealed: true, id: 400 + $0) }
+        for id in ["bea.settled", "bea.storyTime", "bea.fence"] { add(poolNoteText(id, s)) }
+        return out
+    }
+}
+
+extension NotesTests {
+    /// While the tamest bird still waits for a name, Teddy's notes say a general line.
+    @Test func teddysNotesNameNoBirdWhileItWaitsForAName() {
+        var s = Self.freshGame().0
+        var pip = Self.bird("Pip", revealed: true, id: 1)
+        pip.needsName = true
+        s.coop = [pip]
+        s.brooder = []
+        s.henChicks = []
+        #expect(poolNoteText("teddy.drawing", s) == "I drew your chickens! I gave everyone big feet.")
+        #expect(poolNoteText("teddy.handFed", s) == "One of your chickens ate from my hand! It tickled!")
+        #expect(poolNoteText("teddy.lap", s) == "A chicken sat on my lap for AGES! Best day ever!")
+    }
+}

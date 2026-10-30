@@ -1,6 +1,198 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "arc.bea.invite" : {
+      "comment" : "Bea's story: her postcard comes.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You pin Bea's postcard up by the coop door."
+          }
+        }
+      }
+    },
+    "arc.bea.start" : {
+      "comment" : "Bea's story starts. Henhaven is the keeper's farm.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "News travels in Featherwick. Bea, who runs the hen rescue on the hill, has heard about the bird that went to a new home from Henhaven."
+          }
+        }
+      }
+    },
+    "arc.bea.third" : {
+      "comment" : "Bea's story: her invitation comes.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bea's invitation goes on the shelf by the door. The rescue is open whenever you like."
+          }
+        }
+      }
+    },
+    "arc.dot.invite" : {
+      "comment" : "Dot's story: she invites the keeper to see the breed standard.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dot stops you in the lane. \"Come by on a quiet afternoon and I'll show you the standard. It's the book we judges score by. Every breed has its own page.\""
+          }
+        }
+      }
+    },
+    "arc.dot.standard" : {
+      "comment" : "Dot's story: she asks which breed's page to read.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dot opens a fat old book with a cracked spine. \"Which page shall we read first? One of your own breeds, I think.\""
+          }
+        }
+      }
+    },
+    "arc.dot.start" : {
+      "comment" : "Dot's story starts at the county show's entry desk.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "At the entry desk, a woman with reading glasses on a chain watches you fill in your form. \"First show? I'm Dot. I judge. Don't let that frighten you.\""
+          }
+        }
+      }
+    },
+    "arc.dot.startVeteran" : {
+      "comment" : "Dot's story starts, for a keeper who has shown birds before.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "At the entry desk, a woman with reading glasses on a chain looks up from her list. \"I've seen your birds at a show or two. I'm Dot. I judge. We should talk properly some time.\""
+          }
+        }
+      }
+    },
+    "arc.okafor.board" : {
+      "comment" : "Mr Okafor's story ends.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "People stop at the bakery window to look at your eggs. Mr Okafor says it's good for trade."
+          }
+        }
+      }
+    },
+    "arc.okafor.bring" : {
+      "comment" : "Mr Okafor's story: he waits for the eggs.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mr Okafor clears a space in his window. \"Bring them down to the bakery when they're ready.\""
+          }
+        }
+      }
+    },
+    "arc.okafor.start" : {
+      "comment" : "Mr Okafor's story starts.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mr Okafor from the bakery stops at your gate, flour on his sleeves. \"Those brown eggs of yours! I've a basket in my shop window that wants filling.\""
+          }
+        }
+      }
+    },
+    "arc.okafor.thanks" : {
+      "comment" : "Mr Okafor's story: the eggs go in his window.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mr Okafor sets your eggs in his window one by one, and steps back to look."
+          }
+        }
+      }
+    },
+    "arc.okafor.window" : {
+      "comment" : "Mr Okafor's story: brown eggs now, or a new colour later.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mr Okafor is back. \"Six brown eggs would fill the basket now. But a colour nobody has seen in my window yet... I'd wait for that. It's your choice, and there's no hurry.\""
+          }
+        }
+      }
+    },
+    "arc.teddy.help" : {
+      "comment" : "Teddy's story: he offers two ways to help.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Teddy has his wellies on today. \"Can I help? I could name your next chick. I'm good at names. Or we could have a drawing day, and I'll draw all of them.\""
+          }
+        }
+      }
+    },
+    "arc.teddy.lap" : {
+      "comment" : "Teddy's story: he asks the keeper to make a lap chicken.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Teddy runs home happy. \"Pick them up lots,\" he calls back. \"Then one of them will be a lap chicken. I'll know when it happens.\""
+          }
+        }
+      }
+    },
+    "arc.teddy.notAllowed" : {
+      "comment" : "Teddy's story: he may not keep a chicken.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Teddy is back at the gate. \"Mum says I'm not allowed a chicken. Not even a small one. So I'm going to visit yours instead.\""
+          }
+        }
+      }
+    },
+    "arc.teddy.start" : {
+      "comment" : "Teddy's story starts.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A boy with muddy knees hangs over your gate. \"Is that your chicken? Can I meet it? I'm Teddy. I live down the lane.\""
+          }
+        }
+      }
+    },
     "cli.heading" : {
       "comment" : "A heading in the text game, followed by its lines. The placeholder is the heading.",
       "extractionState" : "extracted_with_value",
@@ -9,6 +201,1158 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%@:"
+          }
+        }
+      }
+    },
+    "notes.bea.appleTree" : {
+      "comment" : "A note in the post from Bea. Placeholders: a rehomed bird's name, its pronoun or name (capital first).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ has a new garden with an apple tree. %2$@ spends the afternoons under it."
+          }
+        }
+      }
+    },
+    "notes.bea.appleTree.general" : {
+      "comment" : "A note in the post from Bea, when what it names has gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "One of your birds has a new garden with an apple tree."
+          }
+        }
+      }
+    },
+    "notes.bea.fence" : {
+      "comment" : "A note in the post from Bea. Placeholders: a rehomed bird's name, its pronoun or name (capital first).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I visited %1$@ today. %2$@ came straight to the fence to see me."
+          }
+        }
+      }
+    },
+    "notes.bea.fence.general" : {
+      "comment" : "A note in the post from Bea, when what it names has gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I visited your birds today. They're doing well."
+          }
+        }
+      }
+    },
+    "notes.bea.fridge" : {
+      "comment" : "A note in the post from Bea. Placeholders: a rehomed bird's name, its pronoun or name (capital first).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I have a photo of %1$@ on my fridge. %2$@ looks very pleased in it."
+          }
+        }
+      }
+    },
+    "notes.bea.fridge.general" : {
+      "comment" : "A note in the post from Bea, when what it names has gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I have a photo of your birds on my fridge."
+          }
+        }
+      }
+    },
+    "notes.bea.newFriend" : {
+      "comment" : "A note in the post from Bea. The placeholder is a rehomed bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ has a friend at the new place. The two of them dust-bathe side by side."
+          }
+        }
+      }
+    },
+    "notes.bea.newFriend.general" : {
+      "comment" : "A note in the post from Bea, when what it names has gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your birds have made friends in their new homes."
+          }
+        }
+      }
+    },
+    "notes.bea.quietWeek" : {
+      "comment" : "A note in the post from Bea.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The rescue is quiet this week. I sit with the old birds and drink my tea."
+          }
+        }
+      }
+    },
+    "notes.bea.settled" : {
+      "comment" : "A note in the post from Bea. Placeholders: a rehomed bird's name, its pronoun or name (capital first).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ has settled in well. %2$@ found the sunny corner on the first day."
+          }
+        }
+      }
+    },
+    "notes.bea.settled.general" : {
+      "comment" : "A note in the post from Bea, when what it names has gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your birds have settled in well at their new homes."
+          }
+        }
+      }
+    },
+    "notes.bea.storyTime" : {
+      "comment" : "A note in the post from Bea. Placeholders: a rehomed bird's name, its object pronoun or name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@'s new family has two small girls. They read to %2$@ after school."
+          }
+        }
+      }
+    },
+    "notes.bea.storyTime.general" : {
+      "comment" : "A note in the post from Bea, when what it names has gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your birds' new families read to them after school."
+          }
+        }
+      }
+    },
+    "notes.bea.thanks" : {
+      "comment" : "A note in the post from Bea. The placeholder is the birds rehomed (more than 1).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld of your birds have found new homes now. Every one is loved."
+          }
+        }
+      }
+    },
+    "notes.bea.winterCheck" : {
+      "comment" : "A note in the post from Bea. The placeholder is a rehomed bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Winter check on %@: a warm coop, deep straw and a family who fusses."
+          }
+        }
+      }
+    },
+    "notes.bea.winterCheck.general" : {
+      "comment" : "A note in the post from Bea, when what it names has gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Winter check on your birds: warm coops and deep straw."
+          }
+        }
+      }
+    },
+    "notes.countyShow" : {
+      "comment" : "In Dot's note, for a show from an older save that has no name: \"at the county show\".",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "county show"
+          }
+        }
+      }
+    },
+    "notes.dot.breedClass" : {
+      "comment" : "A note in the post from Dot. Placeholders: the bird's name, the show class (a breed's name).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your %1$@ showed good type in the %2$@ class. That is bred, not bought."
+          }
+        }
+      }
+    },
+    "notes.dot.breedClass.general" : {
+      "comment" : "A note in the post from Dot, when what it names has gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A good breed bird is bred, not bought. Keep at it."
+          }
+        }
+      }
+    },
+    "notes.dot.championship" : {
+      "comment" : "A note in the post from Dot. The placeholder is the winter show's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The %@ draws the strongest field of the year. Don't let that stop you."
+          }
+        }
+      }
+    },
+    "notes.dot.eggClass" : {
+      "comment" : "A note in the post from Dot. The placeholder is the egg class, lower case, such as \"blue eggs\".",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your plate in the %@ class matched well. Harder than it looks."
+          }
+        }
+      }
+    },
+    "notes.dot.eggClass.general" : {
+      "comment" : "A note in the post from Dot, when what it names has gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A plate of eggs that match is harder than it looks."
+          }
+        }
+      }
+    },
+    "notes.dot.eggFair" : {
+      "comment" : "A note in the post from Dot. The placeholder is the spring show's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The %@ is my favourite for eggs. Three that match, clean and fresh."
+          }
+        }
+      }
+    },
+    "notes.dot.fete" : {
+      "comment" : "A note in the post from Dot. The placeholder is the summer show's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "At the %@ the pet class is the star. Bring your calmest bird."
+          }
+        }
+      }
+    },
+    "notes.dot.firstEntry" : {
+      "comment" : "A note in the post from Dot.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Thank you for bringing your birds to the show. Every keeper starts somewhere."
+          }
+        }
+      }
+    },
+    "notes.dot.friendliness" : {
+      "comment" : "A note in the post from Dot.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The pet class is half friendliness. A bird that sits still for me scores well."
+          }
+        }
+      }
+    },
+    "notes.dot.harvest" : {
+      "comment" : "A note in the post from Dot. The placeholder is the autumn show's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The %@ favours the breed classes. Type and colour count most."
+          }
+        }
+      }
+    },
+    "notes.dot.lapChicken" : {
+      "comment" : "A note in the post from Dot.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I hear you have a lap chicken. The pet class judges friendliness. Just saying."
+          }
+        }
+      }
+    },
+    "notes.dot.petClass" : {
+      "comment" : "A note in the post from Dot. The placeholder is the bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ stood so calmly on my table. That comes from kind hands."
+          }
+        }
+      }
+    },
+    "notes.dot.petClass.general" : {
+      "comment" : "A note in the post from Dot, when the ribbon is not in the records.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The pet class is a pleasure to judge. Calm birds, kind hands."
+          }
+        }
+      }
+    },
+    "notes.dot.ribbon.first" : {
+      "comment" : "A note in the post from Dot. Placeholders: the bird's name or \"plate of blue eggs\", the show's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I noticed your %1$@ at the %2$@. First place. Well earned."
+          }
+        }
+      }
+    },
+    "notes.dot.ribbon.general" : {
+      "comment" : "A note in the post from Dot, when what it names has gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I noticed your entry at the show. Well kept."
+          }
+        }
+      }
+    },
+    "notes.dot.ribbon.second" : {
+      "comment" : "A note in the post from Dot. Placeholders: the bird's name or \"plate of blue eggs\", the show's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I noticed your %1$@ at the %2$@. Second place. Well earned."
+          }
+        }
+      }
+    },
+    "notes.dot.ribbon.third" : {
+      "comment" : "A note in the post from Dot. Placeholders: the bird's name or \"plate of blue eggs\", the show's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I noticed your %1$@ at the %2$@. Third place. Well earned."
+          }
+        }
+      }
+    },
+    "notes.dot.shutTheDoor" : {
+      "comment" : "A note in the post from Dot.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A hint for show week: shut the coop at night. A fox fright still shows on the judging table."
+          }
+        }
+      }
+    },
+    "notes.fineEggs" : {
+      "comment" : "In Mr Okafor's note, when the Egg Book is empty: \"My window has fine eggs\".",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "fine"
+          }
+        }
+      }
+    },
+    "notes.hazel.borrowed" : {
+      "comment" : "A note in the post from Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A borrowed bird is a guest. Treat a guest well, and the stories go home with them."
+          }
+        }
+      }
+    },
+    "notes.hazel.broody" : {
+      "comment" : "A note in the post from Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "If a hen sits tight and fluffs up at you, she's broody. She's the best incubator there is."
+          }
+        }
+      }
+    },
+    "notes.hazel.coopDoor" : {
+      "comment" : "A note in the post from Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A shut door is a quiet night. An open one is a fed flock in the morning. Your choice, love."
+          }
+        }
+      }
+    },
+    "notes.hazel.crosses" : {
+      "comment" : "A note in the post from Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A cross can be as fine a bird as any purebred. The pet class takes crosses, and judges them fairly."
+          }
+        }
+      }
+    },
+    "notes.hazel.favouriteLook" : {
+      "comment" : "A note in the post from Hazel. The placeholder is a look from the Breed Book, such as \"gold laced wyandotte\".",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I keep thinking about your %@. A lovely look."
+          }
+        }
+      }
+    },
+    "notes.hazel.favouriteLook.general" : {
+      "comment" : "A note in the post from Hazel, when what it names has gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I keep thinking about your flock. A lovely mix of looks."
+          }
+        }
+      }
+    },
+    "notes.hazel.firstPeep" : {
+      "comment" : "A note in the post from Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Every egg hatches if you give it time. I still go soft at the first peep."
+          }
+        }
+      }
+    },
+    "notes.hazel.handling" : {
+      "comment" : "A note in the post from Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pick them up while they're small, love. A chick learns trust faster than any grown bird."
+          }
+        }
+      }
+    },
+    "notes.hazel.moult" : {
+      "comment" : "A note in the post from Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Feathers everywhere? That's the moult. They'll be in new clothes before winter."
+          }
+        }
+      }
+    },
+    "notes.hazel.notes" : {
+      "comment" : "A note in the post from Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Keep notes on who you pair. A colour can hide for a generation and turn up later."
+          }
+        }
+      }
+    },
+    "notes.hazel.oldHens" : {
+      "comment" : "A note in the post from Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Old hens stop laying in time. They still earn their keep: they keep the young ones in line."
+          }
+        }
+      }
+    },
+    "notes.hazel.patience" : {
+      "comment" : "A note in the post from Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your birds come to the gate when you call. That's patience, that is."
+          }
+        }
+      }
+    },
+    "notes.hazel.peckingOrder" : {
+      "comment" : "A note in the post from Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A word on the pecking order. Every flock sorts itself out. Give it a few days and all is calm."
+          }
+        }
+      }
+    },
+    "notes.hazel.springAgain" : {
+      "comment" : "A note in the post from Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Spring again. The best time to set eggs, my mother always said."
+          }
+        }
+      }
+    },
+    "notes.hazel.winterLaying" : {
+      "comment" : "A note in the post from Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hens lay less in the short days. Don't fret. They pick up again in spring."
+          }
+        }
+      }
+    },
+    "notes.listAndLast" : {
+      "comment" : "The last colour of a list: \"cream, blue and brown\". Placeholders: the colours before it, the last colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ and %2$@"
+          }
+        }
+      }
+    },
+    "notes.listComma" : {
+      "comment" : "Joins a list of egg colours. Placeholders: the colours so far, the next colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "notes.okafor.blue" : {
+      "comment" : "A note in the post from Mr Okafor.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A blue egg, I hear. There is a space in my window for one, if you ever have a spare."
+          }
+        }
+      }
+    },
+    "notes.okafor.brown" : {
+      "comment" : "A note in the post from Mr Okafor.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Brown eggs, warm as toast. The colour is only on the outside, but I like it all the same."
+          }
+        }
+      }
+    },
+    "notes.okafor.chocolate" : {
+      "comment" : "A note in the post from Mr Okafor.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A chocolate egg, dark as a crust. I would like to bake with one, one day."
+          }
+        }
+      }
+    },
+    "notes.okafor.cream" : {
+      "comment" : "A note in the post from Mr Okafor.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cream eggs, the colour of good butter. They sell first in my window, every time."
+          }
+        }
+      }
+    },
+    "notes.okafor.custard" : {
+      "comment" : "A note in the post from Mr Okafor.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Spring, and every basket is full. I am making custard tarts this week."
+          }
+        }
+      }
+    },
+    "notes.okafor.green" : {
+      "comment" : "A note in the post from Mr Okafor.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Green eggs in Featherwick. The children at my counter will not believe me."
+          }
+        }
+      }
+    },
+    "notes.okafor.laying" : {
+      "comment" : "A note in the post from Mr Okafor.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Word reached the bakery that your flock is laying. Fresh eggs make the best bread."
+          }
+        }
+      }
+    },
+    "notes.okafor.olive" : {
+      "comment" : "A note in the post from Mr Okafor.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Olive eggs. My grandmother kept a hen that laid them. You have brought back a memory."
+          }
+        }
+      }
+    },
+    "notes.okafor.white" : {
+      "comment" : "A note in the post from Mr Okafor.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A white egg, plain and clean. Good for meringue, and for painting at Easter."
+          }
+        }
+      }
+    },
+    "notes.okafor.window" : {
+      "comment" : "A note in the post from Mr Okafor. The placeholder is the egg colours (\"cream, blue and brown\") or \"fine\".",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "My window has %@ eggs this week, thanks to you. There is room for more colours."
+          }
+        }
+      }
+    },
+    "notes.okafor.winterOven" : {
+      "comment" : "A note in the post from Mr Okafor.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "In winter the eggs come slower and the oven stays on longer. We manage."
+          }
+        }
+      }
+    },
+    "notes.plateOfEggs" : {
+      "comment" : "In Dot's note: \"I noticed your plate of blue eggs\". The placeholder is the egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "plate of %@ eggs"
+          }
+        }
+      }
+    },
+    "notes.teddy.chickNames" : {
+      "comment" : "A note in the post from Teddy.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Can I name a chick one day? I have a list! Number one is Captain Fluff."
+          }
+        }
+      }
+    },
+    "notes.teddy.counted" : {
+      "comment" : "A note in the post from Teddy. The placeholder is the friendly birds (more than 1).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld of your chickens came running when I said hello! I counted twice!"
+          }
+        }
+      }
+    },
+    "notes.teddy.counted.general" : {
+      "comment" : "A note in the post from Teddy, when what it names has gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your chickens come running when I say hello! I counted!"
+          }
+        }
+      }
+    },
+    "notes.teddy.drawing" : {
+      "comment" : "A note in the post from Teddy. The placeholder is the tamest bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I drew your chickens! The one in the middle is %@. I gave everyone big feet."
+          }
+        }
+      }
+    },
+    "notes.teddy.drawing.general" : {
+      "comment" : "A note in the post from Teddy, when what it names has gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I drew your chickens! I gave everyone big feet."
+          }
+        }
+      }
+    },
+    "notes.teddy.dreams" : {
+      "comment" : "A note in the post from Teddy.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Where do chickens sleep? Do they dream? I think they dream about worms."
+          }
+        }
+      }
+    },
+    "notes.teddy.dustBath" : {
+      "comment" : "A note in the post from Teddy.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your chickens were rolling in the dirt! I thought they were broken! Gran says it's a bath."
+          }
+        }
+      }
+    },
+    "notes.teddy.feather" : {
+      "comment" : "A note in the post from Teddy.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I found a feather by your gate! I'm keeping it in my best book."
+          }
+        }
+      }
+    },
+    "notes.teddy.handFed" : {
+      "comment" : "A note in the post from Teddy. The placeholder is the tamest bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ ate from my hand today! It tickled! Mum says I can come back on Saturday."
+          }
+        }
+      }
+    },
+    "notes.teddy.handFed.general" : {
+      "comment" : "A note in the post from Teddy, when what it names has gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "One of your chickens ate from my hand! It tickled!"
+          }
+        }
+      }
+    },
+    "notes.teddy.lap" : {
+      "comment" : "A note in the post from Teddy. The placeholder is the tamest bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ sat on my lap for AGES! Best day ever!"
+          }
+        }
+      }
+    },
+    "notes.teddy.lap.general" : {
+      "comment" : "A note in the post from Teddy, when what it names has gone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A chicken sat on my lap for AGES! Best day ever!"
+          }
+        }
+      }
+    },
+    "notes.teddy.ribbon" : {
+      "comment" : "A note in the post from Teddy.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You won a ribbon at the show! I told everyone at school!"
+          }
+        }
+      }
+    },
+    "notes.teddy.snow" : {
+      "comment" : "A note in the post from Teddy.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It snowed! Do chickens get cold feet? I drew them a picture of the sun."
+          }
+        }
+      }
+    },
+    "notes.teddy.visitor" : {
+      "comment" : "A note in the post from Teddy. Placeholders: a loaned bird's name, twice.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is visiting! Can I say hello to %2$@? I'll be very quiet!"
+          }
+        }
+      }
+    },
+    "notes.teddy.visitor.general" : {
+      "comment" : "A note in the post from Teddy, when the visiting bird is not at home.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You had a visitor chicken! Can I say hello next time?"
+          }
+        }
+      }
+    },
+    "notes.teddy.whichEgg" : {
+      "comment" : "A note in the post from Teddy.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Do chickens know which egg is theirs? I think they do. I asked Mum and she doesn't know."
+          }
+        }
+      }
+    },
+    "notes.wren.bigIncubator" : {
+      "comment" : "A note in the post from Wren.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The big incubator is in at the shop. It holds a good many more eggs than a small one."
+          }
+        }
+      }
+    },
+    "notes.wren.breedBook" : {
+      "comment" : "A note in the post from Wren. The placeholder is the pages in the Breed Book (more than 1).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I hear your Breed Book has %lld pages now. That's more than mine, and I sell the birds."
+          }
+        }
+      }
+    },
+    "notes.wren.frost" : {
+      "comment" : "A note in the post from Wren.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Frost on the lane this morning. Everyone at the shop is in two jumpers."
+          }
+        }
+      }
+    },
+    "notes.wren.hazelNews" : {
+      "comment" : "A note in the post from Wren. The placeholder is Hazel's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ was in for twine. She says your flock is coming on nicely."
+          }
+        }
+      }
+    },
+    "notes.wren.heat" : {
+      "comment" : "A note in the post from Wren.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hot days ahead. A dish of water in the shade keeps a flock content."
+          }
+        }
+      }
+    },
+    "notes.wren.leaves" : {
+      "comment" : "A note in the post from Wren.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The leaves are coming down. Chickens love to scratch through them for beetles."
+          }
+        }
+      }
+    },
+    "notes.wren.mealworms" : {
+      "comment" : "A note in the post from Wren.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fresh mealworms in at the shop this week. A treat a day makes a tame bird."
+          }
+        }
+      }
+    },
+    "notes.wren.newLoaf" : {
+      "comment" : "A note in the post from Wren.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mr Okafor has a new loaf in his window. He says it's the eggs that make it."
+          }
+        }
+      }
+    },
+    "notes.wren.premiumFeed" : {
+      "comment" : "A note in the post from Wren.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Premium feed is back on the shelf. A scoop in the morning lifts the day's laying."
+          }
+        }
+      }
+    },
+    "notes.wren.rain" : {
+      "comment" : "A note in the post from Wren.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Rain all week, they say. Chickens don't mind it. They just look cross."
+          }
+        }
+      }
+    },
+    "notes.wren.showTalk" : {
+      "comment" : "A note in the post from Wren.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The whole village is talking about the show. Dot has been seen measuring tables."
+          }
+        }
+      }
+    },
+    "notes.wren.specialPen" : {
+      "comment" : "A note in the post from Wren.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "There's a new bird in the special pen every morning. Come and look, even if you don't buy."
+          }
+        }
+      }
+    },
+    "notes.wren.surpriseBoxes" : {
+      "comment" : "A note in the post from Wren.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The surprise boxes are popular this week. Nobody knows the breed till the lid comes off."
+          }
+        }
+      }
+    },
+    "notes.wren.timber" : {
+      "comment" : "A note in the post from Wren.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The timber cart came by. If your coop feels tight, I have perches in stock."
           }
         }
       }
@@ -409,6 +1753,1470 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Total"
+          }
+        }
+      }
+    },
+    "village.about.bea" : {
+      "comment" : "Who Bea is, in one line.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bea runs the hen rescue on the hill. Every bird she takes in finds a good garden."
+          }
+        }
+      }
+    },
+    "village.about.dot" : {
+      "comment" : "Who Dot is, in one line.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dot judges the county show. She has a sharp eye and a soft spot for a well-kept bird."
+          }
+        }
+      }
+    },
+    "village.about.okafor" : {
+      "comment" : "Who Mr Okafor is, in one line.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mr Okafor bakes the village bread and fills his window with eggs of every colour."
+          }
+        }
+      }
+    },
+    "village.about.teddy" : {
+      "comment" : "Who Teddy is, in one line.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Teddy lives down the lane. He isn't allowed a chicken, so he visits yours."
+          }
+        }
+      }
+    },
+    "village.calendarLater" : {
+      "comment" : "CLI calendar line. Placeholders: the day's name (capital first), the days until it (2 or more), its day number, what happens on it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, in %2$lld days (day %3$lld). %4$@"
+          }
+        }
+      }
+    },
+    "village.calendarToday" : {
+      "comment" : "CLI calendar line. Placeholders: the day's name (capital first), what happens on it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, today. %2$@"
+          }
+        }
+      }
+    },
+    "village.calendarTomorrow" : {
+      "comment" : "CLI calendar line. Placeholders: the day's name (capital first), what happens on it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, tomorrow. %2$@"
+          }
+        }
+      }
+    },
+    "village.choice.marigold.keep" : {
+      "comment" : "A choice, lower case: keep the borrowed hen.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "keep Marigold, and pay Hazel for her when you can"
+          }
+        }
+      }
+    },
+    "village.choice.marigold.return" : {
+      "comment" : "A choice, lower case: send the borrowed hen back to Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "send Marigold home, with an egg for you"
+          }
+        }
+      }
+    },
+    "village.choiceButton.marigold.keep" : {
+      "comment" : "Button: keep the borrowed hen.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Keep Marigold"
+          }
+        }
+      }
+    },
+    "village.choiceButton.marigold.return" : {
+      "comment" : "Button: send the borrowed hen back to Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Send Marigold home"
+          }
+        }
+      }
+    },
+    "village.choiceDetail" : {
+      "comment" : "A choice's words as a sentence, under its button. The placeholder is the choice's words.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@."
+          }
+        }
+      }
+    },
+    "village.choiceHint" : {
+      "comment" : "CLI hint for a choice that waits. Placeholders: the person's name, the commands.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ asks you to choose. Type: %2$@"
+          }
+        }
+      }
+    },
+    "village.choiceHintCommand" : {
+      "comment" : "A command the player types in the CLI. Keep the word \"choose\" in English. Placeholders: story ID, option ID.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "choose %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "village.choiceHintOr" : {
+      "comment" : "Joins CLI commands the player may type. Placeholders: the commands so far, the next command.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, or %2$@"
+          }
+        }
+      }
+    },
+    "village.choiceReply.marigold.keep" : {
+      "comment" : "Hazel's reply when the keeper keeps Marigold.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hazel smiles. \"Pay me when you can. She likes you.\""
+          }
+        }
+      }
+    },
+    "village.choiceReply.marigold.return" : {
+      "comment" : "Hazel's reply when the keeper sends Marigold home.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hazel tucks Marigold under her arm. \"Thank you, love. She's had a lovely holiday. Here's an egg from my flock, same breed as your chick, already candled.\""
+          }
+        }
+      }
+    },
+    "village.chose" : {
+      "comment" : "After the keeper picks an option. The placeholder is the option's words.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You've decided: %@."
+          }
+        }
+      }
+    },
+    "village.choseReply" : {
+      "comment" : "After the keeper picks an option. Placeholders: the option's words, what the person says back.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You've decided: %1$@. %2$@"
+          }
+        }
+      }
+    },
+    "village.dayAbout.hatchAlong" : {
+      "comment" : "What happens on the Hatch-along.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The village hatches eggs together."
+          }
+        }
+      }
+    },
+    "village.dayAbout.longestDay" : {
+      "comment" : "What happens on the Longest Day.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The longest day of the year."
+          }
+        }
+      }
+    },
+    "village.dayAbout.midwinterLights" : {
+      "comment" : "What happens on Midwinter Lights.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Lanterns in every window of the village."
+          }
+        }
+      }
+    },
+    "village.dayAbout.moultWeek" : {
+      "comment" : "What happens in Moult Week.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The flock drops its old feathers and grows new ones."
+          }
+        }
+      }
+    },
+    "village.dayComing" : {
+      "comment" : "A village day comes soon (always 2 or more days away). Placeholders: the day's name (capital first), the days, what happens on it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is in %2$lld days. %3$@"
+          }
+        }
+      }
+    },
+    "village.dayName.hatchAlong" : {
+      "comment" : "A village day's name, in a sentence. Spring: the village hatches eggs together.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "the Hatch-along"
+          }
+        }
+      }
+    },
+    "village.dayName.longestDay" : {
+      "comment" : "A village day's name, in a sentence. Midsummer.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "the Longest Day"
+          }
+        }
+      }
+    },
+    "village.dayName.midwinterLights" : {
+      "comment" : "A village day's name, in a sentence. Midwinter: lanterns in the windows.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Midwinter Lights"
+          }
+        }
+      }
+    },
+    "village.dayName.moultWeek" : {
+      "comment" : "A village day's name, in a sentence. Autumn: the flock moults.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Moult Week"
+          }
+        }
+      }
+    },
+    "village.dayToday" : {
+      "comment" : "A village day is today. Placeholders: the day's name, what happens on it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Today is %1$@. %2$@"
+          }
+        }
+      }
+    },
+    "village.debtLine.one" : {
+      "comment" : "One debt in the \"You owe\" list, n == 1. Placeholders: the person's name, the coins.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld coin"
+          }
+        }
+      }
+    },
+    "village.debtLine.other" : {
+      "comment" : "One debt in the \"You owe\" list, n other than 1. Placeholders: the person's name, the coins.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld coins"
+          }
+        }
+      }
+    },
+    "village.debtOwed" : {
+      "comment" : "A new debt. Placeholders: the person's name, the coins.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You owe %1$@ %2$lld coins. Pay when you can: there's no hurry."
+          }
+        }
+      }
+    },
+    "village.debtPaid" : {
+      "comment" : "A debt is paid. Placeholders: the person's name, the coins.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You pay %1$@ %2$lld coins. \"Thank you, love.\""
+          }
+        }
+      }
+    },
+    "village.debtReminder" : {
+      "comment" : "A kind reminder of a debt. The placeholder is the person's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ waves over the fence. \"No rush on those coins, mind. Whenever suits.\""
+          }
+        }
+      }
+    },
+    "village.debtsNote" : {
+      "comment" : "Under the \"You owe\" list.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No hurry and no interest. Pay when you can."
+          }
+        }
+      }
+    },
+    "village.hazelAway" : {
+      "comment" : "At the back fence while Hazel is away. The placeholder is the day she is home.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hazel's house is quiet. She's at her sister's, and home on day %lld."
+          }
+        }
+      }
+    },
+    "village.hazelAwayTomorrow" : {
+      "comment" : "At the back fence while Hazel is away. She is home tomorrow.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hazel's house is quiet. She's at her sister's, and home tomorrow."
+          }
+        }
+      }
+    },
+    "village.hazelFenceKeep" : {
+      "comment" : "Hazel at the back fence: the keeper kept Marigold but has no perch for her.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "“She's yours as soon as there's a perch for her. Make room when you can, love.”"
+          }
+        }
+      }
+    },
+    "village.hazelFenceReturn" : {
+      "comment" : "Hazel at the back fence: Marigold goes home once she is free.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "“Let her finish what she's busy with. I'll fetch her when she's free.”"
+          }
+        }
+      }
+    },
+    "village.loanArrivedHer" : {
+      "comment" : "A loaned hen, or a bird whose sex is hidden, arrives. Placeholders: the bird's name, her pronoun or name (capital first), the owner's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ comes to stay. %2$@ belongs to %3$@, and comes with a box of her own."
+          }
+        }
+      }
+    },
+    "village.loanArrivedHis" : {
+      "comment" : "A loaned rooster arrives. Placeholders: his name, his pronoun or name (capital first), the owner's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ comes to stay. %2$@ belongs to %3$@, and comes with a box of his own."
+          }
+        }
+      }
+    },
+    "village.loanDecide" : {
+      "comment" : "Marigold's card: the keeper must choose. Placeholders: the owner's name, the kind of bird, the owner's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@'s %2$@. %3$@ is home: keep her, or send her home?"
+          }
+        }
+      }
+    },
+    "village.loanGoingHome" : {
+      "comment" : "Marigold's card: she goes home soon. Placeholders: the owner's name, the kind of bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@'s %2$@, going home once she's free"
+          }
+        }
+      }
+    },
+    "village.loanKeep" : {
+      "comment" : "Marigold's card: the keeper kept her and needs a perch for her.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Yours once there's a perch for her"
+          }
+        }
+      }
+    },
+    "village.loanKept" : {
+      "comment" : "The keeper keeps a loaned bird. Placeholders: the bird's name, the owner's name, the bird's pronoun or name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is yours now. %2$@ is glad %3$@'s staying."
+          }
+        }
+      }
+    },
+    "village.loanOnLoan" : {
+      "comment" : "A loaned bird's card. Placeholders: the owner's name, the kind of bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@'s %2$@, on loan"
+          }
+        }
+      }
+    },
+    "village.loanReturned" : {
+      "comment" : "A loaned bird goes home. Placeholders: the bird's name, the owner's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ goes home to %2$@."
+          }
+        }
+      }
+    },
+    "village.loanStaying" : {
+      "comment" : "A loaned bird's card. Placeholders: the owner's name, the kind of bird, the days left (2 or more).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@'s %2$@, staying %3$lld more days"
+          }
+        }
+      }
+    },
+    "village.loanStayingTomorrow" : {
+      "comment" : "A loaned bird's card: she goes home tomorrow. Placeholders: the owner's name, the kind of bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@'s %2$@, staying until tomorrow"
+          }
+        }
+      }
+    },
+    "village.name.bea" : {
+      "comment" : "A person's name: she runs the hen rescue.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bea"
+          }
+        }
+      }
+    },
+    "village.name.dot" : {
+      "comment" : "A person's name: the show judge.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dot"
+          }
+        }
+      }
+    },
+    "village.name.okafor" : {
+      "comment" : "A person's name: the baker.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mr Okafor"
+          }
+        }
+      }
+    },
+    "village.name.teddy" : {
+      "comment" : "A person's name: the boy down the lane.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Teddy"
+          }
+        }
+      }
+    },
+    "village.noteArrived" : {
+      "comment" : "A note in the post. Placeholders: the sender's name, the note.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A note from %1$@: %2$@"
+          }
+        }
+      }
+    },
+    "village.peopleChoice" : {
+      "comment" : "CLI: a choice that waits. Keep \"choose\" and \"<option>\" in English: the player types them. Placeholders: the person's name, the options, the story ID.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ asks you to choose: %2$@. Type: choose %3$@ <option>"
+          }
+        }
+      }
+    },
+    "village.peopleDebt" : {
+      "comment" : "CLI: a debt. Keep \"pay\" after the colon in English: the player types it. Placeholders: the person's name, the coins, the debt ID.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You owe %1$@ %2$lld coins. No hurry. To pay: pay %3$@"
+          }
+        }
+      }
+    },
+    "village.peopleLine" : {
+      "comment" : "CLI people list. Placeholders: the person's name, their part in the game, who they are.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@. %3$@"
+          }
+        }
+      }
+    },
+    "village.peopleLoan" : {
+      "comment" : "CLI: a loaned bird. Placeholders: the bird's name, the owner's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is on loan from %2$@."
+          }
+        }
+      }
+    },
+    "village.peopleOption" : {
+      "comment" : "CLI: one option of a choice. Placeholders: the option ID the player types, its words.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "village.peopleOptionList" : {
+      "comment" : "CLI: joins the options of a choice. Placeholders: the options so far, the next option.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "village.pronounShe" : {
+      "comment" : "A loaned bird no longer at home: she, lower case.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "she"
+          }
+        }
+      }
+    },
+    "village.role.bea" : {
+      "comment" : "Bea's part in the game, after her name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "the rescue: rehoming"
+          }
+        }
+      }
+    },
+    "village.role.dot" : {
+      "comment" : "Dot's part in the game, after her name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "the judge: shows"
+          }
+        }
+      }
+    },
+    "village.role.hazel" : {
+      "comment" : "Hazel's part in the game, after her name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "the neighbour: genetics and the breeding pen"
+          }
+        }
+      }
+    },
+    "village.role.okafor" : {
+      "comment" : "Mr Okafor's part in the game, after his name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "the baker: egg colours"
+          }
+        }
+      }
+    },
+    "village.role.teddy" : {
+      "comment" : "Teddy's part in the game, after his name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "the kid down the lane: friendly birds"
+          }
+        }
+      }
+    },
+    "village.role.wren" : {
+      "comment" : "Wren's part in the game, after her name. Speckle & Down is the shop's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Speckle & Down: the shop and the news"
+          }
+        }
+      }
+    },
+    "village.storyCoins.one" : {
+      "comment" : "A story's gift, n == 1. The placeholder is the coins.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You're given %lld coin."
+          }
+        }
+      }
+    },
+    "village.storyCoins.other" : {
+      "comment" : "A story's gift, n other than 1. The placeholder is the coins.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You're given %lld coins."
+          }
+        }
+      }
+    },
+    "village.storyGiftEgg" : {
+      "comment" : "A story's gift. The placeholder is the breed's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A %@ egg goes into your carton, already candled."
+          }
+        }
+      }
+    },
+    "village.storyTreats.one" : {
+      "comment" : "A story's gift, n == 1. Placeholders: the mealworms given, the treats the keeper has now.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You're given %1$lld mealworm. You have %2$lld treats."
+          }
+        }
+      }
+    },
+    "village.storyTreats.other" : {
+      "comment" : "A story's gift, n other than 1. Placeholders: the mealworms given, the treats the keeper has now.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You're given %1$lld mealworms. You have %2$lld treats."
+          }
+        }
+      }
+    },
+    "villagePeople.asks" : {
+      "comment" : "Above a choice's buttons. The placeholder is the person's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ asks you to choose:"
+          }
+        }
+      }
+    },
+    "villagePeople.chickNamed" : {
+      "comment" : "Teddy names a new chick. Placeholders: the person's name, the chick's name, the chick's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is at the gate the minute he hears. \"That one's called %2$@!\" (You can rename %3$@ any time.)"
+          }
+        }
+      }
+    },
+    "villagePeople.choice.dotPage" : {
+      "comment" : "A choice, lower case: which page of the breed standard to read. The placeholder is a breed's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "the %@ page"
+          }
+        }
+      }
+    },
+    "villagePeople.choice.okafor.now" : {
+      "comment" : "A choice, lower case: eggs for Mr Okafor's window.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "take him six brown eggs now"
+          }
+        }
+      }
+    },
+    "villagePeople.choice.okafor.wait" : {
+      "comment" : "A choice, lower case: eggs for Mr Okafor's window.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "wait, and take him three eggs of a new colour"
+          }
+        }
+      }
+    },
+    "villagePeople.choice.teddy.drawing" : {
+      "comment" : "A choice, lower case.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "have a drawing day with Teddy"
+          }
+        }
+      }
+    },
+    "villagePeople.choice.teddy.name" : {
+      "comment" : "A choice, lower case.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "let Teddy name your next chick"
+          }
+        }
+      }
+    },
+    "villagePeople.deliveredOkafor" : {
+      "comment" : "The keeper takes eggs to Mr Okafor.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You carry the eggs down to the bakery, carefully."
+          }
+        }
+      }
+    },
+    "villagePeople.dotBookLine" : {
+      "comment" : "CLI Breed Book line. Placeholders: the breed's name, Dot's notes on it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "What Dot looks for in the %1$@: %2$@"
+          }
+        }
+      }
+    },
+    "villagePeople.dotHeading" : {
+      "comment" : "Heading on a Breed Book page, above Dot's notes.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "What Dot looks for"
+          }
+        }
+      }
+    },
+    "villagePeople.finished" : {
+      "comment" : "People page: a story that is over.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Finished"
+          }
+        }
+      }
+    },
+    "villagePeople.handOver" : {
+      "comment" : "Button: give the eggs to the person who asked for them.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hand over the eggs"
+          }
+        }
+      }
+    },
+    "villagePeople.listComma" : {
+      "comment" : "Joins a list of egg colours. Placeholders: the colours so far, the next colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "villagePeople.listOrLast" : {
+      "comment" : "The last colour of a list: \"blue, green or olive\". Placeholders: the colours before it, the last colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ or %2$@"
+          }
+        }
+      }
+    },
+    "villagePeople.needEggs" : {
+      "comment" : "Refused: not enough eggs. Placeholders: the eggs needed, the egg colour, the eggs the keeper has.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "That needs %1$lld %2$@ eggs in your carton. You have %3$lld. Collect more first."
+          }
+        }
+      }
+    },
+    "villagePeople.needEggsOfNewColour" : {
+      "comment" : "Refused: not enough eggs of a new colour. Placeholders: the eggs needed, the colours (\"blue or green\"), the most eggs of one of those colours the keeper has.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "That needs %1$lld eggs of one new colour in your carton: %2$@. You have %3$lld of the colour you have most of. No hurry: Mr Okafor will wait."
+          }
+        }
+      }
+    },
+    "villagePeople.note.beaInvite" : {
+      "comment" : "Bea's invitation. The placeholder is a rehomed bird's name, or \"your bird\".",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Come up to the rescue one afternoon and see %@ for yourself. I'll put the kettle on. No need to write first. Love, Bea."
+          }
+        }
+      }
+    },
+    "villagePeople.note.beaPostcard" : {
+      "comment" : "Bea's postcard. The placeholder is a rehomed bird's name, or \"your bird\".",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dear keeper, I've been to see %@, who went to a new home from Henhaven. Happy as anything, with a favourite corner of the run, and the children say good morning every day. Love, Bea."
+          }
+        }
+      }
+    },
+    "villagePeople.note.beaPostcard3" : {
+      "comment" : "Bea's third postcard.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Three of your birds have new homes in Featherwick now. The newest one settled in at once. You raise them kind, keeper. Love, Bea."
+          }
+        }
+      }
+    },
+    "villagePeople.note.beaPostcard3Named" : {
+      "comment" : "Bea's third postcard. The placeholder is the newest rehomed bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Three of your birds have new homes in Featherwick now. %@ is the newest, and settled in at once. You raise them kind, keeper. Love, Bea."
+          }
+        }
+      }
+    },
+    "villagePeople.note.okaforMarketBoard" : {
+      "comment" : "Mr Okafor's note about the market board.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "There's talk of a market board by the bakery, where keepers can say what they have. I've put your name down first, if you'll have it."
+          }
+        }
+      }
+    },
+    "villagePeople.note.okaforWindow" : {
+      "comment" : "Mr Okafor's note. Henhaven is the keeper's farm.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your eggs sit in the middle of my window, and people come in just to ask about them. Since you waited, I've put a card by them with Henhaven's name on it."
+          }
+        }
+      }
+    },
+    "villagePeople.note.standard" : {
+      "comment" : "Dot's note. Placeholders: the breed's name, her notes on it, the breed's name again.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Here is the %1$@ page, with my pencil notes in the margin. \"%2$@\" (Dot's notes are in your Breed Book now, on the %3$@ page.)"
+          }
+        }
+      }
+    },
+    "villagePeople.note.teddyDrawing" : {
+      "comment" : "Teddy's drawing comes in the post.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A drawing in crayon of every bird in your flock, with the names spelled Teddy's own way. You pin it to the coop door."
+          }
+        }
+      }
+    },
+    "villagePeople.note.teddyLap" : {
+      "comment" : "Teddy sees a lap chicken. The placeholder is the bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "\"That one's a lap chicken, you know,\" Teddy says, pointing at %@. He looks very proud."
+          }
+        }
+      }
+    },
+    "villagePeople.note.teddyLapNamed" : {
+      "comment" : "Teddy sees a lap chicken. He named one of the keeper's chicks. The placeholder is the bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "\"That one's a lap chicken, you know,\" Teddy says, pointing at %@. He looks very proud. He still talks about naming your chick."
+          }
+        }
+      }
+    },
+    "villagePeople.note.teddyLapYard" : {
+      "comment" : "Teddy sees a lap chicken.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "\"That one's a lap chicken, you know,\" Teddy says, pointing into the yard. He looks very proud."
+          }
+        }
+      }
+    },
+    "villagePeople.note.teddyLapYardNamed" : {
+      "comment" : "Teddy sees a lap chicken. He named one of the keeper's chicks.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "\"That one's a lap chicken, you know,\" Teddy says, pointing into the yard. He looks very proud. He still talks about naming your chick."
+          }
+        }
+      }
+    },
+    "villagePeople.pageTitle" : {
+      "comment" : "The People page's title.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "People"
+          }
+        }
+      }
+    },
+    "villagePeople.remembered.dot" : {
+      "comment" : "People page: what the keeper chose in Dot's story. The placeholder is a breed's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dot showed you the %@ standard."
+          }
+        }
+      }
+    },
+    "villagePeople.remembered.okafor.now" : {
+      "comment" : "People page: what the keeper chose in Mr Okafor's story.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your brown eggs filled his window."
+          }
+        }
+      }
+    },
+    "villagePeople.remembered.okafor.wait" : {
+      "comment" : "People page: what the keeper chose in Mr Okafor's story.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You waited, and took him eggs of a new colour."
+          }
+        }
+      }
+    },
+    "villagePeople.remembered.teddy.drawing" : {
+      "comment" : "People page: what the keeper chose in Teddy's story.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Teddy's drawing is on the coop door."
+          }
+        }
+      }
+    },
+    "villagePeople.remembered.teddy.name" : {
+      "comment" : "People page: what the keeper chose in Teddy's story.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You let Teddy name a chick."
+          }
+        }
+      }
+    },
+    "villagePeople.standard.araucana" : {
+      "comment" : "Dot's notes on the Araucana, from the breed standard.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A neat crest that never hides the eyes, and a small pea comb. A lively, upright bird, with the tail carried well. And the eggs must be blue."
+          }
+        }
+      }
+    },
+    "villagePeople.standard.australorp" : {
+      "comment" : "Dot's notes on the Australorp, from the breed standard.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Upright and busy, with a deep body and a bright red single comb. Dark eyes. In the right light, the black feathers shine beetle-green."
+          }
+        }
+      }
+    },
+    "villagePeople.standard.orpington" : {
+      "comment" : "Dot's notes on the Orpington, from the breed standard.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A big, soft, deep bird, low to the ground. A short back and a smooth curve from neck to tail. Plenty of loose feather, and a neat single comb that stands up straight."
+          }
+        }
+      }
+    },
+    "villagePeople.standard.silkie" : {
+      "comment" : "Dot's notes on the Silkie, from the breed standard.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fluff all over, like a powder puff. A round crest, a walnut comb, feathered feet and five toes. Dark skin and face, and turquoise earlobes."
+          }
+        }
+      }
+    },
+    "villagePeople.standard.wyandotte" : {
+      "comment" : "Dot's notes on the Wyandotte, from the breed standard.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Curves everywhere: a round body, a short back and a full breast. A rose comb, low and tight. On a laced bird, a clean, even edge on every feather."
+          }
+        }
+      }
+    },
+    "villagePeople.tab" : {
+      "comment" : "Books tab: the people.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "People"
+          }
+        }
+      }
+    },
+    "villagePeople.title.beaPostcards" : {
+      "comment" : "A story's title: Bea writes about rehomed birds.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Postcards from the rescue"
+          }
+        }
+      }
+    },
+    "villagePeople.title.broodySilkie" : {
+      "comment" : "A story's title: Hazel's broody Silkie hen.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The broody Silkie"
+          }
+        }
+      }
+    },
+    "villagePeople.title.dotStandard" : {
+      "comment" : "A story's title: Dot shows the keeper the breed standard, the book judges score by.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The standard"
+          }
+        }
+      }
+    },
+    "villagePeople.title.heritageBreed" : {
+      "comment" : "A story's title: Hazel's old breed.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A heritage breed"
+          }
+        }
+      }
+    },
+    "villagePeople.title.lacedGift" : {
+      "comment" : "A story's title: Hazel gives a laced bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A laced gift"
+          }
+        }
+      }
+    },
+    "villagePeople.title.marigold" : {
+      "comment" : "A story's title: Hazel's hen Marigold stays with the keeper.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The borrowed hen"
+          }
+        }
+      }
+    },
+    "villagePeople.title.okaforWindow" : {
+      "comment" : "A story's title: Mr Okafor's shop window of eggs.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The bakery window"
+          }
+        }
+      }
+    },
+    "villagePeople.title.teddyHelps" : {
+      "comment" : "A story's title.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Teddy helps out"
+          }
+        }
+      }
+    },
+    "villagePeople.underWay" : {
+      "comment" : "People page: a story still running.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Under way"
+          }
+        }
+      }
+    },
+    "villagePeople.yourBird" : {
+      "comment" : "In Bea's notes, in place of a rehomed bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "your bird"
           }
         }
       }
