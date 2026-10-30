@@ -201,6 +201,21 @@ struct SkinMesh: Equatable, Sendable {
         return CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
     }
 
+    /// How far any paint moves from its rest place in this pose, across and down. A pixel inside a triangle
+    /// moves no further than its farthest corner, so the corners bound it. The shader samples that far from
+    /// the pixel it draws, and SwiftUI must be told (`maxSampleOffset`), or it draws nothing past the run's
+    /// rest picture: a long peck lost its head at the edge of the frame.
+    func drift(moved: [CGPoint], height: Double) -> CGSize {
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        for corner in used {
+            let rest: CGPoint = rest(corner, height: height)
+            x = max(x, abs(moved[corner].x - rest.x))
+            y = max(y, abs(moved[corner].y - rest.y))
+        }
+        return CGSize(width: x, height: y)
+    }
+
     /// The mesh for one pose as the shader reads it (`ChickenSkin.metal`). Points are in the frame moved by
     /// `offset` (the layer's origin, negated).
     ///

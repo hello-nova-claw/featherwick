@@ -55,7 +55,9 @@ extension View {
 ///
 /// A layer effect draws only inside its view, and SwiftUI draws that view to a surface of its own each
 /// frame. So the view is cut to just what the shader needs: the run's rest paint (it samples there) and
-/// where this pose puts it (it draws there). Every sample lies inside, so it needs no sample offset.
+/// where this pose puts it (it draws there). A pixel samples its paint's rest place, as far away as the
+/// paint moved (`SkinMesh.drift`), and that is the effect's sample offset: SwiftUI draws no further than
+/// the rest picture plus that offset, so with none a long peck lost its head at the frame's edge.
 struct SkinEffect: ViewModifier, Animatable {
     let skin: ChickenSkin
     let mesh: SkinMesh
@@ -82,6 +84,9 @@ struct SkinEffect: ViewModifier, Animatable {
         let offset = CGPoint(x: -layer.minX, y: -layer.minY)
         let packed: SkinMesh.Packed = mesh.packed(moved: moved, height: h, layer: layer, offset: offset)
         let corner: CGPoint = mesh.rest(0, height: h)
+        // A point of slack, as for the layer.
+        let moves: CGSize = mesh.drift(moved: moved, height: h)
+        let drift = CGSize(width: (moves.width + 1).rounded(.up), height: (moves.height + 1).rounded(.up))
         return
             content
             .offset(x: offset.x, y: offset.y)
@@ -96,7 +101,7 @@ struct SkinEffect: ViewModifier, Animatable {
                         Float(packed.tileOrigin.x), Float(packed.tileOrigin.y), Float(packed.tile),
                         Float(packed.across)),
                     .float(Float(packed.down))),
-                maxSampleOffset: .zero
+                maxSampleOffset: drift
             )
             .offset(x: layer.minX, y: layer.minY)
             .frame(width: height * ChickenRigMetrics.widthRatio, height: height, alignment: .topLeading)

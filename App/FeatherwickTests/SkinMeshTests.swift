@@ -66,6 +66,23 @@ import Testing
         )
     }
 
+    /// The drift is how far the paint moves: none at rest, and in a peck at least as far as every corner
+    /// moved, so SwiftUI draws the head wherever the peck takes it.
+    @Test func theDriftCoversEveryCorner() {
+        let still: CGSize = mesh.drift(moved: mesh.moved(transforms: transforms(.rest), height: height), height: height)
+        #expect(still.width < 1e-9 && still.height < 1e-9)
+        let moved: [CGPoint] = mesh.moved(
+            transforms: transforms(ChickenMotion.peck(rig, progress: 0.45)), height: height)
+        let drift: CGSize = mesh.drift(moved: moved, height: height)
+        #expect(drift.width > 10 && drift.height > 10)
+        for triangle in mesh.triangles {
+            for corner in triangle.corners {
+                let rest: CGPoint = mesh.rest(corner, height: height)
+                #expect(abs(moved[corner].x - rest.x) <= drift.width && abs(moved[corner].y - rest.y) <= drift.height)
+            }
+        }
+    }
+
     /// At rest every pixel of the grid finds its own paint, once.
     @Test func theRestPoseMovesNothing() {
         let (packed, grid, _) = pack(transforms(.rest))
