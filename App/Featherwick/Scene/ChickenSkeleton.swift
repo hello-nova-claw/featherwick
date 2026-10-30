@@ -346,19 +346,64 @@ enum ChickenMotion {
         let foot = CGPoint(x: middle + (leg == .back ? -spread : spread), y: Double(drawn.y))
         let half: Double = m.stepLength / 2
         let lift: Double = m.liftShare * Double(rig.hip.y)
-        let target: CGPoint
-        let curl: Double
         if u < M.stance {
             let s: Double = u / M.stance
-            target = CGPoint(x: Double(foot.x) + half - 2 * half * s, y: Double(foot.y))
-            curl = 0
-        } else {
-            let s: Double = (u - M.stance) / (1 - M.stance)
-            let arc: Double = sin(Double.pi * s)
-            target = CGPoint(x: Double(foot.x) - half + 2 * half * ease(s), y: Double(foot.y) + lift * arc)
-            curl = m.toeCurl * arc
+            let target = CGPoint(x: Double(foot.x) + half - 2 * half * s, y: Double(foot.y))
+            solve(leg, target: target, curl: 0, rig: rig, pose: &pose)
+            return
         }
-        solve(leg, target: target, curl: curl, rig: rig, pose: &pose)
+        let s: Double = (u - M.stance) / (1 - M.stance)
+        let arc: Double = sin(Double.pi * s)
+        let curl: Double = m.toeCurl * arc
+        let target = CGPoint(x: Double(foot.x) - half + 2 * half * ease(s), y: Double(foot.y) + lift * arc)
+        guard rig.bends(leg) else {
+            solve(leg, target: target, curl: curl, rig: rig, pose: &pose)
+            return
+        }
+        // Reaching for the lifted foot would fold the hock up and back, so the drumstick would swing back
+        // as the foot steps forward. Instead the thigh swings forward, from where it left the ground to where
+        // it lands, and the hock alone lifts the foot.
+        var off: ChickenPose = pose
+        solve(leg, target: CGPoint(x: Double(foot.x) - half, y: Double(foot.y)), curl: 0, rig: rig, pose: &off)
+        var on: ChickenPose = pose
+        solve(leg, target: CGPoint(x: Double(foot.x) + half, y: Double(foot.y)), curl: 0, rig: rig, pose: &on)
+        let e: Double = ease(s)
+        let thigh: Double = off[leg.thigh] + e * (on[leg.thigh] - off[leg.thigh])
+        let shank: Double = thigh + off[leg.shank] + e * (on[leg.shank] - off[leg.shank])
+        raise(leg, thigh: thigh, near: shank, to: Double(target.y), curl: curl, rig: rig, pose: &pose)
+    }
+
+    /// Turns the thigh by `thigh` (pose degrees), then bends the hock so the foot is at height `y`, on the
+    /// side the hock bends at rest. Of the two shank angles that reach `y`, the one nearer `near` (the shank's
+    /// turn, pose degrees) wins. Too high to reach: the shank points as high as it can.
+    private static func raise(
+        _ leg: Leg, thigh: Double, near: Double, to y: Double, curl: Double, rig: SkeletonRig,
+        pose: inout ChickenPose
+    ) {
+        guard let hip0 = rig.joints[leg.thigh], let hock0 = rig.joints[leg.shank], let foot0 = rig.feet[leg] else {
+            return
+        }
+        let hip = CGPoint(x: hip0.x, y: hip0.y + CGFloat(pose.rise))
+        let a: Double = distance(hip0, hock0)
+        let b: Double = distance(hock0, foot0)
+        let thighTurn: Double = -radians(thigh)
+        let thighAngle: Double = angle(from: hip0, to: hock0) + thighTurn
+        let hock = CGPoint(x: Double(hip.x) + a * cos(thighAngle), y: Double(hip.y) + a * sin(thighAngle))
+        let rest: Double = cross(sub(foot0, hip0), sub(hock0, hip0))
+        let up: Double = asin(min(1, max(-1, (y - Double(hock.y)) / b)))
+        let wanted: Double = angle(from: hock0, to: foot0) - radians(near)
+        let candidates: [Double] = [up, Double.pi - up]
+        let backwards: [Double] = candidates.filter { shankAngle in
+            let foot = CGPoint(x: Double(hock.x) + b * cos(shankAngle), y: Double(hock.y) + b * sin(shankAngle))
+            return cross(sub(foot, hip), sub(hock, hip)) * rest >= 0
+        }
+        let shankAngle: Double =
+            (backwards.isEmpty ? candidates : backwards)
+            .min { abs(wrap($0 - wanted)) < abs(wrap($1 - wanted)) } ?? up
+        let shankTurn: Double = wrap(shankAngle - angle(from: hock0, to: foot0))
+        pose[leg.thigh] = thigh
+        pose[leg.shank] = -degrees(shankTurn - thighTurn)
+        if rig.has(leg.toes) { pose[leg.toes] = degrees(shankTurn) + curl }
     }
 
     /// Sets the leg's angles so its foot reaches `target` (rig units) from the hip, lifted by `pose.rise`.
@@ -454,6 +499,8 @@ enum ChickenMotion {
 
     /// An angle in radians brought into -π...π, so a turn never goes the long way round.
     private static func wrap(_ a: Double) -> Double { remainder(a, 2 * Double.pi) }
+
+    private static func radians(_ degrees: Double) -> Double { degrees * Double.pi / 180 }
 
     private static func degrees(_ radians: Double) -> Double {
         var d: Double = radians * 180 / Double.pi

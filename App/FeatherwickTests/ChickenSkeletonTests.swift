@@ -116,6 +116,21 @@ import Testing
         #expect(lifted)
     }
 
+    /// A lifted leg's thigh swings forward all the way, with its foot: the hock alone lifts the foot, so the
+    /// drumstick never kicks back as the foot steps forward.
+    @Test func aLiftedThighSwingsForward() {
+        for (leg, offset) in [(Leg.back, 0.0), (Leg.front, 0.5)] {
+            var last: Double = .infinity
+            for i in 0...40 {
+                let u: Double = ChickenRigMetrics.stance + (1 - ChickenRigMetrics.stance) * Double(i) / 40
+                let pose: ChickenPose = ChickenMotion.walk(adult, phase: u - offset)
+                // Forward is counter-clockwise on screen: a falling angle.
+                #expect(pose[leg.thigh] <= last + 0.5, "\(leg) at \(u)")
+                last = pose[leg.thigh]
+            }
+        }
+    }
+
     /// Which side of the hip-to-foot line the hock is on (the sign of the cross product).
     private func side(_ hip: CGPoint, _ foot: CGPoint, _ hock: CGPoint) -> Double {
         Double((foot.x - hip.x) * (hock.y - hip.y) - (foot.y - hip.y) * (hock.x - hip.x))
