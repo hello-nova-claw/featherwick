@@ -123,11 +123,14 @@ struct PaintedChickenRig: View {
         return out
     }
 
-    /// Each skinned bone's sway: that of the first part on it that has one (the tail).
+    /// Each skinned bone's sway: that of the first skinned part on it that has one (the tail). A rigid part on a
+    /// skinned bone (the wattle on the head) sways by itself and does not move the skin.
     private var skinFollows: [Bone: Follow] {
         var out: [Bone: Follow] = [:]
         for layer in kit.layers {
-            if let bone = layer.bone, let follow = layer.follow, out[bone] == nil { out[bone] = follow }
+            if kit.isSkinned(layer), let bone = layer.bone, let follow = layer.follow, out[bone] == nil {
+                out[bone] = follow
+            }
         }
         return out
     }

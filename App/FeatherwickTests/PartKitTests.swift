@@ -96,40 +96,68 @@ import UniformTypeIdentifiers
 
     /// hen-b pecks to the ground: she tips her body far, her throat comes down near the ground in front of
     /// her, and her upper neck stays nearly straight, so the neck reaches rather than folds under her chin.
-    @MainActor @Test func henBPecksToTheGround() {
+    ///
+    /// Her beak reaches lower than with the hen's peck (0.16 above the ground then, 0.05 now). To get there her
+    /// lower neck turns about 55° against the body, not under 30° as #116 first asked: a neck that stayed in
+    /// line left her head tucked in above the ground.
+    @MainActor @Test func henBPecksToTheGround() throws {
         PartKit.reload()
-        guard let henB = PartKit.load(.henB), let throat = henB.rig.joints[.head] else { return }
+        let henB: PartKit = try #require(PartKit.load(.henB), "the hen-b kit does not load")
+        let throat: CGPoint = try #require(henB.rig.joints[.head])
         let bottom: ChickenPose = ChickenMotion.peck(henB.rig, progress: 0.5)
         #expect(bottom[.body] >= 45)
+        #expect(abs(bottom[.neckLow]) < 60)
         #expect(abs(bottom[.neckHigh]) < 30)
         let placed: CGPoint = Skeleton.place(throat, on: .head, rig: henB.rig, pose: bottom)
         #expect(placed.y < 0.15)
         #expect(placed.x > throat.x)
+        #expect(try Self.beakLow(henB, pose: bottom) < 0.08)
+    }
+
+    /// The lowest point of a kit's painted beak in a pose (rig units above the ground).
+    @MainActor private static func beakLow(_ kit: PartKit, pose: ChickenPose) throws -> Double {
+        let beak: KitLayer = try #require(kit.layers.first { $0.id == "beak" })
+        let painted: (CGPoint) -> Bool = try paint(of: [beak], in: kit)
+        var low: Double = .infinity
+        for x in stride(from: -0.6, through: 0.6, by: 0.005) {
+            for y in stride(from: 0.0, through: 1.0, by: 0.005) where painted(CGPoint(x: x, y: y)) {
+                low = min(low, Double(Skeleton.place(CGPoint(x: x, y: y), on: .head, rig: kit.rig, pose: pose).y))
+            }
+        }
+        return low
     }
 
     /// The hen pecks the same way: by tipping her body, with her lower neck nearly in line with it.
-    @MainActor @Test func henPecksWithHerNeckInLine() {
+    @MainActor @Test func henPecksWithHerNeckInLine() throws {
         PartKit.reload()
-        guard let hen = PartKit.load(.hen) else { return }
+        let hen: PartKit = try #require(PartKit.load(.hen), "the hen kit does not load")
         let bottom: ChickenPose = ChickenMotion.peck(hen.rig, progress: 0.5)
         #expect(abs(bottom[.neckLow]) < 30)
         #expect(bottom[.body] >= 45)
     }
 
     /// Both hen kits bend their body, neck, head and tail as one image, and sit with the belly (the
-    /// body's lowest paint) on the ground.
+    /// body's lowest paint, found here from the body's own pixels) on the ground.
     @MainActor @Test func henKitsBendAndSitOnTheirBelly() throws {
         PartKit.reload()
         for name in [KitName.hen, .henB] {
-            guard let kit = PartKit.load(name) else { continue }
+            let kit: PartKit = try #require(PartKit.load(name), "\(name) does not load")
             let skin: ChickenSkin = try #require(kit.skin, "\(name)")
             #expect(skin.bones.map(\.bone) == [.body, .tail, .neckLow, .neckHigh, .head], "\(name)")
-            let belly: Double = try #require(kit.rig.sitHeight)
             let body: KitLayer = try #require(kit.layers.first { $0.id == "body" })
-            let lowest = CGPoint(x: Double(kit.rig.hip.x), y: belly)
-            let sat: CGPoint = Skeleton.place(lowest, on: body.bone, rig: kit.rig, pose: ChickenMotion.sitting(kit.rig))
-            #expect(abs(sat.y) < 1e-6, "\(name)")
-            #expect(belly > 0.05 && belly < Double(kit.rig.hip.y), "\(name)")
+            let painted: (CGPoint) -> Bool = try Self.paint(of: [body], in: kit)
+            let step: Double = 0.002
+            var lowest: CGPoint?
+            for y in stride(from: 0.0, through: 1.0, by: step) {
+                if let x = stride(from: -0.6, through: 0.6, by: step).first(where: { painted(CGPoint(x: $0, y: y)) }) {
+                    lowest = CGPoint(x: x, y: y)
+                    break
+                }
+            }
+            let belly: CGPoint = try #require(lowest, "\(name) has no body paint")
+            let sat: CGPoint = Skeleton.place(belly, on: body.bone, rig: kit.rig, pose: ChickenMotion.sitting(kit.rig))
+            #expect(abs(sat.y) < 2 * step, "\(name): the belly sits \(sat.y) above the ground")
+            #expect(belly.y > 0.05 && belly.y < kit.rig.hip.y, "\(name)")
         }
     }
 
@@ -138,7 +166,8 @@ import UniformTypeIdentifiers
     @MainActor @Test func henKitsMeshesHoldAllTheirPaint() throws {
         PartKit.reload()
         for name in [KitName.hen, .henB] {
-            guard let kit = PartKit.load(name), kit.skin != nil else { continue }
+            let kit: PartKit = try #require(PartKit.load(name), "\(name) does not load")
+            try #require(kit.skin != nil, "\(name) has no skin")
             #expect(!kit.meshes.isEmpty, "\(name)")
             var runs: [[KitLayer]] = []
             var last: Bool = false
@@ -176,7 +205,8 @@ import UniformTypeIdentifiers
         let height: Double = 240
         let ground: Double = height * Double(ChickenRigMetrics.widthRatio) / 2
         for name in [KitName.hen, .henB] {
-            guard let kit = PartKit.load(name), let skin = kit.skin else { continue }
+            let kit: PartKit = try #require(PartKit.load(name), "\(name) does not load")
+            let skin: ChickenSkin = try #require(kit.skin, "\(name) has no skin")
             var lost: Int = 0
             var checked: Int = 0
             for (id, mesh) in kit.meshes {
@@ -249,12 +279,15 @@ import UniformTypeIdentifiers
         let w: Int = first.width
         let h: Int = first.height
         var alpha = [UInt8](repeating: 0, count: w * h)
-        let context: CGContext = try #require(
-            CGContext(
-                data: &alpha, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
-                space: CGColorSpaceCreateDeviceGray(),
-                bitmapInfo: CGImageAlphaInfo.alphaOnly.rawValue))
-        for layer in layers { context.draw(layer.image, in: CGRect(x: 0, y: 0, width: w, height: h)) }
+        // The context keeps the pointer it is given, so it is used only inside the buffer's scope.
+        try alpha.withUnsafeMutableBytes { buffer in
+            let context: CGContext = try #require(
+                CGContext(
+                    data: buffer.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                    space: CGColorSpaceCreateDeviceGray(),
+                    bitmapInfo: CGImageAlphaInfo.alphaOnly.rawValue))
+            for layer in layers { context.draw(layer.image, in: CGRect(x: 0, y: 0, width: w, height: h)) }
+        }
         let scale: Double = Double(w) / kit.spec.canvas[0]
         let unit: Double = kit.spec.unit
         let ground = CGPoint(x: kit.spec.groundPoint[0], y: kit.spec.groundPoint[1])
@@ -340,12 +373,14 @@ import UniformTypeIdentifiers
         spec.skin = [
             "wing": .init(radius: 0.1, width: 0.1), "body": .init(radius: 0.1, width: 0.1),
             "neckLow": .init(radius: 0.1, width: 0.1), "tail": .init(radius: 0, width: 0.1),
+            "shankBack": .init(radius: 0.1, width: 0.1),
         ]
         let skinProblems: [String] = spec.problems(files: files)
         #expect(skinProblems.contains("skin names unknown bone wing"))
         #expect(skinProblems.contains("skin names body, which is always its root"))
         #expect(skinProblems.contains("skin names neckLow, which has no joint"))
         #expect(skinProblems.contains("skin radius of tail is not above 0"))
+        #expect(skinProblems.contains("skin names shankBack, but legs stay rigid"))
         spec.skin = nil
         spec.parts["body"]?.pivot = nil
         #expect(spec.problems(files: files).contains("no part sets the joint of body"))

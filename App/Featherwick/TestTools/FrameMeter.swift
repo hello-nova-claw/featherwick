@@ -12,8 +12,11 @@ import SwiftUI
     private(set) var worstMilliseconds: Double = 0
     /// Frames dropped since the meter started.
     private(set) var dropped: Int = 0
-    /// The screen's top rate (60, or 120 with ProMotion).
-    let target: Int = UIScreen.main.maximumFramesPerSecond
+    /// The screen's top rate (60, or 120 with ProMotion). From the app's window scene, as `UIScreen.main` is
+    /// deprecated; 60 if no scene is connected yet.
+    let target: Int =
+        UIApplication.shared.connectedScenes.lazy.compactMap { ($0 as? UIWindowScene)?.screen }.first?
+        .maximumFramesPerSecond ?? 60
 
     private var link: CADisplayLink?
     private var last: CFTimeInterval = 0

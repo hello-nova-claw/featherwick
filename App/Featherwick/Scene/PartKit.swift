@@ -140,6 +140,11 @@ final class PartKit: @unchecked Sendable {
             let rows: Int = max(1, Int((Double(paint.height) / cell).rounded(.up)))
             let covered: [Bool] = coverage(
                 of: run.map(\.image), spec: spec, origin: paint.origin, cell: cell, columns: columns, rows: rows)
+            // No cell covered (the drawing context failed): leave the run rigid, as an empty mesh draws nothing.
+            guard covered.contains(true) else {
+                log.error("Kit \(spec.build, privacy: .public): skinned run \(id, privacy: .public) has no paint")
+                continue
+            }
             out[id] = SkinMesh(skin: skin, paint: paint, cell: cell, order: skin.order(drawing: run.map(\.bone))) {
                 column, row in
                 for dy in -1...1 {

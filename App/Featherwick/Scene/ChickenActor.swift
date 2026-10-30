@@ -59,9 +59,10 @@ struct AnimatedChicken: View {
         let reduceMotion: Bool
     }
 
-    /// True while the legs or a peck need a new frame every display refresh.
+    /// True while the legs or a peck need a new frame every display refresh. `walkStart` still set while not
+    /// walking: the walk just ended and `live` has not started the ease out yet.
     private var moving: Bool {
-        !reduceMotion && (activity == .walking || peckStart != nil || walkStop != nil)
+        !reduceMotion && (activity == .walking || peckStart != nil || walkStart != nil || walkStop != nil)
     }
 
     /// The pose for this moment, worked out on the skeleton this bird is drawn with (painted or path):
@@ -78,15 +79,20 @@ struct AnimatedChicken: View {
     }
 
     /// The bones alone at `date`: no face, no sway. A walk eases in from standing and out to what comes next.
+    ///
+    /// SwiftUI draws the new activity before `live` sets `walkStart` or `walkStop`. So a walk with no start yet
+    /// stands, and a walk that ended with no stop yet still walks: neither snaps for a frame.
     private func motion(_ rig: SkeletonRig, at date: Date) -> ChickenPose {
         guard !reduceMotion else { return stillMotion(rig, at: date) }
         let phase: Double = date.timeIntervalSinceReferenceDate / rig.motion.stride
         if activity == .walking {
-            let t: Double = walkStart.map { date.timeIntervalSince($0) / M.walkEase } ?? 1
+            let t: Double = walkStart.map { date.timeIntervalSince($0) / M.walkEase } ?? 0
             let walking: ChickenPose = ChickenMotion.walk(rig, phase: phase)
             return t >= 1 ? walking : .mix(stillMotion(rig, at: date), walking, t: ChickenMotion.ease(max(0, t)))
         }
-        if let walkStop, case let t = date.timeIntervalSince(walkStop) / M.walkEase, t < 1 {
+        if let stop = walkStop ?? walkStart.map({ _ in date }),
+            case let t = date.timeIntervalSince(stop) / M.walkEase, t < 1
+        {
             return .mix(
                 ChickenMotion.walk(rig, phase: phase), stillMotion(rig, at: date), t: ChickenMotion.ease(max(0, t)))
         }

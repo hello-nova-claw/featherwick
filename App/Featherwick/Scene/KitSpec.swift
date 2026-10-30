@@ -136,6 +136,7 @@ struct KitSpec: Decodable, Sendable {
                 continue
             }
             if bone == .body { found.append("skin names body, which is always its root") }
+            if bone.leg != nil { found.append("skin names \(name), but legs stay rigid") }
             if skeleton.joints[bone] == nil { found.append("skin names \(name), which has no joint") }
             if reach.radius <= 0 { found.append("skin radius of \(name) is not above 0") }
             if reach.width <= 0 { found.append("skin width of \(name) is not above 0") }
