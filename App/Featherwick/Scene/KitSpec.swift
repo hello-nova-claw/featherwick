@@ -61,6 +61,11 @@ struct KitSpec: Decodable, Sendable {
         var stride: Double?
         /// While walking, how far each foot steps behind or in front of the middle of the two feet.
         var footSpread: Double?
+        /// How high a stepping foot lifts, as a part of the hip's height. A leg drawn nearly straight needs a
+        /// low step, or its shank kicks out flat to lift the foot.
+        var stepLift: Double?
+        /// Degrees the toes curl under while the foot is in the air.
+        var toeCurl: Double?
     }
 
     var build: String
@@ -203,6 +208,8 @@ struct KitSpec: Decodable, Sendable {
             if let v = m.peckHeadDip { motion.peckHeadDip = v }
             if let v = m.peckCrouch { motion.peckCrouch = v }
             if let v = m.footSpread { motion.footSpread = v }
+            if let v = m.stepLift { motion.liftShare = v }
+            if let v = m.toeCurl { motion.toeCurl = v }
             let legHeight: Double = Leg.allCases.compactMap { joints[$0.thigh].map { Double($0.y) } }.max() ?? 0
             if let swing = m.legSwing, legHeight > 0 {
                 motion.stepLength = 2 * legHeight * tan(swing * Double.pi / 180)

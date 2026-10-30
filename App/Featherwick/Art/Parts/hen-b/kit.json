@@ -143,7 +143,9 @@
       -0.6
     ],
     "stride": 0.8,
-    "footSpread": 0.06
+    "footSpread": 0.06,
+    "stepLift": 0.15,
+    "toeCurl": 30
   },
   "skin": {
     "tail": {
