@@ -103,10 +103,12 @@ tail and the drumsticks), its own paint stays. `caps` work as in the hen fit. `m
 replaces those keys of the hen's motion. The script writes `parts/` (a whole kit) and `parts-preview.png`
 (each part in its own colour, bands and caps lighter, over the bones).
 
-The hen and hen-b peck alike: the body tips 50° and crouches 0.12, and sends the throat only a little forward (`peckReach`
-0.1, -0.6). So the lower neck turns about 22° against the body at the bottom of the peck, and the beak goes
-as low as the hen's. More reach turns the neck further: with the hen's reach (throat straight down) it turns
-about 130°, and with 0.45, -0.8 about 55°. A turning neck lifts its base out of the back line.
+The hen pecks by tipping her body 50° and crouching 0.12, with the throat sent only a little forward
+(`peckReach` 0.1, -0.6). Her lower neck turns about 22° against the body at the bottom of the peck, and her
+beak stops about 0.16 above the ground. hen-b reaches further, so her beak comes down to the ground in front
+of her chest. Her body tips 60° and crouches 0.04, her head dips 40°, and her throat goes forward and down
+(`peckReach` 0.3, -0.95). Her lower neck then turns about 55°, and her beak stops about 0.05 above the
+ground. More reach turns the neck further: with the throat straight down it turns about 130°. A turning neck lifts its base out of the back line.
 
 `round` gives a part a rounded end: its cut becomes an arc round its own joint, from edge to edge, filled
 with the paint of the other part (`from`). As the part turns, its end slides along itself, so it never lifts
