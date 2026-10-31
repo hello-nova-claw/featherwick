@@ -21,7 +21,7 @@ A pull request that breaks one of these is closed, however good the code is.
 - **One Swift package, two front ends.** `FeatherwickCore` holds every rule and is pure: no printing, no input, no clock, no unseeded randomness. `FeatherwickText` holds every word the player reads. Each word is a keyed `String(localized:)` call; its English is the default value, and the String Catalog (`Sources/FeatherwickText/Resources/Localizable.xcstrings`) holds it for translators. The CLI (`featherwick`) and the iOS app are thin front ends over both. The core builds and is tested on Linux.
 - **Command in, events out.** A front end sends a `Command`. `Engine.apply(command, to: &state, using: &rng)` changes the `GameState` and returns `GameEvent`s: IDs and enums only, never words. A refused command returns `.rejected` with a `Rejection`. The front end turns events into words through `FeatherwickText`.
 - **The game loop is the day.** The keeper spends the day's slots on care and errands, then sleeps. `.passNight` runs the numbered night steps in a fixed order (see "Night order" below). The app shows the night's events as a morning report, sorted into groups by `MorningReport`.
-- **State and saves.** `GameState` is `Codable`. `SaveStore` writes one slot atomically, keeps rolling backups and quarantines a save it cannot read. `SaveFormat` versions the state and runs migrations, so an old save always loads. The app's `GameStore` runs each command, logs the words and saves after every command.
+- **State and saves.** `GameState` is `Codable`. `SaveStore` writes one slot atomically, keeps rolling backups and quarantines a save it cannot read. It never changes a save from a newer game. `SaveFormat` versions the state and runs migrations, so an old save always loads. The app's `GameStore` runs each command, logs the words and saves after every command.
 - **The app.** SwiftUI menus over the farm: four swipe panels (Barn, Yard, Far yard, Shop), each opening a sheet. The Yard and Far yard draw a 2.5D scene (`FarmScene`) with a Metal season-colour shader. Every chicken moves on one skeleton, with a placeholder rig or a painted part kit on top. Colours, fonts and sizes come from the tokens in `App/Featherwick/Design/`.
 - **Tunable numbers live in `Rules`.** The game has one setting, `Rules.standard`.
 
@@ -583,6 +583,19 @@ The current save version is 2. Version 0 has no version key. Two migrations:
 
 A save with no `layRecords` gets its egg history from the eggs it still holds (`Records.backFill`).
 This is not a migration: no data changes shape, so the version stays the same.
+
+Loading a slot is one function, `SaveStore.load()`, shared by the CLI and the app (#59). It returns the
+save and a `Recovery`, and the front end only turns the `Recovery` into words (`recoveryText`, `SaveWords`):
+
+- `loaded`: the main save loaded, and no backup is from a newer game.
+- `noSave`: the slot is empty. A new game starts.
+- `restoredFromBackup`: the main save is missing. The newest backup that loads is used.
+- `unreadable(keptAs:restoredFromBackup:)`: the main save cannot be read. It is moved aside, never
+  deleted. The newest backup that loads is used, else a new game starts. Each quarantine gets its own
+  file (`…corrupt.json`, `…corrupt2.json`), so a second bad load never replaces the first.
+- `tooNew(version:)`: the main save or a backup is from a newer game. Nothing on disk changes, and the
+  front end never writes to the slot. A new game there would rotate the newer save out of the backups.
+  The CLI prints a line and stops. The app shows a note in place of the farm, and `GameStore` never saves.
 
 ## Shows (data layer)
 
