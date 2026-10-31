@@ -2360,6 +2360,54 @@
         }
       }
     },
+    "tree.kind.crossHen" : {
+      "comment" : "A hen of mixed breeds in the family tree.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "cross hen"
+          }
+        }
+      }
+    },
+    "tree.kind.crossRooster" : {
+      "comment" : "A rooster of mixed breeds in the family tree.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "cross rooster"
+          }
+        }
+      }
+    },
+    "tree.kind.hen" : {
+      "comment" : "A purebred hen in the family tree. The placeholder is her breed, such as araucana.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ hen"
+          }
+        }
+      }
+    },
+    "tree.kind.rooster" : {
+      "comment" : "A purebred rooster in the family tree. The placeholder is his breed, such as araucana.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ rooster"
+          }
+        }
+      }
+    },
     "tree.lineWithCarries" : {
       "comment" : "A family tree line in the CLI. Placeholders: the bird's line, then what it carries.",
       "extractionState" : "extracted_with_value",
@@ -2404,6 +2452,54 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Mother: unknown"
+          }
+        }
+      }
+    },
+    "tree.origin.localFlock" : {
+      "comment" : "Where a bird came from: a flock nearby.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Local flock"
+          }
+        }
+      }
+    },
+    "tree.origin.neighbour" : {
+      "comment" : "Where a bird came from: the neighbour next door.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Neighbour"
+          }
+        }
+      }
+    },
+    "tree.origin.show" : {
+      "comment" : "Where a bird came from: the county show.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "County show"
+          }
+        }
+      }
+    },
+    "tree.origin.village" : {
+      "comment" : "Where a bird came from: someone in the village. Featherwick is the village's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A Featherwick neighbour"
           }
         }
       }

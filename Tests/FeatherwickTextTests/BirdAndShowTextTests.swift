@@ -7,13 +7,19 @@ import Testing
 /// The words at the top of Text.swift (bird labels, stories, the tree, shows) read the same after they
 /// moved into the String Catalog (#58).
 struct BirdAndShowTextTests {
+    /// A fixed ID, so no test reads a random one. Each bird has its own; 90 and up are IDs no bird has.
+    static func fixedID(_ n: UInt8) -> UUID {
+        UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, n))
+    }
+
     /// A bird with its genes fixed, so its label never depends on a seed.
     static func bird(
-        _ name: String, _ breed: Breed, _ sex: Sex, variety: ColourVariety, hatchDay: Int, revealed: Bool = true
+        _ id: UInt8, _ name: String, _ breed: Breed, _ sex: Sex, variety: ColourVariety, hatchDay: Int,
+        revealed: Bool = true
     ) -> Bird {
         Bird(
-            id: UUID(), name: name, breed: breed, genome: breed.purebred(sex, variety: variety), hatchDay: hatchDay,
-            origin: "test", revealed: revealed)
+            id: fixedID(id), name: name, breed: breed, genome: breed.purebred(sex, variety: variety),
+            hatchDay: hatchDay, origin: "test", revealed: revealed)
     }
 
     @Test func birdLabelsReadTheSameWords() {
@@ -21,28 +27,28 @@ struct BirdAndShowTextTests {
         var s = Engine.newGame(earlyGame: false, using: &rng)
         s.day = 600
         let adult = s.day - s.rules.adultAge
-        var hen = Self.bird("Dot", .orpington, .hen, variety: .buff, hatchDay: adult)
+        var hen = Self.bird(1, "Dot", .orpington, .hen, variety: .buff, hatchDay: adult)
         #expect(birdLabel(hen, s) == "Dot: orpington hen, buff, lays brown, skittish (day 21)")
         hen.noLayUntilDay = s.day + 2
         hen.broodyUntilDay = s.day + 3
         #expect(
             birdLabel(hen, s)
                 == "Dot: orpington hen, buff, lays brown, shaken, not laying yet, broody, skittish (day 21)")
-        let old = Self.bird("Nan", .orpington, .hen, variety: .buff, hatchDay: s.day - s.rules.retirementAgeDays)
+        let old = Self.bird(2, "Nan", .orpington, .hen, variety: .buff, hatchDay: s.day - s.rules.retirementAgeDays)
         #expect(birdLabel(old, s) == "Nan: orpington hen, buff, retired, skittish (day 504)")
-        let roo = Self.bird("Rex", .wyandotte, .rooster, variety: .buff, hatchDay: adult)
+        let roo = Self.bird(3, "Rex", .wyandotte, .rooster, variety: .buff, hatchDay: adult)
         #expect(birdLabel(roo, s) == "Rex: wyandotte rooster, gold laced, skittish (day 21)")
-        let grower = Self.bird("Tib", .silkie, .rooster, variety: .buff, hatchDay: s.day - s.rules.growerAge)
+        let grower = Self.bird(4, "Tib", .silkie, .rooster, variety: .buff, hatchDay: s.day - s.rules.growerAge)
         #expect(birdLabel(grower, s) == "Tib: silkie cockerel, buff, skittish (day 7)")
-        let chick = Self.bird("Bud", .silkie, .hen, variety: .buff, hatchDay: s.day - 1)
+        let chick = Self.bird(5, "Bud", .silkie, .hen, variety: .buff, hatchDay: s.day - 1)
         #expect(birdLabel(chick, s) == "Bud: silkie hen chick, buff, skittish (day 1)")
-        let hidden = Self.bird("Wisp", .silkie, .hen, variety: .buff, hatchDay: s.day - 1, revealed: false)
+        let hidden = Self.bird(6, "Wisp", .silkie, .hen, variety: .buff, hatchDay: s.day - 1, revealed: false)
         #expect(birdLabel(hidden, s) == "Wisp: chick, yellow down, breed ?, sex ?, skittish (day 1)")
         #expect(downText(.darkWithHeadSpot) == "dark down with a white head spot")
         #expect(friendlyText(.lapChicken) == "a lap chicken")
         #expect(relatedText(.close) == "closely related (like siblings, or parent and chick)")
-        #expect(handledToastText(UUID(), .pet, s) == "The bird liked that")
-        #expect(birdName(UUID(), s) == "a bird")
+        #expect(handledToastText(Self.fixedID(90), .pet, s) == "The bird liked that")
+        #expect(birdName(Self.fixedID(90), s) == "a bird")
     }
 
     @Test func storiesReadTheSameWords() {
@@ -83,7 +89,7 @@ struct BirdAndShowTextTests {
         let parent = s.pedigree.keys.sorted { $0.uuidString < $1.uuidString }
             .first { !Pedigree.offspring(of: $0, in: s).isEmpty }
         #expect(
-            treeLines(parent ?? UUID(), s) == [
+            treeLines(parent ?? Self.fixedID(90), s) == [
                 "Marigold's mate (araucana rooster, hatched day -109, from Neighbour) · carries lavender and blue eggs",
                 "Parents: not related", "Chicks (1): Pip",
             ])
@@ -169,7 +175,7 @@ struct BirdAndShowTextTests {
         #expect(homeDeadline(hen.id, s) == " If no perch is free in 3 nights, Hazel will find Dot a new home.")
         s.day += s.rules.homeWaitNights - 1
         #expect(homeDeadline(hen.id, s) == " If no perch is free by tomorrow, Hazel will find Dot a new home.")
-        #expect(homeDeadline(UUID(), s) == "")
+        #expect(homeDeadline(Self.fixedID(90), s) == "")
     }
 
     // MARK: - The rarer words, each read once
@@ -178,17 +184,17 @@ struct BirdAndShowTextTests {
         var rng = SeededRNG(seed: 1)
         var s = Engine.newGame(earlyGame: false, using: &rng)
         s.day = 600
-        let roosterChick = Self.bird("Bo", .silkie, .rooster, variety: .buff, hatchDay: s.day - 1)
+        let roosterChick = Self.bird(7, "Bo", .silkie, .rooster, variety: .buff, hatchDay: s.day - 1)
         #expect(birdLabel(roosterChick, s) == "Bo: silkie rooster chick, buff, skittish (day 1)")
-        let pullet = Self.bird("Fern", .orpington, .hen, variety: .buff, hatchDay: s.day - s.rules.growerAge)
+        let pullet = Self.bird(8, "Fern", .orpington, .hen, variety: .buff, hatchDay: s.day - s.rules.growerAge)
         #expect(birdLabel(pullet, s) == "Fern: orpington pullet, buff, skittish (day 7)")
         var genome = Breed.orpington.purebred(.hen, variety: .buff)
         genome.speckle = AllelePair(.speckled, .speckled)
         let speckled = Bird(
-            id: UUID(), name: "Freckle", breed: .orpington, genome: genome, hatchDay: s.day - s.rules.adultAge,
+            id: Self.fixedID(9), name: "Freckle", breed: .orpington, genome: genome, hatchDay: s.day - s.rules.adultAge,
             origin: "test", revealed: true)
         #expect(birdLabel(speckled, s) == "Freckle: orpington hen, buff, lays speckled brown, skittish (day 21)")
-        #expect(handledToastText(UUID(), .treat, s) == "The bird enjoyed the mealworm")
+        #expect(handledToastText(Self.fixedID(90), .treat, s) == "The bird enjoyed the mealworm")
         #expect(
             ChickDown.allCases.map(downText) == [
                 "black down", "slate-grey down", "pale grey down", "silvery down", "yellow down",
@@ -232,17 +238,20 @@ struct BirdAndShowTextTests {
     @Test func everyKindOfTreeLineHasItsWords() {
         var rng = SeededRNG(seed: 1)
         var s = Engine.newGame(earlyGame: false, using: &rng)
-        func record(_ name: String, _ sex: Sex, day: Int, mother: UUID? = nil, father: UUID? = nil) -> Bird {
+        func record(
+            _ id: UInt8, _ name: String, _ sex: Sex, day: Int, mother: UUID? = nil, father: UUID? = nil
+        ) -> Bird {
             Bird(
-                id: UUID(), name: name, breed: .orpington, genome: Breed.orpington.purebred(sex, variety: .buff),
+                id: Self.fixedID(id), name: name, breed: .orpington,
+                genome: Breed.orpington.purebred(sex, variety: .buff),
                 hatchDay: day, motherID: mother, fatherID: father, origin: Bird.neighbourOrigin)
         }
-        let greatGranny = record("Hetty", .hen, day: -300)
-        let greatGrandad = record("Ned", .rooster, day: -300)
-        let granny = record("Maud", .hen, day: -200, mother: greatGranny.id, father: greatGrandad.id)
-        let father = record("Alf", .rooster, day: -100, mother: granny.id, father: UUID())
+        let greatGranny = record(10, "Hetty", .hen, day: -300)
+        let greatGrandad = record(11, "Ned", .rooster, day: -300)
+        let granny = record(12, "Maud", .hen, day: -200, mother: greatGranny.id, father: greatGrandad.id)
+        let father = record(13, "Alf", .rooster, day: -100, mother: granny.id, father: Self.fixedID(90))
         for b in [greatGranny, greatGrandad, granny, father] { s.pedigree[b.id] = PedigreeRecord(b) }
-        let chick = record("", .hen, day: 0, father: father.id)
+        let chick = record(14, "", .hen, day: 0, father: father.id)
         s.coop.append(chick)
         #expect(
             treeLines(chick.id, s) == [
@@ -251,6 +260,23 @@ struct BirdAndShowTextTests {
                 "  ├ Mother: Maud (orpington hen, hatched day -200)", "  │ ├ Mother: further back",
                 "  │ └ Father: further back", "  └ Father: unknown", "Parents: not related",
             ])
+    }
+
+    /// A cross and each known origin read in the tree's words; any other origin reads as saved.
+    @Test func everyTreeKindAndOriginHasItsWords() {
+        for (id, sex, kind) in [(UInt8(15), Sex.rooster, "cross rooster"), (16, .hen, "cross hen")] {
+            var cross = Self.bird(id, "Mix", .orpington, sex, variety: .buff, hatchDay: 0)
+            cross.purebredFlag = false
+            #expect(treeKindText(PedigreeRecord(cross)) == kind)
+        }
+        let pure = Self.bird(17, "Ida", .silkie, .hen, variety: .buff, hatchDay: 0)
+        #expect(treeKindText(PedigreeRecord(pure)) == "silkie hen")
+        #expect(
+            [Bird.neighbourOrigin, Bird.localFlockOrigin, Bird.showOrigin, Bird.villageOrigin, Bird.shopOrigin]
+                .map(originText) == [
+                    "Neighbour", "Local flock", "County show", "A Featherwick neighbour", "Speckle & Down",
+                ])
+        #expect(originText("Somewhere new") == "Somewhere new")
     }
 
     @Test func everyShowWordIsReadOnce() {
@@ -324,7 +350,7 @@ struct BirdAndShowTextTests {
         var rng = SeededRNG(seed: 1)
         let s = Engine.newGame(earlyGame: false, using: &rng)
         let hen = TextTests.plainHen(s)
-        let cock = BirdAndShowTextTests.bird("Rex", .silkie, .rooster, variety: .black, hatchDay: -100)
+        let cock = BirdAndShowTextTests.bird(18, "Rex", .silkie, .rooster, variety: .black, hatchDay: -100)
         let place = { (entrant: PodiumEntrant) in PodiumPlace(placing: 1, entrant: entrant, score: 1, notes: []) }
         #expect(showBirdText(cock) == "black Silkie cock")
         #expect(
@@ -341,7 +367,8 @@ struct BirdAndShowTextTests {
             podiumWhoText(speckled, owner: "Mrs Dimity", in: .eggs(.olive))
                 == "Mrs Dimity's plate of speckled olive eggs")
         #expect(
-            podiumWhoText(place(.keeper(name: "Pip", birdID: UUID())), owner: nil, in: .eggs(.blue)) == "your Pip")
+            podiumWhoText(place(.keeper(name: "Pip", birdID: Self.fixedID(91))), owner: nil, in: .eggs(.blue))
+                == "your Pip")
         #expect(
             showKeeperNames == [
                 "Mrs Pennywhistle", "Mr Hollyoak", "Miss Thistlewood", "Old Tom Furrow", "Mrs Bramble", "Mr Ashdown",

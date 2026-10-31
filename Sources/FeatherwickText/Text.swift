@@ -257,6 +257,55 @@ public func treeLines(_ id: UUID, _ s: GameState) -> [String] {
     }
 }
 
+/// A family record's breed and sex, as the tree shows it: "orpington hen", "cross rooster".
+func treeKindText(_ r: PedigreeRecord) -> String {
+    // The breed's name comes from Core as it does in `birdLabel`; breed names move to the catalog later (#58).
+    let breed = r.breed.rawValue
+    return switch (r.purebred, r.sex) {
+    case (true, .hen):
+        String(
+            localized: "tree.kind.hen", defaultValue: "\(breed) hen", bundle: .module,
+            comment: "A purebred hen in the family tree. The placeholder is her breed, such as araucana.")
+    case (true, .rooster):
+        String(
+            localized: "tree.kind.rooster", defaultValue: "\(breed) rooster", bundle: .module,
+            comment: "A purebred rooster in the family tree. The placeholder is his breed, such as araucana.")
+    case (false, .hen):
+        String(
+            localized: "tree.kind.crossHen", defaultValue: "cross hen", bundle: .module,
+            comment: "A hen of mixed breeds in the family tree.")
+    case (false, .rooster):
+        String(
+            localized: "tree.kind.crossRooster", defaultValue: "cross rooster", bundle: .module,
+            comment: "A rooster of mixed breeds in the family tree.")
+    }
+}
+
+/// Where a bird came from, as the tree shows it. The known origins that are words have keys. Names
+/// (the farm, the shop, a person) and any origin a later version adds read as saved.
+func originText(_ origin: String) -> String {
+    switch origin {
+    case Bird.neighbourOrigin:
+        String(
+            localized: "tree.origin.neighbour", defaultValue: "Neighbour", bundle: .module,
+            comment: "Where a bird came from: the neighbour next door.")
+    case Bird.localFlockOrigin:
+        String(
+            localized: "tree.origin.localFlock", defaultValue: "Local flock", bundle: .module,
+            comment: "Where a bird came from: a flock nearby.")
+    case Bird.showOrigin:
+        String(
+            localized: "tree.origin.show", defaultValue: "County show", bundle: .module,
+            comment: "Where a bird came from: the county show.")
+    case Bird.villageOrigin:
+        String(
+            localized: "tree.origin.village", defaultValue: "A Featherwick neighbour", bundle: .module,
+            comment: "Where a bird came from: someone in the village. Featherwick is the village's name.")
+    default:
+        origin
+    }
+}
+
 /// The family tree, three generations, each bird with its carrier notes. The app shows the notes under each bird.
 public func treeEntries(_ id: UUID, _ s: GameState) -> [TreeLine] {
     var out: [TreeLine] = []
@@ -270,7 +319,7 @@ public func treeEntries(_ id: UUID, _ s: GameState) -> [TreeLine] {
                 localized: "tree.unnamed", defaultValue: "unnamed", bundle: .module,
                 comment: "In the family tree, in place of a bird with no name.")
             : r.name
-        let kind = r.kind
+        let kind = treeKindText(r)
         let day = r.hatchDay
         guard r.motherID == nil && r.fatherID == nil else {
             return String(
@@ -279,7 +328,7 @@ public func treeEntries(_ id: UUID, _ s: GameState) -> [TreeLine] {
                     "A bird in the family tree. Placeholders: its name, its breed and sex (such as araucana hen), the day it hatched."
             )
         }
-        let origin = r.origin
+        let origin = originText(r.origin)
         return String(
             localized: "tree.birdFrom", defaultValue: "\(name) (\(kind), hatched day \(day), from \(origin))",
             bundle: .module,
