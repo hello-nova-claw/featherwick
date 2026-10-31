@@ -74,5 +74,14 @@ struct SimulationTests {
         let report = Simulation.textReport(days: 60, games: 5)
         #expect(report.contains("Balance report"))
         #expect(report.contains("coins"))
+        #expect(report.contains("speckledEgg"))  // the ladder line names every milestone
+    }
+
+    /// Issue #64: rungs the shipped breeds could not reach. A plain keeper, with no eye for genes, gets a
+    /// speckled egg in some games of a year, and keeps a hen long enough for "Grand old lady" in most.
+    @Test func aYearOfPlayClimbsTheOnceUnreachableRungs() {
+        let reports = Simulation.runMany(seeds: 1...10, days: 365)
+        #expect(reports.contains { $0.milestones.contains("speckledEgg") })
+        #expect(reports.count(where: { $0.milestones.contains("elderHen") }) >= 5)
     }
 }
