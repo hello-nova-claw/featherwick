@@ -182,7 +182,7 @@ struct SaveStoreTests {
     @Test(arguments: [
         ("../x", "x"), ("../../etc/passwd", "etcpasswd"), ("a/b", "ab"), ("/tmp/save", "tmpsave"),
         ("my save", "mysave"), ("hen-1_b", "hen-1_b"), ("family.2025", "family.2025"), ("..hidden", "hidden"),
-        ("main.bak1", "mainbak1"), ("main.corrupt", "maincorrupt"),
+        ("main.bak1", "mainbak1"), ("main.corrupt", "maincorrupt"), ("main.BAK1", "mainBAK1"),
     ])
     func aSlotNameIsCleaned(_ raw: String, _ clean: String) {
         let store = SaveStore(directory: tempDir(), slot: raw)

@@ -35,11 +35,17 @@ public struct SaveStore: Sendable {
         let clean = String(kept.drop(while: { $0 == "." }))
         // A name that looks like another slot's backup or quarantine (`main.bak1`) loses its dots, so it
         // never overwrites that file and `slots(in:)` still lists it.
-        return fileMarkers.contains(where: clean.contains) ? clean.filter { $0 != "." } : clean
+        return isMarked(clean) ? clean.filter { $0 != "." } : clean
     }
 
     /// The parts of a file name that mark a backup, a quarantined copy or an old file, not a slot.
     static let fileMarkers = [".bak", ".corrupt", ".old"]
+
+    /// Case does not matter: on a case-insensitive volume `main.BAK1.json` is the file `main.bak1.json`.
+    static func isMarked(_ name: String) -> Bool {
+        let lower = name.lowercased()
+        return fileMarkers.contains(where: lower.contains)
+    }
 
     public var url: URL { directory.appendingPathComponent("\(slot).json") }
     public func backupURL(_ i: Int) -> URL { directory.appendingPathComponent("\(slot).bak\(i).json") }
@@ -158,7 +164,7 @@ public struct SaveStore: Sendable {
         let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
         return names.compactMap { name in
             guard name.hasSuffix(".json"),
-                !fileMarkers.contains(where: name.contains)
+                !isMarked(name)
             else { return nil }
             return String(name.dropLast(".json".count))
         }.sorted()
