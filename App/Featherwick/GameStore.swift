@@ -87,7 +87,7 @@ final class GameStore {
         // A local first: @Observable can't read `self.store` until every property is set.
         let store = SaveStore(directory: directory, slot: slot)
         self.store = store
-        self.slot = slot
+        self.slot = store.slot
         let (loaded, recovery) = store.load()
         if case .tooNew(let version) = recovery { saveTooNew = version } else { saveTooNew = nil }
         save = loaded ?? Self.newSave(rules: .standard)

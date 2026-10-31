@@ -17,10 +17,19 @@ public struct SaveStore: Sendable {
     public let slot: String
     public let backupCount: Int
 
+    /// The slot name is cleaned here, so every front end gets the same rule and no name can reach
+    /// outside `directory` (`--slot ../x` is slot `x`). A name with nothing left is the default slot.
     public init(directory: URL, slot: String = SaveStore.defaultSlot, backupCount: Int = 2) {
         self.directory = directory
-        self.slot = slot.isEmpty ? SaveStore.defaultSlot : slot
+        let clean = SaveStore.cleanSlotName(slot)
+        self.slot = clean.isEmpty ? SaveStore.defaultSlot : clean
         self.backupCount = max(0, backupCount)
+    }
+
+    /// Only letters, numbers, `-` and `_`. No `/` or `.`, so the name is one file in the save folder.
+    /// Empty when nothing is left, so a front end can say the name was not usable.
+    public static func cleanSlotName(_ name: String) -> String {
+        name.filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }
     }
 
     public var url: URL { directory.appendingPathComponent("\(slot).json") }
