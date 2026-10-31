@@ -108,6 +108,16 @@ enum Farm {
         let start = origin.withOffset(CGVector(dx: app.frame.midX, dy: startY))
         let end = origin.withOffset(CGVector(dx: app.frame.midX, dy: startY - (top - 70)))
         start.press(forDuration: 0.1, thenDragTo: end)
+        // The sheet still springs after the drag. Wait until it is in the top third and has stopped moving
+        // between two looks, so the audit does not read a page that is still moving.
+        var last = page.frame.minY
+        let settled = NSPredicate { _, _ in
+            let now = page.frame.minY
+            defer { last = now }
+            return now <= app.frame.height / 3 && abs(now - last) < 1
+        }
+        let rest = XCTNSPredicateExpectation(predicate: settled, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [rest], timeout: 5), .completed, "The sheet did not reach its large detent")
     }
 
     static func slug(_ name: String) -> String {
