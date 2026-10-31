@@ -184,7 +184,9 @@ struct SaveFormatTests {
         var game = Self.busyGame()
         game.state.rules.showCompetitorsByKind = [.pet: 1_000_000, .eggs: 5, .breed: 7]
         game.state.rules.showRivalPicks = [.pet: 1_000_000, .eggs: 2, .breed: 3]
+        game.state.rules.winterChampionshipExtraPicks = 1_000_000
         let loaded = try SaveFormat.decode(SaveFormat.encode(game))
+        #expect(loaded.state.rules.winterChampionshipExtraPicks == SaveFormat.maxShowEntrants)
         #expect(loaded.state.rules.showCompetitorsByKind[.pet] == SaveFormat.maxShowEntrants)
         #expect(loaded.state.rules.showRivalPicks[.pet] == SaveFormat.maxShowEntrants)
         #expect(loaded.state.rules.showCompetitorsByKind[.eggs] == 5)

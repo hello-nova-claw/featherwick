@@ -152,6 +152,7 @@ public enum SaveFormat {
         r.hensPerRooster = max(1, r.hensPerRooster)
         r.showCompetitorsByKind = r.showCompetitorsByKind.mapValues { min($0, maxShowEntrants) }
         r.showRivalPicks = r.showRivalPicks.mapValues { min($0, maxShowEntrants) }
+        r.winterChampionshipExtraPicks = min(r.winterChampionshipExtraPicks, maxShowEntrants)
         state.rules = r
     }
 
