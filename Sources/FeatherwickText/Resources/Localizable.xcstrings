@@ -1241,6 +1241,102 @@
         }
       }
     },
+    "save.restoredMissing" : {
+      "comment" : "On load: the save file was gone, and a backup copy loaded.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Main save was missing; restored from a backup."
+          }
+        }
+      }
+    },
+    "save.tooNew" : {
+      "comment" : "Text game, on load: the save came from a newer game, so it is left alone. The placeholder is the save's version number.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This save is from a newer version of Featherwick (save version %lld). Update the game to load it."
+          }
+        }
+      }
+    },
+    "save.tooNewBody" : {
+      "comment" : "App screen text, under the title, when the save came from a newer version.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your farm was saved by a newer version of the game. It is safe, and nothing has been changed. Update Featherwick to carry on where you left off."
+          }
+        }
+      }
+    },
+    "save.tooNewTitle" : {
+      "comment" : "App screen title, shown instead of the farm when the save came from a newer version.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your farm needs a newer Featherwick"
+          }
+        }
+      }
+    },
+    "save.unreadableKeptNew" : {
+      "comment" : "On load: the save was damaged and moved aside, with no good backup. The placeholder is the file name it was moved to.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your save couldn't be read (kept as %@). Starting a new game."
+          }
+        }
+      }
+    },
+    "save.unreadableKeptRestored" : {
+      "comment" : "On load: the save was damaged and moved aside, and a backup loaded. The placeholder is the file name it was moved to.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your save couldn't be read (kept as %@). Restored from a backup."
+          }
+        }
+      }
+    },
+    "save.unreadableNew" : {
+      "comment" : "On load: the save was damaged, with no good backup.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your save couldn't be read. Starting a new game."
+          }
+        }
+      }
+    },
+    "save.unreadableRestored" : {
+      "comment" : "On load: the save was damaged, and a backup loaded.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your save couldn't be read. Restored from a backup."
+          }
+        }
+      }
+    },
     "shop.special.cockerel" : {
       "comment" : "The shop's daily special. Placeholders: the colour, the breed, the price in coins.",
       "extractionState" : "extracted_with_value",

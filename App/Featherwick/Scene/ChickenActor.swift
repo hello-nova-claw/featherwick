@@ -79,7 +79,7 @@ struct AnimatedChicken: View {
             // A pose, not a motion: it holds with Reduce Motion too. Sit down inside `withAnimation` to ease it.
             return ChickenMotion.sitting(rig)
         } else if !reduceMotion && activity == .walking {
-            return ChickenMotion.walk(rig, phase: date.timeIntervalSinceReferenceDate / M.stride)
+            return ChickenMotion.walk(rig, phase: date.timeIntervalSinceReferenceDate / rig.motion.stride)
         } else if let peckStart, !reduceMotion {
             return ChickenMotion.peck(rig, progress: date.timeIntervalSince(peckStart) / M.peckDuration)
         }

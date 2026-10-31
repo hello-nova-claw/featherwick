@@ -1,0 +1,524 @@
+{
+  "source": "source.jpg",
+  "groundPoint": [
+    690,
+    1159
+  ],
+  "height": 1021,
+  "canvasGroundPoint": [
+    1124,
+    1840
+  ],
+  "joints": {
+    "body": [
+      670,
+      790
+    ],
+    "thighBack": [
+      630,
+      800
+    ],
+    "shankBack": [
+      560,
+      965
+    ],
+    "toesBack": [
+      590,
+      1108
+    ],
+    "thighFront": [
+      705,
+      800
+    ],
+    "shankFront": [
+      732,
+      965
+    ],
+    "toesFront": [
+      785,
+      1106
+    ],
+    "tail": [
+      515,
+      530
+    ],
+    "neckLow": [
+      885,
+      480
+    ],
+    "neckHigh": [
+      965,
+      340
+    ],
+    "head": [
+      1012,
+      280
+    ]
+  },
+  "wingRoot": [
+    830,
+    600
+  ],
+  "wattleTop": [
+    1060,
+    262
+  ],
+  "tailAim": [
+    230,
+    430
+  ],
+  "labels": {
+    "thighBack": [
+      -0.22,
+      0.03
+    ],
+    "shankBack": [
+      -0.18,
+      0.0
+    ],
+    "toesBack": [
+      -0.2,
+      -0.02
+    ],
+    "body": [
+      -0.02,
+      0.1
+    ],
+    "tail": [
+      -0.12,
+      0.12
+    ],
+    "neckLow": [
+      -0.2,
+      -0.02
+    ],
+    "neckHigh": [
+      -0.2,
+      0.02
+    ],
+    "head": [
+      -0.22,
+      0.06
+    ],
+    "thighFront": [
+      0.14,
+      0.04
+    ],
+    "shankFront": [
+      0.14,
+      0.0
+    ],
+    "toesFront": [
+      0.16,
+      -0.03
+    ]
+  },
+  "cuts": {
+    "tail | body": [
+      [
+        588,
+        484
+      ],
+      [
+        540,
+        530
+      ],
+      [
+        480,
+        610
+      ],
+      [
+        420,
+        690
+      ],
+      [
+        348,
+        760
+      ]
+    ],
+    "body | neck": [
+      [
+        762,
+        442
+      ],
+      [
+        825,
+        468
+      ],
+      [
+        885,
+        492
+      ],
+      [
+        960,
+        505
+      ],
+      [
+        1062,
+        488
+      ]
+    ],
+    "neck | hackle": [
+      [
+        848,
+        300
+      ],
+      [
+        910,
+        330
+      ],
+      [
+        970,
+        358
+      ],
+      [
+        1048,
+        392
+      ]
+    ],
+    "hackle | head": [
+      [
+        925,
+        205
+      ],
+      [
+        965,
+        250
+      ],
+      [
+        1000,
+        290
+      ],
+      [
+        1036,
+        318
+      ]
+    ],
+    "head | comb": [
+      [
+        985,
+        190
+      ],
+      [
+        1015,
+        180
+      ],
+      [
+        1050,
+        178
+      ],
+      [
+        1095,
+        198
+      ]
+    ],
+    "head | beak": [
+      [
+        1085,
+        212
+      ],
+      [
+        1088,
+        230
+      ],
+      [
+        1090,
+        248
+      ]
+    ],
+    "head | wattle": [
+      [
+        1036,
+        300
+      ],
+      [
+        1045,
+        320
+      ],
+      [
+        1065,
+        322
+      ],
+      [
+        1085,
+        300
+      ]
+    ],
+    "body | thighs": [
+      [
+        440,
+        880
+      ],
+      [
+        520,
+        862
+      ],
+      [
+        600,
+        852
+      ],
+      [
+        700,
+        850
+      ],
+      [
+        780,
+        862
+      ],
+      [
+        835,
+        890
+      ]
+    ],
+    "thighBack | thighFront": [
+      [
+        650,
+        852
+      ],
+      [
+        652,
+        900
+      ],
+      [
+        655,
+        945
+      ]
+    ],
+    "thighBack | shankBack": [
+      [
+        528,
+        968
+      ],
+      [
+        592,
+        968
+      ]
+    ],
+    "thighFront | shankFront": [
+      [
+        698,
+        974
+      ],
+      [
+        768,
+        974
+      ]
+    ],
+    "shankBack | toesBack": [
+      [
+        552,
+        1094
+      ],
+      [
+        610,
+        1094
+      ]
+    ],
+    "shankFront | toesFront": [
+      [
+        752,
+        1092
+      ],
+      [
+        810,
+        1092
+      ]
+    ]
+  },
+  "regions": {
+    "tail": [
+      290,
+      520
+    ],
+    "body": [
+      700,
+      700
+    ],
+    "neck": [
+      905,
+      450
+    ],
+    "hackle": [
+      960,
+      300
+    ],
+    "head": [
+      1030,
+      240
+    ],
+    "comb": [
+      1040,
+      160
+    ],
+    "beak": [
+      1120,
+      215
+    ],
+    "wattle": [
+      1105,
+      330
+    ],
+    "thighBack": [
+      565,
+      915
+    ],
+    "thighFront": [
+      735,
+      915
+    ],
+    "shankBack": [
+      500,
+      1035
+    ],
+    "shankFront": [
+      810,
+      1035
+    ],
+    "toesBack": [
+      470,
+      1140
+    ],
+    "toesFront": [
+      920,
+      1140
+    ]
+  },
+  "pieces": {
+    "canvas": "Procreate exports: the source image placed on a 2000 px canvas, one part kept on each.",
+    "paper": [
+      247,
+      242,
+      230
+    ],
+    "kraft": [
+      190,
+      157,
+      117
+    ],
+    "files": {
+      "shankBack": "pieces/shankBack.webp",
+      "shankFront": "pieces/shankFront.webp",
+      "toesBack": "pieces/toesBack.webp",
+      "toesFront": "pieces/toesFront.webp",
+      "thighFront": "pieces/thighFront.webp",
+      "body": "pieces/body.webp",
+      "thighBack": "pieces/thighBack.webp",
+      "head": "pieces/head.webp",
+      "hackle": "pieces/hackle.webp",
+      "neck": "pieces/neck.webp",
+      "tail": "pieces/tail.webp",
+      "beak": "pieces/beak.webp",
+      "comb": "pieces/comb.webp"
+    },
+    "splits": {
+      "wattle": {
+        "from": "head",
+        "take": [
+          [
+            1045,
+            258
+          ],
+          [
+            1084,
+            246
+          ],
+          [
+            1100,
+            265
+          ],
+          [
+            1100,
+            335
+          ],
+          [
+            1041,
+            335
+          ],
+          [
+            1041,
+            300
+          ],
+          [
+            1043,
+            280
+          ]
+        ],
+        "leave": [
+          [
+            1050,
+            270
+          ],
+          [
+            1086,
+            258
+          ],
+          [
+            1100,
+            270
+          ],
+          [
+            1100,
+            335
+          ],
+          [
+            1046,
+            335
+          ],
+          [
+            1046,
+            302
+          ],
+          [
+            1048,
+            287
+          ]
+        ]
+      }
+    },
+    "caps": {
+      "neck": {
+        "joint": "neckLow",
+        "radius": 70
+      },
+      "hackle": {
+        "joint": "neckHigh",
+        "radius": 55
+      },
+      "head": {
+        "joint": "head",
+        "radius": 45
+      }
+    }
+  },
+  "drawOrder": [
+    "shankBack",
+    "toesBack",
+    "tail",
+    "body",
+    "thighBack",
+    "wing",
+    "neck",
+    "hackle",
+    "comb",
+    "head",
+    "wattle",
+    "beak",
+    "eye",
+    "shankFront",
+    "toesFront",
+    "thighFront"
+  ],
+  "motion": {
+    "peckBodyTilt": 30,
+    "peckCrouch": 0.08,
+    "peckHeadDip": 80,
+    "peckTail": -22,
+    "peckReach": [
+      -0.052,
+      -0.713
+    ],
+    "stride": 0.8,
+    "footSpread": 0.06
+  },
+  "build": "hen"
+}

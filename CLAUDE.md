@@ -79,9 +79,13 @@ components, screens 1a–9a). The painted farm and bird art come later; dashed b
   pure maths, tested on Linux too). The placeholder chicken (`ChickenRig`) and each painted kit ride its
   bones through `BoneEffect`; test tools have a rig lab. A body shape with a painted kit
   (`Art/Parts/<build>/kit.json` + PNGs, read by `Scene/PartKit.swift`; `kit.json` and its skeleton are
-  `Scene/KitSpec.swift`, pure) is drawn by `PaintedChickenRig`. No kit ships now; source art that is not a
+  `Scene/KitSpec.swift`, pure) is drawn by `PaintedChickenRig`. Every grown hen uses `Art/Parts/hen/`
+  (from `art-source/kit-fits/hen/parts/`). `Art/Parts/hen-b/` is a second hen kit, built from slices by
+  `scripts/make_kit_from_slices.py`; only the test tools pick it (`ChickenColours.kitOverride`). Other grown birds use their body shape's kit, and none ships yet. Source art that is not a
   kit lives in `art-source/` (outside the bundle). `art-source/kit-template/` is the page to paint a kit
-  over, from `python3 scripts/make_kit_template.py`.
+  over, from `python3 scripts/make_kit_template.py`. `art-source/kit-fits/<name>/` fits that skeleton to a
+  drawn silhouette (`python3 scripts/fit_kit_template.py <folder>`); `scripts/extract_kit_parts.py` puts the
+  keeper's cut parts from it on the kit canvas.
   `ChickenView` picks the rig. Kit format: "Painted parts" in `docs/design/README.md`.
   A tap on yard ground makes a ripple. The birds react by friendliness band (`Scene/RippleReaction.swift`). It is view only: no command, no save. Scene presentation numbers go in `Scene/SceneConstants.swift`, not `Rules`. App unit tests are in `App/FeatherwickTests/` (Swift Testing, the `FeatherwickTests` target).
   `Feedback/`: `Haptics` and `Sound` (bundled `Sounds/*.caf`, silent if missing), with on/off switches in Settings. `GameStore.run` plays event feedback through `GameFeedback`.

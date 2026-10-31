@@ -76,7 +76,8 @@ struct RecordsTextTests {
                 day: s.day, showClass: .pet, entrantName: "Pip", placing: 1, fieldSize: 8, score: 70, prize: 10,
                 birdID: pip.id, treats: 0, notes: nil, theme: nil, podium: nil)
         ]
-        // The engine keeps the last bird home, so the record says she went.
+        // The engine keeps the last bird home, so the state says she went: out of the coop, into the village.
+        s.coop.removeAll { $0.id == pip.id }
         s.rehomed.append(pip)
         let lines = recordsLines(s)
         #expect(lines.contains("  Pip (rehomed) — 42, 7, day 21"))

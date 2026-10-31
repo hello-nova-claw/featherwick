@@ -1,0 +1,9 @@
+{
+  "rng" : {
+    "state" : 1
+  },
+  "state" : {
+    "aFieldThisBuildHasNeverHeardOf" : true
+  },
+  "version" : 99
+}
