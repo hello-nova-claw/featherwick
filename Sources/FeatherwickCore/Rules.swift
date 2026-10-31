@@ -368,7 +368,8 @@ public struct Rules: Codable, Hashable, Sendable {
     public func extraRoosters(inCoop coop: [Bird], onDay day: Int) -> Int {
         let roosters = coop.count(where: { $0.sex == .rooster && $0.stage(onDay: day, rules: self) >= .grower })
         let hens = coop.count(where: { $0.sex == .hen && $0.stage(onDay: day, rules: self) >= .grower })
-        let allowed = max(1, (hens + hensPerRooster - 1) / hensPerRooster)
+        let per = max(1, hensPerRooster)
+        let allowed = max(1, (hens + per - 1) / per)
         return max(0, roosters - allowed)
     }
 

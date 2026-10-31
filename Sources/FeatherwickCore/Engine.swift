@@ -1028,7 +1028,8 @@ public enum Engine {
     // MARK: - Night and morning
 
     static func lostDays<R: RandomNumberGenerator>(timesScared: Int, rules: Rules, _ rng: inout R) -> Int {
-        let base = Int.random(in: rules.lostDaysMin...rules.lostDaysMax, using: &rng)
+        // `max`: a range with its max below its min traps. Loading mends it too (`SaveFormat.mendRules`).
+        let base = Int.random(in: rules.lostDaysMin...max(rules.lostDaysMin, rules.lostDaysMax), using: &rng)
         let factor = 1 << min(timesScared, 10)
         return min(base * factor, rules.lostDaysCap)
     }
