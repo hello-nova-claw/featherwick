@@ -146,6 +146,9 @@ public struct Rules: Codable, Hashable, Sendable {
     public var layDeclineStartDays = 252  // full for about nine in-game months before slowing
     public var layDeclineFloor = 0.4  // the least a laying hen's age factor falls to
     public var retirementAgeDays = 504  // about 4.5 in-game years: she becomes a beloved non-layer
+    /// The "Grand old lady" milestone: a hen kept this long (two in-game years, 8 seasons). Retirement
+    /// is too far off to be a goal on the ladder.
+    public var elderHenAgeDays = 224
 
     // Premium feed: an optional coin sink. Basic feed stays free; premium feed feeds the flock
     // for the day AND lifts laying a little. One bag is several day-portions.

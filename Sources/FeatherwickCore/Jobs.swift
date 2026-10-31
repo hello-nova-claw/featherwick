@@ -425,22 +425,11 @@ extension Engine {
         return goals
     }
 
-    /// Egg colours the "new egg" goal can ask for: those a breed in play can make. Chocolate needs a
-    /// breed whose shell depth is above `Rules.chocolateShellDepth`, and white a breed that lays
-    /// white. Without one in the game the colour is left out, so the goal never waits on an egg the
-    /// keeper has almost no way to get. A chocolate or white egg found anyway still counts as a new egg.
+    /// Egg colours the "new egg" goal can ask for: those a breed in play can make (`BreedTable.canLay`).
+    /// So the goal never waits on an egg the keeper has almost no way to get. A chocolate or white egg
+    /// found anyway still counts as a new egg.
     static func newEggColours() -> [EggColour] {
-        let chocolateBreed = BreedTable.inGame.contains {
-            $0.fixes(BrownShell.brown) && $0.brownDepth > Rules.chocolateShellDepth
-        }
-        let whiteBreed = BreedTable.inGame.contains { $0.eggColour == .white }
-        return EggColour.allCases.filter {
-            switch $0 {
-            case .chocolate: chocolateBreed
-            case .white: whiteBreed
-            default: true
-            }
-        }
+        EggColour.allCases.filter(BreedTable.canLay)
     }
 
     /// The first morning of the next season. A goal set late in a season runs on through the next

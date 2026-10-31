@@ -209,6 +209,18 @@ public enum BreedTable {
 
     public static var inGame: [BreedDefinition] { all.filter(\.isInGame) }
 
+    /// True if the breeds in the game make this egg colour, alone or crossed. Chocolate needs a breed
+    /// with brown coating and shell depth above `Rules.chocolateShellDepth`, and white a breed that
+    /// lays white. A bird from outside can still lay either by chance (its depth is drawn), but that
+    /// is too rare to send a keeper after. Every other colour comes from the in-game breeds.
+    public static func canLay(_ colour: EggColour) -> Bool {
+        switch colour {
+        case .chocolate: inGame.contains { $0.fixes(BrownShell.brown) && $0.brownDepth > Rules.chocolateShellDepth }
+        case .white: inGame.contains { $0.eggColour == .white }
+        default: true
+        }
+    }
+
     public static func definition(_ id: Breed) -> BreedDefinition? { all.first { $0.id == id } }
 }
 

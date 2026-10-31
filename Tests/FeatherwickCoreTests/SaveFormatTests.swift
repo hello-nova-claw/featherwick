@@ -61,6 +61,12 @@ struct SaveFormatTests {
         #expect(wyandotte.phenotype.colour == .black)
     }
 
+    /// The "Grand old lady" age came after this save. It fills in with the standard value.
+    @Test func anOldSaveGetsTheElderHenAge() throws {
+        let game = try SaveFormat.decode(Self.fixture("save-v0"))
+        #expect(game.state.rules.elderHenAgeDays == Rules.standard.elderHenAgeDays)
+    }
+
     @Test func anOldSaveKeepsItsCandlingSkill() throws {
         #expect(try SaveFormat.decode(Self.fixture("save-v0")).state.canCandle)
     }
