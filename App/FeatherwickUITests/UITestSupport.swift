@@ -94,7 +94,9 @@ enum Farm {
     /// behind. A sheet that is already large is left alone: a drag would scroll its title under the clock.
     static func expandSheet(_ app: XCUIApplication) {
         // The sheet's page is the scroll view that holds its Close button. Its top is the sheet's top; the
-        // Close button can sit lower, under a portrait.
+        // Close button can sit lower, under a portrait. A sheet with no scroll view (the back fence) is left at
+        // its medium detent: its page is centred in the sheet, so its last line does not run under the edge.
+        // Dragged up at the largest text size, its page overflows the sheet's top (#66).
         let closeLabel = NSPredicate(format: "label BEGINSWITH %@", "Close")
         let page = app.scrollViews.containing(closeLabel).firstMatch
         guard page.waitForExistence(timeout: 2) else { return }
