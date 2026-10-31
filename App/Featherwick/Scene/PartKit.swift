@@ -24,6 +24,8 @@ struct KitLayer: Identifiable {
     let follow: Follow?
     let lacing: Bool
     let barring: Bool
+    /// The part's painted bounds, in rig units, as `eyeBounds`. Nil: it has no paint.
+    let bounds: CGRect?
 }
 
 private let log = Logger(subsystem: "dev.featherwick.app", category: "PartKit")
@@ -73,14 +75,24 @@ final class PartKit: @unchecked Sendable {
     let eyeBounds: CGRect?
     /// The comb part's painted bounds, in rig units: the comb grows from their bottom centre.
     let combBounds: CGRect?
-    /// The kit's skeleton: the shared bones at this kit's joint positions (`KitSpec.skeleton`).
+    /// The kit's skeleton: the shared bones at this kit's joint positions (`KitSpec.skeleton`). It sits
+    /// with its belly (the body's lowest paint) on the ground.
     let rig: SkeletonRig
+    /// The bones that bend the soft parts as one image. Nil: every part turns rigidly.
+    let skin: ChickenSkin?
+    /// Each skinned run's mesh (`SkinMesh`), by the id of the run's first layer.
+    let meshes: [String: SkinMesh]
 
     private init(
         name: KitName, spec: KitSpec, folder: URL, layers: [KitLayer], lacing: CGImage?, barring: CGImage?,
-        eyeBounds: CGRect?, combBounds: CGRect?
+        eyeBounds: CGRect?, combBounds: CGRect?, belly: Double?
     ) {
-        self.rig = spec.skeleton
+        var rig: SkeletonRig = spec.skeleton
+        if let belly { rig.sitHeight = max(0, belly) }
+        self.rig = rig
+        let skin: ChickenSkin? = ChickenSkin(rig: rig, radii: spec.skinReaches)
+        self.skin = skin
+        self.meshes = skin.map { Self.meshes(of: layers, skin: $0, spec: spec) } ?? [:]
         self.name = name
         self.spec = spec
         self.folder = folder
@@ -89,6 +101,97 @@ final class PartKit: @unchecked Sendable {
         self.barring = barring
         self.eyeBounds = eyeBounds
         self.combBounds = combBounds
+    }
+
+    // MARK: - Skin
+
+    /// Whether a part bends with the skin: feathers on a bone the skin bends. The face and legs stay rigid.
+    func isSkinned(_ layer: KitLayer) -> Bool { Self.isSkinned(layer, skin: skin) }
+
+    private static func isSkinned(_ layer: KitLayer, skin: ChickenSkin?) -> Bool {
+        layer.token.isFeather && (skin?.skins(layer.bone) ?? false)
+    }
+
+    /// A mesh for each run of skinned layers next to each other in the draw order, over the run's paint
+    /// with `SceneConstants.skinPaintSlack` round it, on a lattice all the runs share. A cell is kept if any of the run's paint is in it or
+    /// next to it: a part that grows or turns at rest stays inside.
+    private static func meshes(of layers: [KitLayer], skin: ChickenSkin, spec: KitSpec) -> [String: SkinMesh] {
+        var runs: [[KitLayer]] = []
+        var last: Bool? = nil
+        for layer in layers {
+            let skinned: Bool = isSkinned(layer, skin: skin)
+            if skinned, last == true { runs[runs.count - 1].append(layer) } else if skinned { runs.append([layer]) }
+            last = skinned
+        }
+        var out: [String: SkinMesh] = [:]
+        for run in runs {
+            let bounds: [CGRect] = run.compactMap(\.bounds)
+            guard let id = run.first?.id, let first = bounds.first else { continue }
+            let slack: CGFloat = SceneConstants.skinPaintSlack
+            let painted: CGRect = bounds.dropFirst().reduce(first) { $0.union($1) }.insetBy(dx: -slack, dy: -slack)
+            let cell: Double = SceneConstants.skinCell
+            // Every run's grid is on one lattice, so where two runs meet (the head over the neck) their
+            // corners and triangles are the same and they bend alike: separate grids part a little there.
+            let left: Double = (Double(painted.minX) / cell).rounded(.down) * cell
+            let bottom: Double = (Double(painted.minY) / cell).rounded(.down) * cell
+            let paint = CGRect(
+                x: left, y: bottom, width: Double(painted.maxX) - left, height: Double(painted.maxY) - bottom)
+            let columns: Int = max(1, Int((Double(paint.width) / cell).rounded(.up)))
+            let rows: Int = max(1, Int((Double(paint.height) / cell).rounded(.up)))
+            let covered: [Bool] = coverage(
+                of: run.map(\.image), spec: spec, origin: paint.origin, cell: cell, columns: columns, rows: rows)
+            // No cell covered (the drawing context failed): leave the run rigid, as an empty mesh draws nothing.
+            guard covered.contains(true) else {
+                log.error("Kit \(spec.build, privacy: .public): skinned run \(id, privacy: .public) has no paint")
+                continue
+            }
+            out[id] = SkinMesh(skin: skin, paint: paint, cell: cell, order: skin.order(drawing: run.map(\.bone))) {
+                column, row in
+                for dy in -1...1 {
+                    for dx in -1...1 {
+                        let c: Int = column + dx
+                        let r: Int = row + dy
+                        if c >= 0, c < columns, r >= 0, r < rows, covered[r * columns + c] { return true }
+                    }
+                }
+                return false
+            }
+        }
+        return out
+    }
+
+    /// Which cells of a grid (rig units, `columns` by `rows` from `origin`, bottom row first) hold any of
+    /// the images' paint. Drawn at `sub` pixels a cell, so a thin feather still counts.
+    private static func coverage(
+        of images: [CGImage], spec: KitSpec, origin: CGPoint, cell: Double, columns: Int, rows: Int
+    ) -> [Bool] {
+        let sub: Int = 4
+        let width: Int = columns * sub
+        let height: Int = rows * sub
+        var alpha = [UInt8](repeating: 0, count: width * height)
+        let size = CGSize(width: spec.canvas[0] / spec.unit, height: spec.canvas[1] / spec.unit)
+        let centre: CGPoint = spec.rigPoint(pixel: CGPoint(x: spec.canvas[0] / 2, y: spec.canvas[1] / 2))
+        // A bitmap context's y runs up, as rig units do.
+        let scale: Double = Double(sub) / cell
+        let rect = CGRect(
+            x: (Double(centre.x - size.width / 2) - Double(origin.x)) * scale,
+            y: (Double(centre.y - size.height / 2) - Double(origin.y)) * scale,
+            width: Double(size.width) * scale, height: Double(size.height) * scale)
+        alpha.withUnsafeMutableBytes { bytes in
+            guard
+                let context = CGContext(
+                    data: bytes.baseAddress, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width,
+                    space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.alphaOnly.rawValue)
+            else { return }
+            for image in images { context.draw(image, in: rect) }
+        }
+        // Bitmap rows come top first.
+        var out = [Bool](repeating: false, count: columns * rows)
+        for y in 0..<height {
+            let row: Int = (height - 1 - y) / sub
+            for x in 0..<width where alpha[y * width + x] > 8 { out[row * columns + x / sub] = true }
+        }
+        return out
     }
 
     // MARK: - Geometry
@@ -283,16 +386,17 @@ final class PartKit: @unchecked Sendable {
                     id: part, image: image, token: token, tokenScale: entry.tokenScale ?? 1,
                     bone: spec.bone(of: part), follow: spec.follow(of: part),
                     lacing: overlay("lacing", isOn: part, in: spec),
-                    barring: overlay("barring", isOn: part, in: spec)))
+                    barring: overlay("barring", isOn: part, in: spec), bounds: rigBounds(of: image, in: spec)))
         }
         let lacing: CGImage? = spec.overlays?["lacing"] == nil ? nil : working("lacing.png")
         let barring: CGImage? = spec.overlays?["barring"] == nil ? nil : working("barring.png").flatMap(lightMap)
         func paintedBounds(_ name: String) -> CGRect? {
-            layers.first(where: { $0.id == name }).flatMap { rigBounds(of: $0.image, in: spec) }
+            layers.first(where: { $0.id == name })?.bounds
         }
         return PartKit(
             name: name, spec: spec, folder: folder, layers: layers, lacing: lacing, barring: barring,
-            eyeBounds: paintedBounds("eye"), combBounds: paintedBounds("comb"))
+            eyeBounds: paintedBounds("eye"), combBounds: paintedBounds("comb"),
+            belly: paintedBounds("body").map { Double($0.minY) })
     }
 
     /// A working-size part's painted bounds (`alphaBounds`) in rig units, origin at the bottom left.
