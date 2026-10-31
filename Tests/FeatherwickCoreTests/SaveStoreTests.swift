@@ -186,7 +186,10 @@ struct SaveStoreTests {
     func aSlotNameIsCleaned(_ raw: String, _ clean: String) {
         let store = SaveStore(directory: tempDir(), slot: raw)
         #expect(store.slot == clean)
-        #expect(store.url.deletingLastPathComponent().standardizedFileURL == store.directory.standardizedFileURL)
+        // Path components, not URLs: on Linux the parent URL keeps a trailing slash and the directory URL does not.
+        #expect(
+            store.url.deletingLastPathComponent().standardizedFileURL.pathComponents
+                == store.directory.standardizedFileURL.pathComponents)
     }
 
     @Test(arguments: ["", "..", "../", "/", ". ."])
