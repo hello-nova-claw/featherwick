@@ -47,11 +47,20 @@ struct KitSpec: Decodable, Sendable {
         var peckHeadDip: Double?
         /// A kit with a `neckLow` bone: the neck's angle at the bottom of a peck.
         var peckNeckSwing: Double?
+        /// A kit with a `neckHigh` bone: the upper neck's bend at the bottom of a peck.
+        var peckNeckBend: Double?
+        /// `[x, y]`: where the throat goes at the bottom of a peck, from its rest place (rig units). The neck
+        /// is then solved to follow a straight line, and `peckHeadDip` is the head's whole turn.
+        var peckReach: [Double]?
+        /// The tail's own turn at the bottom of a peck, in degrees. Negative lowers it against the tilt.
+        var peckTail: Double?
         /// How far the hip drops at the bottom of a peck, in bird heights. Missing: the standard crouch.
         var peckCrouch: Double?
         var glanceHeadDip: Double?
         var legSwing: Double?
         var stride: Double?
+        /// While walking, how far each foot steps behind or in front of the middle of the two feet.
+        var footSpread: Double?
     }
 
     var build: String
@@ -169,11 +178,20 @@ struct KitSpec: Decodable, Sendable {
         if let m = self.motion {
             if let v = m.peckBodyTilt { motion.peckBodyTilt = v }
             if let v = m.peckNeckSwing { motion.peckNeckSwing = v }
+            if let v = m.peckNeckBend { motion.peckNeckBend = v }
+            if let v = m.peckTail { motion.peckTail = v }
+            if let v = m.peckReach, v.count == 2 { motion.peckReach = CGPoint(x: v[0], y: v[1]) }
             if let v = m.peckHeadDip { motion.peckHeadDip = v }
             if let v = m.peckCrouch { motion.peckCrouch = v }
+            if let v = m.footSpread { motion.footSpread = v }
             let legHeight: Double = Leg.allCases.compactMap { joints[$0.thigh].map { Double($0.y) } }.max() ?? 0
             if let swing = m.legSwing, legHeight > 0 {
                 motion.stepLength = 2 * legHeight * tan(swing * Double.pi / 180)
+            }
+            if let v = m.stride, v > 0 {
+                // The bird walks at the scene's speed, so a slower stride slides each foot further.
+                motion.stepLength *= v / motion.stride
+                motion.stride = v
             }
         }
         return SkeletonRig(joints: joints, feet: feet, motion: motion)

@@ -1,6 +1,6 @@
 import XCTest
 
-/// Opens the main screens and runs Apple's accessibility audit on each: welcome, the starter choice, the
+/// Opens the main screens and runs Apple's accessibility audit on each: the newer-save note, welcome, the starter choice, the
 /// tour, the four farm panels, the four place sheets, the market board, Books, Today and Settings. The rest
 /// (bird card, morning report, breeding pen, show day, Books ▸ People, village) follow in #98. Any issue fails, except the
 /// known ones listed in `knownIssue` with the issue that will fix them. The subclasses below run the same
@@ -19,6 +19,13 @@ class AccessibilityAuditTests: XCTestCase {
         let app = launch(.fresh)
         XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 10))
         try audit(app, screen: "welcome")
+    }
+
+    /// A save from a newer game: the note shown in place of the farm (#59).
+    func testNewerSave() throws {
+        let app = launch(.newerSave)
+        XCTAssertTrue(Farm.newerSaveNote(in: app).waitForExistence(timeout: 10))
+        try audit(app, screen: "newer save")
     }
 
     /// Day 1: name the keeper, take a chick home, then the tour of the farm.

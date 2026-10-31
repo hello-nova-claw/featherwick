@@ -9,8 +9,10 @@ import UniformTypeIdentifiers
 
 /// The painted part kits in the app bundle, and the loader. No kit ships now (the skeleton's path rig draws
 /// every bird), so the loader is checked on a small kit these tests write to a temporary folder.
-@Suite struct PartKitTests {
-    /// Every kit folder in the bundle: `kit.json` reads and has no problems, and names its own build.
+/// Serialised: the kit shelf is shared by the whole app, and `drawingNeverReadsAKit` waits on it.
+@Suite(.serialized) struct PartKitTests {
+    /// Every kit folder in the bundle: `kit.json` reads and has no problems, and names its own folder (the
+    /// hen kit, or a body shape).
     /// No kits at all is fine: the path rig draws every bird.
     @Test func everyKitInTheBundleIsWhole() throws {
         let root: URL = try #require(PartKit.bundleRoot, "no Parts folder in the app bundle")
@@ -20,7 +22,7 @@ import UniformTypeIdentifiers
             let folder: URL = root.appendingPathComponent(build)
             let spec: KitSpec = try JSONDecoder().decode(
                 KitSpec.self, from: Data(contentsOf: folder.appendingPathComponent("kit.json")))
-            #expect(BodyShape(rawValue: build) != nil, "\(build) is not a body shape")
+            #expect(KitName.all.map(\.folder).contains(build), "\(build) is not a kit name")
             #expect(spec.build == build, "kit.json in \(build) says it is \(spec.build)")
             let files = Set(try FileManager.default.contentsOfDirectory(atPath: folder.path))
             #expect(spec.problems(files: files) == [], "\(build)")
@@ -45,6 +47,79 @@ import UniformTypeIdentifiers
         }
         let eye: CGRect = try #require(kit.eyeBounds)
         #expect(abs(eye.minX - Fixture.eye.minX) < 0.01 && abs(eye.maxY - Fixture.eye.maxY) < 0.01)
+    }
+
+    /// Every grown hen shares the hen kit, whatever her body shape. A rooster (not a hen) does not use it.
+    @MainActor @Test func grownHensShareTheHenKit() throws {
+        PartKit.reload()
+        let henKit: PartKit = try #require(PartKit.load(.hen), "the hen kit does not load")
+        var hen: ChickenColours = ChickenColours.sample
+        hen.isGrownHen = true
+        for shape in BodyShape.allCases {
+            hen.build = shape
+            #expect(PartKit.kit(for: hen) === henKit, "\(shape)")
+        }
+        var rooster: ChickenColours = ChickenColours.sample
+        rooster.build = nil
+        #expect(PartKit.kit(for: rooster) == nil)
+        var chick: ChickenColours = ChickenColours.sampleChick
+        chick.isGrownHen = true
+        #expect(PartKit.kit(for: chick) == nil)
+    }
+
+    /// A laced or barred hen keeps the path rig while the hen kit has no map for her pattern, so her
+    /// pattern still shows: her look comes from her genes.
+    @MainActor @Test func patternedHensWaitForTheirPatternMap() throws {
+        PartKit.reload()
+        let henKit: PartKit = try #require(PartKit.load(.hen), "the hen kit does not load")
+        var hen: ChickenColours = ChickenColours.sample
+        hen.isGrownHen = true
+        hen.pattern = nil
+        #expect(PartKit.kit(for: hen) === henKit)
+        hen.pattern = .lacing
+        #expect(PartKit.kit(for: hen) === (henKit.lacing == nil ? nil : henKit))
+        hen.pattern = .barring
+        #expect(PartKit.kit(for: hen) === (henKit.barring == nil ? nil : henKit))
+    }
+
+    /// The test tools' kit override wins over the bird's own kit: a grown hen can be drawn with `hen-b`.
+    /// Without it, she keeps the hen kit.
+    @MainActor @Test func theKitOverrideDrawsHenB() throws {
+        PartKit.reload()
+        let henB: PartKit = try #require(PartKit.load(.henB), "the hen-b kit does not load")
+        var hen: ChickenColours = ChickenColours.sample
+        hen.use(kit: .henB)
+        #expect(PartKit.kit(for: hen) === henB)
+        hen.use(kit: .hen)
+        #expect(PartKit.kit(for: hen) === PartKit.load(.hen))
+    }
+
+    /// hen-b pecks by tipping her body, with her lower neck nearly in line with it: a neck that turns far
+    /// against the body lifts its base out of her back line.
+    @MainActor @Test func henBPecksWithHerNeckInLine() {
+        PartKit.reload()
+        guard let henB = PartKit.load(.henB) else { return }
+        let bottom: ChickenPose = ChickenMotion.peck(henB.rig, progress: 0.5)
+        #expect(abs(bottom[.neckLow]) < 30)
+        #expect(bottom[.body] >= 45)
+    }
+
+    /// Launch reads only the kits a bird can draw. `hen-b` is for the test tools, so it loads when picked.
+    @Test func launchPreloadsOnlyTheKitsBirdsUse() {
+        #expect(!KitName.preloaded.contains(.henB))
+        #expect(KitName.preloaded == KitName.all.filter { $0 != .henB })
+    }
+
+    /// Drawing never reads a kit: a hen drawn before the hen kit is read gets the path rig, and the kit is
+    /// read off the main thread. Once it is in, she gets it.
+    @MainActor @Test func drawingNeverReadsAKit() async throws {
+        PartKit.reload()
+        var hen: ChickenColours = ChickenColours.sample
+        hen.isGrownHen = true
+        #expect(PartKit.kit(for: hen) == nil)
+        await PartKit.preload()
+        let henKit: PartKit = try #require(PartKit.kit(for: hen), "the hen kit does not load")
+        #expect(henKit.name == .hen)
     }
 
     /// Chicks keep the path rig, and so does a bird whose body shape has no kit.
