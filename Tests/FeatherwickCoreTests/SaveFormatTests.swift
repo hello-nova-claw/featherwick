@@ -179,6 +179,17 @@ struct SaveFormatTests {
         Self.play(&game)
     }
 
+    /// A show class of a million rivals would make a million birds on show day, so loading caps it.
+    @Test func aHugeShowClassIsCappedOnLoad() throws {
+        var game = Self.busyGame()
+        game.state.rules.showCompetitorsByKind = [.pet: 1_000_000, .eggs: 5, .breed: 7]
+        game.state.rules.showRivalPicks = [.pet: 1_000_000, .eggs: 2, .breed: 3]
+        let loaded = try SaveFormat.decode(SaveFormat.encode(game))
+        #expect(loaded.state.rules.showCompetitorsByKind[.pet] == SaveFormat.maxShowEntrants)
+        #expect(loaded.state.rules.showRivalPicks[.pet] == SaveFormat.maxShowEntrants)
+        #expect(loaded.state.rules.showCompetitorsByKind[.eggs] == 5)
+    }
+
     /// The bounds only catch hand edits: a played save, and its big shop seed, load as they were written.
     @Test func boundsLeaveARealSaveAlone() throws {
         let game = Self.busyGame()

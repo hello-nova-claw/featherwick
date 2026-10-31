@@ -91,6 +91,9 @@ public enum SaveFormat {
     /// The largest number (either sign) anywhere else in the state: coins, days, counts.
     /// A game would take millions of years to reach it, so only a hand edit ever does.
     public static let maxStateNumber = 1_000_000_000
+    /// The most rivals a show class may hold, and the most a judge may pick. Each rival is a whole bird
+    /// made on show day, so a hand-edited million would stall the show. Far above any real class.
+    public static let maxShowEntrants = 100
     /// State keys whose numbers are seeds, not amounts. Their whole 64-bit range is real.
     static let seedKeys: Set<String> = ["shopSeed"]
     /// Counts that are never below 0 in play.
@@ -147,6 +150,8 @@ public enum SaveFormat {
         r.marketBuyerMaxDays = max(r.marketBuyerMinDays, r.marketBuyerMaxDays)
         r.daysPerSeason = max(1, r.daysPerSeason)
         r.hensPerRooster = max(1, r.hensPerRooster)
+        r.showCompetitorsByKind = r.showCompetitorsByKind.mapValues { min($0, maxShowEntrants) }
+        r.showRivalPicks = r.showRivalPicks.mapValues { min($0, maxShowEntrants) }
         state.rules = r
     }
 
