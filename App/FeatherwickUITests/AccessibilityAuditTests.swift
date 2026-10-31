@@ -128,7 +128,6 @@ class AccessibilityAuditTests: XCTestCase {
     nonisolated static func knownIssue(_ issue: XCUIAccessibilityAuditIssue) -> String? {
         switch issue.auditType {
         case .contrast: "#88"
-        case .hitRegion: "#89"
         case .elementDetection: "#90"
         case .textClipped, .dynamicType: "#66"
         default: nil

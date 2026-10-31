@@ -46,10 +46,11 @@ enum Farm {
     }
 
     /// Taps the panel's dot on the rail. Swipes would go the other way right to left; the dots do not.
-    /// A dot is the narrow button whose label starts with the panel's name (the Yard place button shares it).
+    /// A dot is the `rail.dot` button whose label starts with the panel's name (the Yard place button shares it).
     static func show(panel: String, in app: XCUIApplication) {
-        let named = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", panel))
-        guard let dot = named.allElementsBoundByIndex.first(where: { $0.frame.width < 30 }) else {
+        let dots = app.buttons.matching(
+            NSPredicate(format: "identifier == %@ AND label BEGINSWITH %@", railDot, panel))
+        guard let dot = dots.allElementsBoundByIndex.first else {
             XCTFail("No rail dot for \(panel)")
             return
         }
@@ -72,12 +73,16 @@ enum Farm {
     }
 
     /// The place button in the bottom row. The Yard's rail dot starts with the same name, so this one is
-    /// told apart by size: a dot is under 30 points wide.
+    /// told apart by the dot's identifier. Size cannot tell them apart: every dot takes taps over 44pt.
     static func placeButton(_ name: String, in app: XCUIApplication) -> XCUIElement? {
-        let named = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name))
+        let named = app.buttons.matching(
+            NSPredicate(format: "identifier != %@ AND label BEGINSWITH %@", railDot, name))
         guard named.firstMatch.waitForExistence(timeout: 5) else { return nil }
-        return named.allElementsBoundByIndex.first { $0.frame.width >= 30 }
+        return named.firstMatch
     }
+
+    /// The accessibility identifier of every dot on the panel rail (`PanelDots`).
+    static let railDot = "rail.dot"
 
     /// Closes the sheet on top, then waits until one fewer Close button is on screen, so the next tap lands
     /// on what is under it. Counting matters: the market board opens over the farm gate sheet, so a Close
