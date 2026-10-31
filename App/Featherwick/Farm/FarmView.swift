@@ -202,7 +202,10 @@ struct FarmView: View {
                 }
             }
             VStack(alignment: .leading, spacing: Space.m) {
-                HStack(alignment: .bottom) { dayButtons }
+                HStack(alignment: .bottom) {
+                    Spacer(minLength: 0)
+                    dayButtons
+                }
                 farmButtons
             }
             .frame(maxWidth: .infinity, alignment: .leading)
