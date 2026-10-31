@@ -1,0 +1,514 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "cli.heading" : {
+      "comment" : "A heading in the text game, followed by its lines. The placeholder is the heading.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@:"
+          }
+        }
+      }
+    },
+    "records.bird" : {
+      "comment" : "Column heading: the bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bird"
+          }
+        }
+      }
+    },
+    "records.birdsNow" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Birds now"
+          }
+        }
+      }
+    },
+    "records.bought" : {
+      "comment" : "Birds bought.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bought"
+          }
+        }
+      }
+    },
+    "records.cli.eggRow" : {
+      "comment" : "CLI egg table row: hen's name, eggs in all, eggs lately, the day of her first egg.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ — %2$lld, %3$lld, %4$@"
+          }
+        }
+      }
+    },
+    "records.cli.eggRowNone" : {
+      "comment" : "CLI egg table row for a hen who has not laid: her name, then none yet.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ — %2$@"
+          }
+        }
+      }
+    },
+    "records.cli.eggs" : {
+      "comment" : "CLI heading over the egg table. The placeholder is a number of days.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Eggs (total, last %lld days, first egg):"
+          }
+        }
+      }
+    },
+    "records.cli.fact" : {
+      "comment" : "CLI flock table row: a label, then its value.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@"
+          }
+        }
+      }
+    },
+    "records.cli.ribbonRow" : {
+      "comment" : "CLI ribbon table row: bird's name, then its 1st, 2nd and 3rd places.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ — %2$lld, %3$lld, %4$lld"
+          }
+        }
+      }
+    },
+    "records.cli.ribbons" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ribbons (1st, 2nd, 3rd):"
+          }
+        }
+      }
+    },
+    "records.day" : {
+      "comment" : "A day of the game, in a table cell. The placeholder is the day number.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "day %lld"
+          }
+        }
+      }
+    },
+    "records.daysKept" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Days kept"
+          }
+        }
+      }
+    },
+    "records.eggs" : {
+      "comment" : "Record book section.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Eggs"
+          }
+        }
+      }
+    },
+    "records.first" : {
+      "comment" : "Column heading: first places.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "1st"
+          }
+        }
+      }
+    },
+    "records.firstEgg" : {
+      "comment" : "Column heading: the day of a hen's first egg.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "First egg"
+          }
+        }
+      }
+    },
+    "records.firstHatch" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "First hatch"
+          }
+        }
+      }
+    },
+    "records.firstRibbon" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "First ribbon"
+          }
+        }
+      }
+    },
+    "records.flock" : {
+      "comment" : "Record book section.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The flock"
+          }
+        }
+      }
+    },
+    "records.hatchedHere" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hatched here"
+          }
+        }
+      }
+    },
+    "records.hen" : {
+      "comment" : "Column heading: the hen.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hen"
+          }
+        }
+      }
+    },
+    "records.noHensYet" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No hens laying yet."
+          }
+        }
+      }
+    },
+    "records.noRibbonsYet" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No ribbons yet. The county show gives them for 1st, 2nd and 3rd."
+          }
+        }
+      }
+    },
+    "records.noneYet" : {
+      "comment" : "In place of a hen's egg count: she has not laid yet.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "none yet"
+          }
+        }
+      }
+    },
+    "records.notYet" : {
+      "comment" : "In place of a day.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "not yet"
+          }
+        }
+      }
+    },
+    "records.recent" : {
+      "comment" : "Column heading: eggs laid lately. The placeholder is a number of days.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Last %lld days"
+          }
+        }
+      }
+    },
+    "records.rehomed" : {
+      "comment" : "Beside a hen who now lives in the village.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "rehomed"
+          }
+        }
+      }
+    },
+    "records.rehomedCount" : {
+      "comment" : "Birds that went to live in the village.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Rehomed"
+          }
+        }
+      }
+    },
+    "records.rehomedName" : {
+      "comment" : "A hen's name, then the note that she was rehomed.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "records.retired" : {
+      "comment" : "Hens too old to lay.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Retired"
+          }
+        }
+      }
+    },
+    "records.ribbons" : {
+      "comment" : "Record book section.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ribbons"
+          }
+        }
+      }
+    },
+    "records.second" : {
+      "comment" : "Column heading: second places.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "2nd"
+          }
+        }
+      }
+    },
+    "records.tab" : {
+      "comment" : "Books tab: the record book.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Records"
+          }
+        }
+      }
+    },
+    "records.third" : {
+      "comment" : "Column heading: third places.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "3rd"
+          }
+        }
+      }
+    },
+    "records.title" : {
+      "comment" : "Record book title.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Record Book"
+          }
+        }
+      }
+    },
+    "records.total" : {
+      "comment" : "Column heading: eggs laid in all.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Total"
+          }
+        }
+      }
+    },
+    "save.restoredMissing" : {
+      "comment" : "On load: the save file was gone, and a backup copy loaded.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Main save was missing; restored from a backup."
+          }
+        }
+      }
+    },
+    "save.tooNew" : {
+      "comment" : "Text game, on load: the save came from a newer game, so it is left alone. The placeholder is the save's version number.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This save is from a newer version of Featherwick (save version %lld). Update the game to load it."
+          }
+        }
+      }
+    },
+    "save.tooNewBody" : {
+      "comment" : "App screen text, under the title, when the save came from a newer version.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your farm was saved by a newer version of the game. It is safe, and nothing has been changed. Update Featherwick to carry on where you left off."
+          }
+        }
+      }
+    },
+    "save.tooNewTitle" : {
+      "comment" : "App screen title, shown instead of the farm when the save came from a newer version.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your farm needs a newer Featherwick"
+          }
+        }
+      }
+    },
+    "save.unreadableKeptNew" : {
+      "comment" : "On load: the save was damaged and moved aside, with no good backup. The placeholder is the file name it was moved to.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your save couldn't be read (kept as %@). Starting a new game."
+          }
+        }
+      }
+    },
+    "save.unreadableKeptRestored" : {
+      "comment" : "On load: the save was damaged and moved aside, and a backup loaded. The placeholder is the file name it was moved to.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your save couldn't be read (kept as %@). Restored from a backup."
+          }
+        }
+      }
+    },
+    "save.unreadableNew" : {
+      "comment" : "On load: the save was damaged, with no good backup.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your save couldn't be read. Starting a new game."
+          }
+        }
+      }
+    },
+    "save.unreadableRestored" : {
+      "comment" : "On load: the save was damaged, and a backup loaded.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your save couldn't be read. Restored from a backup."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

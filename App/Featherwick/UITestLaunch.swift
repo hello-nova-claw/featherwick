@@ -5,10 +5,11 @@
     /// Launch arguments that start the app in a known game, for UI tests and screenshots. Debug builds only.
     /// `-uiTestState fresh` is day 1 before the keeper is named. `-uiTestState farm` is a farm a few days in,
     /// with the early game's lessons already open, so every screen and button can be reached.
+    /// `-uiTestState newerSave` is a slot holding a save from a newer game, so the app shows its note.
     /// `-uiTestSeed <n>` picks the seed (2026 if left out), so the same arguments give the same game.
     struct UITestLaunch: Equatable {
         enum Start: String {
-            case fresh, farm
+            case fresh, farm, newerSave
         }
 
         let start: Start
@@ -51,9 +52,18 @@
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             // Its own slot too: the app keeps per-slot notes (new stock seen, beta prompts) outside the save.
             let slot = "uitest-\(UUID().uuidString)"
-            try SaveStore(directory: directory, slot: slot).write(SaveFormat.encode(save()))
+            let saves = SaveStore(directory: directory, slot: slot)
+            if start == .newerSave {
+                try Self.newerSave.write(to: saves.url)
+            } else {
+                try saves.write(SaveFormat.encode(save()))
+            }
             return GameStore(directory: directory, slot: slot)
         }
+
+        /// A save from a game one version newer than this build. Its state does not matter: it is never read.
+        static let newerSave = Data(
+            #"{"version": \#(SaveFormat.currentVersion + 1), "state": {}, "rng": {"state": 1}}"#.utf8)
 
         /// Cares for the flock, rests until the sleep gate opens, then sleeps.
         private func sleepThroughTheNight(_ state: inout GameState, _ rng: inout SeededRNG) {

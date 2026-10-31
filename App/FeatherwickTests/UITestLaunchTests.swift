@@ -51,4 +51,10 @@ import Testing
         #expect(first.slot != second.slot)
         #expect(first.state.day == launch.save().state.day)
     }
+
+    /// The newer-save launch shows the app's note, for the audit and the screenshots (#59).
+    @MainActor @Test func newerSaveHoldsASaveFromANewerGame() throws {
+        let launch = try #require(UITestLaunch(arguments: ["-uiTestState", "newerSave"]))
+        #expect(try launch.makeStore().saveTooNew == SaveFormat.currentVersion + 1)
+    }
 }

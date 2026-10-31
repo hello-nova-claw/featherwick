@@ -2,9 +2,11 @@ import CoreGraphics
 import FeatherwickCore
 import Foundation
 import ImageIO
+import Observation
 import os
 
-// A painted parts kit for one body shape: `Art/Parts/<build>/kit.json` and one PNG per part.
+// A painted parts kit: `Art/Parts/<name>/kit.json` and one PNG per part. A grown hen uses the `hen` kit;
+// any other grown bird uses the kit for its body shape (`Art/Parts/heavy/`...), if there is one.
 // See "Painted parts" in docs/design/README.md for the format, and `KitSpec.swift` for `kit.json`.
 //
 // Every PNG shares one canvas. RGB is a greyscale value, alpha is coverage. On screen a part is its colour
@@ -27,6 +29,28 @@ struct KitLayer: Identifiable {
 private let log = Logger(subsystem: "dev.featherwick.app", category: "PartKit")
 
 /// A loaded kit. Immutable after load, so it is safe to share.
+/// Which kit a bird uses: the one every grown hen shares, or the one for a body shape.
+enum KitName: Hashable, Sendable {
+    case hen
+    /// A second hen kit, cut from the same silhouette along other lines (`art-source/kit-fits/hen-b/`).
+    /// No bird uses it yet: the test tools pick it.
+    case henB
+    case build(BodyShape)
+
+    /// The kit's folder in `Art/Parts/`.
+    var folder: String {
+        switch self {
+        case .hen: "hen"
+        case .henB: "hen-b"
+        case .build(let shape): shape.rawValue
+        }
+    }
+
+    static let all: [KitName] = [.hen, .henB] + BodyShape.allCases.map(KitName.build)
+    /// The kits launch reads. `hen-b` is only for the test tools, so it loads when picked.
+    static let preloaded: [KitName] = all.filter { $0 != .henB }
+}
+
 final class PartKit: @unchecked Sendable {
     /// A painted bird is downsampled once, at load, to this many pixels tall. A yard bird is at most
     /// about 64 pt tall, so 512 px is sharp at 3x with room to spare, and far cheaper to draw than 1673 px.
@@ -35,7 +59,7 @@ final class PartKit: @unchecked Sendable {
     /// painted comb at full size; a pullet's grows in towards it, and a rooster's is larger.
     static let paintedCombSize: Double = 0.6
 
-    let build: BodyShape
+    let name: KitName
     let spec: KitSpec
     /// Where the kit was read from: the app bundle, or the source folder in a Debug simulator build.
     let folder: URL
@@ -53,11 +77,11 @@ final class PartKit: @unchecked Sendable {
     let rig: SkeletonRig
 
     private init(
-        build: BodyShape, spec: KitSpec, folder: URL, layers: [KitLayer], lacing: CGImage?, barring: CGImage?,
+        name: KitName, spec: KitSpec, folder: URL, layers: [KitLayer], lacing: CGImage?, barring: CGImage?,
         eyeBounds: CGRect?, combBounds: CGRect?
     ) {
         self.rig = spec.skeleton
-        self.build = build
+        self.name = name
         self.spec = spec
         self.folder = folder
         self.layers = layers
@@ -94,48 +118,104 @@ final class PartKit: @unchecked Sendable {
 
     // MARK: - Loading
 
-    @MainActor private static var cache: [BodyShape: PartKit] = [:]
-    /// Builds that have no kit, or a broken one: asked once, then remembered, so the log says it once.
-    @MainActor private static var missing: Set<BodyShape> = []
+    /// The kits read so far. Observed, so a bird drawn before its kit was read draws again once it is.
+    @MainActor @Observable fileprivate final class Shelf {
+        var kits: [KitName: PartKit] = [:]
+        /// Kits that are not there, or are broken: asked once, then remembered, so the log says it once.
+        var missing: Set<KitName> = []
+        /// Kits being read off the main thread now. Every caller waits on the one read, so each kit is
+        /// read once.
+        @ObservationIgnored var reading: [KitName: Task<PartKit?, Never>] = [:]
+        /// Goes up on each reload, so a read started before it is thrown away.
+        @ObservationIgnored var generation: Int = 0
+    }
 
-    /// The kit for a bird's body shape, or nil (no kit yet, or a broken kit: then the path rig draws it).
-    /// Read once, then cached.
-    @MainActor static func load(build: BodyShape) -> PartKit? {
-        if let kit = cache[build] { return kit }
-        if missing.contains(build) { return nil }
-        guard let root = partsRoot, let kit = load(build: build, from: root.appendingPathComponent(build.rawValue))
-        else {
-            missing.insert(build)
+    @MainActor fileprivate static let shelf = Shelf()
+
+    /// A kit by name, read now if it is not read yet, or nil (no kit, or a broken kit). Drawing never
+    /// calls this: it reads a 2048 px PNG for each part. The test tools and tests do.
+    @MainActor static func load(_ name: KitName) -> PartKit? {
+        if let kit = shelf.kits[name] { return kit }
+        if shelf.missing.contains(name) { return nil }
+        guard let root = partsRoot, let kit = load(name, from: root.appendingPathComponent(name.folder)) else {
+            shelf.missing.insert(name)
             return nil
         }
-        cache[build] = kit
+        shelf.kits[name] = kit
         return kit
     }
 
-    /// The kit for a grown bird with this build. Chicks keep the path rig: there is no chick kit yet.
+    /// The kit for a body shape, or nil.
+    @MainActor static func load(build: BodyShape) -> PartKit? { load(.build(build)) }
+
+    /// The kit a grown bird is drawn with: a grown hen's is the hen kit, whatever her body shape; any
+    /// other grown bird's is its body shape's. Chicks keep the path rig: there is no chick kit yet. A kit
+    /// with no map for the bird's pattern is passed over, so the pattern still shows. Nil: the path rig
+    /// draws it. A kit not read yet is read off the main thread, and the bird draws again when it is in.
     @MainActor static func kit(for colours: ChickenColours) -> PartKit? {
-        guard !colours.isChick, let build = colours.build else { return nil }
-        return load(build: build)
+        guard !colours.isChick else { return nil }
+        if let name = colours.kitOverride { return load(name) }
+        if colours.isGrownHen, let kit = shelved(.hen), kit.draws(colours.pattern) { return kit }
+        guard let build = colours.build, let kit = shelved(.build(build)), kit.draws(colours.pattern) else {
+            return nil
+        }
+        return kit
     }
 
-    /// Reads every kit off the main thread, at launch, so the first painted bird does not stall a frame
-    /// (eleven 2048 px PNGs and two pixel passes). A bird drawn before this ends loads its kit itself.
-    @MainActor static func preload() async {
-        guard let root = partsRoot else { return }
-        for build in BodyShape.allCases where cache[build] == nil && !missing.contains(build) {
-            let folder: URL = root.appendingPathComponent(build.rawValue)
-            let kit: PartKit? = await Task.detached(priority: .utility) {
-                PartKit.load(build: build, from: folder)
-            }.value
-            guard cache[build] == nil, !missing.contains(build) else { continue }
-            if let kit { cache[build] = kit } else { missing.insert(build) }
+    /// Whether this kit can show the pattern: lacing and barring need their overlay map.
+    func draws(_ pattern: FeatherwickCore.Pattern?) -> Bool {
+        switch pattern {
+        case .lacing: lacing != nil
+        case .barring: barring != nil
+        case .headSpot, nil: true
         }
+    }
+
+    /// A kit already read, or nil. A kit not read yet starts reading off the main thread.
+    @MainActor private static func shelved(_ name: KitName) -> PartKit? {
+        if let kit = shelf.kits[name] { return kit }
+        if !shelf.missing.contains(name) && shelf.reading[name] == nil {
+            Task { await read(name) }
+        }
+        return nil
+    }
+
+    /// Reads one kit off the main thread and shelves it.
+    @MainActor private static func read(_ name: KitName) async {
+        guard shelf.kits[name] == nil, !shelf.missing.contains(name) else { return }
+        let generation: Int = shelf.generation
+        guard let root = partsRoot else {
+            shelf.missing.insert(name)
+            return
+        }
+        let task: Task<PartKit?, Never>
+        if let running = shelf.reading[name] {
+            task = running
+        } else {
+            let folder: URL = root.appendingPathComponent(name.folder)
+            task = Task.detached(priority: .utility) { PartKit.load(name, from: folder) }
+            shelf.reading[name] = task
+        }
+        let kit: PartKit? = await task.value
+        guard generation == shelf.generation else { return }
+        shelf.reading[name] = nil
+        guard shelf.kits[name] == nil, !shelf.missing.contains(name) else { return }
+        if let kit { shelf.kits[name] = kit } else { shelf.missing.insert(name) }
+    }
+
+    /// Reads every kit a bird can use off the main thread, at launch, so the first painted bird is
+    /// ready soon (eleven 2048 px PNGs and two pixel passes). A bird drawn before this ends gets the path
+    /// rig, and draws again when its kit is in.
+    @MainActor static func preload() async {
+        for name in KitName.preloaded { await read(name) }
     }
 
     /// Forgets every kit, so the next draw reads the folders again (the rig lab's "Reload kit").
     @MainActor static func reload() {
-        cache = [:]
-        missing = []
+        shelf.generation &+= 1
+        shelf.reading = [:]
+        shelf.kits = [:]
+        shelf.missing = []
     }
 
     /// The `Parts` folder in the app bundle (a folder reference, so each kit keeps its own folder).
@@ -155,7 +235,10 @@ final class PartKit: @unchecked Sendable {
 
     /// Reads one kit folder. Nil, with one log line, when the folder is missing or the kit is broken:
     /// art never crashes the app.
-    static func load(build: BodyShape, from folder: URL) -> PartKit? {
+    static func load(build: BodyShape, from folder: URL) -> PartKit? { load(.build(build), from: folder) }
+
+    /// Reads one kit folder, for the kit `name`. See `load(build:from:)`.
+    static func load(_ name: KitName, from folder: URL) -> PartKit? {
         let specURL: URL = folder.appendingPathComponent("kit.json")
         guard FileManager.default.fileExists(atPath: specURL.path) else { return nil }
         let spec: KitSpec
@@ -163,13 +246,13 @@ final class PartKit: @unchecked Sendable {
             spec = try JSONDecoder().decode(KitSpec.self, from: Data(contentsOf: specURL))
         } catch {
             let reason: String = String(describing: error)
-            log.error("Kit \(build.rawValue, privacy: .public): kit.json does not read: \(reason, privacy: .public)")
+            log.error("Kit \(name.folder, privacy: .public): kit.json does not read: \(reason, privacy: .public)")
             return nil
         }
         let files = Set((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? [])
         let problems: [String] = spec.problems(files: files)
         guard problems.isEmpty else {
-            log.error("Kit \(build.rawValue, privacy: .public): \(problems.joined(separator: "; "), privacy: .public)")
+            log.error("Kit \(name.folder, privacy: .public): \(problems.joined(separator: "; "), privacy: .public)")
             return nil
         }
         // Every PNG must be the canvas size: a part of another size would be stretched onto the canvas.
@@ -180,7 +263,7 @@ final class PartKit: @unchecked Sendable {
         }
         guard wrongSize.isEmpty else {
             let names: String = wrongSize.joined(separator: ", ")
-            log.error("Kit \(build.rawValue, privacy: .public): not the canvas size: \(names, privacy: .public)")
+            log.error("Kit \(name.folder, privacy: .public): not the canvas size: \(names, privacy: .public)")
             return nil
         }
         // The canvas's longer side, scaled so the bird is `workingHeight` pixels tall.
@@ -188,19 +271,19 @@ final class PartKit: @unchecked Sendable {
         func working(_ name: String) -> CGImage? { image(at: folder.appendingPathComponent(name), maxPixel: maxPixel) }
 
         var layers: [KitLayer] = []
-        for name in spec.drawOrder {
-            guard let part = spec.parts[name], let image = working("\(name).png") else {
-                log.error("Kit \(build.rawValue, privacy: .public): \(name).png does not read")
+        for part in spec.drawOrder {
+            guard let entry = spec.parts[part], let image = working("\(part).png") else {
+                log.error("Kit \(name.folder, privacy: .public): \(part).png does not read")
                 return nil
             }
             let token: KitToken =
-                part.token.flatMap(KitToken.init(rawValue:)) ?? KitToken.implied(for: name, in: spec)
+                entry.token.flatMap(KitToken.init(rawValue:)) ?? KitToken.implied(for: part, in: spec)
             layers.append(
                 KitLayer(
-                    id: name, image: image, token: token, tokenScale: part.tokenScale ?? 1,
-                    bone: spec.bone(of: name), follow: spec.follow(of: name),
-                    lacing: overlay("lacing", isOn: name, in: spec),
-                    barring: overlay("barring", isOn: name, in: spec)))
+                    id: part, image: image, token: token, tokenScale: entry.tokenScale ?? 1,
+                    bone: spec.bone(of: part), follow: spec.follow(of: part),
+                    lacing: overlay("lacing", isOn: part, in: spec),
+                    barring: overlay("barring", isOn: part, in: spec)))
         }
         let lacing: CGImage? = spec.overlays?["lacing"] == nil ? nil : working("lacing.png")
         let barring: CGImage? = spec.overlays?["barring"] == nil ? nil : working("barring.png").flatMap(lightMap)
@@ -208,7 +291,7 @@ final class PartKit: @unchecked Sendable {
             layers.first(where: { $0.id == name }).flatMap { rigBounds(of: $0.image, in: spec) }
         }
         return PartKit(
-            build: build, spec: spec, folder: folder, layers: layers, lacing: lacing, barring: barring,
+            name: name, spec: spec, folder: folder, layers: layers, lacing: lacing, barring: barring,
             eyeBounds: paintedBounds("eye"), combBounds: paintedBounds("comb"))
     }
 
