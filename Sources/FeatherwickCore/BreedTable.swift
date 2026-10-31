@@ -116,6 +116,13 @@ public struct BreedDefinition: Sendable, Identifiable {
     /// Shell depth: the share of brown-depth genes, 0...1. Purebreds get exactly this share;
     /// birds bred outside the player's flock draw each gene with this chance. 0.5 is average.
     public var brownDepth: Double = 0.5
+    /// Recessive genes that run in some lines of the breed, each as `.pair(usual, carried)`. Autosomal
+    /// genes only. A bird bred outside the player's flock draws each of its two copies from its own ID:
+    /// the carried allele with chance `carriedShare`, else the usual one. A purebred made by `purebred`
+    /// has neither copy. The breed's public recipes list all three forms (`RecipeTable`).
+    public var carried: [GeneSetting] = []
+    /// At 0.3, about 4 in 10 outside birds carry one copy unseen, and about 1 in 11 has two and shows it.
+    public var carriedShare: Double = 0
     /// Which shared art parts the breed uses, its skin colours and its size.
     public let look: BreedLook
     public let note: String
@@ -153,14 +160,16 @@ public enum BreedTable {
             id: .orpington, displayName: "Orpington", status: .inGame, isStarter: true,
             signature: [.two(BrownShell.brown)],
             varieties: [.black, .blue, .buff, .lavender, .white], broodiness: 0.3, calmness: 0.7,
+            carried: [.pair(Speckle.plain, Speckle.speckled)], carriedShare: 0.3,
             look: BreedLook(body: .heavy, comb: .single, legTone: .slate, legToneOnBuff: .white, size: 1.2),
-            note: "Big, soft and calm. Brown eggs."),
+            note: "Big, soft and calm. Brown eggs. Some lines lay speckled eggs."),
         BreedDefinition(
             id: .wyandotte, displayName: "Wyandotte", status: .inGame, isStarter: true,
             signature: [.two(Lacing.laced), .two(BrownShell.brown)],
             varieties: [.black, .blue, .buff, .lavender], broodiness: 0.15, calmness: 0.55,
+            carried: [.pair(Speckle.plain, Speckle.speckled)], carriedShare: 0.3,
             look: BreedLook(body: .medium, comb: .rose, legTone: .yellow, size: 1.0),
-            note: "Carries lacing; it shows on gold (buff) birds. Brown eggs."),
+            note: "Carries lacing; it shows on gold (buff) birds. Brown eggs. Some lines lay speckled eggs."),
         BreedDefinition(
             id: .araucana, displayName: "Araucana", status: .inGame, isStarter: true,
             signature: [.two(BlueShell.blue)],
