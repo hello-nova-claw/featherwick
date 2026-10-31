@@ -37,10 +37,10 @@ Exceptions:
 | `paper` | `#FFFFFF` | All sheet and page backgrounds |
 | `ink` | `#2A2320` | Primary text, primary button fill, filled marks, outlines on swatches |
 | `inkSoft` | `#5A4D45` | Secondary body text, quiet actions (Rename, Later) |
-| `inkMuted` | `#7A6A5F` | Labels, captions, unselected tabs (4.6:1 on white) |
+| `inkMuted` | `#6F5F55` | Labels, captions, unselected tabs, the `?` of an unfound breed (6.1:1 on white; darkened from `#7A6A5F`, which Apple's accessibility audit failed on small text) |
 | `hairline` | `#E6DCCF` | Secondary button outline, dashed row dividers |
 | `hairlineSoft` | `#ECE5DB` | Sheet grabber (defined; the app uses the system grabber) |
-| `unknown` | `#C9BBAE` | Dashed "not yet" outlines, `?` glyph |
+| `unknown` | `#C9BBAE` | Dashed "not yet" outlines. Not for text: it is 1.9:1 on white. |
 | `unknownBox` | `#D8CDBF` | Dashed outline of unfound collection tiles and the egg carton |
 | `artPlaceholder` | `rgba(122,106,95,0.30)` | 1px dashed outline of art placeholders |
 | `coin` | `#D6A65E` | Coin disc, sun mark |
@@ -184,7 +184,7 @@ The text always carries the meaning; the dot only draws the eye.
 
 **Egg swatch (inline)** (`EggSwatch`): an egg shape 14×18 with a 1pt ink inset outline, filled with the egg colour, plus text ("Brown eggs").
 
-**Collection tile** (`BreedTile`): square art with a 1px dashed placeholder and radius 12, the name in Libre Caslon Text 15, and a row of 8pt colour dots: filled for colours found, dashed for colours still to find. Unfound breed: the tile shows a `?` in `unknown` in a dashed `unknownBox` square, with a one-line italic hint ("lays blue eggs").
+**Collection tile** (`BreedTile`): square art with a 1px dashed placeholder and radius 12, the name in Libre Caslon Text 15, and a row of 8pt colour dots: filled for colours found, dashed for colours still to find. Unfound breed: the tile shows a `?` in `inkMuted` in a dashed `unknownBox` square, with a one-line italic hint ("lays blue eggs").
 
 **Grade** (not built in the app yet; Show day writes the score as "72 of 100"): a 128pt circle drawn as a 1.3pt dashed ink ring, score in Caslon Display 48 with "of 100" underneath, grade word in italic, then a 4-step scale (Fair, Good, Very good, Excellent). Reached steps are solid 2pt ink lines and the current one is labelled in weight 500; unreached steps are dashed `unknown`.
 
@@ -202,7 +202,7 @@ All screens are 393×852 (iPhone 15/16). Sheets sit over the dimmed farm. The mo
 - 4 panels to swipe between: Barn, Yard, Far yard, Shop. The Yard and the Far yard draw a placeholder 2.5D scene (see Farm scene). Until their paintings exist, the Barn and the Shop are a flat colour with a dashed "scene" box.
 - One place per panel: Barn: Coop. Yard: Yard. Far yard: Back fence. Shop: Farm gate. Its button sits in the bottom row after Today, so it never covers the scene, and it changes as you swipe. The Coop sheet holds the brooder, chicks with their mothers, broody hens and the incubator too (there is no separate potting shed).
 - Panel rail: a white box down the right side, under the HUD, with one dot per panel in swipe order. Tap a dot to go there. The current panel is an ink dot. A panel off screen with a notice gets a bigger dot in its notice colour (decision, then collect, then story) with a ring. Others are small `unknown` dots. VoiceOver reads the panel name and its notices.
-- Bottom: "Books" (Caslon Display 23) bottom-left, then "Today", then the place of the panel on screen (Coop, Yard, Back fence or Farm gate), then "Rest a while" ("Sleep" when the last slot is spent; only after the daylight lesson, before it Sleep is in the Coop sheet), and a settings button "≡" bottom-right, all white boxes with radius 10, 56pt tall, 24pt above the home indicator.
+- Bottom: "Books" (Caslon Display 23) bottom-left, then "Today", then the place of the panel on screen (Coop, Yard, Back fence or Farm gate), then "Rest a while" ("Sleep" when the last slot is spent; only after the daylight lesson, before it Sleep is in the Coop sheet), and a settings button "≡" bottom-right, all white boxes with radius 10, 56pt tall, 24pt above the home indicator. When the row does not fit (a narrow phone, long words, large text), "Rest a while" and "≡" move up to a row of their own on the right; if that is still too wide, Books, Today and the place stack under it. A word never breaks across lines.
 - Books appears when the early game introduces the Breed Book (the `breedBook` lesson, the morning the first chick's sex shows). Until then, an "added to the Breed Book" toast has no "View". "≡" is always there.
 - Today shows how many of today's jobs are left in a buff badge. When all are done, the badge goes: "Today" turns `inkMuted`, with an ink tick and "Done" (Figtree 13). VoiceOver reads "Today, all jobs done".
 - Farm gate notice "new in today": stock the early game brought in this morning. It goes when the keeper opens the Farm gate or buys something there. The app keeps what was seen (per save slot); the game does not.
