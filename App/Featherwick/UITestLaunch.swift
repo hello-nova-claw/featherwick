@@ -28,6 +28,11 @@
             seed = Self.value(after: "-uiTestSeed", in: arguments).flatMap(UInt64.init) ?? 2026
         }
 
+        /// Every UI test launch freezes the farm scene (`SceneMotion.frozen`), so two runs give the same pixels.
+        static func freezesScene(arguments: [String]) -> Bool {
+            UITestLaunch(arguments: arguments) != nil
+        }
+
         /// The save this launch starts from, played through the engine like any game.
         func save() -> SaveGame {
             var rng = SeededRNG(seed: seed)
