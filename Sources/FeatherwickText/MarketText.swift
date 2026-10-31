@@ -233,12 +233,12 @@ func marketEventText(_ e: GameEvent, _ s: GameState) -> String? {
                 localized: "market.buyerCame.one",
                 defaultValue: """
                     Someone saw your card at the bakery. They'd like a young \(name), \
-                    and they'll be in the village for 1 day. (see: board)
+                    and they'll be in the village for \(days) day. (see: board)
                     """,
                 bundle: .module,
                 comment: """
-                    A buyer comes for the keeper's card and stays one day. The placeholder is the breed's name. \
-                    "board" is a CLI command.
+                    A buyer comes for the keeper's card and stays one day. The placeholders are the breed's name \
+                    and the number of days (1). "board" is a CLI command.
                     """)
         }
         return String(
