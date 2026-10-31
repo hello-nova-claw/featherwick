@@ -1669,6 +1669,18 @@
         }
       }
     },
+    "market.board.fits.list" : {
+      "comment" : "CLI board page: one more bird name on the list of birds that fit a card. The placeholders are the list so far and the next name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
     "market.board.forSale" : {
       "comment" : "CLI board page: a bird the buyer would take. The placeholders are the bird's name, the price and the bird's name again. \"sell\" is a CLI command.",
       "extractionState" : "extracted_with_value",

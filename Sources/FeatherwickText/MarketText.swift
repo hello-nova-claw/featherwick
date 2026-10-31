@@ -357,7 +357,16 @@ public func marketBoardLines(_ s: GameState) -> [String] {
                         comment: "CLI board page: the person's line, in quotes. The placeholder is the line."))
         }
         if case .bird = card.want, s.canFill(card) {
-            let names = s.birdsFor(card).map(\.name).joined(separator: ", ")
+            let names = s.birdsFor(card).map(\.name).reduce(into: "") { list, name in
+                list =
+                    list.isEmpty
+                    ? name
+                    : String(
+                        localized: "market.board.fits.list", defaultValue: "\(list), \(name)", bundle: .module,
+                        comment:
+                            "CLI board page: one more bird name on the list of birds that fit a card. The placeholders are the list so far and the next name."
+                    )
+            }
             out.append(
                 "     "
                     + String(
