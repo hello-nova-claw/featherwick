@@ -562,7 +562,7 @@ while true {
         }
         let name = SaveStore.cleanSlotName(words[1])
         guard !name.isEmpty else {
-            print("Use letters, numbers, - or _ for a slot name.")
+            print("Use letters, numbers, -, _ or . for a slot name.")
             break
         }
         guard name != store.slot else {

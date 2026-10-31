@@ -26,11 +26,20 @@ public struct SaveStore: Sendable {
         self.backupCount = max(0, backupCount)
     }
 
-    /// Only letters, numbers, `-` and `_`. No `/` or `.`, so the name is one file in the save folder.
+    /// Only letters, numbers, `-`, `_` and inner dots. No `/`, so the name is one file in the save folder.
     /// Empty when nothing is left, so a front end can say the name was not usable.
     public static func cleanSlotName(_ name: String) -> String {
-        name.filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }
+        // Dots stay, so an older slot such as `family.2025` still finds its file. With no slash left a
+        // dot cannot climb out of the folder, and leading dots go so the file is never hidden or `..`.
+        let kept = name.filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" || $0 == "." }
+        let clean = String(kept.drop(while: { $0 == "." }))
+        // A name that looks like another slot's backup or quarantine (`main.bak1`) loses its dots, so it
+        // never overwrites that file and `slots(in:)` still lists it.
+        return fileMarkers.contains(where: clean.contains) ? clean.filter { $0 != "." } : clean
     }
+
+    /// The parts of a file name that mark a backup, a quarantined copy or an old file, not a slot.
+    static let fileMarkers = [".bak", ".corrupt", ".old"]
 
     public var url: URL { directory.appendingPathComponent("\(slot).json") }
     public func backupURL(_ i: Int) -> URL { directory.appendingPathComponent("\(slot).bak\(i).json") }
@@ -149,7 +158,7 @@ public struct SaveStore: Sendable {
         let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
         return names.compactMap { name in
             guard name.hasSuffix(".json"),
-                !name.contains(".bak"), !name.contains(".corrupt"), !name.contains(".old")
+                !fileMarkers.contains(where: name.contains)
             else { return nil }
             return String(name.dropLast(".json".count))
         }.sorted()
