@@ -448,36 +448,64 @@ struct InheritanceBook: View {
     }
 }
 
-/// ≡: the keeper's name, debts, the old test screens, sound and haptics, the morning report and time of day
-/// switches, fast forward and a new game.
+/// ≡: the keeper's name, debts, sound and haptics, the morning report switch and a new game. Debug builds
+/// add the old test screens; Debug and Beta builds add the time of day pin and fast forward.
 struct SettingsSheet: View {
     @Environment(GameStore.self) private var store
     @Environment(\.palette) private var palette
-    @Environment(\.dismiss) private var dismiss
     @State private var confirmNew = false
-    @State private var testTools = false
+    #if DEBUG
+        @State private var testTools = false
+    #endif
 
     var body: some View {
         SheetPage(context: "Settings") {
             Text("Henhaven").font(Typeface.title)
             KeeperNameField()
             DebtsSection()
-            Button("Open test tools") { testTools = true }.buttonStyle(.secondary)
-            Text("The plain lists from the test build: every action, the full log, the simulator.")
-                .font(Typeface.caption).foregroundStyle(palette.inkMuted)
-            StitchDivider()
+            // The old test screens are Debug only: `TestTools/` is not compiled into Beta or Release.
+            #if DEBUG
+                Button("Open test tools") { testTools = true }.buttonStyle(.secondary)
+                Text("The plain lists from the test build: every action, the full log, the simulator.")
+                    .font(Typeface.caption).foregroundStyle(palette.inkMuted)
+                StitchDivider()
+            #endif
             FeedbackToggles()
             StitchDivider()
             MorningReportToggle()
             StitchDivider()
-            TimeOfDayPicker()
-            StitchDivider()
+            // Testing aids for Debug and TestFlight builds. The App Store build (Release) never shows them.
             #if DEBUG || BETA
+                TimeOfDayPicker()
+                StitchDivider()
                 if BetaNotes.showsInSettings {
                     BetaNotesSettings()
                     StitchDivider()
                 }
+                FastForward()
+                StitchDivider()
             #endif
+            Text("New game").font(Typeface.item)
+            Button("Start a new game") { confirmNew = true }.buttonStyle(.secondary)
+        }
+        .presentationDetents([.medium, .large])
+        .confirmationDialog("This replaces your current game.", isPresented: $confirmNew, titleVisibility: .visible) {
+            Button("Start again", role: .destructive) { store.newGame() }
+        }
+        #if DEBUG
+            .fullScreenCover(isPresented: $testTools) { TestToolsView() }
+        #endif
+    }
+}
+
+#if DEBUG || BETA
+    /// For testing: whole days in one tap, as a keeper in a hurry (`GameStore.fullDays`).
+    struct FastForward: View {
+        @Environment(GameStore.self) private var store
+        @Environment(\.palette) private var palette
+        @Environment(\.dismiss) private var dismiss
+
+        var body: some View {
             Text("Fast forward").font(Typeface.item)
             HStack(spacing: Space.m) {
                 Button("1 day") { store.fullDays(1) }.buttonStyle(.secondary)
@@ -495,32 +523,28 @@ struct SettingsSheet: View {
             .buttonStyle(.secondary)
             Text("Feeds, collects, sells a full carton and shuts the coop each day. Your show entries stay.")
                 .font(Typeface.caption).foregroundStyle(palette.inkMuted)
-            StitchDivider()
-            Text("New game").font(Typeface.item)
-            Button("Start a new game") { confirmNew = true }.buttonStyle(.secondary)
         }
-        .presentationDetents([.medium, .large])
-        .confirmationDialog("This replaces your current game.", isPresented: $confirmNew, titleVisibility: .visible) {
-            Button("Start again", role: .destructive) { store.newGame() }
-        }
-        .fullScreenCover(isPresented: $testTools) { TestToolsView() }
     }
-}
+#endif
 
-/// For testing: see the farm by day or by night without waiting for game time.
-struct TimeOfDayPicker: View {
-    @Environment(\.palette) private var palette
-    @AppStorage(TimeOfDayPin.key) private var pinned: TimeOfDayPin = .clock
+#if DEBUG || BETA
+    /// For testing: see the farm by day or by night without waiting for game time.
+    struct TimeOfDayPicker: View {
+        @Environment(\.palette) private var palette
+        @AppStorage(TimeOfDayPin.key) private var pinned: TimeOfDayPin = .clock
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: Space.s) {
-            Text("Time of day").font(Typeface.item)
-            WordTabs(tabs: TimeOfDayPin.allCases.map { ($0, $0.label) }, selection: $pinned)
-            Text("For testing. Game: day until evening, night from Sleep. Day or Night stays until you set Game again.")
+        var body: some View {
+            VStack(alignment: .leading, spacing: Space.s) {
+                Text("Time of day").font(Typeface.item)
+                WordTabs(tabs: TimeOfDayPin.allCases.map { ($0, $0.label) }, selection: $pinned)
+                Text(
+                    "For testing. Game: day until evening, night from Sleep. Day or Night stays until you set Game again."
+                )
                 .font(Typeface.caption).foregroundStyle(palette.inkMuted)
+            }
         }
     }
-}
+#endif
 
 /// Sound and haptics on or off. `Sound` and `Haptics` read the same keys.
 struct FeedbackToggles: View {

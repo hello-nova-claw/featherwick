@@ -63,8 +63,13 @@ targets:
           UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown
           UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
       configs:
+        # The old test screens (Featherwick/TestTools/) are Debug only: Settings opens them under `#if DEBUG`.
+        # Leaving the files out of Beta and Release keeps their code out of every shipped build.
+        Release:
+          EXCLUDED_SOURCE_FILE_NAMES: "$(SRCROOT)/Featherwick/TestTools/*"
         Beta:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BETA"
+          EXCLUDED_SOURCE_FILE_NAMES: "$(SRCROOT)/Featherwick/TestTools/*"
   # Unit tests for app-only logic (Swift Testing). Hosted in the app, so `@testable import Featherwick`
   # reaches its types. Run them with the Featherwick scheme's test action (Cmd-U).
   FeatherwickTests:

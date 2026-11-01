@@ -97,7 +97,7 @@ components, screens 1a–9a). The painted farm and bird art come later; dashed b
 - Morning report (`Sheets/MorningReportSheet.swift`): after Sleep, one page of the night, before the farm.
   Core's `MorningReport.from(events:state:)` sorts the night's events into groups; every event lands in one.
   A new `GameEvent` needs a group in `MorningReport.group(of:)`. Settings has a switch (on by default).
-- Day or night follows game time, not the device clock, via `\.palette`. Morning and afternoon are day. Evening starts a 30-minute crossfade to night. Night lasts from Sleep until the morning report (or the farm) shows. Settings ▸ Time of day (`TimeOfDayPin`: Game, Day, Night) pins day or night for testing.
+- Day or night follows game time, not the device clock, via `\.palette`. Morning and afternoon are day. Evening starts a 30-minute crossfade to night. Night lasts from Sleep until the morning report (or the farm) shows. Settings ▸ Time of day (`TimeOfDayPin`: Game, Day, Night) pins day or night for testing (Debug and Beta builds only, like Fast forward).
 - Fonts (Libre Caslon Display/Text, Figtree; OFL) are bundled in `Fonts/` and registered at launch.
 - UI tests (`App/FeatherwickUITests/`, XCTest) launch the app with `-uiTestState fresh|farm` (and
   `-uiTestSeed`), which `UITestLaunch` turns into a known game on an empty save folder, Debug builds only.
@@ -115,6 +115,7 @@ components, screens 1a–9a). The painted farm and bird art come later; dashed b
     `bin/compare-screenshots` lists what changed.
   - The shared helpers (launch, rail dots, label-prefix buttons) are in `UITestSupport.swift`.
 - ≡ → "Open test tools" shows the old plain screens (`TestTools/`), with every action and the full log.
+  Debug builds only: `project.yml` leaves `TestTools/` out of Beta and Release (`EXCLUDED_SOURCE_FILE_NAMES`).
 - `Beta/`: TestFlight questions after the first hatch and the first show (once per save slot). Compiled only with the `BETA` flag (Beta config, "Featherwick Beta" scheme) or `DEBUG`, and shown only on a sandbox receipt. Answers go to `beta-notes.json` (not the save); Settings ▸ Share beta notes.
 
 ```sh

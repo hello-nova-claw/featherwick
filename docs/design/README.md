@@ -290,7 +290,7 @@ These screens exist in the app (`App/Featherwick/`) but not in the design file. 
 
 **Market board** (`Sheets/MarketBoardSheet.swift`, large). See 1a. Context "By the bakery", coin balance, title "Market board", a line in italic, "Wanted" cards split by stitches, then "Your card".
 
-**Settings** (≡, `SettingsSheet` in `Sheets/BooksView.swift`, medium and large). Title "Henhaven", the keeper's name field, "You owe" (see 6a), "Open test tools", Sound and Haptics switches, the Morning report switch, Time of day (Game, Day, Night), beta notes (beta builds only), Fast forward ("1 day", "7 days", and "To show day" or "To the show news"), and "Start a new game".
+**Settings** (≡, `SettingsSheet` in `Sheets/BooksView.swift`, medium and large). Title "Henhaven", the keeper's name field, "You owe" (see 6a), "Open test tools" (Debug builds only), Sound and Haptics switches, the Morning report switch, Time of day (Game, Day, Night), beta notes (beta builds only), Fast forward ("1 day", "7 days", and "To show day" or "To the show news"), and "Start a new game". Time of day and Fast forward show in Debug and Beta builds only. The App Store build (Release) has neither, and it ignores a pinned time of day. The Sound switch shows only when a sound file is in the bundle.
 
 ---
 
