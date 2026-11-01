@@ -66,7 +66,48 @@ struct InvariantTests {
         if let offer = s.tradeOffer, !s.ownedBirds.contains(where: { $0.id == offer.roosterID }) {
             p.append("trade offer for a rooster the player doesn't own")
         }
+        p += villageProblems(in: s)
         return p
+    }
+
+    /// Loans, debts, daylight, the market board and the pen.
+    static func villageProblems(in s: GameState) -> [String] {
+        var p: [String] = []
+        // A loaned bird lives in the coop, or is lost for a while. She never boards, and never goes to a new home.
+        let elsewhere = s.brooder + s.henChicks + s.boarding + s.rehomed
+        if elsewhere.contains(where: \.isOnLoan) { p.append("a loaned bird outside the coop") }
+        for debt in s.debts where debt.coins <= 0 { p.append("a debt of \(debt.coins) coins") }
+        if Set(s.debts.map(\.id)).count != s.debts.count { p.append("a debt owed twice") }
+
+        if s.slotsUsed > s.rules.maxDaySlots { p.append("\(s.slotsUsed) slots used, over the most in a day") }
+        if s.slotsUsed < 0 { p.append("negative slots used") }
+        // Each errand's first trip spends a slot, so there are never more errands than slots spent.
+        if s.errandsToday.count > s.slotsUsed { p.append("more errands than slots spent") }
+        if !s.isOpen(.daylight), s.slotsUsed != 0 { p.append("slots spent before the daylight lesson") }
+
+        let cards = s.marketBoard.cards
+        if cards.count > s.rules.marketCardsMax { p.append("\(cards.count) cards on the board") }
+        if Set(cards.map(\.id)).count != cards.count { p.append("a card pinned twice") }
+        if cards.contains(where: { $0.untilDay < s.day }) { p.append("a card past its day") }
+        if let card = s.marketBoard.keeperCard, card.buyerLeavesDay <= s.day, s.isOpen(.marketBoard) {
+            p.append("the keeper's card outlived its buyer")
+        }
+
+        // The pen sorts by sex, so only a bird whose sex shows goes in; a loaned bird's line is her owner's.
+        for b in s.pennedBirds where !b.revealed { p.append("unrevealed bird in the pen: \(b.name)") }
+        if s.pennedBirds.contains(where: \.isOnLoan) { p.append("a loaned bird in the pen") }
+        if s.pennedBirds.contains(where: { $0.stage(onDay: s.day, rules: s.rules) == .chick }) {
+            p.append("a chick in the pen")
+        }
+        return p
+    }
+
+    /// After a night: every loan whose day has come has gone home, unless she is sitting or mothering.
+    static func overdueLoans(in s: GameState) -> [String] {
+        s.loanedBirds.compactMap { b in
+            guard let due = b.loan?.returnDay, due <= s.day, !Engine.isBusy(b.id, s) else { return nil }
+            return "\(b.name) is still here, due home on day \(due)"
+        }
     }
 
     /// Sleep, or rest first while daylight is left (sleep waits for evening; see `DaylightTests`).
@@ -144,6 +185,12 @@ struct InvariantTests {
             if command == .passNight && !refused {
                 #expect(s.day == dayBefore + 1)
                 #expect(!s.fedToday && s.coopDoorOpen)
+                #expect(s.slotsUsed == 0 && s.errandsToday.isEmpty)
+                let overdue = overdueLoans(in: s)
+                if !overdue.isEmpty {
+                    Issue.record("seed \(seed), step \(step): \(overdue)")
+                    break
+                }
                 // No dead ends: with no hen, the player can buy one, has an offer, or a rooster is still out.
                 let hasHen = s.ownedBirds.contains { $0.sex == .hen }
                 let roosterAtHome = (s.coop + s.brooder).contains { $0.sex == .rooster && $0.revealed }
@@ -161,6 +208,25 @@ struct InvariantTests {
             }
         }
         return all
+    }
+
+    /// The new checks are not blind: a state that breaks each one is caught.
+    @Test func theVillageChecksCatchABrokenState() {
+        var rng = SeededRNG(seed: 3)
+        var s = Engine.newGame(earlyGame: false, using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        #expect(Self.villageProblems(in: s).isEmpty)
+        s.slotsUsed = s.rules.maxDaySlots + 1
+        s.debts = [Debt(id: "owed", to: .hazel, coins: -1, mentionedDay: s.day)]
+        s.marketBoard.cards = (0...s.rules.marketCardsMax).map { i in
+            MarketCard(
+                id: "card\(i)", kind: "okafor-blue", from: .okafor, want: .eggs(.blue, count: 3), coins: 1,
+                pinnedDay: s.day, untilDay: s.day)
+        }
+        let p = Self.villageProblems(in: s)
+        #expect(p.contains("\(s.slotsUsed) slots used, over the most in a day"))
+        #expect(p.contains("a debt of -1 coins"))
+        #expect(p.contains("\(s.marketBoard.cards.count) cards on the board"))
     }
 
     @Test(arguments: Array(UInt64(1)...200))
