@@ -74,7 +74,10 @@ struct InvariantTests {
         s.isOpen(.daylight) && s.slotsLeft > 0 ? .rest : .passNight
     }
 
+    /// One draw in eight is any command at all (`anyCommand`), so every command is fuzzed. The rest lean
+    /// towards care and hatching, so the game gets somewhere.
     static func randomCommand(_ s: GameState, _ pick: inout SeededRNG) -> Command {
+        if Int.random(in: 0..<8, using: &pick) == 0 { return anyCommand(s, &pick) }
         let birds = s.birdsAtHome + s.boarding
         let anyBird = birds.randomElement(using: &pick)?.id ?? UUID()
         // Mostly sensible moves (so the game gets somewhere), with some nonsense mixed in.
@@ -134,8 +137,11 @@ struct InvariantTests {
         for step in 0..<steps {
             let command = randomCommand(s, &pick)
             let dayBefore = s.day
-            all += Engine.apply(command, to: &s, using: &rng)
-            if command == .passNight {
+            let events = Engine.apply(command, to: &s, using: &rng)
+            all += events
+            // The fuzzer may try to sleep while daylight is left: the engine refuses, and the day stays.
+            let refused = events.contains { if case .rejected = $0 { true } else { false } }
+            if command == .passNight && !refused {
                 #expect(s.day == dayBefore + 1)
                 #expect(!s.fedToday && s.coopDoorOpen)
                 // No dead ends: with no hen, the player can buy one, has an offer, or a rooster is still out.
@@ -178,5 +184,14 @@ struct InvariantTests {
         #expect(seen { if case .rehomed = $0 { true } else { false } })
         #expect(seen { if case .coopUpgraded = $0 { true } else { false } })
         #expect(seen { if case .eggBroken = $0 { true } else { false } })
+        // The systems only the wider draws reach.
+        #expect(seen { if case .loanArrived = $0 { true } else { false } })
+        #expect(seen { if case .loanReturned = $0 { true } else { false } })
+        #expect(seen { if case .debtOwed = $0 { true } else { false } })
+        #expect(seen { if case .birdPenned = $0 { true } else { false } })
+        #expect(seen { if case .marketCardFilled = $0 { true } else { false } })
+        #expect(seen { if case .chose = $0 { true } else { false } })
+        #expect(seen { if case .fedPremium = $0 { true } else { false } })
+        #expect(seen { if case .sexGuessed = $0 { true } else { false } })
     }
 }
