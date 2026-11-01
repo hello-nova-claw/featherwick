@@ -27,6 +27,45 @@ import Testing
                 == "speckled-egg hen × rooster → every daughter lays speckled eggs")
     }
 
+    /// Every rule shape reads the same after the words moved into the String Catalog (#58).
+    @Test func everyRuleShapeReadsAsBefore() {
+        #expect(
+            inheritanceText(.colours(.black, .blue, [ColourShare(.blue, 1), ColourShare(.splash, 1)], denominator: 4))
+                == "black × blue → 1 in 4 blue, 1 in 4 splash")
+        #expect(
+            inheritanceText(.trait(.colour(.lavender), hen: false, rooster: true, numerator: 1, denominator: 4))
+                == "non-lavender hen × lavender rooster → 1 in 4 lavender")
+        #expect(
+            inheritanceText(.trait(.eggColour(.blue), hen: true, rooster: false, numerator: 1, denominator: 2))
+                == "blue-egg hen × rooster → 1 in 2 daughters lay blue eggs")
+        var lines: [String] = [inheritanceTitleText, inheritanceSubtitleText, inheritanceEmptyText]
+        let traits: [FeatherwickCore.Trait] = [
+            .colour(.black), .colour(.lavender), .barred, .laced, .silkieFeathered, .eggColour(.blue),
+            .eggColour(.olive), .speckledEggs,
+        ]
+        let looks: [Bool?] = [true, false, nil]
+        for t in traits {
+            for hen in looks {
+                for rooster in looks {
+                    for n in [1, 2] {
+                        lines.append(
+                            inheritanceText(.trait(t, hen: hen, rooster: rooster, numerator: n, denominator: 2)))
+                    }
+                }
+            }
+        }
+        let shares: [[ColourShare]] = [
+            [ColourShare(.lavender, 1)], [ColourShare(.black, 1), ColourShare(.blue, 2), ColourShare(.splash, 1)],
+            [ColourShare(.blue, 1), ColourShare(.splash, 1)],
+        ]
+        for share in shares {
+            lines.append(inheritanceText(.colours(.blue, .splash, share, denominator: share.count == 1 ? 1 : 4)))
+        }
+        lines.append(inheritanceText(.sexLink))
+        let fingerprint = pin(lines)
+        #expect(fingerprint == "6c80e4c68aebc862")
+    }
+
     @Test func anEmptyPageSaysHowToFillIt() {
         var rng = SeededRNG(seed: 1)
         let s = Engine.newGame(earlyGame: false, using: &rng)
