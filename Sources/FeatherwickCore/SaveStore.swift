@@ -33,18 +33,23 @@ public struct SaveStore: Sendable {
         // dot cannot climb out of the folder, and leading dots go so the file is never hidden or `..`.
         let kept = name.filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" || $0 == "." }
         let clean = String(kept.drop(while: { $0 == "." }))
-        // A name that looks like another slot's backup or quarantine (`main.bak1`) loses its dots, so it
+        // A name that ends like another slot's backup or quarantine (`main.bak1`) loses its dots, so it
         // never overwrites that file and `slots(in:)` still lists it.
         return isMarked(clean) ? clean.filter { $0 != "." } : clean
     }
 
-    /// The parts of a file name that mark a backup, a quarantined copy or an old file, not a slot.
+    /// The endings that mark a backup, a quarantined copy or an old file, not a slot: `.bak1`, `.corrupt`,
+    /// `.corrupt2`, `.old`. Each may carry a number.
     static let fileMarkers = [".bak", ".corrupt", ".old"]
 
-    /// Case does not matter: on a case-insensitive volume `main.BAK1.json` is the file `main.bak1.json`.
+    /// True when `name` (with or without `.json`) ends the way a backup or quarantine file name does.
+    /// Only the ending counts, so a slot such as `not.bakery` is still a slot. Case does not matter: on a
+    /// case-insensitive volume `main.BAK1.json` is the file `main.bak1.json`.
     static func isMarked(_ name: String) -> Bool {
-        let lower = name.lowercased()
-        return fileMarkers.contains(where: lower.contains)
+        var lower = name.lowercased()
+        if lower.hasSuffix(".json") { lower.removeLast(".json".count) }
+        let stem = String(lower.reversed().drop(while: \.isNumber).reversed())
+        return fileMarkers.contains(where: stem.hasSuffix)
     }
 
     public var url: URL { directory.appendingPathComponent("\(slot).json") }

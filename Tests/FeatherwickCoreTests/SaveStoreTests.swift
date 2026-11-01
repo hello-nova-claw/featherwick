@@ -55,8 +55,9 @@ struct SaveStoreTests {
         try SaveStore(directory: dir, slot: "alpha").write(data)
         try SaveStore(directory: dir, slot: "alpha").write(data)  // makes alpha.bak1.json
         try SaveStore(directory: dir, slot: "beta").write(data)
+        try SaveStore(directory: dir, slot: "not.bakery").write(data)  // a dot, but not a backup's ending
         let slots = SaveStore.slots(in: dir)
-        #expect(slots == ["alpha", "beta"])  // backups excluded
+        #expect(slots == ["alpha", "beta", "not.bakery"])  // backups excluded
     }
 
     // MARK: - Loading and recovery (#59)
@@ -183,6 +184,7 @@ struct SaveStoreTests {
         ("../x", "x"), ("../../etc/passwd", "etcpasswd"), ("a/b", "ab"), ("/tmp/save", "tmpsave"),
         ("my save", "mysave"), ("hen-1_b", "hen-1_b"), ("family.2025", "family.2025"), ("..hidden", "hidden"),
         ("main.bak1", "mainbak1"), ("main.corrupt", "maincorrupt"), ("main.BAK1", "mainBAK1"),
+        ("not.bakery", "not.bakery"), ("main.corrupt2", "maincorrupt2"),
     ])
     func aSlotNameIsCleaned(_ raw: String, _ clean: String) {
         let store = SaveStore(directory: tempDir(), slot: raw)
