@@ -1357,6 +1357,2837 @@
         }
       }
     },
+    "planner.aBird" : {
+      "comment" : "In place of the name of a bird the keeper does not have.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a bird"
+          }
+        }
+      }
+    },
+    "planner.aBirdPossessive" : {
+      "comment" : "Possessive of a bird the keeper does not have, as in: a bird's mother.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a bird's"
+          }
+        }
+      }
+    },
+    "planner.band.excellent" : {
+      "comment" : "A judge's type band.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "excellent"
+          }
+        }
+      }
+    },
+    "planner.band.fair" : {
+      "comment" : "A judge's type band.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "fair"
+          }
+        }
+      }
+    },
+    "planner.band.good" : {
+      "comment" : "A judge's type band.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "good"
+          }
+        }
+      }
+    },
+    "planner.band.poor" : {
+      "comment" : "A judge's type band.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "poor"
+          }
+        }
+      }
+    },
+    "planner.carrierLine" : {
+      "comment" : "A carrier note, like: Carries lavender; then how the keeper can be sure.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@. %2$@"
+          }
+        }
+      }
+    },
+    "planner.carries.barring" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries barring"
+          }
+        }
+      }
+    },
+    "planner.carries.black" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries black"
+          }
+        }
+      }
+    },
+    "planner.carries.blue" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries blue"
+          }
+        }
+      }
+    },
+    "planner.carries.blueEggs" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries blue eggs"
+          }
+        }
+      }
+    },
+    "planner.carries.brownEggs" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries brown eggs"
+          }
+        }
+      }
+    },
+    "planner.carries.buff" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries buff"
+          }
+        }
+      }
+    },
+    "planner.carries.lacing" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries lacing"
+          }
+        }
+      }
+    },
+    "planner.carries.lavender" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries lavender"
+          }
+        }
+      }
+    },
+    "planner.carries.normalFeathers" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries normal feathers"
+          }
+        }
+      }
+    },
+    "planner.carries.notBarred" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries plain feathers, not barred"
+          }
+        }
+      }
+    },
+    "planner.carries.notBlue" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries plain colour, not blue"
+          }
+        }
+      }
+    },
+    "planner.carries.notBlueEggs" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries plain eggs, not blue"
+          }
+        }
+      }
+    },
+    "planner.carries.notBrownEggs" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries pale eggs, not brown"
+          }
+        }
+      }
+    },
+    "planner.carries.notLaced" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries plain feathers, not laced"
+          }
+        }
+      }
+    },
+    "planner.carries.notLavender" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries plain colour, not lavender"
+          }
+        }
+      }
+    },
+    "planner.carries.notSpeckled" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries plain eggs, not speckled"
+          }
+        }
+      }
+    },
+    "planner.carries.notWhite" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries colour under the white"
+          }
+        }
+      }
+    },
+    "planner.carries.silkie" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries silkie feathers"
+          }
+        }
+      }
+    },
+    "planner.carries.speckled" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries speckled eggs"
+          }
+        }
+      }
+    },
+    "planner.carries.splash" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries splash"
+          }
+        }
+      }
+    },
+    "planner.carries.unknown" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries something it does not show"
+          }
+        }
+      }
+    },
+    "planner.carries.white" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Carries white"
+          }
+        }
+      }
+    },
+    "planner.carriesNone" : {
+      "comment" : "When a bird has no carrier notes yet. The value is its name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Nothing hidden you can be sure of yet. Watch %@'s chicks."
+          }
+        }
+      }
+    },
+    "planner.carriesShort" : {
+      "comment" : "A bird's carrier notes in the family tree. The value is a list, like: lavender and blue eggs.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "carries %@"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.barring" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "barring"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.black" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "black"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.blue" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "blue"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.blueEggs" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "blue eggs"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.brownEggs" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "brown eggs"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.buff" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "buff"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.lacing" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "lacing"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.lavender" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "lavender"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.normalFeathers" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "normal feathers"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.notBarred" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "plain feathers, not barred"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.notBlue" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "plain colour, not blue"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.notBlueEggs" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "plain eggs, not blue"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.notBrownEggs" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "pale eggs, not brown"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.notLaced" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "plain feathers, not laced"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.notLavender" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "plain colour, not lavender"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.notSpeckled" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "plain eggs, not speckled"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.notWhite" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "colour under the white"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.silkie" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "silkie feathers"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.speckled" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "speckled eggs"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.splash" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "splash"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.unknown" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "something it does not show"
+          }
+        }
+      }
+    },
+    "planner.carriesShort.white" : {
+      "comment" : "One item in a short carrier list, as in: carries lavender and barring.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "white"
+          }
+        }
+      }
+    },
+    "planner.certain.barred" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Every chick will be barred."
+          }
+        }
+      }
+    },
+    "planner.certain.colour" : {
+      "comment" : "Forecast. The value is a feather colour, like: lavender.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Every chick will be %@."
+          }
+        }
+      }
+    },
+    "planner.certain.eggs" : {
+      "comment" : "Forecast. The value is an egg phrase, like: blue eggs.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Every hen from this pair will lay %@."
+          }
+        }
+      }
+    },
+    "planner.certain.laced" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Every chick will be laced."
+          }
+        }
+      }
+    },
+    "planner.certain.silkie" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Every chick will have silkie feathers."
+          }
+        }
+      }
+    },
+    "planner.chick.barred" : {
+      "comment" : "Reason. The value is They, or a bird's name, or two names.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ had a barred chick."
+          }
+        }
+      }
+    },
+    "planner.chick.barredNamed" : {
+      "comment" : "Reason: They, or a bird's name, or two names; then the chick's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ had a barred chick, %2$@."
+          }
+        }
+      }
+    },
+    "planner.chick.colour" : {
+      "comment" : "Reason: They, or a bird's name, or two names; then a feather colour, like: lavender.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ had a %2$@ chick."
+          }
+        }
+      }
+    },
+    "planner.chick.colourAn" : {
+      "comment" : "Reason: They, or a bird's name, or two names; then a feather colour that takes an.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ had an %2$@ chick."
+          }
+        }
+      }
+    },
+    "planner.chick.colourAnNamed" : {
+      "comment" : "Reason: They, or a bird's name, or two names; a feather colour that takes an; the chick's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ had an %2$@ chick, %3$@."
+          }
+        }
+      }
+    },
+    "planner.chick.colourNamed" : {
+      "comment" : "Reason: They, or a bird's name, or two names; a feather colour; then the chick's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ had a %2$@ chick, %3$@."
+          }
+        }
+      }
+    },
+    "planner.chick.daughterLays" : {
+      "comment" : "Reason: They, or a bird's name, or two names; then an egg colour, like: blue.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ had a daughter who lays %2$@ eggs."
+          }
+        }
+      }
+    },
+    "planner.chick.daughterLaysNamed" : {
+      "comment" : "Reason: They, or a bird's name, or two names; the daughter's name; then an egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ had a daughter, %2$@, who lays %3$@ eggs."
+          }
+        }
+      }
+    },
+    "planner.chick.daughterSpeckled" : {
+      "comment" : "Reason. The value is They, or a bird's name, or two names.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ had a daughter who lays speckled eggs."
+          }
+        }
+      }
+    },
+    "planner.chick.daughterSpeckledNamed" : {
+      "comment" : "Reason: They, or a bird's name, or two names; then the daughter's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ had a daughter, %2$@, who lays speckled eggs."
+          }
+        }
+      }
+    },
+    "planner.chick.laced" : {
+      "comment" : "Reason. The value is They, or a bird's name, or two names.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ had a laced chick."
+          }
+        }
+      }
+    },
+    "planner.chick.lacedNamed" : {
+      "comment" : "Reason: They, or a bird's name, or two names; then the chick's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ had a laced chick, %2$@."
+          }
+        }
+      }
+    },
+    "planner.chick.parents" : {
+      "comment" : "A chick's mother's name, then its father's, as in: Clover and Bramble had a lavender chick.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ and %2$@"
+          }
+        }
+      }
+    },
+    "planner.chick.showsCarrier" : {
+      "comment" : "Reason: a bird's name (twice), then a trait, like: lavender.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "One of %1$@'s chicks shows that %2$@ carries %3$@."
+          }
+        }
+      }
+    },
+    "planner.chick.showsCarrierNamed" : {
+      "comment" : "Reason: a bird's name, its chick's name, the bird's name again, then a trait, like: lavender.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@'s chick, %2$@, shows that %3$@ carries %4$@."
+          }
+        }
+      }
+    },
+    "planner.chick.silkie" : {
+      "comment" : "Reason. The value is They, or a bird's name, or two names.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ had a silkie-feathered chick."
+          }
+        }
+      }
+    },
+    "planner.chick.silkieNamed" : {
+      "comment" : "Reason: They, or a bird's name, or two names; then the chick's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ had a silkie-feathered chick, %2$@."
+          }
+        }
+      }
+    },
+    "planner.chick.they" : {
+      "comment" : "The penned pair, at the start of a sentence, as in: They had a lavender chick.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "They"
+          }
+        }
+      }
+    },
+    "planner.colour.black" : {
+      "comment" : "A feather colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "black"
+          }
+        }
+      }
+    },
+    "planner.colour.blue" : {
+      "comment" : "A feather colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "blue"
+          }
+        }
+      }
+    },
+    "planner.colour.buff" : {
+      "comment" : "A feather colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "buff"
+          }
+        }
+      }
+    },
+    "planner.colour.lavender" : {
+      "comment" : "A feather colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "lavender"
+          }
+        }
+      }
+    },
+    "planner.colour.splash" : {
+      "comment" : "A feather colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "splash"
+          }
+        }
+      }
+    },
+    "planner.colour.white" : {
+      "comment" : "A feather colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "white"
+          }
+        }
+      }
+    },
+    "planner.egg.blue" : {
+      "comment" : "An egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "blue"
+          }
+        }
+      }
+    },
+    "planner.egg.brown" : {
+      "comment" : "An egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "brown"
+          }
+        }
+      }
+    },
+    "planner.egg.chocolate" : {
+      "comment" : "An egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "chocolate"
+          }
+        }
+      }
+    },
+    "planner.egg.cream" : {
+      "comment" : "An egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "cream"
+          }
+        }
+      }
+    },
+    "planner.egg.green" : {
+      "comment" : "An egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "green"
+          }
+        }
+      }
+    },
+    "planner.egg.olive" : {
+      "comment" : "An egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "olive"
+          }
+        }
+      }
+    },
+    "planner.egg.white" : {
+      "comment" : "An egg colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "white"
+          }
+        }
+      }
+    },
+    "planner.eggColours.sure" : {
+      "comment" : "Forecast. The value is egg colours, like: blue or green.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hens from this pair will lay %@ eggs."
+          }
+        }
+      }
+    },
+    "planner.eggColours.unlessBlue" : {
+      "comment" : "Forecast. The value is egg colours, like: white, cream or brown.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hens from this pair will lay %@ eggs, unless one of them carries blue."
+          }
+        }
+      }
+    },
+    "planner.eggColours.unlessBrown" : {
+      "comment" : "Forecast. The value is egg colours, like: white or cream.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hens from this pair will lay %@ eggs, unless one of them carries brown."
+          }
+        }
+      }
+    },
+    "planner.eggColours.unlessOther" : {
+      "comment" : "Forecast. The value is egg colours, like: brown.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hens from this pair will lay %@ eggs, unless one of them is hiding another egg colour."
+          }
+        }
+      }
+    },
+    "planner.eggColours.unlessSpeckles" : {
+      "comment" : "Forecast. The value is egg colours, like: blue or green.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hens from this pair will lay %@ eggs, unless one of them carries speckles."
+          }
+        }
+      }
+    },
+    "planner.eggsPhrase" : {
+      "comment" : "Egg colours, then eggs. The value is one colour or a list, like: white or cream.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ eggs"
+          }
+        }
+      }
+    },
+    "planner.eggsPlain" : {
+      "comment" : "In place of egg colours when there are none to list, as in: plain eggs.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "plain"
+          }
+        }
+      }
+    },
+    "planner.heading" : {
+      "comment" : "Heading of the breeding pen's forecast panel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "What might hatch"
+          }
+        }
+      }
+    },
+    "planner.headingWithRooster" : {
+      "comment" : "The forecast heading, then the penned rooster's name. CLI and test tools.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (rooster: %2$@)"
+          }
+        }
+      }
+    },
+    "planner.her" : {
+      "comment" : "Possessive for a hen.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "her"
+          }
+        }
+      }
+    },
+    "planner.hiding.barred" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "If one of them is hiding barring, you'll find out."
+          }
+        }
+      }
+    },
+    "planner.hiding.colour" : {
+      "comment" : "Forecast. The value is a feather colour, like: lavender.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "If one of them is hiding %@, you'll find out."
+          }
+        }
+      }
+    },
+    "planner.hiding.eggs" : {
+      "comment" : "Forecast. The value is an egg phrase, like: blue eggs.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "If one of them carries %@, you'll find out."
+          }
+        }
+      }
+    },
+    "planner.hiding.laced" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "If one of them is hiding lacing, you'll find out."
+          }
+        }
+      }
+    },
+    "planner.hiding.silkie" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "If one of them is hiding silkie feathers, you'll find out."
+          }
+        }
+      }
+    },
+    "planner.his" : {
+      "comment" : "Possessive for a rooster.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "his"
+          }
+        }
+      }
+    },
+    "planner.kin.father" : {
+      "comment" : "A bird's father. The value is a possessive: her, his, Pip's, a bird's, this bird's.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ father"
+          }
+        }
+      }
+    },
+    "planner.kin.mother" : {
+      "comment" : "A bird's mother. The value is a possessive: her, his, Pip's, a bird's, this bird's.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ mother"
+          }
+        }
+      }
+    },
+    "planner.kin.parent" : {
+      "comment" : "A bird's parent. The value is a possessive: her, his, Pip's, a bird's, this bird's.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ parent"
+          }
+        }
+      }
+    },
+    "planner.kinship.close" : {
+      "comment" : "Forecast: how the penned pair are related.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "They are closely related (like siblings, or parent and chick)."
+          }
+        }
+      }
+    },
+    "planner.kinship.cousins" : {
+      "comment" : "Forecast: how the penned pair are related.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "They are related like cousins."
+          }
+        }
+      }
+    },
+    "planner.kinship.distant" : {
+      "comment" : "Forecast: how the penned pair are related.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "They are distantly related."
+          }
+        }
+      }
+    },
+    "planner.kinship.halfSiblings" : {
+      "comment" : "Forecast: how the penned pair are related.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "They are related like half-siblings."
+          }
+        }
+      }
+    },
+    "planner.kinship.unrelated" : {
+      "comment" : "Forecast: how the penned pair are related.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "They are not related."
+          }
+        }
+      }
+    },
+    "planner.likely.barred" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some chicks will likely be barred."
+          }
+        }
+      }
+    },
+    "planner.likely.colour" : {
+      "comment" : "Forecast. The value is a feather colour, like: lavender.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some chicks will likely be %@."
+          }
+        }
+      }
+    },
+    "planner.likely.eggs" : {
+      "comment" : "Forecast. The value is an egg phrase, like: blue eggs.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hens from this pair will likely lay %@."
+          }
+        }
+      }
+    },
+    "planner.likely.laced" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some chicks will likely be laced."
+          }
+        }
+      }
+    },
+    "planner.likely.silkie" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some chicks will likely have silkie feathers."
+          }
+        }
+      }
+    },
+    "planner.likelyNone.barred" : {
+      "comment" : "Forecast after many chicks never showed it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Likely no barred chicks."
+          }
+        }
+      }
+    },
+    "planner.likelyNone.colour" : {
+      "comment" : "Forecast after many chicks never showed it. The value is a feather colour, like: lavender.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Likely no %@ chicks."
+          }
+        }
+      }
+    },
+    "planner.likelyNone.eggs" : {
+      "comment" : "Forecast after many daughters never laid it. The value is an egg phrase, like: blue eggs.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Likely no %@."
+          }
+        }
+      }
+    },
+    "planner.likelyNone.laced" : {
+      "comment" : "Forecast after many chicks never showed it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Likely no laced chicks."
+          }
+        }
+      }
+    },
+    "planner.likelyNone.silkie" : {
+      "comment" : "Forecast after many chicks never showed it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Likely no silkie-feathered chicks."
+          }
+        }
+      }
+    },
+    "planner.lineWithReasons" : {
+      "comment" : "A forecast sentence, then the reasons for it in brackets.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "planner.list.and" : {
+      "comment" : "The end of a list: the items before, then the last item.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ and %2$@"
+          }
+        }
+      }
+    },
+    "planner.list.comma" : {
+      "comment" : "Two items in the middle of a list: the items so far, then the next one.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "planner.list.or" : {
+      "comment" : "The end of a list of choices: the items before, then the last item.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ or %2$@"
+          }
+        }
+      }
+    },
+    "planner.look.barred" : {
+      "comment" : "Reason. The value is a bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is barred."
+          }
+        }
+      }
+    },
+    "planner.look.blackNoBlue.he" : {
+      "comment" : "Reason about a rooster. The value is his name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is black, so he carries no blue."
+          }
+        }
+      }
+    },
+    "planner.look.blackNoBlue.name" : {
+      "comment" : "Reason about a bird whose sex does not show yet. Both values are its name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is black, so %2$@ carries no blue."
+          }
+        }
+      }
+    },
+    "planner.look.blackNoBlue.she" : {
+      "comment" : "Reason about a hen. The value is her name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is black, so she carries no blue."
+          }
+        }
+      }
+    },
+    "planner.look.blue" : {
+      "comment" : "Reason. The value is a bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is blue. Blue birds always carry one of each."
+          }
+        }
+      }
+    },
+    "planner.look.buff" : {
+      "comment" : "Reason. The value is a bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is buff. Buff birds always pass buff on."
+          }
+        }
+      }
+    },
+    "planner.look.buffHidesBarring" : {
+      "comment" : "Reason. The value is a bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is buff, and buff hides barring."
+          }
+        }
+      }
+    },
+    "planner.look.buffHidesBlue" : {
+      "comment" : "Reason. The value is a bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is buff, and buff hides blue."
+          }
+        }
+      }
+    },
+    "planner.look.buffHidesLavender" : {
+      "comment" : "Reason. The value is a bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is buff, and buff hides lavender."
+          }
+        }
+      }
+    },
+    "planner.look.laced" : {
+      "comment" : "Reason. The value is a bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is laced. Laced birds always pass lacing on."
+          }
+        }
+      }
+    },
+    "planner.look.lavender" : {
+      "comment" : "Reason. The value is a bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is lavender. Lavender birds always pass lavender on."
+          }
+        }
+      }
+    },
+    "planner.look.lavenderHidesBlue" : {
+      "comment" : "Reason. The value is a bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is lavender, and lavender hides blue."
+          }
+        }
+      }
+    },
+    "planner.look.lays" : {
+      "comment" : "Reason: a hen's name, then an egg colour, like: blue.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ lays %2$@ eggs."
+          }
+        }
+      }
+    },
+    "planner.look.laysNoBlue" : {
+      "comment" : "Reason about a hen: her name, then an egg colour, like: brown.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ lays %2$@ eggs, so she carries no blue."
+          }
+        }
+      }
+    },
+    "planner.look.laysNoBrown" : {
+      "comment" : "Reason about a hen: her name, then an egg colour, like: blue.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ lays %2$@ eggs, so she carries no brown."
+          }
+        }
+      }
+    },
+    "planner.look.laysPlain" : {
+      "comment" : "Reason. The value is a hen's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ lays plain eggs."
+          }
+        }
+      }
+    },
+    "planner.look.laysSpeckled" : {
+      "comment" : "Reason. The value is a hen's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ lays speckled eggs."
+          }
+        }
+      }
+    },
+    "planner.look.notBarred.he" : {
+      "comment" : "Reason about a rooster. The value is his name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is not barred, so he has no barring to pass on."
+          }
+        }
+      }
+    },
+    "planner.look.notBarred.name" : {
+      "comment" : "Reason about a bird whose sex does not show yet. Both values are its name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is not barred, so %2$@ has no barring to pass on."
+          }
+        }
+      }
+    },
+    "planner.look.notBarred.she" : {
+      "comment" : "Reason about a hen. The value is her name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is not barred, so she has no barring to pass on."
+          }
+        }
+      }
+    },
+    "planner.look.notWhite.he" : {
+      "comment" : "Reason about a rooster. The value is his name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is not white, so he carries no white."
+          }
+        }
+      }
+    },
+    "planner.look.notWhite.name" : {
+      "comment" : "Reason about a bird whose sex does not show yet. Both values are its name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is not white, so %2$@ carries no white."
+          }
+        }
+      }
+    },
+    "planner.look.notWhite.she" : {
+      "comment" : "Reason about a hen. The value is her name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is not white, so she carries no white."
+          }
+        }
+      }
+    },
+    "planner.look.silkie" : {
+      "comment" : "Reason. The value is a bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ has silkie feathers. Silkie birds always pass them on."
+          }
+        }
+      }
+    },
+    "planner.look.splash" : {
+      "comment" : "Reason. The value is a bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is splash. Splash birds always pass blue on."
+          }
+        }
+      }
+    },
+    "planner.look.white" : {
+      "comment" : "Reason. The value is a bird's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is white."
+          }
+        }
+      }
+    },
+    "planner.namePossessive" : {
+      "comment" : "Possessive of a bird's name, for a bird whose sex does not show yet.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@'s"
+          }
+        }
+      }
+    },
+    "planner.needsHen" : {
+      "comment" : "Breeding pen prompt when no hen is penned.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pen a hen to see what might hatch."
+          }
+        }
+      }
+    },
+    "planner.needsRooster" : {
+      "comment" : "Breeding pen prompt when no rooster is penned.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pen a rooster to see what might hatch."
+          }
+        }
+      }
+    },
+    "planner.notPossible.barred" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No barred chicks from this pair."
+          }
+        }
+      }
+    },
+    "planner.notPossible.colour" : {
+      "comment" : "Forecast. The value is a feather colour, like: lavender.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No %@ chicks from this pair."
+          }
+        }
+      }
+    },
+    "planner.notPossible.eggs" : {
+      "comment" : "Forecast. The value is an egg phrase, like: blue eggs.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No hens from this pair will lay %@."
+          }
+        }
+      }
+    },
+    "planner.notPossible.laced" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No laced chicks from this pair."
+          }
+        }
+      }
+    },
+    "planner.notPossible.silkie" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No silkie-feathered chicks from this pair."
+          }
+        }
+      }
+    },
+    "planner.notYet" : {
+      "comment" : "The forecast before the keeper has met it. Hazel is the neighbour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not yet. Hatch a few chicks first, and Hazel will show you a trick."
+          }
+        }
+      }
+    },
+    "planner.nothingYet" : {
+      "comment" : "A pair's forecast when there is nothing to say.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Nothing to say about this pair yet."
+          }
+        }
+      }
+    },
+    "planner.notice" : {
+      "comment" : "Notice on the breeding pen until the keeper first opens the forecast.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New: What might hatch. Tap to see what this pair could hatch."
+          }
+        }
+      }
+    },
+    "planner.origin.localFlock" : {
+      "comment" : "Where a bird came from, as in: came from a local flock.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a local flock"
+          }
+        }
+      }
+    },
+    "planner.origin.neighbour" : {
+      "comment" : "Where a bird came from: the neighbour, Hazel.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hazel"
+          }
+        }
+      }
+    },
+    "planner.origin.outside" : {
+      "comment" : "Where a bird came from, as in: came from outside the flock.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "outside the flock"
+          }
+        }
+      }
+    },
+    "planner.origin.show" : {
+      "comment" : "Where a bird came from, as in: came from the county show.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "the county show"
+          }
+        }
+      }
+    },
+    "planner.origin.village" : {
+      "comment" : "Where a bird came from, as in: came from a Featherwick neighbour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "a Featherwick neighbour"
+          }
+        }
+      }
+    },
+    "planner.pair.notHen" : {
+      "comment" : "CLI plan. The value is a bird's name. Keep the command word plan as it is.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is not a hen. Use: plan <hen> <rooster>"
+          }
+        }
+      }
+    },
+    "planner.pair.notRooster" : {
+      "comment" : "CLI plan. The value is a bird's name. Keep the command word plan as it is.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is not a rooster. Use: plan <hen> <rooster>"
+          }
+        }
+      }
+    },
+    "planner.pair.tooYoung" : {
+      "comment" : "CLI plan: a bird whose sex does not show yet. The value is its name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is too young to tell yet."
+          }
+        }
+      }
+    },
+    "planner.parent.cameDown" : {
+      "comment" : "Reason: a trait, like: lavender; then a bird's mother, father or parent.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ came down from %2$@."
+          }
+        }
+      }
+    },
+    "planner.parent.cameDownNamed" : {
+      "comment" : "Reason: a trait, like: lavender; a bird's mother, father or parent; then that parent's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ came down from %2$@, %3$@."
+          }
+        }
+      }
+    },
+    "planner.parent.isBarred" : {
+      "comment" : "Reason. The value is a bird's mother, father or parent, like: her mother.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is barred."
+          }
+        }
+      }
+    },
+    "planner.parent.isBarredNamed" : {
+      "comment" : "Reason: a bird's mother, father or parent, then that parent's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@, is barred."
+          }
+        }
+      }
+    },
+    "planner.parent.isColour" : {
+      "comment" : "Reason: a bird's mother, father or parent, then a feather colour, like: lavender.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is %2$@."
+          }
+        }
+      }
+    },
+    "planner.parent.isColourNamed" : {
+      "comment" : "Reason: a bird's mother, father or parent; that parent's name; then a feather colour.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@, is %3$@."
+          }
+        }
+      }
+    },
+    "planner.parent.isLaced" : {
+      "comment" : "Reason. The value is a bird's mother, father or parent, like: her mother.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is laced."
+          }
+        }
+      }
+    },
+    "planner.parent.isLacedNamed" : {
+      "comment" : "Reason: a bird's mother, father or parent, then that parent's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@, is laced."
+          }
+        }
+      }
+    },
+    "planner.parent.lays" : {
+      "comment" : "Reason: a bird's mother or parent, then an egg colour, like: blue.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ lays %2$@ eggs."
+          }
+        }
+      }
+    },
+    "planner.parent.laysNamed" : {
+      "comment" : "Reason: a bird's mother or parent; that parent's name; then an egg colour, like: blue.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@, lays %3$@ eggs."
+          }
+        }
+      }
+    },
+    "planner.parent.laysSpeckled" : {
+      "comment" : "Reason. The value is a bird's mother or parent, like: her mother.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ lays speckled eggs."
+          }
+        }
+      }
+    },
+    "planner.parent.laysSpeckledNamed" : {
+      "comment" : "Reason: a bird's mother or parent, then that parent's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@, lays speckled eggs."
+          }
+        }
+      }
+    },
+    "planner.parent.silkie" : {
+      "comment" : "Reason. The value is a bird's mother, father or parent, like: her mother.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ has silkie feathers."
+          }
+        }
+      }
+    },
+    "planner.parent.silkieNamed" : {
+      "comment" : "Reason: a bird's mother, father or parent, then that parent's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@, has silkie feathers."
+          }
+        }
+      }
+    },
+    "planner.possible.barred" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some chicks could be barred."
+          }
+        }
+      }
+    },
+    "planner.possible.colour" : {
+      "comment" : "Forecast. The value is a feather colour, like: lavender.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some chicks could be %@."
+          }
+        }
+      }
+    },
+    "planner.possible.eggs" : {
+      "comment" : "Forecast. The value is an egg phrase, like: blue eggs.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hens from this pair could lay %@."
+          }
+        }
+      }
+    },
+    "planner.possible.laced" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some chicks could be laced."
+          }
+        }
+      }
+    },
+    "planner.possible.silkie" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some chicks could have silkie feathers."
+          }
+        }
+      }
+    },
+    "planner.proof.child" : {
+      "comment" : "Carrier note proof. The value is a possessive: her, his, Pip's, this bird's.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "One of %@ chicks proves it."
+          }
+        }
+      }
+    },
+    "planner.proof.childNamed" : {
+      "comment" : "Carrier note proof: a possessive (her, his, Pip's, this bird's), then the chick's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ chick %2$@ proves it."
+          }
+        }
+      }
+    },
+    "planner.proof.family" : {
+      "comment" : "Carrier note proof. The value is a possessive: her, his, Pip's, this bird's.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ family tree proves it."
+          }
+        }
+      }
+    },
+    "planner.proof.look" : {
+      "comment" : "Carrier note proof. The value is a possessive: her, his, Pip's, this bird's.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ own look shows it."
+          }
+        }
+      }
+    },
+    "planner.proof.originA" : {
+      "comment" : "Carrier note proof: a bird's name, where it came from, then its breed (a name that takes a).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ came from %2$@ as a %3$@, and every one with that look carries it."
+          }
+        }
+      }
+    },
+    "planner.proof.originAn" : {
+      "comment" : "Carrier note proof: a bird's name, where it came from, then its breed (a name that takes an).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ came from %2$@ as an %3$@, and every one with that look carries it."
+          }
+        }
+      }
+    },
+    "planner.proof.outsideFlock" : {
+      "comment" : "Carrier note proof: a bird's name, then where it came from.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ came from %2$@, and every bird from there with that look carries it."
+          }
+        }
+      }
+    },
+    "planner.proof.parent" : {
+      "comment" : "Carrier note proof. The value is a bird's mother, father or parent, like: her mother.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It came from %@."
+          }
+        }
+      }
+    },
+    "planner.proof.parentNamed" : {
+      "comment" : "Carrier note proof: a bird's mother, father or parent, then that parent's name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It came from %1$@, %2$@."
+          }
+        }
+      }
+    },
+    "planner.proof.parents" : {
+      "comment" : "Carrier note proof. The value is a possessive: her, his, Pip's, this bird's.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It came from %@ parents."
+          }
+        }
+      }
+    },
+    "planner.proof.parentsNamed" : {
+      "comment" : "Carrier note proof: a possessive (her, his, Pip's, this bird's), the mother's name, the father's.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It came from %1$@ parents, %2$@ and %3$@."
+          }
+        }
+      }
+    },
+    "planner.ratio.barred" : {
+      "comment" : "Forecast: how many chicks, out of how many. Never a percentage.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "About %1$lld in %2$lld chicks will be barred."
+          }
+        }
+      }
+    },
+    "planner.ratio.colour" : {
+      "comment" : "Forecast: how many chicks, out of how many, then a feather colour. Never a percentage.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "About %1$lld in %2$lld chicks will be %3$@."
+          }
+        }
+      }
+    },
+    "planner.ratio.eggs" : {
+      "comment" : "Forecast: how many hens, out of how many, then an egg phrase, like: blue eggs. Never a percentage.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "About %1$lld in %2$lld hens from this pair will lay %3$@."
+          }
+        }
+      }
+    },
+    "planner.ratio.laced" : {
+      "comment" : "Forecast: how many chicks, out of how many. Never a percentage.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "About %1$lld in %2$lld chicks will be laced."
+          }
+        }
+      }
+    },
+    "planner.ratio.silkie" : {
+      "comment" : "Forecast: how many chicks, out of how many. Never a percentage.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "About %1$lld in %2$lld chicks will have silkie feathers."
+          }
+        }
+      }
+    },
+    "planner.ratioPart" : {
+      "comment" : "One part of a ratio list: how many, out of how many, then a feather or egg colour. Example: 1 in 4 black.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld in %2$lld %3$@"
+          }
+        }
+      }
+    },
+    "planner.ratios.colour" : {
+      "comment" : "Feather colour ratios in one sentence. The value is a list like: 1 in 4 black, 2 in 4 blue.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "About %@."
+          }
+        }
+      }
+    },
+    "planner.ratios.eggs" : {
+      "comment" : "Egg colour ratios in one sentence. The value is a list like: 1 in 2 blue, 1 in 2 brown.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hens from this pair: about %@ eggs."
+          }
+        }
+      }
+    },
+    "planner.reason.breedA" : {
+      "comment" : "Reason: a bird's name, where it came from, then its breed (a name that takes a).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ came from %2$@ as a %3$@."
+          }
+        }
+      }
+    },
+    "planner.reason.breedAn" : {
+      "comment" : "Reason: a bird's name, where it came from, then its breed (a name that takes an).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ came from %2$@ as an %3$@."
+          }
+        }
+      }
+    },
+    "planner.reason.chicks.one" : {
+      "comment" : "Reason, count == 1: a bird's name, the count, then a trait, like: lavender.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ has had %2$lld chick, and it did not show %3$@."
+          }
+        }
+      }
+    },
+    "planner.reason.chicks.other" : {
+      "comment" : "Reason, count other than 1: a bird's name, the count, then a trait, like: lavender.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ has had %2$lld chicks and none showed %3$@."
+          }
+        }
+      }
+    },
+    "planner.reason.daughters.one" : {
+      "comment" : "Reason, count == 1: a bird's name, the count, then an egg trait, like: blue.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ has had %2$lld daughter, and she did not lay %3$@."
+          }
+        }
+      }
+    },
+    "planner.reason.daughters.other" : {
+      "comment" : "Reason, count other than 1: a bird's name, the count, then an egg trait, like: blue.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ has had %2$lld daughters and none laid %3$@."
+          }
+        }
+      }
+    },
+    "planner.reason.family" : {
+      "comment" : "Reason: the hen's name, then the rooster's.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "From the family trees of %1$@ and %2$@."
+          }
+        }
+      }
+    },
+    "planner.reason.grades" : {
+      "comment" : "Reason: the hen's name, then the rooster's.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "From the judge's notes on %1$@ and %2$@ at their last shows."
+          }
+        }
+      }
+    },
+    "planner.reason.lookSettles" : {
+      "comment" : "Reason. The value is a bird's name, or: a bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@'s look settles it."
+          }
+        }
+      }
+    },
+    "planner.reason.unknownFamily" : {
+      "comment" : "Reason. The value is a trait, like: lavender, barring, blue eggs.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No one in their family has shown %@ yet."
+          }
+        }
+      }
+    },
+    "planner.reason.whiteHides" : {
+      "comment" : "Reason. The value is a bird's name, or: a bird.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ is white, and white hides what's underneath."
+          }
+        }
+      }
+    },
+    "planner.sentences" : {
+      "comment" : "Two whole sentences one after the other.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "planner.sexLink.barredCockerels" : {
+      "comment" : "Forecast for a sex-link pair.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Every barred chick will be a cockerel, every plain one a pullet."
+          }
+        }
+      }
+    },
+    "planner.sexLink.barredPullets" : {
+      "comment" : "Forecast for a sex-link pair.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Every barred chick will be a pullet, every plain one a cockerel."
+          }
+        }
+      }
+    },
+    "planner.speckledEggs" : {
+      "comment" : "Inside a forecast sentence.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "speckled eggs"
+          }
+        }
+      }
+    },
+    "planner.thisBird" : {
+      "comment" : "A bird on its own card when the keeper no longer has it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "this bird"
+          }
+        }
+      }
+    },
+    "planner.thisBirdPossessive" : {
+      "comment" : "Possessive of a bird on its own card when the keeper no longer has it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "this bird's"
+          }
+        }
+      }
+    },
+    "planner.trait.barring" : {
+      "comment" : "A trait.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "barring"
+          }
+        }
+      }
+    },
+    "planner.trait.it" : {
+      "comment" : "A trait with no name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "it"
+          }
+        }
+      }
+    },
+    "planner.trait.lacing" : {
+      "comment" : "A trait.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "lacing"
+          }
+        }
+      }
+    },
+    "planner.trait.silkieFeathers" : {
+      "comment" : "A trait.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "silkie feathers"
+          }
+        }
+      }
+    },
+    "planner.type.both" : {
+      "comment" : "Forecast: both penned birds got the same type band, like: good.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Both judged %@ for type."
+          }
+        }
+      }
+    },
+    "planner.type.bothGood" : {
+      "comment" : "Forecast when both birds are judged good for type or better.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chicks should carry it."
+          }
+        }
+      }
+    },
+    "planner.type.named" : {
+      "comment" : "Forecast: the hen's name and type band, then the rooster's name and type band.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ judged %2$@ for type, %3$@ %4$@."
+          }
+        }
+      }
+    },
+    "planner.type.neitherGood" : {
+      "comment" : "Forecast when neither bird is judged good for type.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A partner judged better for type would help."
+          }
+        }
+      }
+    },
+    "planner.type.oneGood" : {
+      "comment" : "Forecast when one bird is judged good for type or better.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some chicks should take after the better one."
+          }
+        }
+      }
+    },
+    "planner.type.unnamed" : {
+      "comment" : "Forecast: the hen's type band, then the rooster's.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The hen judged %1$@ for type, the rooster %2$@."
+          }
+        }
+      }
+    },
+    "planner.unknownUnderWhite" : {
+      "comment" : "Forecast when a white bird hides its colour genes.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "White hides what's underneath. Anything either of them carries could show."
+          }
+        }
+      }
+    },
+    "planner.withHen" : {
+      "comment" : "Introduces one penned hen's forecast lines. The value is her name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With %@:"
+          }
+        }
+      }
+    },
     "records.bird" : {
       "comment" : "Column heading: the bird.",
       "extractionState" : "extracted_with_value",
