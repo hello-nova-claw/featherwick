@@ -81,7 +81,8 @@ struct SimulationTests {
     /// speckled egg in some games of a year, and keeps a hen long enough for "Grand old lady" in most.
     @Test func aYearOfPlayClimbsTheOnceUnreachableRungs() {
         let reports = Simulation.runMany(seeds: 1...10, days: 365)
-        #expect(reports.contains { $0.milestones.contains("speckledEgg") })
+        // The first five are `sim 365 5`, the issue's acceptance case.
+        #expect(reports.prefix(5).contains { $0.milestones.contains("speckledEgg") })
         #expect(reports.count(where: { $0.milestones.contains("elderHen") }) >= 5)
     }
 }
