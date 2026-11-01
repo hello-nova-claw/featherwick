@@ -42,14 +42,20 @@ public struct SaveStore: Sendable {
     /// `.corrupt2`, `.old`. Each may carry a number.
     static let fileMarkers = [".bak", ".corrupt", ".old"]
 
-    /// True when `name` (with or without `.json`) ends the way a backup or quarantine file name does.
-    /// Only the ending counts, so a slot such as `not.bakery` is still a slot. Case does not matter: on a
+    /// True when a slot name ends the way a backup or quarantine file name does (before `.json`). Only the
+    /// ending counts, so a slot such as `not.bakery` is still a slot. Case does not matter: on a
     /// case-insensitive volume `main.BAK1.json` is the file `main.bak1.json`.
     static func isMarked(_ name: String) -> Bool {
-        var lower = name.lowercased()
-        if lower.hasSuffix(".json") { lower.removeLast(".json".count) }
-        let stem = String(lower.reversed().drop(while: \.isNumber).reversed())
+        let stem = String(name.lowercased().reversed().drop(while: \.isNumber).reversed())
         return fileMarkers.contains(where: stem.hasSuffix)
+    }
+
+    /// The same check for a file name in the folder: one `.json` comes off first. A slot name keeps any
+    /// `.json` text of its own, so `farm.bak1.json` as a slot is not mistaken for a file.
+    static func isMarkedFile(_ fileName: String) -> Bool {
+        var stem = fileName
+        if stem.lowercased().hasSuffix(".json") { stem.removeLast(".json".count) }
+        return isMarked(stem)
     }
 
     public var url: URL { directory.appendingPathComponent("\(slot).json") }
@@ -169,7 +175,7 @@ public struct SaveStore: Sendable {
         let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
         return names.compactMap { name in
             guard name.hasSuffix(".json"),
-                !isMarked(name)
+                !isMarkedFile(name)
             else { return nil }
             return String(name.dropLast(".json".count))
         }.sorted()
