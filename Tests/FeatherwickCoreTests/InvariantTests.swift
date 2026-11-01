@@ -120,10 +120,10 @@ struct InvariantTests {
     static func randomCommand(_ s: GameState, _ pick: inout SeededRNG) -> Command {
         if Int.random(in: 0..<8, using: &pick) == 0 { return anyCommand(s, &pick) }
         let birds = s.birdsAtHome + s.boarding
-        let anyBird = birds.randomElement(using: &pick)?.id ?? UUID()
+        let anyBird = birds.randomElement(using: &pick)?.id ?? strayID
         // Mostly sensible moves (so the game gets somewhere), with some nonsense mixed in.
         let broody = s.coop.filter { $0.isBroody(onDay: s.day) }.randomElement(using: &pick)?.id
-        let coopHen = broody ?? s.coop.filter { $0.sex == .hen }.randomElement(using: &pick)?.id ?? UUID()
+        let coopHen = broody ?? s.coop.filter { $0.sex == .hen }.randomElement(using: &pick)?.id ?? strayID
         let sensibleCount = Int.random(in: 1...max(1, s.incubatorSize), using: &pick)
         let roll = Int.random(in: 0..<100, using: &pick)
         switch roll {
@@ -156,8 +156,8 @@ struct InvariantTests {
             case 2: return .buy(.fertileEgg)
             default: return .acceptTrade
             }
-        case 98..<99: return .sit(hen: UUID(), count: 3)
-        default: return .rehome(UUID())
+        case 98..<99: return .sit(hen: strayID, count: 3)
+        default: return .rehome(strayID)
         }
     }
 

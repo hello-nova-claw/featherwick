@@ -13,7 +13,7 @@ import Testing
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let slot = "store-\(UUID().uuidString)"
         if let save { try SaveStore(directory: dir, slot: slot).write(SaveFormat.encode(save)) }
-        return (GameStore(directory: dir, slot: slot), dir, slot)
+        return (GameStore(directory: dir, slot: slot, newGameSeed: 7), dir, slot)
     }
 
     /// A seeded game with every feature open, past the starter choice.
@@ -63,13 +63,14 @@ import Testing
     @Test func everyCommandIsSaved() throws {
         let (store, dir, slot) = try Self.store()
         defer { Self.cleanUp(dir, slot) }
-        store.run(.nameKeeper("Robin"))
-        store.run(.chooseStarter(index: 1, name: "Pip"))
-        store.run(.feed)
-        let again = GameStore(directory: dir, slot: slot)
-        #expect(again.state == store.state)
-        #expect(again.save.rng == store.save.rng)
-        #expect(again.state.keeperName == "Robin")
+        // Reopened after each one, so a later save cannot hide an earlier command that did not save.
+        for command: Command in [.nameKeeper("Robin"), .chooseStarter(index: 1, name: "Pip"), .feed] {
+            store.run(command)
+            let again = GameStore(directory: dir, slot: slot)
+            #expect(again.state == store.state, "\(command)")
+            #expect(again.save.rng == store.save.rng, "\(command)")
+        }
+        #expect(store.state.keeperName == "Robin")
     }
 
     /// Day 1: once the chick is home, the tour opens.
@@ -168,7 +169,7 @@ import Testing
         let shopDay = try #require(Self.nextFeatureDay(after: store.state.day, GameStore.shopFeatures))
         store.fullDays(shopDay - store.state.day)
         #expect(store.hasNewStock)
-        store.sawNewStock()
+        store.run(.buy(.treats))  // buying counts as looking, whether or not the sale goes through
         #expect(!store.hasNewStock)
         // Kept outside the save, per slot, so the next launch knows too.
         #expect(!GameStore(directory: dir, slot: slot).hasNewStock)
@@ -205,6 +206,8 @@ import Testing
             return
         }
         #expect(store.log.count == 2)  // the welcome, and what happened to the save
+        // With no backup to restore, the kept copy is the only copy: it holds the bytes as they were.
+        #expect(try Data(contentsOf: SaveStore(directory: dir, slot: slot).corruptURL()) == Data("not a save".utf8))
     }
 
     @Test func theLogKeepsTheNewest400Lines() throws {

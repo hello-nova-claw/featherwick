@@ -121,7 +121,9 @@ struct VillageTests {
         for id in Self.arcs { #expect(ev.contains(.storyStarted(id)), "\(id)") }
         _ = Self.nights(8, &s, &rng)
         // Every choice waits at once, each for its own person.
-        #expect(Set(s.pendingChoices.map(\.person)) == [.dot, .teddy, .okafor])
+        // Only the arcs: a storyline appended later may wait for a choice too.
+        let arcChoices = s.pendingChoices.filter { Self.arcs.contains($0.story) }
+        #expect(Set(arcChoices.map(\.person)) == [.dot, .teddy, .okafor])
     }
 
     // MARK: - Dot

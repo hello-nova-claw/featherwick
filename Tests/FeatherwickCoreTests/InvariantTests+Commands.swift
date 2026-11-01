@@ -5,6 +5,10 @@ import Testing
 
 /// The fuzzer's reach: every `Command` it can draw, and how it builds one from the game in hand.
 extension InvariantTests {
+    /// An ID that is no bird and no egg, for the fuzzer's nonsense. Fixed, not `UUID()`, so the same seed
+    /// draws the same commands and a failed run replays. Version 0: `makeID` never draws it.
+    static let strayID = UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+
     /// One case per `Command`, without its values. `kind(of:)` has no `default`, so a new command does
     /// not compile here until the fuzzer can draw it.
     enum CommandKind: CaseIterable {
@@ -66,12 +70,12 @@ extension InvariantTests {
     static func anyCommand(_ s: GameState, _ pick: inout SeededRNG) -> Command {
         let birds = s.birdsAtHome + s.boarding
         let nonsense = Int.random(in: 0..<8, using: &pick) == 0
-        let anyBird = nonsense ? UUID() : birds.randomElement(using: &pick)?.id ?? UUID()
-        let coopBird = nonsense ? UUID() : s.coop.randomElement(using: &pick)?.id ?? anyBird
+        let anyBird = nonsense ? strayID : birds.randomElement(using: &pick)?.id ?? strayID
+        let coopBird = nonsense ? strayID : s.coop.randomElement(using: &pick)?.id ?? anyBird
         let broody = s.coop.filter { $0.isBroody(onDay: s.day) }.randomElement(using: &pick)?.id
-        let coopHen = nonsense ? UUID() : broody ?? s.coop.first { $0.sex == .hen }?.id ?? UUID()
+        let coopHen = nonsense ? strayID : broody ?? s.coop.first { $0.sex == .hen }?.id ?? strayID
         let someEggs = s.carton.shuffled(using: &pick).prefix(Int.random(in: 0...4, using: &pick)).map(\.id)
-        let anEgg = nonsense ? UUID() : s.carton.randomElement(using: &pick)?.id ?? UUID()
+        let anEgg = nonsense ? strayID : s.carton.randomElement(using: &pick)?.id ?? strayID
         let names = ["Clover", "Pip", "", "  ", String(repeating: "Feather", count: 8), "Starter"]
         let name = names.randomElement(using: &pick) ?? "Clover"
         switch CommandKind.allCases.randomElement(using: &pick) ?? .feed {
