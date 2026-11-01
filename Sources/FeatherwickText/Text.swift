@@ -319,7 +319,13 @@ public func treeEntries(_ id: UUID, _ s: GameState) -> [TreeLine] {
                 localized: "tree.unnamed", defaultValue: "unnamed", bundle: .module,
                 comment: "In the family tree, in place of a bird with no name.")
             : r.name
-        let kind = treeKindText(r)
+        // A live bird whose sex and breed do not show yet reads "chick": the record holds both (principle 2).
+        let kind =
+            s.bird(r.id)?.revealed == false
+            ? String(
+                localized: "tree.kind.chick", defaultValue: "chick", bundle: .module,
+                comment: "In the family tree, in place of the breed and sex of a bird whose sex does not show yet.")
+            : treeKindText(r)
         let day = r.hatchDay
         guard r.motherID == nil && r.fatherID == nil else {
             return String(
@@ -479,53 +485,39 @@ public func showSeasonNote(_ theme: ShowTheme) -> String? {
 }
 
 /// What the judge looks at in a kind of class, with the points for each part (`ShowPoints`).
+/// One whole sentence per kind, so a translator can order and inflect the parts.
 public func judgingText(_ kind: ShowKind) -> String {
-    let parts: [String] =
-        switch kind {
-        case .breed:
-            [
-                String(
-                    localized: "show.judged.breedType",
-                    defaultValue: "type (size, shape and carriage) \(ShowPoints.breedType)",
-                    bundle: .module, comment: "A part of breed judging. The placeholder is its points out of 100."),
-                String(
-                    localized: "show.judged.breedColour",
-                    defaultValue: "a standard colour and feathering \(ShowPoints.breedColour)", bundle: .module,
-                    comment: "A part of breed judging. The placeholder is its points out of 100."),
-                String(
-                    localized: "show.judged.breedCondition", defaultValue: "condition \(ShowPoints.breedCondition)",
-                    bundle: .module, comment: "A part of breed judging. The placeholder is its points out of 100."),
-            ]
-        case .pet:
-            [
-                String(
-                    localized: "show.judged.petCondition", defaultValue: "condition \(ShowPoints.petCondition)",
-                    bundle: .module, comment: "A part of pet judging. The placeholder is its points out of 100."),
-                String(
-                    localized: "show.judged.petFriendliness",
-                    defaultValue: "friendliness \(ShowPoints.petFriendliness)", bundle: .module,
-                    comment: "A part of pet judging. The placeholder is its points out of 100."),
-            ]
-        case .eggs:
-            [
-                String(
-                    localized: "show.judged.eggMatch", defaultValue: "a matched plate \(ShowPoints.eggMatch)",
-                    bundle: .module, comment: "A part of egg judging. The placeholder is its points out of 100."),
-                String(
-                    localized: "show.judged.eggShape", defaultValue: "shape \(ShowPoints.eggShape)", bundle: .module,
-                    comment: "A part of egg judging. The placeholder is its points out of 100."),
-                String(
-                    localized: "show.judged.eggShell", defaultValue: "shells \(ShowPoints.eggShell)", bundle: .module,
-                    comment: "A part of egg judging. The placeholder is its points out of 100."),
-                String(
-                    localized: "show.judged.eggFreshness", defaultValue: "freshness \(ShowPoints.eggFreshness)",
-                    bundle: .module, comment: "A part of egg judging. The placeholder is its points out of 100."),
-            ]
-        }
-    let list = parts.joined(separator: " · ")
-    return String(
-        localized: "show.judgedOn", defaultValue: "Judged on \(list)", bundle: .module,
-        comment: "What a class is judged on. The placeholder is the parts with their points, split by \" · \".")
+    switch kind {
+    case .breed:
+        let (type, colour, condition) = (ShowPoints.breedType, ShowPoints.breedColour, ShowPoints.breedCondition)
+        return String(
+            localized: "show.judgedOn.breed",
+            defaultValue:
+                "Judged on type (size, shape and carriage) \(type) · a standard colour and feathering \(colour) · condition \(condition)",
+            bundle: .module,
+            comment:
+                "What a breed class is judged on, each part with its points out of 100. Placeholders: the points for type, for colour and feathering, for condition."
+        )
+    case .pet:
+        let (condition, friendliness) = (ShowPoints.petCondition, ShowPoints.petFriendliness)
+        return String(
+            localized: "show.judgedOn.pet",
+            defaultValue: "Judged on condition \(condition) · friendliness \(friendliness)", bundle: .module,
+            comment:
+                "What a pet class is judged on, each part with its points out of 100. Placeholders: the points for condition, for friendliness."
+        )
+    case .eggs:
+        let (match, shape, shell, freshness) =
+            (ShowPoints.eggMatch, ShowPoints.eggShape, ShowPoints.eggShell, ShowPoints.eggFreshness)
+        return String(
+            localized: "show.judgedOn.eggs",
+            defaultValue:
+                "Judged on a matched plate \(match) · shape \(shape) · shells \(shell) · freshness \(freshness)",
+            bundle: .module,
+            comment:
+                "What an egg class is judged on, each part with its points out of 100. Placeholders: the points for a matched plate, for shape, for shells, for freshness."
+        )
+    }
 }
 
 /// A condition worry for show day (`Judge.forecast`), with what the keeper can do about it.
@@ -905,7 +897,7 @@ public func noteText(_ n: JudgeNote) -> String {
                 localized: "note.featheringSmooth", defaultValue: "smooth, tight feathering", bundle: .module,
                 comment: "A judge's note.")
     case .type(let b):
-        let band = b.rawValue
+        let band = bandText(b)
         let words = typeWords(b)
         return String(
             localized: "note.type", defaultValue: "type \(band): \(words)", bundle: .module,
@@ -940,12 +932,12 @@ public func noteText(_ n: JudgeNote) -> String {
     case .friendliness(let f):
         return friendlyText(f)
     case .shape(let b):
-        let band = b.rawValue
+        let band = bandText(b)
         return String(
             localized: "note.shape", defaultValue: "shape \(band)", bundle: .module,
             comment: "A judge's note on eggs. The placeholder is the grade: poor, fair, good or excellent.")
     case .shell(let b):
-        let band = b.rawValue
+        let band = bandText(b)
         return String(
             localized: "note.shell", defaultValue: "shells \(band)", bundle: .module,
             comment: "A judge's note on eggs. The placeholder is the grade: poor, fair, good or excellent.")
@@ -953,6 +945,28 @@ public func noteText(_ n: JudgeNote) -> String {
         return String(
             localized: "note.staleEggs", defaultValue: "\(count) stale", bundle: .module,
             comment: "A judge's note: how many eggs on the plate are stale. The placeholder is the number.")
+    }
+}
+
+/// A judge's grade for one part: type, egg shape or shells.
+func bandText(_ b: JudgeNote.Band) -> String {
+    switch b {
+    case .poor:
+        String(
+            localized: "note.band.poor", defaultValue: "poor", bundle: .module, comment: "A judge's grade for one part."
+        )
+    case .fair:
+        String(
+            localized: "note.band.fair", defaultValue: "fair", bundle: .module, comment: "A judge's grade for one part."
+        )
+    case .good:
+        String(
+            localized: "note.band.good", defaultValue: "good", bundle: .module, comment: "A judge's grade for one part."
+        )
+    case .excellent:
+        String(
+            localized: "note.band.excellent", defaultValue: "excellent", bundle: .module,
+            comment: "A judge's grade for one part.")
     }
 }
 

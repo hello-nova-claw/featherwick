@@ -541,6 +541,54 @@
         }
       }
     },
+    "note.band.excellent" : {
+      "comment" : "A judge's grade for one part.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "excellent"
+          }
+        }
+      }
+    },
+    "note.band.fair" : {
+      "comment" : "A judge's grade for one part.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "fair"
+          }
+        }
+      }
+    },
+    "note.band.good" : {
+      "comment" : "A judge's grade for one part.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "good"
+          }
+        }
+      }
+    },
+    "note.band.poor" : {
+      "comment" : "A judge's grade for one part.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "poor"
+          }
+        }
+      }
+    },
     "note.broody" : {
       "comment" : "A judge's note.",
       "extractionState" : "extracted_with_value",
@@ -4324,122 +4372,38 @@
         }
       }
     },
-    "show.judged.breedColour" : {
-      "comment" : "A part of breed judging. The placeholder is its points out of 100.",
+    "show.judgedOn.breed" : {
+      "comment" : "What a breed class is judged on, each part with its points out of 100. Placeholders: the points for type, for colour and feathering, for condition.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "a standard colour and feathering %lld"
+            "value" : "Judged on type (size, shape and carriage) %1$lld · a standard colour and feathering %2$lld · condition %3$lld"
           }
         }
       }
     },
-    "show.judged.breedCondition" : {
-      "comment" : "A part of breed judging. The placeholder is its points out of 100.",
+    "show.judgedOn.eggs" : {
+      "comment" : "What an egg class is judged on, each part with its points out of 100. Placeholders: the points for a matched plate, for shape, for shells, for freshness.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "condition %lld"
+            "value" : "Judged on a matched plate %1$lld · shape %2$lld · shells %3$lld · freshness %4$lld"
           }
         }
       }
     },
-    "show.judged.breedType" : {
-      "comment" : "A part of breed judging. The placeholder is its points out of 100.",
+    "show.judgedOn.pet" : {
+      "comment" : "What a pet class is judged on, each part with its points out of 100. Placeholders: the points for condition, for friendliness.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "type (size, shape and carriage) %lld"
-          }
-        }
-      }
-    },
-    "show.judged.eggFreshness" : {
-      "comment" : "A part of egg judging. The placeholder is its points out of 100.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "freshness %lld"
-          }
-        }
-      }
-    },
-    "show.judged.eggMatch" : {
-      "comment" : "A part of egg judging. The placeholder is its points out of 100.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "a matched plate %lld"
-          }
-        }
-      }
-    },
-    "show.judged.eggShape" : {
-      "comment" : "A part of egg judging. The placeholder is its points out of 100.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "shape %lld"
-          }
-        }
-      }
-    },
-    "show.judged.eggShell" : {
-      "comment" : "A part of egg judging. The placeholder is its points out of 100.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "shells %lld"
-          }
-        }
-      }
-    },
-    "show.judged.petCondition" : {
-      "comment" : "A part of pet judging. The placeholder is its points out of 100.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "condition %lld"
-          }
-        }
-      }
-    },
-    "show.judged.petFriendliness" : {
-      "comment" : "A part of pet judging. The placeholder is its points out of 100.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "friendliness %lld"
-          }
-        }
-      }
-    },
-    "show.judgedOn" : {
-      "comment" : "What a class is judged on. The placeholder is the parts with their points, split by \" · \".",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Judged on %@"
+            "value" : "Judged on condition %1$lld · friendliness %2$lld"
           }
         }
       }
@@ -5187,6 +5151,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Father: unknown"
+          }
+        }
+      }
+    },
+    "tree.kind.chick" : {
+      "comment" : "In the family tree, in place of the breed and sex of a bird whose sex does not show yet.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "chick"
           }
         }
       }
