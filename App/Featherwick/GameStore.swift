@@ -87,12 +87,16 @@ final class GameStore {
         // A local first: @Observable can't read `self.store` until every property is set.
         let store = SaveStore(directory: directory, slot: slot)
         self.store = store
-        self.slot = slot
+        self.slot = store.slot
         let (loaded, recovery) = store.load()
         if case .tooNew(let version) = recovery { saveTooNew = version } else { saveTooNew = nil }
         save = loaded ?? Self.newSave(rules: .standard)
-        seenStockKey = "seenNewStock.\(slot)"
-        let seen = UserDefaults.standard.stringArray(forKey: seenStockKey) ?? []
+        // Keyed by the cleaned slot, as the save is. A key under the raw name from before is read once.
+        seenStockKey = "seenNewStock.\(store.slot)"
+        let legacyKey = "seenNewStock.\(slot)"
+        let seen =
+            UserDefaults.standard.stringArray(forKey: seenStockKey)
+            ?? (legacyKey == seenStockKey ? nil : UserDefaults.standard.stringArray(forKey: legacyKey)) ?? []
         seenNewStock = Set(seen.compactMap(Feature.init(rawValue:)))
         if case .choosingStarter = state.phase {
             append("Welcome to Featherwick.")

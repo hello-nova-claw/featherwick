@@ -17,10 +17,45 @@ public struct SaveStore: Sendable {
     public let slot: String
     public let backupCount: Int
 
+    /// The slot name is cleaned here, so every front end gets the same rule and no name can reach
+    /// outside `directory` (`--slot ../x` is slot `x`). A name with nothing left is the default slot.
     public init(directory: URL, slot: String = SaveStore.defaultSlot, backupCount: Int = 2) {
         self.directory = directory
-        self.slot = slot.isEmpty ? SaveStore.defaultSlot : slot
+        let clean = SaveStore.cleanSlotName(slot)
+        self.slot = clean.isEmpty ? SaveStore.defaultSlot : clean
         self.backupCount = max(0, backupCount)
+    }
+
+    /// Only letters, numbers, `-`, `_` and inner dots. No `/`, so the name is one file in the save folder.
+    /// Empty when nothing is left, so a front end can say the name was not usable.
+    public static func cleanSlotName(_ name: String) -> String {
+        // Dots stay, so an older slot such as `family.2025` still finds its file. With no slash left a
+        // dot cannot climb out of the folder, and leading dots go so the file is never hidden or `..`.
+        let kept = name.filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" || $0 == "." }
+        let clean = String(kept.drop(while: { $0 == "." }))
+        // A name that ends like another slot's backup or quarantine (`main.bak1`) loses its dots, so it
+        // never overwrites that file and `slots(in:)` still lists it.
+        return isMarked(clean) ? clean.filter { $0 != "." } : clean
+    }
+
+    /// The endings that mark a backup, a quarantined copy or an old file, not a slot: `.bak1`, `.corrupt`,
+    /// `.corrupt2`, `.old`. Each may carry a number.
+    static let fileMarkers = [".bak", ".corrupt", ".old"]
+
+    /// True when a slot name ends the way a backup or quarantine file name does (before `.json`). Only the
+    /// ending counts, so a slot such as `not.bakery` is still a slot. Case does not matter: on a
+    /// case-insensitive volume `main.BAK1.json` is the file `main.bak1.json`.
+    static func isMarked(_ name: String) -> Bool {
+        let stem = String(name.lowercased().reversed().drop(while: \.isNumber).reversed())
+        return fileMarkers.contains(where: stem.hasSuffix)
+    }
+
+    /// The same check for a file name in the folder: one `.json` comes off first. A slot name keeps any
+    /// `.json` text of its own, so `farm.bak1.json` as a slot is not mistaken for a file.
+    static func isMarkedFile(_ fileName: String) -> Bool {
+        var stem = fileName
+        if stem.lowercased().hasSuffix(".json") { stem.removeLast(".json".count) }
+        return isMarked(stem)
     }
 
     public var url: URL { directory.appendingPathComponent("\(slot).json") }
@@ -140,7 +175,7 @@ public struct SaveStore: Sendable {
         let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
         return names.compactMap { name in
             guard name.hasSuffix(".json"),
-                !name.contains(".bak"), !name.contains(".corrupt"), !name.contains(".old")
+                !isMarkedFile(name)
             else { return nil }
             return String(name.dropLast(".json".count))
         }.sorted()
