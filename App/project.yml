@@ -24,7 +24,8 @@ targets:
     type: application
     platform: iOS
     # Every file under Featherwick/ is built in: Swift and Metal (Scene/SeasonRamp.metal, into the
-    # default shader library) as code, the rest (fonts, Sounds/*.caf, Art/Scene/*.png) as resources,
+    # default shader library) as code, the rest (fonts, Sounds/*.caf, Art/Scene/*.png, the privacy
+    # manifest PrivacyInfo.xcprivacy) as resources,
     # copied flat to the bundle root, so every file name must be unique. The READMEs are notes for people, so they stay out
     # (two README.md files at the bundle root would also clash).
     sources:
@@ -62,6 +63,9 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: >-
           UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown
           UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        # The game uses no encryption beyond what iOS itself provides, so App Store Connect asks no export
+        # compliance questions on each upload.
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
       configs:
         # The old test screens (Featherwick/TestTools/) are Debug only: Settings opens them under `#if DEBUG`.
         # Leaving the files out of Beta and Release keeps their code out of every shipped build.

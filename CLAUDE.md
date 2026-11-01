@@ -116,6 +116,8 @@ components, screens 1a–9a). The painted farm and bird art come later; dashed b
   - The shared helpers (launch, rail dots, label-prefix buttons) are in `UITestSupport.swift`.
 - ≡ → "Open test tools" shows the old plain screens (`TestTools/`), with every action and the full log.
   Debug builds only: `project.yml` leaves `TestTools/` out of Beta and Release (`EXCLUDED_SOURCE_FILE_NAMES`).
+- `PrivacyInfo.xcprivacy`: the privacy manifest. A new required-reason API (file timestamps, disk space,
+  system uptime, `UserDefaults`) needs its reason there.
 - `Beta/`: TestFlight questions after the first hatch and the first show (once per save slot). Compiled only with the `BETA` flag (Beta config, "Featherwick Beta" scheme) or `DEBUG`, and shown only on a sandbox receipt. Answers go to `beta-notes.json` (not the save); Settings ▸ Share beta notes.
 
 ```sh
