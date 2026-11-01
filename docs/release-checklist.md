@@ -14,6 +14,18 @@ Follow these steps for each TestFlight or App Store build. CI never uploads a bu
 5. `cd App && xcodegen`, then archive in Xcode: the "Featherwick Beta" scheme for TestFlight, the "Featherwick" scheme for the App Store.
 6. Upload from the Organizer. Signing material stays in the keychain; it never enters the repository.
 
+### Manual App Store archive
+
+CI has no archive or upload step. The maintainer archives on her own Mac.
+
+1. Raise `CURRENT_PROJECT_VERSION` in `App/project.yml`. App Store Connect refuses a build number it has seen before, so every upload needs a new one. Commit the change.
+2. `cd App && xcodegen`. The project is generated, so a change to `project.yml` reaches Xcode only after this step.
+3. Copy `App/Config/Local.xcconfig.example` to `Local.xcconfig` and set the team ID, if that is not done yet. The file is git-ignored.
+4. In Xcode, choose the "Featherwick" scheme and "Any iOS Device (arm64)", then Product ▸ Archive. Never archive "Featherwick Beta" for the App Store: it compiles in the beta questions and the testing aids.
+5. In the Organizer, select the archive and choose Validate App. The report must list no missing icon and no missing privacy manifest reason.
+6. Choose Distribute App ▸ App Store Connect ▸ Upload.
+7. Check a Release build has none of the testing aids: Settings shows no "Open test tools", no Time of day and no Fast forward.
+
 ## The listing
 
 7. The App Store or TestFlight text, screenshots and "What to test" match `CHANGELOG.md`.
