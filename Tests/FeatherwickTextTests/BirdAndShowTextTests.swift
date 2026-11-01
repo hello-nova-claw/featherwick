@@ -244,7 +244,7 @@ struct BirdAndShowTextTests {
             Bird(
                 id: Self.fixedID(id), name: name, breed: .orpington,
                 genome: Breed.orpington.purebred(sex, variety: .buff),
-                hatchDay: day, motherID: mother, fatherID: father, origin: Bird.neighbourOrigin)
+                hatchDay: day, motherID: mother, fatherID: father, origin: Bird.neighbourOrigin, revealed: true)
         }
         let greatGranny = record(10, "Hetty", .hen, day: -300)
         let greatGrandad = record(11, "Ned", .rooster, day: -300)
