@@ -373,6 +373,26 @@ import Testing
         #expect(!treeLines(chick, s).contains { $0.contains("carries") })
     }
 
+    /// A chick whose sex does not show yet reads "chick" in the family tree, never its breed and sex,
+    /// in the brooder or rehomed. Once it shows, the tree gives both.
+    @Test func theFamilyTreeHidesAnUnrevealedSex() {
+        var (s, _, _, chick) = Self.flock()
+        s.plannerKnown = false
+        #expect(treeLines(chick, s).first == "Moss (chick, hatched day \(s.day))")
+        guard let at = s.brooder.firstIndex(where: { $0.id == chick }) else {
+            Issue.record("no Moss")
+            return
+        }
+        var moss = s.brooder.remove(at: at)
+        s.rehomed.append(moss)
+        #expect(treeLines(chick, s).first == "Moss (chick, hatched day \(s.day))")
+        s.rehomed.removeAll()
+        moss.revealed = true
+        s.brooder.append(moss)
+        #expect(treeLines(chick, s).first == "Moss (orpington rooster, hatched day \(s.day))")
+        #expect(treeLines(chick, s).contains { $0.hasPrefix("├ Mother: Clover (orpington hen, hatched day") })
+    }
+
     /// "They" is only the pair the line is about. Any other pair is named.
     @Test func theyMeansThePairShown() {
         var (s, hen, rooster, _) = Self.flock()
