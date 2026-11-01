@@ -58,8 +58,23 @@ struct TextTests {
     @Test(arguments: [UInt64(1), 2, 3, 4, 5])
     func everyEventHasWords(seed: UInt64) {
         for (event, state) in Self.play(seed: seed, days: 120) {
-            guard let words = eventText(event, state) else { continue }
+            guard let words = eventText(event, state) else {
+                #expect(Self.isSilent(event, state), "no words for \(event)")
+                continue
+            }
             #expect(!words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "\(event)")
+        }
+    }
+
+    /// The events that say nothing by design, because other words already tell them.
+    static func isSilent(_ event: GameEvent, _ s: GameState) -> Bool {
+        switch event {
+        case .grewUp: true  // the reveal and the look tell it
+        case .storyFinished: true  // the story's last step tells it
+        case .introduced(.shows): true  // the neighbour's show tip tells it
+        case .showPodium(_, let podium): podium.isEmpty
+        case .jobsSet: s.todaysJobs.isEmpty
+        default: false
         }
     }
 

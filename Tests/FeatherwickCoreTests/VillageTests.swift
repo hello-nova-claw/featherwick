@@ -106,9 +106,11 @@ struct VillageTests {
 
     @Test func noArcWaitsOnAnotherAndAllRunAtOnce() {
         for id in Self.arcs { #expect(Storylines.story(id)?.after == []) }
-        // Append, never insert: Hazel's three stories keep their places.
-        #expect(Storylines.all.map(\.id) == ["broodySilkie", "lacedGift", "heritageBreed"] + Self.arcs + ["marigold"])
-        #expect(Storylines.all.map(\.person) == [.hazel, .hazel, .hazel, .dot, .teddy, .okafor, .bea, .hazel])
+        // Append, never insert: these keep their places, and a later storyline goes after them.
+        let shipped = ["broodySilkie", "lacedGift", "heritageBreed"] + Self.arcs + ["marigold"]
+        #expect(Storylines.all.map(\.id).starts(with: shipped))
+        let people: [Person] = [.hazel, .hazel, .hazel, .dot, .teddy, .okafor, .bea, .hazel]
+        #expect(Storylines.all.map(\.person).starts(with: people))
 
         var (s, rng) = Self.game()
         s.day = 29
@@ -119,7 +121,9 @@ struct VillageTests {
         for id in Self.arcs { #expect(ev.contains(.storyStarted(id)), "\(id)") }
         _ = Self.nights(8, &s, &rng)
         // Every choice waits at once, each for its own person.
-        #expect(Set(s.pendingChoices.map(\.person)) == [.dot, .teddy, .okafor])
+        // Only the arcs: a storyline appended later may wait for a choice too.
+        let arcChoices = s.pendingChoices.filter { Self.arcs.contains($0.story) }
+        #expect(Set(arcChoices.map(\.person)) == [.dot, .teddy, .okafor])
     }
 
     // MARK: - Dot

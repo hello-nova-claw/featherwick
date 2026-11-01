@@ -72,11 +72,15 @@ struct QuirkTests {
         }
     }
 
+    /// Read from the table, not counted, so an appended quirk breaks no test.
     @Test func theSetsAreAsDesigned() {
-        #expect(Quirk.allCases.count == 16)
-        #expect(Set(Quirk.only(.hen)) == [.singsWhenLaying, .broodsOverGolfBalls])
-        #expect(Quirk.only(.rooster) == [.runsAtTheFox])
-        #expect(Quirk.neutral.count == 13)
+        // Every quirk is in exactly one set: neutral, hens only or roosters only.
+        let sets = Quirk.neutral + Quirk.only(.hen) + Quirk.only(.rooster)
+        #expect(sets.count == Quirk.allCases.count && Set(sets) == Set(Quirk.allCases))
+        #expect(Set(Quirk.only(.hen)).isSuperset(of: [.singsWhenLaying, .broodsOverGolfBalls]))
+        #expect(Quirk.only(.rooster).contains(.runsAtTheFox))
+        // Enough neutral quirks for every bird to have its own pair.
+        #expect(Quirk.neutral.count > Quirks.neutralCount)
         // Raw values are what any later save or table keys on: they must not change.
         #expect(Quirk.dustBathLover.rawValue == "dustBathLover")
         #expect(Quirk.alwaysLastToBed.rawValue == "alwaysLastToBed")
