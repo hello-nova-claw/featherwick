@@ -530,14 +530,19 @@ struct FeedbackToggles: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.s) {
-            Toggle("Sound", isOn: $soundOn)
-                .font(Typeface.body)
-                .frame(minHeight: 44)
+            // Hidden until a sound file ships (`Sounds/`): without one the switch would change nothing.
+            if Sound.isBundled {
+                Toggle("Sound", isOn: $soundOn)
+                    .font(Typeface.body)
+                    .frame(minHeight: 44)
+            }
             Toggle("Haptics", isOn: $hapticsOn)
                 .font(Typeface.body)
                 .frame(minHeight: 44)
-            Text("Sounds are quiet when the silent switch is on.")
-                .font(Typeface.caption).foregroundStyle(palette.inkMuted)
+            if Sound.isBundled {
+                Text("Sounds are quiet when the silent switch is on.")
+                    .font(Typeface.caption).foregroundStyle(palette.inkMuted)
+            }
         }
         .tint(palette.ink)
     }
