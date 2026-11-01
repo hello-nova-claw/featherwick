@@ -1,0 +1,1 @@
+A save from a newer version of Featherwick now waits safely for an update, and is never replaced by a new game.

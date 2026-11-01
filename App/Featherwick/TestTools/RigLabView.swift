@@ -23,7 +23,7 @@ struct RigLabView: View {
 
     @State private var mode: Mode = .manual
     /// The body shape whose painted kit the stage uses. Nil, or a shape with no kit: the path rig.
-    @State private var build: BodyShape?
+    @State private var build: KitName?
     /// Nil keeps the bird's (or the sample's) own colours.
     @State private var tone: Tone?
     @State private var pattern: LabPattern = .none
@@ -104,7 +104,7 @@ struct RigLabView: View {
             c.pattern = .barring
             c.patternColour = Tone.white.artColour
         }
-        c.build = build
+        c.use(kit: build)
         return c
     }
 
@@ -174,9 +174,9 @@ struct RigLabView: View {
     private var rigControls: some View {
         Group {
             Picker("Painted kit", selection: $build) {
-                Text("None (path rig)").tag(BodyShape?.none)
-                ForEach(BodyShape.allCases, id: \.self) { shape in
-                    Text(shape.rawValue).tag(BodyShape?.some(shape))
+                Text("None (path rig)").tag(KitName?.none)
+                ForEach(KitName.all, id: \.self) { name in
+                    Text(name.folder).tag(KitName?.some(name))
                 }
             }
             Picker("Feathers", selection: $tone) {
@@ -210,7 +210,7 @@ struct RigLabView: View {
                     .font(Typeface.caption).foregroundStyle(palette.inkMuted)
                     .lineLimit(2).truncationMode(.head)
             } else {
-                Text("No kit loaded (a chick, or no Parts/\(build.rawValue)/kit.json): the path rig shows.")
+                Text("No kit loaded (a chick, or no Parts/\(build.folder)/kit.json): the path rig shows.")
                     .font(Typeface.caption).foregroundStyle(palette.inkMuted)
             }
             Text(

@@ -140,6 +140,9 @@ enum ChickenRigMetrics {
     /// How far a planted foot slides back under the body in one stance, in rig heights, for a grown bird.
     /// Matched to the scene's walking speed (about 0.4 heights a second), so the feet do not skate.
     static let stepLength: Double = 0.16
+    /// While walking, a painted kit's feet step this far behind or in front of the middle of its two feet (rig
+    /// heights, for a grown bird), whatever their drawn gap. The path rig steps on its own drawn feet.
+    static let footSpread: Double = 0.04
     /// How high a foot lifts at the top of its swing, as a part of the hip's height: a high, deliberate step.
     static let liftShare: Double = 0.32
     /// Degrees the toes curl under while the foot is in the air.
@@ -164,6 +167,9 @@ enum ChickenRigMetrics {
     static let peckNeckSwing: Double = 88
     static let peckHeadDip: Double = 10
     static let peckCrouch: Double = 0.12
+    /// A kit that pecks by reach (`peckReach`): how much nearer the base of the neck the head comes at
+    /// halfway down, as a part of the neck's length. Keeps the head from swinging out forward.
+    static let peckTuck: Double = 0.25
     /// Parts of the peck: going down, then holding at the bottom. The rest comes back up.
     static let peckDown: Double = 0.4
     static let peckHold: Double = 0.15

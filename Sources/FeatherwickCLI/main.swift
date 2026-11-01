@@ -28,33 +28,14 @@ func newSave(seed: UInt64) -> SaveFile {
     return SaveFile(state: state, rng: rng)
 }
 
+/// The slot's save, or nil to start a new game. Old saves are migrated on load and written back in the new
+/// format on the next save. An unreadable save is kept (quarantined, never deleted).
 func load(from store: SaveStore) -> SaveFile? {
-    let data = (try? store.read()) ?? nil
-    guard let data else {
-        // Main save gone: fall back to the newest backup if there is one.
-        if let b = store.newestBackupData(), let save = try? SaveFormat.decode(b) {
-            print("Main save was missing; restored from a backup.")
-            return save
-        }
-        return nil
-    }
-    do {
-        // Old saves are migrated here. They are written back in the new format on the next save.
-        return try SaveFormat.decode(data)
-    } catch SaveFormat.LoadError.tooNew(let version) {
-        // Never overwrite a save from a newer game.
-        print("This save is from a newer version of Featherwick (save version \(version)). Update the game to load it.")
-        exit(1)
-    } catch {
-        // Not readable: keep it (quarantine, never delete), then try a backup, else start fresh.
-        let kept = store.quarantine().map { " (kept as \($0.lastPathComponent))" } ?? ""
-        if let b = store.newestBackupData(), let save = try? SaveFormat.decode(b) {
-            print("Your save couldn't be read\(kept). Restored from a backup.")
-            return save
-        }
-        print("Your save couldn't be read\(kept). Starting a new game.")
-        return nil
-    }
+    let (save, recovery) = store.load()
+    if let words = recoveryText(recovery) { print(words) }
+    // Never overwrite a save from a newer game.
+    if case .tooNew = recovery { exit(1) }
+    return save
 }
 
 @MainActor func save(_ file: SaveFile) {
