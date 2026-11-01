@@ -1119,13 +1119,31 @@ public func milestoneText(_ id: String) -> (title: String, hint: String) {
     case "growingFlock": ("A proper flock", "Grow your flock to eight birds.")
     case "blueEgg": ("Blue egg", "Keep an Araucana line laying blue eggs.")
     case "oliveEgg": ("Olive egg", "Cross a blue-egg bird with a brown-egg bird for an olive egger.")
-    case "speckledEgg": ("Speckled egg", "Breed the speckle gene into a pair to get speckled eggs.")
+    case "speckledEgg":
+        (
+            String(
+                localized: "milestone.speckledEgg.title", defaultValue: "Speckled egg", bundle: .module,
+                comment: "Journal: the speckled-egg milestone."),
+            String(
+                localized: "milestone.speckledEgg.hint",
+                defaultValue:
+                    "Some Orpingtons and Wyandottes carry speckle without showing it. Pair two carriers, and some daughters lay speckled eggs.",
+                bundle: .module, comment: "Journal: how to reach the speckled-egg milestone.")
+        )
     case "colourCollector": ("Collector", "Record eight kinds in your Breed Book.")
     case "showRibbon": ("In the ribbons", "Place in the top three at the county show.")
     case "blueRibbon": ("Blue ribbon", "Win a class at the county show.")
     case "lapChicken": ("Lap chicken", "Tame a bird all the way to a lap chicken.")
     case "storyteller": ("Neighbourly", "Finish a Featherwick storyline.")
-    case "elderHen": ("Grand old lady", "Keep a hen into her beloved retirement.")
+    case "elderHen":
+        (
+            String(
+                localized: "milestone.elderHen.title", defaultValue: "Grand old lady", bundle: .module,
+                comment: "Journal: the milestone for keeping a hen to an old age."),
+            String(
+                localized: "milestone.elderHen.hint", defaultValue: "Keep a hen until she is two years old.",
+                bundle: .module, comment: "Journal: how to reach the old-hen milestone. Two in-game years.")
+        )
     case "chocolateEgg": ("Chocolate egg", "Find a hen that lays very dark chocolate-brown eggs.")
     case "greenEgg": ("Green egg", "Cross an Araucana with a brown-egg breed. Some of the hens lay green eggs.")
     case "whiteEgg":
@@ -1134,6 +1152,18 @@ public func milestoneText(_ id: String) -> (title: String, hint: String) {
         ("Guessed hen or roo right", "Guess hen or roo for a young chick. You find out when its feathers come in.")
     default: (id, "")
     }
+}
+
+/// The journal line under a milestone not reached yet: its hint, or, while no breed in the game can
+/// make it, a line that says so. No hint sends the keeper after an egg no bird lays.
+public func milestoneHint(_ m: Milestone) -> String {
+    guard m.isAvailable else {
+        return String(
+            localized: "milestone.notYet",
+            defaultValue: "Not yet: this one waits for a new breed. A lucky hen may lay one before then.",
+            bundle: .module, comment: "Journal: a milestone no breed in the game can make yet.")
+    }
+    return milestoneText(m.id).hint
 }
 
 /// A quirk in one line, present tense. Hen and rooster lines may say she or he: they show only once
@@ -1171,7 +1201,7 @@ public func journalLines(_ s: GameState) -> [String] {
     for m in Milestones.all {
         let got = s.milestonesReached.contains(m.id)
         let t = milestoneText(m.id)
-        out.append("  \(got ? "✓" : "○") \(t.title)" + (got ? "" : " — \(t.hint)"))
+        out.append("  \(got ? "✓" : "○") \(t.title)" + (got ? "" : " — \(milestoneHint(m))"))
     }
     return out
 }

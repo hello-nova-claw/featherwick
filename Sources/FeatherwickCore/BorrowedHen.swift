@@ -67,7 +67,8 @@ extension GameState {
 extension Breed {
     /// The genome of a purebred hen of this breed who could be `chick`'s mother, or nil if none of the
     /// breed's colours can be. She is one of the breed's colours (a public recipe, so `Knowledge` reads
-    /// her as it reads any bought bird) that holds one of the chick's alleles at every single gene.
+    /// her as it reads any bought bird) that holds one of the chick's alleles at every single gene. At a
+    /// recessive the breed carries (`BreedDefinition.carried`) she takes the chick's first copy.
     /// Her one Z copy is the chick's first: her barring matches the chick's, so it never tells its sex.
     /// One draw from `rng` picks among the colours that fit.
     public func motherGenome<R: RandomNumberGenerator>(of chick: Genome, using rng: inout R) -> Genome? {
@@ -76,12 +77,30 @@ extension Breed {
         let fits = definition.varieties.compactMap { variety -> Genome? in
             var g = purebred(.hen, variety: variety)
             for locus in Loci.zLinked { g.setAlleles([chick.alleles(at: locus)[0]], at: locus) }
+            // A recessive that runs in the breed: she has the chick's first copy and the usual one.
+            for gene in definition.carried {
+                guard let def = Loci.definition(gene.locus), def.inheritance == .autosomal else { continue }
+                g.setAlleles([chick.alleles(at: def)[0], gene.first], at: def)
+            }
             let shares = autosomal.allSatisfy { !Set(g.alleles(at: $0)).isDisjoint(with: chick.alleles(at: $0)) }
             let genotypes = GenotypeSpace.all.map { Genotype(g.alleles(at: $0.locus), at: $0.locus) }
             return shares && recipes.contains(genotypes) ? g : nil
         }
         guard !fits.isEmpty else { return nil }
         return fits[Int.random(in: 0..<fits.count, using: &rng)]
+    }
+
+    /// The genome of a purebred rooster of this breed who could be `chick`'s father beside the mother from
+    /// `motherGenome(of:using:)`. At a recessive the breed carries he takes the chick's second copy, the
+    /// one its mother did not give, and the usual one. So a chick with two carried copies has a father
+    /// who could give one. He makes no draw from the game's random numbers.
+    public func fatherGenome(of chick: Genome) -> Genome {
+        var g = purebred(.rooster)
+        for gene in definition.carried {
+            guard let def = Loci.definition(gene.locus), def.inheritance == .autosomal else { continue }
+            g.setAlleles([chick.alleles(at: def)[1], gene.first], at: def)
+        }
+        return g
     }
 }
 
@@ -115,10 +134,15 @@ extension Engine {
             hatchDay: s.day - spec.ageDays.value(in: s.rules), origin: spec.owner.origin, revealed: true
         ).withFounderQuality()
         mother.genome.shareQuantitativeAlleles(with: starter.genome)
+        // Her founder draw must not undo the copy she shares with the chick at a carried recessive.
+        for def in breed.definition.carried.compactMap({ Loci.definition($0.locus) }) {
+            mother.genome.setAlleles(genome.alleles(at: def), at: def)
+        }
         // Her mate: a purebred rooster of the breed at his owner's. The keeper never sees him, so his
         // record has no look, and `Knowledge` reads only his breed.
         let mate = Bird(
-            id: makeID(using: &rng), name: "\(spec.name)'s mate", breed: breed, genome: breed.purebred(.rooster),
+            id: makeID(using: &rng), name: "\(spec.name)'s mate", breed: breed,
+            genome: breed.fatherGenome(of: starter.genome),
             hatchDay: mother.hatchDay, origin: spec.owner.origin, revealed: true)
         s.pedigree[mate.id] = PedigreeRecord(mate, look: nil)
         s[keyPath: home][i].motherID = mother.id

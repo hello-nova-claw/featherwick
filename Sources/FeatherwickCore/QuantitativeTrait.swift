@@ -88,7 +88,8 @@ public struct QuantitativeTrait: Sendable {
 }
 
 extension Bird {
-    /// A bird bred outside the player's flock (neighbour, shop, trade) gets random quality genes.
+    /// A bird bred outside the player's flock (neighbour, shop, trade) gets random quality genes, and
+    /// may carry one of its breed's hidden recessives.
     /// The random numbers come from the bird's own ID, so this does not move the game's RNG.
     public func withFounderQuality() -> Bird {
         var local = localRNG(salt: 0)
@@ -103,6 +104,15 @@ extension Bird {
                 default: 0.5
                 }
             trait.randomise(&copy.genome, plusChance: chance, using: &local)
+        }
+        // Recessives that run in the breed (`BreedDefinition.carried`). Their own salt, so the quality
+        // genes above stay as they were for every existing bird ID.
+        var carriers = localRNG(salt: 0x4341_5252)  // "CARR"
+        let def = breed.definition
+        for gene in def.carried {
+            let a = Double.roll(def.carriedShare, using: &carriers) ? gene.second : gene.first
+            let b = Double.roll(def.carriedShare, using: &carriers) ? gene.second : gene.first
+            GeneSetting(locus: gene.locus, first: a, second: b).apply(to: &copy.genome)
         }
         return copy
     }

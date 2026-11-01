@@ -165,6 +165,26 @@ struct TextTests {
         }
     }
 
+    /// A milestone no breed in the game can make yet sends the keeper after nothing: the journal says
+    /// it waits for a new breed instead of giving its hint. The others show their hint.
+    @Test func theJournalGivesNoHintForAnEggNoBreedLays() {
+        for m in Milestones.all {
+            if m.isAvailable {
+                #expect(milestoneHint(m) == milestoneText(m.id).hint)
+            } else {
+                #expect(milestoneHint(m) != milestoneText(m.id).hint, "\(m.id)")
+                #expect(milestoneHint(m).contains("new breed"))
+            }
+        }
+        var rng = SeededRNG(seed: 1)
+        var s = Engine.newGame(using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        let journal = journalLines(s).joined(separator: "\n")
+        #expect(!journal.contains("Silkie sometimes"))
+        #expect(!journal.contains("chocolate-brown"))
+        #expect(journal.contains("Orpingtons and Wyandottes carry speckle"))
+    }
+
     /// 4th, 5th and 6th used to show as "3rd" in the app. Every placing needs its own word.
     @Test func placingsHaveTheirOwnOrdinals() {
         #expect(placingText(0) == "not placed")

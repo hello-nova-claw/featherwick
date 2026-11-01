@@ -69,7 +69,7 @@ struct JournalView: View {
                         VStack(alignment: .leading) {
                             Text("\(reached ? "✓" : "○") \(words.title)")
                             if !reached {
-                                Text(words.hint).font(.caption).foregroundStyle(.secondary)
+                                Text(milestoneHint(m)).font(.caption).foregroundStyle(.secondary)
                             }
                         }
                     }

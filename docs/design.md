@@ -239,7 +239,8 @@ genotypes that cannot be:
    the single genes. It never reads a real bird.
 2. **Origin.** A bird from outside the flock (not hatched at home) is one of its breed's public
    recipes (`RecipeTable`) that gives its look. Where it was bred decides this, not its parents: the
-   starter has its mother (Marigold) on record, and is still Hazel's purebred stock.
+   starter has its mother (Marigold) on record, and is still Hazel's purebred stock. A breed's
+   recipes hold each recessive that runs in it (`BreedDefinition.carried`) as no copy, one or two.
 3. **Family up.** A chick keeps only genotypes its parents can give it.
 4. **Family down.** A parent keeps a genotype only if every seen chick can come from it.
 5. Steps 3 and 4 repeat until nothing changes.
@@ -496,7 +497,7 @@ Each line has one `Reason`. The app shows it on a tap. The CLI shows it in brack
 | Barring | B / b+ | Sex-linked (Z), dominant | Hens ZW, roosters ZZ |
 | Blue shell | O / o+ | Dominant | |
 | Brown coating | Br / br | Dominant | Simplified (real brown is polygenic). Depth sets the shade |
-| Speckle | sp+ / sp | Recessive | Game-only gene |
+| Speckle | sp+ / sp | Recessive | Game-only gene. Runs in Orpington and Wyandotte lines (`BreedDefinition.carried`) |
 | Show type | + / - at 10 genes | Additive | Quantitative trait (`QuantitativeTrait.showType`). Judged in breed classes |
 | Egg shape | + / - at 6 genes | Additive | Quantitative trait (`QuantitativeTrait.eggShape`). Judged in egg classes |
 | Calm | + / - at 8 genes | Additive | Quantitative trait (`QuantitativeTrait.calm`). 40% of friendliness |
@@ -548,7 +549,7 @@ Three tables. Most new content is a table entry, not new logic.
 | Table | File | One entry is |
 | --- | --- | --- |
 | Gene registry `Loci` | `Locus.swift` | one gene: allele enum + default allele |
-| Breed table `BreedTable` | `BreedTable.swift` | one breed: signature genes, colour varieties, broodiness, calmness, shell depth, look, status |
+| Breed table `BreedTable` | `BreedTable.swift` | one breed: signature genes, colour varieties, broodiness, calmness, shell depth, carried recessives, look, status |
 | Colour varieties `ColourVariety` | `BreedTable.swift` | one named colour: a recipe of genes |
 
 - Genomes store only genes that differ from the default allele. A gene missing from a save is the
@@ -563,6 +564,15 @@ Three tables. Most new content is a table entry, not new logic.
 - The Leghorn is a White Leghorn: light body, single comb, clean yellow legs, rarely broody. It lays
   white eggs, as real Leghorns do (shell depth 0).
 - The colour a bird shows always comes from its genes (`Phenotype`), never from a variety name.
+- **Carried recessives** (`BreedDefinition.carried`, `carriedShare`). Some recessives run in a breed's
+  lines without being part of its signature. A bird from outside the flock draws each of its two
+  copies from its own ID (`withFounderQuality`, its own salt). Each copy is the carried allele with
+  chance `carriedShare`. A purebred made by `Breed.purebred` has neither copy.
+- Now: speckle runs in Orpingtons and Wyandottes, share 0.3. So about 4 in 10 outside birds of these
+  breeds carry one copy unseen, and about 1 in 11 has two and lays speckled eggs. Two carriers bred
+  together give speckled-egg daughters 1 in 4 of the time. This is the source of the speckled egg.
+- The draw uses no game randomness, so existing seeds keep their games. Only the speckle gene of
+  new outside birds changes. Birds in old saves keep their genes.
 
 How to add:
 
@@ -756,6 +766,8 @@ Hens slow and retire with age, so breeding keeps mattering (`Rules.layAgeFactor`
 
 - A hen lays at full rate until `layDeclineStartDays`, then gradually less, down to `layDeclineFloor`.
 - At `retirementAgeDays` (504 days, four and a half in-game years) she becomes a beloved non-layer — never death (cozy).
+- The "Grand old lady" milestone does not wait for retirement. It needs a hen kept `elderHenAgeDays`
+  (224 days, two in-game years, 8 seasons).
   Retired hens keep their perch, can still be petted, shown in the pet class, and rehomed.
 - **Premium feed** is an optional coin sink (basic feed stays free). A bag is several day-portions;
   `feed premium` feeds the flock for the day and lifts that day's laying. CLI: `buy feed`, `feed premium`.
@@ -780,8 +792,8 @@ On the Longest Day's night the fox stays home, so an open door forages for free 
   rules when it loads (`SaveFormat.migrateToOneSetting`). Its birds, coins and progress stay.
 - **Balance sim** (`Simulation.swift`): plays many seeded games with a simple keeper policy and reports
   coins, flock size, Breed Book growth, eggs/day, income from eggs, shows and the market board,
-  chicks hatched and fox visits, so the first-guess `Rules` numbers can be tuned
-  from data. CLI: `sim [days] [games]`; `SimulationTests` guards against balance regressions.
+  chicks hatched, fox visits and milestones (how many, and how many games reached each one), so the
+  first-guess `Rules` numbers can be tuned from data. CLI: `sim [days] [games]`; `SimulationTests` guards against balance regressions.
 - **The sim keeper's day.** Care first: feed and collect. Then the errands, most useful first: candle
   (only if an egg is not candled), story choices (always the first option), shop (a breeding pair, the
   big incubator), the show desk in show week, the market board (egg cards, and a bird card with a spare
@@ -961,7 +973,8 @@ inside `anyOf`.
     Meanwhile the bird card says "Yours once there's a perch for her", and Hazel says so at the fence.
   - The choice waits. Until it is made, Marigold stays. Nothing is lost by waiting.
 - **She is the starter's mother.** `Breed.motherGenome(of:)` picks one of the breed's colours that
-  holds one of the starter's alleles at every gene. So she is one of the breed's public recipes, and
+  holds one of the starter's alleles at every gene. At a recessive the breed carries, she has the
+  starter's first copy and the usual one. So she is one of the breed's public recipes, and
   `Knowledge` reads her as it reads any bought bird. The genes behind each quantitative trait share
   the starter's first allele too. The starter's `motherID` is Marigold. Its `fatherID` is her mate, a
   family-tree record with no look (he stays at Hazel's). The starter keeps its own breed evidence
@@ -1158,8 +1171,19 @@ brings it. The keeper can pin a card of their own to sell young birds. Nothing h
 `Milestone.swift`. Small, always-visible goals that give the no-loss sandbox a direction. The ladder,
 in order: first egg, first hatch, a friendly bird, a growing flock (8 birds), a blue egg, an olive egg,
 a speckled egg, 8 Breed Book looks, a show ribbon (top 3), a first place, a lap chicken, a finished
-storyline, a hen into retirement, a chocolate egg, a green egg, a right "hen or roo?" guess, a white egg.
+storyline, a hen two years old, a chocolate egg, a green egg, a right "hen or roo?" guess, a white egg.
 Cozy rule: a milestone is only ever *reached*, never failed — no deadlines, nothing lost by missing one.
+
+- **Every rung can be climbed** with the breeds in the game, or it is marked unavailable.
+  `MilestoneTests` reaches each one from the least state that gets there.
+- Speckled egg: speckle runs in Orpington and Wyandotte lines (see "Data layer"). The hint says so.
+- Grand old lady (`elderHen`): a hen kept `Rules.elderHenAgeDays` (224 days). Retirement, at 504 days,
+  is too far off for a rung.
+- Chocolate and white eggs need a breed that lays them (Marans, Leghorn), and both are planned.
+  `BreedTable.canLay` says whether the in-game breeds make an egg colour. While it says no, the
+  milestone has `isAvailable: false`. The journal then shows no hint, only a line that it waits for
+  a new breed (`milestoneHint`). A chocolate or white egg found anyway still reaches it.
+- When Marans or Leghorn comes into the game, `canLay` turns true, and the hint shows again.
 
 - Each `Milestone` is an id plus a test read from existing, player-visible state (so none can leak
   a hidden gene). Checked each night, after the day settles (`advanceMilestones`, a `passNight` step).
@@ -1197,8 +1221,9 @@ To add one: append a `Milestone` to `Milestones.all` (list order is the ladder),
   a show ribbon, one more friendly bird, grow the flock by 2, or collect a number of eggs. The game
   picks only goals the keeper can work on now. Progress shows as "2 of 3". A bird on loan goes home
   one day, so she never counts for the flock or friend goals (`GameState.ownBirds`).
-- The "new egg" goal asks only for colours a breed in play can make. Chocolate needs an in-game breed
-  with shell depth above `Rules.chocolateShellDepth`. White needs an in-game breed that lays white.
+- The "new egg" goal asks only for colours a breed in play can make (`BreedTable.canLay`, which the
+  goal ladder uses too). Chocolate needs an in-game breed with shell depth above
+  `Rules.chocolateShellDepth`. White needs an in-game breed that lays white.
   No in-game breed has either yet, so both are left out. A chocolate or white egg found anyway still
   counts as a new egg.
 - "Collect eggs" asks for `seasonGoalEggsPerHen` (8) eggs for each visible hen in the coop, at most

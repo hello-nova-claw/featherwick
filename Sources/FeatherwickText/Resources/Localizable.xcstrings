@@ -13,6 +13,66 @@
         }
       }
     },
+    "milestone.elderHen.hint" : {
+      "comment" : "Journal: how to reach the old-hen milestone. Two in-game years.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Keep a hen until she is two years old."
+          }
+        }
+      }
+    },
+    "milestone.elderHen.title" : {
+      "comment" : "Journal: the milestone for keeping a hen to an old age.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Grand old lady"
+          }
+        }
+      }
+    },
+    "milestone.notYet" : {
+      "comment" : "Journal: a milestone no breed in the game can make yet.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not yet: this one waits for a new breed. A lucky hen may lay one before then."
+          }
+        }
+      }
+    },
+    "milestone.speckledEgg.hint" : {
+      "comment" : "Journal: how to reach the speckled-egg milestone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some Orpingtons and Wyandottes carry speckle without showing it. Pair two carriers, and some daughters lay speckled eggs."
+          }
+        }
+      }
+    },
+    "milestone.speckledEgg.title" : {
+      "comment" : "Journal: the speckled-egg milestone.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Speckled egg"
+          }
+        }
+      }
+    },
     "planner.aBird" : {
       "comment" : "In place of the name of a bird the keeper does not have.",
       "extractionState" : "extracted_with_value",
