@@ -89,6 +89,19 @@ extension Breed {
         guard !fits.isEmpty else { return nil }
         return fits[Int.random(in: 0..<fits.count, using: &rng)]
     }
+
+    /// The genome of a purebred rooster of this breed who could be `chick`'s father beside the mother from
+    /// `motherGenome(of:using:)`. At a recessive the breed carries he takes the chick's second copy, the
+    /// one its mother did not give, and the usual one. So a chick with two carried copies has a father
+    /// who could give one. He makes no draw from the game's random numbers.
+    public func fatherGenome(of chick: Genome) -> Genome {
+        var g = purebred(.rooster)
+        for gene in definition.carried {
+            guard let def = Loci.definition(gene.locus), def.inheritance == .autosomal else { continue }
+            g.setAlleles([chick.alleles(at: def)[1], gene.first], at: def)
+        }
+        return g
+    }
 }
 
 extension Genome {
@@ -128,7 +141,8 @@ extension Engine {
         // Her mate: a purebred rooster of the breed at his owner's. The keeper never sees him, so his
         // record has no look, and `Knowledge` reads only his breed.
         let mate = Bird(
-            id: makeID(using: &rng), name: "\(spec.name)'s mate", breed: breed, genome: breed.purebred(.rooster),
+            id: makeID(using: &rng), name: "\(spec.name)'s mate", breed: breed,
+            genome: breed.fatherGenome(of: starter.genome),
             hatchDay: mother.hatchDay, origin: spec.owner.origin, revealed: true)
         s.pedigree[mate.id] = PedigreeRecord(mate, look: nil)
         s[keyPath: home][i].motherID = mother.id

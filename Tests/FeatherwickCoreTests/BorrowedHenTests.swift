@@ -147,6 +147,29 @@ struct BorrowedHenTests {
         }
     }
 
+    /// Rule 7. At a recessive the breed carries, the chick's first copy comes from Marigold and its second
+    /// from her mate. So a starter with two speckle copies has two parents who could each give one.
+    @Test func herMateCanGiveTheStartersOtherCarriedCopy() throws {
+        let speckle = try #require(Loci.definition(Speckle.locus))
+        let plain = Speckle.plain.rawValue
+        let speckled = Speckle.speckled.rawValue
+        var rng = SeededRNG(seed: 5)
+        for breed in [Breed.orpington, .wyandotte] {
+            for copies in [[plain, plain], [plain, speckled], [speckled, plain], [speckled, speckled]] {
+                var chick = breed.purebred(.rooster)
+                chick.setAlleles(copies, at: speckle)
+                let mother = try #require(breed.motherGenome(of: chick, using: &rng))
+                let father = breed.fatherGenome(of: chick)
+                #expect(mother.alleles(at: speckle) == [copies[0], plain], "\(breed) \(copies)")
+                #expect(father.alleles(at: speckle) == [copies[1], plain], "\(breed) \(copies)")
+                // Outside the carried genes he is the breed's plain purebred rooster.
+                var usual = father
+                usual.setAlleles([plain, plain], at: speckle)
+                #expect(usual == breed.purebred(.rooster))
+            }
+        }
+    }
+
     /// Rule 8. Marigold's look, and everything the keeper can work out, is the same for a hen starter and
     /// a rooster starter with the same look, until the sex shows. Barring is the trap: it is on the Z.
     @Test(arguments: [UInt64(1), 2, 3, 7, 42, 100])
