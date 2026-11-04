@@ -63,6 +63,7 @@ class AccessibilityAuditTests: XCTestCase {
         for (button, screen) in [("Books", "books"), ("Today", "today"), ("Settings", "settings")] {
             Farm.button(button, in: app).tap()
             XCTAssertTrue(Farm.button("Close", in: app).waitForExistence(timeout: 5), "\(button) did not open")
+            Farm.expandSheet(app)
             try audit(app, screen: screen)
             Farm.close(app)
         }
@@ -83,6 +84,7 @@ class AccessibilityAuditTests: XCTestCase {
             if place == "Yard" && Self.variant == Farm.Language.doubled.arguments {
                 XCTContext.runActivity(named: "Skipped the Yard sheet audit with doubled strings: #97") { _ in }
             } else {
+                Farm.expandSheet(app)
                 try audit(app, screen: "place-\(Farm.slug(place))")
             }
             // The Market board opens from the farm gate.
@@ -127,7 +129,6 @@ class AccessibilityAuditTests: XCTestCase {
     /// still fails at once.
     nonisolated static func knownIssue(_ issue: XCUIAccessibilityAuditIssue) -> String? {
         switch issue.auditType {
-        case .contrast: "#88"
         case .hitRegion: "#89"
         case .elementDetection: "#90"
         case .textClipped, .dynamicType: "#66"

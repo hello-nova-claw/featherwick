@@ -28,7 +28,7 @@ struct Palette: Equatable, Sendable {
 
     static let day = Palette(
         paper: Color(hex: 0xFFFFFF), ink: Color(hex: 0x2A2320), inkSoft: Color(hex: 0x5A4D45),
-        inkMuted: Color(hex: 0x7A6A5F), hairline: Color(hex: 0xE6DCCF), hairlineSoft: Color(hex: 0xECE5DB),
+        inkMuted: Color(hex: 0x6F5F55), hairline: Color(hex: 0xE6DCCF), hairlineSoft: Color(hex: 0xECE5DB),
         unknown: Color(hex: 0xC9BBAE), unknownBox: Color(hex: 0xD8CDBF),
         artPlaceholder: Color(hex: 0x7A6A5F).opacity(0.30), coin: Color(hex: 0xD6A65E),
         floating: Color.white.opacity(0.9), toast: Color(hex: 0xFFFFFF), toastText: Color(hex: 0x2A2320),
