@@ -147,6 +147,9 @@ enum ChickenRigMetrics {
     static let liftShare: Double = 0.32
     /// Degrees the toes curl under while the foot is in the air.
     static let toeCurl: Double = 50
+    /// While walking, a leg reaches no further than this part of its length: the hip drops if it must
+    /// (`ChickenMotion.walkingSink`). A leg pulled straight snaps.
+    static let legReach: Double = 0.95
     /// The body rises this much (rig heights) over each planted foot, and rocks this many degrees.
     static let bounce: Double = 0.012
     static let bodyBob: Double = 2
@@ -157,6 +160,9 @@ enum ChickenRigMetrics {
     static let headHold: Double = 0.7
     /// Degrees the tail flicks on each step.
     static let tailFlick: Double = 4
+
+    /// Seconds to ease into a walk from standing, and out of it again: no snap to mid-stride.
+    static let walkEase: Double = 0.2
 
     // Pecking.
     /// Seconds for one peck, down and back up.

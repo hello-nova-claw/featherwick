@@ -32,6 +32,8 @@ struct AnimatedChicken: View {
     @State private var face: ChickenPose = .rest
     /// When the running peck began. Nil when no peck is running or settling.
     @State private var peckStart: Date?
+    /// When a painted bird's walk began or ended, to ease into and out of it.
+    @State private var walk = WalkEase()
 
     private typealias M = ChickenRigMetrics
 
@@ -57,7 +59,8 @@ struct AnimatedChicken: View {
 
     /// True while the legs or a peck need a new frame every display refresh.
     private var moving: Bool {
-        !reduceMotion && (activity == .walking || peckStart != nil)
+        !reduceMotion
+            && (activity == .walking || peckStart != nil || (ChickenView.rig(for: colours).painted && walk.easing))
     }
 
     /// The pose for this moment, worked out on the skeleton this bird is drawn with (painted or path):
@@ -73,13 +76,23 @@ struct AnimatedChicken: View {
         return pose
     }
 
-    /// The bones alone at `date`: no face, no sway.
+    /// The bones alone at `date`: no face, no sway. A painted bird's walk eases in from standing and out to
+    /// what comes next (`WalkEase`); the path rig starts and stops at once, as it always has.
     private func motion(_ rig: SkeletonRig, at date: Date) -> ChickenPose {
+        guard !reduceMotion else { return stillMotion(rig, at: date) }
+        let walking: Bool = activity == .walking
+        let share: Double = rig.painted ? walk.share(at: date, walking: walking, over: M.walkEase) : walking ? 1 : 0
+        guard share > 0 else { return stillMotion(rig, at: date) }
+        let walked: ChickenPose = ChickenMotion.walk(
+            rig, phase: date.timeIntervalSinceReferenceDate / rig.motion.stride)
+        return share >= 1 ? walked : .mix(stillMotion(rig, at: date), walked, t: share)
+    }
+
+    /// The bones when not walking: sitting, a running peck, or standing.
+    private func stillMotion(_ rig: SkeletonRig, at date: Date) -> ChickenPose {
         if activity == .sitting {
             // A pose, not a motion: it holds with Reduce Motion too. Sit down inside `withAnimation` to ease it.
             return ChickenMotion.sitting(rig)
-        } else if !reduceMotion && activity == .walking {
-            return ChickenMotion.walk(rig, phase: date.timeIntervalSinceReferenceDate / rig.motion.stride)
         } else if let peckStart, !reduceMotion {
             return ChickenMotion.peck(rig, progress: date.timeIntervalSince(peckStart) / M.peckDuration)
         }
@@ -89,6 +102,11 @@ struct AnimatedChicken: View {
     /// Runs for as long as the activity lasts: one peck if pecking, then blinks (and glances when idle).
     private func live(_ activity: ChickenActivity) async {
         peckStart = nil
+        if activity == .walking {
+            walk.begin(at: Date(), over: M.walkEase)
+        } else if walk.start != nil {
+            walk.end(at: Date(), over: M.walkEase)
+        }
         let canLook: Bool = (activity == .idle || activity == .sitting) && !reduceMotion
         if !canLook && face.headTurn != 0 {
             withAnimation(.easeInOut(duration: M.lookDuration)) { face.headTurn = 0 }
@@ -98,6 +116,11 @@ struct AnimatedChicken: View {
             // On past the peck until the loose parts settle: the last frame must have no sway in it.
             guard await pause(M.peckDuration + FluffFollow.settle) else { return }
             peckStart = nil
+        }
+        if walk.stop != nil {
+            // Frames run on until the legs are home and the loose parts settle.
+            guard await pause(M.walkEase + FluffFollow.settle) else { return }
+            walk.stop = nil
         }
         await blinkAndLook(canLook: canLook)
     }
@@ -126,5 +149,58 @@ struct AnimatedChicken: View {
         } catch {
             return false
         }
+    }
+}
+
+/// When a painted bird's walk began or ended, so it eases in from standing and out to what comes next, over
+/// `over` seconds. Pure, so it is tested without a view.
+///
+/// A walk that turns round part way (it stops while still easing in, or starts again while easing out)
+/// carries on from where it was: the share of walk on show never jumps. SwiftUI draws a new activity before
+/// the task calls `begin` or `end`, so the share is right before then too.
+struct WalkEase: Equatable {
+    /// When the walk began, as if eased in from standing. Nil when not walking.
+    var start: Date?
+    /// When the walk ended, as if eased out from a full walk. Nil once the legs are home.
+    var stop: Date?
+
+    /// True while a walk is easing in or out, or has not yet been told it ended.
+    var easing: Bool { start != nil || stop != nil }
+
+    /// How much of the walk shows at `date`: 0 standing, 1 walking, eased between.
+    func share(at date: Date, walking: Bool, over seconds: Double) -> Double {
+        let t: Double
+        if walking {
+            if let start {
+                t = date.timeIntervalSince(start) / seconds
+            } else if let stop {
+                // Walking again before `begin`: carry on back from where the ease out is.
+                t = 1 - date.timeIntervalSince(stop) / seconds
+            } else {
+                t = 0
+            }
+        } else if let stop {
+            t = 1 - date.timeIntervalSince(stop) / seconds
+        } else if let start {
+            // Stopped before `end`: as far into the walk as it has eased.
+            t = date.timeIntervalSince(start) / seconds
+        } else {
+            t = 0
+        }
+        return ChickenMotion.ease(min(1, max(0, t)))
+    }
+
+    /// The walk starts at `date`, from where any ease out has got to.
+    mutating func begin(at date: Date, over seconds: Double) {
+        let shown: Double = stop.map { 1 - min(1, max(0, date.timeIntervalSince($0) / seconds)) } ?? 0
+        start = date.addingTimeInterval(-shown * seconds)
+        stop = nil
+    }
+
+    /// The walk ends at `date`, from where any ease in has got to.
+    mutating func end(at date: Date, over seconds: Double) {
+        let shown: Double = start.map { min(1, max(0, date.timeIntervalSince($0) / seconds)) } ?? 1
+        stop = date.addingTimeInterval(-(1 - shown) * seconds)
+        start = nil
     }
 }
