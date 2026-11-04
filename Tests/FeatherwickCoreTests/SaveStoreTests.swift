@@ -55,8 +55,9 @@ struct SaveStoreTests {
         try SaveStore(directory: dir, slot: "alpha").write(data)
         try SaveStore(directory: dir, slot: "alpha").write(data)  // makes alpha.bak1.json
         try SaveStore(directory: dir, slot: "beta").write(data)
+        try SaveStore(directory: dir, slot: "not.bakery").write(data)  // a dot, but not a backup's ending
         let slots = SaveStore.slots(in: dir)
-        #expect(slots == ["alpha", "beta"])  // backups excluded
+        #expect(slots == ["alpha", "beta", "not.bakery"])  // backups excluded
     }
 
     // MARK: - Loading and recovery (#59)
@@ -173,5 +174,39 @@ struct SaveStoreTests {
         #expect(try Data(contentsOf: store.corruptURL()) == Data("first".utf8))
         #expect(try Data(contentsOf: store.corruptURL(2)) == Data("second".utf8))
         #expect(SaveStore.slots(in: dir).isEmpty)  // quarantines are not slots
+    }
+
+    // MARK: - Slot names (#69)
+
+    /// A slot name from the CLI's `--slot`, the in-game `slot` command or the app is cleaned the same way,
+    /// so no name can point outside the save folder.
+    @Test(arguments: [
+        ("../x", "x"), ("../../etc/passwd", "etcpasswd"), ("a/b", "ab"), ("/tmp/save", "tmpsave"),
+        ("my save", "mysave"), ("hen-1_b", "hen-1_b"), ("family.2025", "family.2025"), ("..hidden", "hidden"),
+        ("main.bak1", "mainbak1"), ("main.corrupt", "maincorrupt"), ("main.BAK1", "mainBAK1"),
+        ("not.bakery", "not.bakery"), ("farm.json", "farm.json"), ("main.corrupt2", "maincorrupt2"),
+    ])
+    func aSlotNameIsCleaned(_ raw: String, _ clean: String) {
+        let store = SaveStore(directory: tempDir(), slot: raw)
+        #expect(store.slot == clean)
+        // Path components, not URLs: on Linux the parent URL keeps a trailing slash and the directory URL does not.
+        #expect(
+            store.url.deletingLastPathComponent().standardizedFileURL.pathComponents
+                == store.directory.standardizedFileURL.pathComponents)
+    }
+
+    @Test(arguments: ["", "..", "../", "/", ". ."])
+    func aSlotNameWithNothingLeftIsTheDefault(_ raw: String) {
+        #expect(SaveStore(directory: tempDir(), slot: raw).slot == SaveStore.defaultSlot)
+    }
+
+    @Test func aSlotThatClimbsOutStillWritesInsideTheFolder() throws {
+        let parent = tempDir()
+        defer { try? FileManager.default.removeItem(at: parent) }
+        let dir = parent.appendingPathComponent("saves")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try SaveStore(directory: dir, slot: "../x").write(try sampleSave(5))
+        #expect(FileManager.default.fileExists(atPath: dir.appendingPathComponent("x.json").path))
+        #expect(!FileManager.default.fileExists(atPath: parent.appendingPathComponent("x.json").path))
     }
 }

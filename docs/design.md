@@ -597,6 +597,22 @@ save and a `Recovery`, and the front end only turns the `Recovery` into words (`
   front end never writes to the slot. A new game there would rotate the newer save out of the backups.
   The CLI prints a line and stops. The app shows a note in place of the farm, and `GameStore` never saves.
 
+A hand-edited save must load and play without a trap (#69):
+
+- Slot names: `SaveStore.init` keeps only letters, numbers, `-`, `_` and dots (`cleanSlotName`). It drops
+  leading dots. So `--slot ../x` is slot `x`, in the save folder, and an older `family.2025` slot still loads.
+  A name that looks like a backup or a quarantined copy (`main.bak1`) loses its dots. A name with nothing left
+  is the default slot. The CLI and the app share this.
+- Numbers: `SaveFormat.decode` keeps every rule in 0...`maxRuleNumber` (1,000,000) and every other number in
+  ±`maxStateNumber` (1,000,000,000). Counts such as coins, treats and the day are never below 0. `shopSeed` is
+  a seed, so it keeps its full range. A save the game wrote holds no number out of bounds, so it loads unchanged.
+- Show classes: each kind's rivals and picks, and the winter extra picks, are capped at `maxShowEntrants` (100). Each rival is a
+  bird made on show day.
+- Rules that go together: `SaveFormat.mendRules` raises a range's max to its min (`lostDays`, `marketCards`,
+  `marketBuyer…Days`), and keeps `daysPerSeason` and `hensPerRooster` at 1 or more, because they divide.
+- Beta notes: a `beta-notes.json` that cannot be read is quarantined the same way as a save
+  (`beta-notes.corrupt.json`, then `…corrupt2.json`). It is never replaced by an empty file.
+
 ## Shows (data layer)
 
 `Shows.swift`. Three kinds of class, as at a real poultry show:

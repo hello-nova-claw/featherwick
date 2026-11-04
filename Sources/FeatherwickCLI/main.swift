@@ -560,9 +560,9 @@ while true {
             print("Switch to or create a slot: slot <name>")
             break
         }
-        let name = words[1].filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }
+        let name = SaveStore.cleanSlotName(words[1])
         guard !name.isEmpty else {
-            print("Use letters, numbers, - or _ for a slot name.")
+            print("Use letters, numbers, -, _ or . for a slot name.")
             break
         }
         guard name != store.slot else {
