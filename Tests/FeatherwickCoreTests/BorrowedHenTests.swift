@@ -383,7 +383,7 @@ struct BorrowedHenTests {
         #expect(s.lost.contains { $0.bird.id == hen.id })
         #expect(Self.marigold(s) != nil)  // still on loan while away
         s.rules.foxChance = 0
-        let back = Self.play(until: s.lost.first!.returnsOnDay, &s, &rng)
+        let back = Self.play(until: try #require(s.lost.first).returnsOnDay, &s, &rng)
         #expect(back.contains(.birdReturned(hen.id)))
         #expect(s.coop.contains { $0.id == hen.id && $0.loan?.tag == Self.tag })
 
