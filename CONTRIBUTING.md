@@ -105,6 +105,10 @@ cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Fea
 - The words live in a String Catalog, `Sources/FeatherwickText/Resources/Localizable.xcstrings`. They are moving in a file at a time (#58); a file that has moved holds no bare words.
 - Write each word as `String(localized: "area.name", defaultValue: "The English \(value)", bundle: .module, comment: "...")`. The key never changes once a word ships; the default value is the English. Every string with a placeholder has a comment that says what each placeholder is.
 - After you change the words, run `bin/sync-strings` (macOS, Xcode 26) and commit the catalog. It uses Apple's `xcstringstool` to add new keys, update changed English and drop keys the code no longer uses.
+- A number goes into the sentence as it is (`"\(n) eggs"`): the lookup formats it for the language, and the catalog keeps it a number (`%lld`) for plural rules. Only a number shown on its own uses `.formatted()`.
+- A count picks its words with two keys, `area.name.one` when `n == 1` and `area.name.other` otherwise. A language with more plural forms gives `.other` plural variations in the catalog.
+- A list joined with "and" or "or" uses its own keys for the separators (`"\(a), \(b)"`, `"\(a) and \(b)"`). `ListFormatStyle` adds a serial comma, which changes the English.
+- An id, a file name or a CLI command the keeper types is not a word. Where it is not a `case` pattern or a comparison, end its line with `// not words`.
 - On Linux there is no `String(localized:)`. `Localized.swift` gives the same call there, and it returns the English. `swift build` does not compile the catalog either, so the CLI and the tests read the English default everywhere; only the app reads the catalog.
 - Never build a sentence by joining fragments. Write the whole sentence, with the values in it.
 - Numbers, dates and durations use `FormatStyle`, never hand-built strings.

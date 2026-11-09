@@ -14,7 +14,10 @@ struct RootView: View {
             let evening = store.eveningSince.map { max(0, context.date.timeIntervalSince($0)) }
             let palette = Palette.forGame(evening: evening, asleep: store.asleep, pinned: pinned)
             Group {
-                if case .choosingStarter(let chicks) = store.state.phase {
+                if store.saveTooNew != nil {
+                    // A save from a newer game: no farm and no new game, so nothing writes over it.
+                    SaveTooNewView()
+                } else if case .choosingStarter(let chicks) = store.state.phase {
                     // Day 1: Hazel says hello and asks the keeper's name, then offers a chick.
                     if store.state.keeperName == nil {
                         WelcomeView()
@@ -30,6 +33,25 @@ struct RootView: View {
             // A rest eases the light over the whole rest scene.
             .animation(.easeInOut(duration: store.restSeconds ?? 1.5), value: palette)
         }
+    }
+}
+
+/// Shown in place of the farm when the save came from a newer Featherwick. It offers nothing to tap.
+struct SaveTooNewView: View {
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Space.l) {
+                Text(SaveWords.tooNewTitle).font(Typeface.title).accessibilityAddTraits(.isHeader)
+                Text(SaveWords.tooNewBody).font(Typeface.body).fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, Space.sheetSide)
+            .padding(.vertical, Space.xxl)
+        }
+        .foregroundStyle(palette.ink)
+        .background(palette.paper)
     }
 }
 

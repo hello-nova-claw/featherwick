@@ -8,6 +8,8 @@ import Foundation
 /// - Rolling backups: the current good copy is rotated into `…bak1`, `…bak2` before each write, so a
 ///   write that completes but holds bad content still leaves an earlier good save to fall back to.
 /// - Quarantine: an unreadable save is moved aside, never deleted, so nothing is ever lost silently.
+///   Each one gets its own file, so a second bad load never replaces the first.
+/// - Too new: a save from a newer game is never moved, rotated or written over (see `load()`).
 public struct SaveStore: Sendable {
     public static let defaultSlot = "featherwick-save"
 
@@ -23,7 +25,10 @@ public struct SaveStore: Sendable {
 
     public var url: URL { directory.appendingPathComponent("\(slot).json") }
     public func backupURL(_ i: Int) -> URL { directory.appendingPathComponent("\(slot).bak\(i).json") }
-    public var corruptURL: URL { directory.appendingPathComponent("\(slot).corrupt.json") }
+    /// The n-th quarantined copy: `…corrupt.json`, then `…corrupt2.json`, `…corrupt3.json`.
+    public func corruptURL(_ n: Int = 1) -> URL {
+        directory.appendingPathComponent(n == 1 ? "\(slot).corrupt.json" : "\(slot).corrupt\(n).json")
+    }
 
     public var exists: Bool { FileManager.default.fileExists(atPath: url.path) }
 
@@ -52,16 +57,73 @@ public struct SaveStore: Sendable {
     }
 
     /// Moves an unreadable save aside (never deletes it) so a fresh game can start without losing it.
+    /// It goes to the first free quarantine name, so an earlier quarantined copy stays too.
     /// Returns where it was moved, if anything was moved.
     @discardableResult
     public func quarantine() -> URL? {
         guard exists else { return nil }
         let fm = FileManager.default
-        try? fm.removeItem(at: corruptURL)
+        var n = 1
+        while fm.fileExists(atPath: corruptURL(n).path) { n += 1 }
         do {
-            try fm.moveItem(at: url, to: corruptURL)
-            return corruptURL
+            try fm.moveItem(at: url, to: corruptURL(n))
+            return corruptURL(n)
         } catch { return nil }
+    }
+
+    /// What `load()` found, for the front end to turn into words.
+    public enum Recovery: Equatable, Sendable {
+        /// The main save loaded.
+        case loaded
+        /// No save in this slot: start a new game.
+        case noSave
+        /// The main save was missing. The newest backup that loads was used.
+        case restoredFromBackup
+        /// The main save could not be read. It was moved to `keptAs` (nil if the move failed). The newest
+        /// backup that loads was used if there was one; otherwise a new game starts.
+        case unreadable(keptAs: URL?, restoredFromBackup: Bool)
+        /// A file in this slot is from a newer game. Nothing was touched, and the front end must not
+        /// write to this slot: a new game here would rotate the newer save out of the backups.
+        case tooNew(version: Int)
+    }
+
+    /// Reads the slot: the main save, else the newest backup that loads. Every front end loads through
+    /// this, and only turns the `Recovery` into words. The save is nil for `.noSave`, `.tooNew`, and an
+    /// unreadable save with no good backup.
+    public func load() -> (save: SaveGame?, recovery: Recovery) {
+        let main = attempt(url)
+        let backups = backupCount > 0 ? (1...backupCount).map { attempt(backupURL($0)) } : []
+        // Checked before anything loads or moves: even with a good main save, the next write would rotate a
+        // newer backup out. So a newer game's files stay exactly as they are.
+        if let version = ([main] + backups).compactMap(\.tooNewVersion).max() {
+            return (nil, .tooNew(version: version))
+        }
+        if case .loaded(let save) = main { return (save, .loaded) }
+        let restored = backups.lazy.compactMap(\.save).first
+        if case .missing = main { return (restored, restored == nil ? .noSave : .restoredFromBackup) }
+        return (restored, .unreadable(keptAs: quarantine(), restoredFromBackup: restored != nil))
+    }
+
+    /// One file, read without changing anything on disk.
+    private enum Attempt {
+        case missing, unreadable
+        case loaded(SaveGame)
+        case tooNew(Int)
+
+        var save: SaveGame? { if case .loaded(let s) = self { s } else { nil } }
+        var tooNewVersion: Int? { if case .tooNew(let v) = self { v } else { nil } }
+    }
+
+    private func attempt(_ file: URL) -> Attempt {
+        guard FileManager.default.fileExists(atPath: file.path) else { return .missing }
+        guard let data = try? Data(contentsOf: file) else { return .unreadable }
+        do {
+            return .loaded(try SaveFormat.decode(data))
+        } catch SaveFormat.LoadError.tooNew(let version) {
+            return .tooNew(version)
+        } catch {
+            return .unreadable
+        }
     }
 
     /// The most recent readable backup's bytes, if any. Used when the main save is gone or unreadable.

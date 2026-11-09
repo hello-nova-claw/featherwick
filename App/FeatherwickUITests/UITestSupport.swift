@@ -5,7 +5,7 @@ import XCTest
 @MainActor
 enum Farm {
     enum Start: String {
-        case fresh, farm
+        case fresh, farm, newerSave
     }
 
     /// The launch arguments for each language the tests run in. Doubled strings read "Settings Settings";
@@ -64,6 +64,11 @@ enum Farm {
     /// button adds its notices after the name, so an exact match would miss both.
     static func button(_ name: String, in app: XCUIApplication) -> XCUIElement {
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
+    }
+
+    /// The title of the note shown for a save from a newer game. By prefix, for doubled strings.
+    static func newerSaveNote(in app: XCUIApplication) -> XCUIElement {
+        app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Your farm needs a newer")).firstMatch
     }
 
     /// The place button in the bottom row. The Yard's rail dot starts with the same name, so this one is
