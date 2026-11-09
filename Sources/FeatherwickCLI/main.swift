@@ -560,17 +560,18 @@ while true {
             print("Switch to or create a slot: slot <name>")
             break
         }
-        let name = SaveStore.cleanSlotName(words[1])
-        guard !name.isEmpty else {
+        // Resolved as `--slot` is, so an older slot such as `my!farm` still finds its own file.
+        let target = SaveStore(directory: store.directory, slot: words[1])
+        guard target.slot == words[1] || !SaveStore.cleanSlotName(words[1]).isEmpty else {
             print("Use letters, numbers, -, _ or . for a slot name.")
             break
         }
-        guard name != store.slot else {
-            print("You're already playing slot \(name).")
+        guard target.slot != store.slot else {
+            print("You're already playing slot \(target.slot).")
             break
         }
         save(game)  // keep the current game safe in its own slot before switching
-        store = SaveStore(directory: store.directory, slot: name)
+        store = target
         if let loaded = load(from: store) {
             game = loaded
             print("Switched to slot \(store.slot).")

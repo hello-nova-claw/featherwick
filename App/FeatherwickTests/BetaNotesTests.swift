@@ -37,6 +37,23 @@ import Testing
         #expect(try Data(contentsOf: dir.appendingPathComponent("beta-notes.corrupt2.json")) == Data("second".utf8))
     }
 
+    /// When the unreadable file cannot be moved aside (here a dangling link holds the quarantine name), a
+    /// new answer is not written: the tester's bytes stay where they are.
+    @Test func aFileThatCannotBeMovedAsideIsNotWrittenOver() throws {
+        let dir = try tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let file = dir.appendingPathComponent("beta-notes.json")
+        let broken = Data("not notes".utf8)
+        try broken.write(to: file)
+        try FileManager.default.createSymbolicLink(
+            at: dir.appendingPathComponent("beta-notes.corrupt.json"),
+            withDestinationURL: dir.appendingPathComponent("missing"))
+
+        #expect(BetaNotes.readForWrite(at: file) == nil)
+        BetaNotes.markAsked(.firstHatch, slot: "main", at: file)
+        #expect(try Data(contentsOf: file) == broken)
+    }
+
     @Test func aGoodFileReadsAndStaysPut() throws {
         let dir = try tempDir()
         defer { try? FileManager.default.removeItem(at: dir) }
