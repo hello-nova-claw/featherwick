@@ -66,6 +66,24 @@ struct BreedLoreTests {
         #expect(breedFoundText(.orpington, s) == "Found on day 9")
     }
 
+    /// Every page reads the same after the words moved into the String Catalog (#58).
+    @Test func everyPageReadsAsBefore() {
+        let silkie = breedLore(.silkie)
+        #expect(
+            silkie?.sections.map(\.heading) == [
+                "Where it comes from", "Bred for", "Eggs", "Temperament", "What the judge looks for", "Did you know?",
+            ])
+        #expect(
+            silkie?.judge
+                == "A broad, stout body with a short back that rises to a short, round, fluffy tail, "
+                + "and soft fluff of one clear, even colour.")
+        let lines = BreedTable.all.flatMap { breed in
+            (breedLore(breed.id)?.sections ?? []).flatMap { [$0.heading, $0.text] }
+        }
+        let fingerprint = pin(lines)
+        #expect(fingerprint == "aea94bada289b885")
+    }
+
     @Test func noPageUsesGeneWords() {
         let geneWords = [
             "gene", "genes", "genetic", "dominant", "recessive", "allele", "alleles", "locus",
