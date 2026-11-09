@@ -5,6 +5,13 @@ import Testing
 
 /// The goal ladder: milestones are awarded once, recorded in the save, and never punish.
 struct MilestoneTests {
+    /// The ladder as it shipped, in order. New milestones are appended after it, never inserted.
+    static let ladder = [
+        "firstEgg", "firstHatch", "firstFriend", "growingFlock", "blueEgg", "oliveEgg", "speckledEgg",
+        "colourCollector", "showRibbon", "blueRibbon", "lapChicken", "storyteller", "elderHen", "chocolateEgg",
+        "greenEgg", "henOrRoo", "whiteEgg",
+    ]
+
     @Test func theLadderHasUniqueIds() {
         #expect(Set(Milestones.all.map(\.id)).count == Milestones.all.count)
     }
@@ -56,6 +63,7 @@ struct MilestoneTests {
         #expect(!Engine.advanceMilestones(&s).contains(.milestoneReached("whiteEgg")))
         s.eggBook.insert(EggBookEntry(colour: .white, speckled: false))
         #expect(Engine.advanceMilestones(&s).contains(.milestoneReached("whiteEgg")))
-        #expect(Milestones.all.last?.id == "whiteEgg")  // appended: the ladder order of saves stays
+        // Appended: the ladder order of saves stays. A later milestone goes after these.
+        #expect(Milestones.all.map(\.id).starts(with: Self.ladder))
     }
 }
