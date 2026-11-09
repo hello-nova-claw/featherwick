@@ -308,7 +308,7 @@ public enum Judge {
     public static func shellQuality(of hen: Bird, in s: GameState) -> Double {
         var value = 1.0
         if s.day < hen.noLayUntilDay + s.rules.scaredNoLayDays { value -= s.rules.shellLossFright }
-        let years = hen.age(onDay: s.day) / (s.rules.daysPerSeason * Season.allCases.count)
+        let years = hen.age(onDay: s.day) / (max(1, s.rules.daysPerSeason) * Season.allCases.count)
         value -= s.rules.shellLossPerYear * Double(years)
         return max(s.rules.shellQualityFloor, value)
     }
