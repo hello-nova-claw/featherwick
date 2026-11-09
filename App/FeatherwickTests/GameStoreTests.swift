@@ -73,6 +73,20 @@ import Testing
         #expect(store.state.keeperName == "Robin")
     }
 
+    /// Buying a pullet draws from the seeded RNG (her breed, colour and ID), so a reopened store must find
+    /// the advanced RNG, not the one from before. Otherwise the next draw would replay the same bird.
+    @Test func anRNGDrawIsSaved() throws {
+        let (store, dir, slot) = try Self.store(Self.openGame())
+        defer { Self.cleanUp(dir, slot) }
+        let before = store.save.rng
+        store.run(.buy(.pullet))
+        #expect(store.log.last?.isRejection == false)
+        #expect(store.save.rng != before)
+        let again = GameStore(directory: dir, slot: slot)
+        #expect(again.state == store.state)
+        #expect(again.save.rng == store.save.rng)
+    }
+
     /// Day 1: once the chick is home, the tour opens.
     @Test func choosingTheStarterOpensTheTour() throws {
         let (store, dir, slot) = try Self.store()
