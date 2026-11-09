@@ -94,11 +94,31 @@ extension Breed {
     /// `motherGenome(of:using:)`. At a recessive the breed carries he takes the chick's second copy, the
     /// one its mother did not give, and the usual one. So a chick with two carried copies has a father
     /// who could give one. He makes no draw from the game's random numbers.
+    ///
+    /// He is the first of the breed's colours that holds the chick's second copy at every single gene.
+    /// Where none does, he keeps the breed's first colour and carries the chick's copy beside his own at
+    /// each gene that lacks it: every single gene, every gene behind a quantitative trait, and the Z the
+    /// chick had from its father (a hen chick's only Z). So `Breeding.cross` could have given the chick.
     public func fatherGenome(of chick: Genome) -> Genome {
-        var g = purebred(.rooster)
-        for gene in definition.carried {
-            guard let def = Loci.definition(gene.locus), def.inheritance == .autosomal else { continue }
-            g.setAlleles([chick.alleles(at: def)[1], gene.first], at: def)
+        let autosomal = Loci.mendelian.filter { $0.inheritance == .autosomal }
+        let quantitative = QuantitativeTrait.all.flatMap(\.loci).filter { $0.inheritance == .autosomal }
+        let fathers = definition.varieties.map { variety in
+            var g = purebred(.rooster, variety: variety)
+            for gene in definition.carried {
+                guard let def = Loci.definition(gene.locus), def.inheritance == .autosomal else { continue }
+                g.setAlleles([chick.alleles(at: def)[1], gene.first], at: def)
+            }
+            return g
+        }
+        let fits = { (g: Genome) in autosomal.allSatisfy { g.alleles(at: $0).contains(chick.alleles(at: $0)[1]) } }
+        var g = fathers.first(where: fits) ?? fathers.first ?? purebred(.rooster)
+        for locus in autosomal + quantitative {
+            let copy = chick.alleles(at: locus)[1]
+            if !g.alleles(at: locus).contains(copy) { g.setAlleles([copy, g.alleles(at: locus)[0]], at: locus) }
+        }
+        for locus in Loci.zLinked {
+            guard let copy = chick.alleles(at: locus).last, !g.alleles(at: locus).contains(copy) else { continue }
+            g.setAlleles([copy, g.alleles(at: locus)[0]], at: locus)
         }
         return g
     }

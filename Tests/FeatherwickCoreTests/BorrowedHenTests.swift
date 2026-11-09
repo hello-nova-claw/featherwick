@@ -170,6 +170,43 @@ struct BorrowedHenTests {
         }
     }
 
+    /// Rule 7. Her mate could have given the starter its second copy at every gene, not only at the
+    /// carried recessives: a colour other than the breed's first, barring on the Z, and the genes behind a
+    /// quantitative trait. A hen chick's one Z came from him.
+    @Test func herMateCouldHaveGivenEveryCopy() throws {
+        let autosomal = (Loci.mendelian + QuantitativeTrait.all.flatMap(\.loci)).filter { $0.inheritance == .autosomal }
+        var chicks: [(Breed, Genome)] = []
+        for breed in [Breed.orpington, .wyandotte] {
+            for variety in breed.definition.varieties {
+                for sex in [Sex.hen, .rooster] {
+                    for barred in [false, true] {
+                        var chick = breed.purebred(sex, variety: variety, barred: barred)
+                        // A quantitative gene where the chick's second copy is not the breed's usual one.
+                        let locus = try #require(QuantitativeTrait.all.first?.loci.first)
+                        let own = chick.alleles(at: locus)[1]
+                        let other = try #require(locus.alleles.first { $0 != own })
+                        chick.setAlleles([chick.alleles(at: locus)[0], other], at: locus)
+                        chicks.append((breed, chick))
+                    }
+                }
+            }
+        }
+        for (breed, chick) in chicks {
+            let father = breed.fatherGenome(of: chick)
+            #expect(father.sex == .rooster)
+            for locus in autosomal {
+                #expect(father.alleles(at: locus).contains(chick.alleles(at: locus)[1]), "\(breed) \(locus.id)")
+            }
+            for locus in Loci.zLinked {
+                let copy = try #require(chick.alleles(at: locus).last)
+                #expect(father.alleles(at: locus).contains(copy), "\(breed) \(locus.id)")
+            }
+        }
+        // A buff chick's father is a buff rooster of the breed, not a black one carrying buff.
+        let buff = Breed.orpington.purebred(.rooster, colour: .buff)
+        #expect(Phenotype(Breed.orpington.fatherGenome(of: buff)).colour == .buff)
+    }
+
     /// Rule 8. Marigold's look, and everything the keeper can work out, is the same for a hen starter and
     /// a rooster starter with the same look, until the sex shows. Barring is the trap: it is on the Z.
     @Test(arguments: [UInt64(1), 2, 3, 7, 42, 100])

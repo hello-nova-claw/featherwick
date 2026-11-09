@@ -977,7 +977,9 @@ inside `anyOf`.
   starter's first copy and the usual one. So she is one of the breed's public recipes, and
   `Knowledge` reads her as it reads any bought bird. The genes behind each quantitative trait share
   the starter's first allele too. The starter's `motherID` is Marigold. Its `fatherID` is her mate, a
-  family-tree record with no look (he stays at Hazel's). The starter keeps its own breed evidence
+  family-tree record with no look (he stays at Hazel's). `Breed.fatherGenome(of:)` gives him the
+  starter's second copy at every gene, its quantitative genes and the Z it had from him. He is the first
+  of the breed's colours that fits, or the breed's first colour carrying the copies it lacks. The starter keeps its own breed evidence
   (`Visible.isFromOutside` reads the origin only), so its parents add to what the keeper knows and
   never take away from it. The planner's sure lines stay as many as before (`KnowledgeTests`).
 - **Rule 8.** Marigold's look is evidence, like any mother's. It must never tell the starter's sex.
