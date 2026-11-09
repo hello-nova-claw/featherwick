@@ -55,8 +55,9 @@ struct SaveStoreTests {
         try SaveStore(directory: dir, slot: "alpha").write(data)
         try SaveStore(directory: dir, slot: "alpha").write(data)  // makes alpha.bak1.json
         try SaveStore(directory: dir, slot: "beta").write(data)
+        try SaveStore(directory: dir, slot: "not.bakery").write(data)  // a dot, but not a backup's ending
         let slots = SaveStore.slots(in: dir)
-        #expect(slots == ["alpha", "beta"])  // backups excluded
+        #expect(slots == ["alpha", "beta", "not.bakery"])  // backups excluded
     }
 
     // MARK: - Loading and recovery (#59)
@@ -173,5 +174,82 @@ struct SaveStoreTests {
         #expect(try Data(contentsOf: store.corruptURL()) == Data("first".utf8))
         #expect(try Data(contentsOf: store.corruptURL(2)) == Data("second".utf8))
         #expect(SaveStore.slots(in: dir).isEmpty)  // quarantines are not slots
+    }
+
+    // MARK: - Slot names (#69)
+
+    /// A slot name from the CLI's `--slot`, the in-game `slot` command or the app is cleaned the same way,
+    /// so no name can point outside the save folder.
+    @Test(arguments: [
+        ("../x", "x"), ("../../etc/passwd", "etcpasswd"), ("a/b", "ab"), ("/tmp/save", "tmpsave"),
+        ("my save", "mysave"), ("hen-1_b", "hen-1_b"), ("family.2025", "family.2025"), ("..hidden", "hidden"),
+        ("main.bak1", "mainbak1"), ("main.corrupt", "maincorrupt"), ("main.BAK1", "mainBAK1"),
+        ("not.bakery", "not.bakery"), ("farm.json", "farm.json"), ("main.corrupt2", "maincorrupt2"),
+    ])
+    func aSlotNameIsCleaned(_ raw: String, _ clean: String) {
+        let store = SaveStore(directory: tempDir(), slot: raw)
+        #expect(store.slot == clean)
+        // Path components, not URLs: on Linux the parent URL keeps a trailing slash and the directory URL does not.
+        #expect(
+            store.url.deletingLastPathComponent().standardizedFileURL.pathComponents
+                == store.directory.standardizedFileURL.pathComponents)
+    }
+
+    /// A slot named `farm.json` is the file `farm.json.json`. The folder lists it by that name, and the
+    /// listed name opens the same save. `farm.bak1.json` holds a backup's ending inside it, but only the
+    /// end of the name counts, so it is a slot too.
+    @Test(arguments: ["farm.json", "farm.bak1.json"])
+    func aSlotEndingInJsonIsListedAndReopens(_ name: String) throws {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let data = try sampleSave(8)
+        try SaveStore(directory: dir, slot: name).write(data)
+        #expect(FileManager.default.fileExists(atPath: dir.appendingPathComponent("\(name).json").path))
+        #expect(SaveStore.slots(in: dir) == [name])
+        #expect(try SaveStore(directory: dir, slot: name).read() == data)
+    }
+
+    /// An older CLI took `--slot` as it was. A save already under such a name still opens, while a new
+    /// name gets the clean form.
+    @Test func anOlderSlotNameStillOpensItsOwnFile() throws {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let data = try sampleSave(9)
+        try data.write(to: dir.appendingPathComponent("My Farm.json"))
+        let store = SaveStore(directory: dir, slot: "My Farm")
+        #expect(store.slot == "My Farm")
+        #expect(try store.read() == data)
+        #expect(SaveStore(directory: dir, slot: "New Farm").slot == "NewFarm")  // no file yet: cleaned
+    }
+
+    /// The older-name rule never reaches outside the folder, never opens a hidden file and never takes a
+    /// backup's name, even when such a file exists.
+    @Test func anUnsafeOlderNameIsStillCleaned() throws {
+        let parent = tempDir()
+        defer { try? FileManager.default.removeItem(at: parent) }
+        let dir = parent.appendingPathComponent("saves")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let data = try sampleSave(10)
+        try data.write(to: parent.appendingPathComponent("x.json"))
+        try data.write(to: dir.appendingPathComponent(".hidden.json"))
+        try data.write(to: dir.appendingPathComponent("main.bak1.json"))
+        #expect(SaveStore(directory: dir, slot: "../x").slot == "x")
+        #expect(SaveStore(directory: dir, slot: ".hidden").slot == "hidden")
+        #expect(SaveStore(directory: dir, slot: "main.bak1").slot == "mainbak1")
+    }
+
+    @Test(arguments: ["", "..", "../", "/", ". ."])
+    func aSlotNameWithNothingLeftIsTheDefault(_ raw: String) {
+        #expect(SaveStore(directory: tempDir(), slot: raw).slot == SaveStore.defaultSlot)
+    }
+
+    @Test func aSlotThatClimbsOutStillWritesInsideTheFolder() throws {
+        let parent = tempDir()
+        defer { try? FileManager.default.removeItem(at: parent) }
+        let dir = parent.appendingPathComponent("saves")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try SaveStore(directory: dir, slot: "../x").write(try sampleSave(5))
+        #expect(FileManager.default.fileExists(atPath: dir.appendingPathComponent("x.json").path))
+        #expect(!FileManager.default.fileExists(atPath: parent.appendingPathComponent("x.json").path))
     }
 }

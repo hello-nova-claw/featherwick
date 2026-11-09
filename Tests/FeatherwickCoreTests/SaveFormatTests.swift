@@ -109,4 +109,96 @@ struct SaveFormatTests {
     func junkIsNotASave(_ text: String) {
         #expect(throws: SaveFormat.LoadError.notASave) { try SaveFormat.decode(Data(text.utf8)) }
     }
+
+    // MARK: - Hand-edited saves (#69)
+
+    /// `busyGame`'s save with some state fields and rules replaced, as a hand-edited file would have them.
+    static func edited(state stateChanges: [String: Any] = [:], rules ruleChanges: [String: Any] = [:]) throws -> Data {
+        var json = try #require(JSONSerialization.jsonObject(with: SaveFormat.encode(busyGame())) as? [String: Any])
+        var state = try #require(json["state"] as? [String: Any])
+        var rules = try #require(state["rules"] as? [String: Any])
+        for (key, value) in ruleChanges { rules[key] = value }
+        for (key, value) in stateChanges { state[key] = value }
+        state["rules"] = rules
+        json["state"] = state
+        return try JSONSerialization.data(withJSONObject: json)
+    }
+
+    /// Thirty days with the door left open for the fox, eggs sold and the flock fed.
+    static func play(_ game: inout SaveGame) {
+        for _ in 0..<30 {
+            for c in [Command.feed, .collectEggs, .sellEggs] { _ = Engine.apply(c, to: &game.state, using: &game.rng) }
+            sleepTonight(&game.state, &game.rng)
+        }
+    }
+
+    @Test func aRangeWithItsMaxBelowItsMinLoadsAndPlays() throws {
+        let data = try Self.edited(rules: [
+            "lostDaysMin": 9, "lostDaysMax": 2, "foxChance": 1, "fleeChance": 1,
+            "marketCardsMin": 3, "marketCardsMax": 1, "marketBuyerMinDays": 5, "marketBuyerMaxDays": 0,
+        ])
+        var game = try SaveFormat.decode(data)
+        let r = game.state.rules
+        #expect(r.lostDaysMin <= r.lostDaysMax)
+        #expect(r.marketCardsMin <= r.marketCardsMax)
+        #expect(r.marketBuyerMinDays <= r.marketBuyerMaxDays)
+        Self.play(&game)
+        #expect(game.state.day > Self.busyGame().state.day)
+    }
+
+    @Test func aRuleOfZeroThatDividesLoadsAndPlays() throws {
+        var game = try SaveFormat.decode(Self.edited(rules: ["daysPerSeason": 0, "hensPerRooster": 0]))
+        #expect(game.state.rules.daysPerSeason >= 1)
+        #expect(game.state.rules.hensPerRooster >= 1)
+        Self.play(&game)
+    }
+
+    @Test func coinsAtIntMaxLoadAndPlay() throws {
+        let data = try Self.edited(state: ["coins": Int.max, "treats": Int.max, "day": Int.max - 1])
+        var game = try SaveFormat.decode(data)
+        #expect(game.state.coins <= SaveFormat.maxStateNumber)
+        #expect(game.state.treats <= SaveFormat.maxStateNumber)
+        #expect(game.state.day <= SaveFormat.maxStateNumber)
+        Self.play(&game)
+        #expect(game.state.coins > 0)
+    }
+
+    @Test func aHugeOrNegativeRuleIsKeptInBounds() throws {
+        let data = try Self.edited(
+            state: ["coins": -Int.max],
+            rules: [
+                "showEntryFee": 1e30, "pulletPrice": -5, "rehomeStandardPurebredFactor": 1e300, "cartonSize": Int.max,
+            ])
+        var game = try SaveFormat.decode(data)
+        let r = game.state.rules
+        #expect(r.showEntryFee == SaveFormat.maxRuleNumber)
+        #expect(r.pulletPrice == 0)
+        #expect(r.rehomeStandardPurebredFactor == Double(SaveFormat.maxRuleNumber))
+        #expect(r.cartonSize == SaveFormat.maxRuleNumber)
+        #expect(game.state.coins >= 0)
+        Self.play(&game)
+    }
+
+    /// A show class of a million rivals would make a million birds on show day, so loading caps it.
+    @Test func aHugeShowClassIsCappedOnLoad() throws {
+        var game = Self.busyGame()
+        game.state.rules.showCompetitorsByKind = [.pet: 1_000_000, .eggs: 5, .breed: 7]
+        game.state.rules.showRivalPicks = [.pet: 1_000_000, .eggs: 2, .breed: 3]
+        game.state.rules.winterChampionshipExtraPicks = 1_000_000
+        let loaded = try SaveFormat.decode(SaveFormat.encode(game))
+        #expect(loaded.state.rules.winterChampionshipExtraPicks == SaveFormat.maxShowEntrants)
+        #expect(loaded.state.rules.showCompetitorsByKind[.pet] == SaveFormat.maxShowEntrants)
+        #expect(loaded.state.rules.showRivalPicks[.pet] == SaveFormat.maxShowEntrants)
+        #expect(loaded.state.rules.showCompetitorsByKind[.eggs] == 5)
+    }
+
+    /// The bounds only catch hand edits: a played save, and its big shop seed, load as they were written.
+    @Test func boundsLeaveARealSaveAlone() throws {
+        let game = Self.busyGame()
+        #expect(game.state.shopSeed > UInt64(SaveFormat.maxStateNumber))
+        let loaded = try SaveFormat.decode(SaveFormat.encode(game))
+        #expect(loaded.state.shopSeed == game.state.shopSeed)
+        #expect(loaded.state.rules == game.state.rules)
+        #expect(loaded.state.coins == game.state.coins)
+    }
 }

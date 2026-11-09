@@ -1,0 +1,1 @@
+A save file edited by hand now loads safely, and a slot name can no longer point outside the save folder.

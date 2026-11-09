@@ -10,6 +10,7 @@
 // share sheet (Settings ▸ Share beta notes). No network, no analytics.
 #if DEBUG || BETA
 
+    import FeatherwickCore
     import Foundation
 
     /// The two moments worth a question: the first chick, and the first show the keeper entered.
@@ -78,14 +79,32 @@
 
         static var url: URL { GameStore.saveDirectory().appendingPathComponent("beta-notes.json") }
 
-        static func read() -> BetaNotesFile {
-            guard let data = try? Data(contentsOf: url) else { return BetaNotesFile() }
-            return (try? decoder.decode(BetaNotesFile.self, from: data)) ?? BetaNotesFile()
+        static func read() -> BetaNotesFile { read(at: url) }
+
+        /// The notes at `file`, or none. A file that cannot be read is moved aside first, never written over,
+        /// so a tester's answers are kept: `beta-notes.corrupt.json`, then `…corrupt2.json` (as `SaveStore` does).
+        static func read(at file: URL) -> BetaNotesFile { readForWrite(at: file) ?? BetaNotesFile() }
+
+        /// The same, for a change about to be written: nil when an unreadable file could not be moved
+        /// aside, so the write is skipped and the file's bytes stay where they are.
+        static func readForWrite(at file: URL) -> BetaNotesFile? {
+            guard FileManager.default.fileExists(atPath: file.path) else { return BetaNotesFile() }
+            if let data = try? Data(contentsOf: file), let notes = try? decoder.decode(BetaNotesFile.self, from: data) {
+                return notes
+            }
+            return quarantine(file) == nil ? nil : BetaNotesFile()
         }
 
-        private static func write(_ file: BetaNotesFile) {
+        /// The same quarantine as an unreadable save: `SaveStore` with the notes file as its slot.
+        @discardableResult
+        static func quarantine(_ file: URL) -> URL? {
+            let name = file.deletingPathExtension().lastPathComponent
+            return SaveStore(directory: file.deletingLastPathComponent(), slot: name, backupCount: 0).quarantine()
+        }
+
+        private static func write(_ file: BetaNotesFile, to target: URL) {
             guard let data = try? encoder.encode(file) else { return }
-            try? data.write(to: url, options: .atomic)
+            try? data.write(to: target, options: .atomic)
         }
 
         static func wasAsked(_ moment: BetaMoment, slot: String) -> Bool {
@@ -94,17 +113,16 @@
 
         /// Marked on Save, Skip or close (not when the sheet opens), so a tester who swipes it away is not
         /// asked again, but a question another sheet pushed aside is.
-        static func markAsked(_ moment: BetaMoment, slot: String) {
-            var file = read()
-            guard !(file.asked[slot]?.contains(moment) ?? false) else { return }
+        static func markAsked(_ moment: BetaMoment, slot: String, at target: URL = url) {
+            guard var file = readForWrite(at: target), !(file.asked[slot]?.contains(moment) ?? false) else { return }
             file.asked[slot, default: []].append(moment)
-            write(file)
+            write(file, to: target)
         }
 
-        static func record(_ answer: BetaAnswer) {
-            var file = read()
+        static func record(_ answer: BetaAnswer, at target: URL = url) {
+            guard var file = readForWrite(at: target) else { return }
             file.answers.append(answer)
-            write(file)
+            write(file, to: target)
         }
 
         /// The file to share, once there is at least one answer.
