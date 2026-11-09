@@ -195,6 +195,47 @@ struct SaveStoreTests {
                 == store.directory.standardizedFileURL.pathComponents)
     }
 
+    /// A slot named `farm.json` is the file `farm.json.json`. The folder lists it by that name, and the
+    /// listed name opens the same save.
+    @Test func aSlotEndingInJsonIsListedAndReopens() throws {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let data = try sampleSave(8)
+        try SaveStore(directory: dir, slot: "farm.json").write(data)
+        #expect(FileManager.default.fileExists(atPath: dir.appendingPathComponent("farm.json.json").path))
+        #expect(SaveStore.slots(in: dir) == ["farm.json"])
+        #expect(try SaveStore(directory: dir, slot: "farm.json").read() == data)
+    }
+
+    /// An older CLI took `--slot` as it was. A save already under such a name still opens, while a new
+    /// name gets the clean form.
+    @Test func anOlderSlotNameStillOpensItsOwnFile() throws {
+        let dir = tempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let data = try sampleSave(9)
+        try data.write(to: dir.appendingPathComponent("My Farm.json"))
+        let store = SaveStore(directory: dir, slot: "My Farm")
+        #expect(store.slot == "My Farm")
+        #expect(try store.read() == data)
+        #expect(SaveStore(directory: dir, slot: "New Farm").slot == "NewFarm")  // no file yet: cleaned
+    }
+
+    /// The older-name rule never reaches outside the folder, never opens a hidden file and never takes a
+    /// backup's name, even when such a file exists.
+    @Test func anUnsafeOlderNameIsStillCleaned() throws {
+        let parent = tempDir()
+        defer { try? FileManager.default.removeItem(at: parent) }
+        let dir = parent.appendingPathComponent("saves")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let data = try sampleSave(10)
+        try data.write(to: parent.appendingPathComponent("x.json"))
+        try data.write(to: dir.appendingPathComponent(".hidden.json"))
+        try data.write(to: dir.appendingPathComponent("main.bak1.json"))
+        #expect(SaveStore(directory: dir, slot: "../x").slot == "x")
+        #expect(SaveStore(directory: dir, slot: ".hidden").slot == "hidden")
+        #expect(SaveStore(directory: dir, slot: "main.bak1").slot == "mainbak1")
+    }
+
     @Test(arguments: ["", "..", "../", "/", ". ."])
     func aSlotNameWithNothingLeftIsTheDefault(_ raw: String) {
         #expect(SaveStore(directory: tempDir(), slot: raw).slot == SaveStore.defaultSlot)

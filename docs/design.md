@@ -603,6 +603,8 @@ A hand-edited save must load and play without a trap (#69):
   leading dots. So `--slot ../x` is slot `x`, in the save folder, and an older `family.2025` slot still loads.
   A name that looks like a backup or a quarantined copy (`main.bak1`) loses its dots. A name with nothing left
   is the default slot. The CLI and the app share this.
+  An older CLI took `--slot` as it was. A save already under such a name (`My Farm.json`) still opens, if the
+  name has no slash, no leading dot, no control character and no backup ending (`isSafeLegacyName`).
 - Numbers: `SaveFormat.decode` keeps every rule in 0...`maxRuleNumber` (1,000,000) and every other number in
   ±`maxStateNumber` (1,000,000,000). Counts such as coins, treats and the day are never below 0. `shopSeed` is
   a seed, so it keeps its full range. A save the game wrote holds no number out of bounds, so it loads unchanged.

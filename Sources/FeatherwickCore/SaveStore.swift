@@ -19,11 +19,25 @@ public struct SaveStore: Sendable {
 
     /// The slot name is cleaned here, so every front end gets the same rule and no name can reach
     /// outside `directory` (`--slot ../x` is slot `x`). A name with nothing left is the default slot.
+    /// An older `--slot` name the rule would change (`My Farm`) keeps its own file while that file exists.
     public init(directory: URL, slot: String = SaveStore.defaultSlot, backupCount: Int = 2) {
         self.directory = directory
         let clean = SaveStore.cleanSlotName(slot)
-        self.slot = clean.isEmpty ? SaveStore.defaultSlot : clean
+        if clean != slot, SaveStore.isSafeLegacyName(slot),
+            FileManager.default.fileExists(atPath: directory.appendingPathComponent("\(slot).json").path)
+        {
+            self.slot = slot
+        } else {
+            self.slot = clean.isEmpty ? SaveStore.defaultSlot : clean
+        }
         self.backupCount = max(0, backupCount)
+    }
+
+    /// A name an older CLI could have saved under that is still one plain file in the folder: no slash,
+    /// no leading dot (hidden, or `..`), no control character, and not a backup's or quarantine's ending.
+    static func isSafeLegacyName(_ name: String) -> Bool {
+        !name.isEmpty && !name.hasPrefix(".") && !isMarked(name)
+            && !name.unicodeScalars.contains { $0 == "/" || $0 == "\\" || $0.properties.generalCategory == .control }
     }
 
     /// Only letters, numbers, `-`, `_` and inner dots. No `/`, so the name is one file in the save folder.
