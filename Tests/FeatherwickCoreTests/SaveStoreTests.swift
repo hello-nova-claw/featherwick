@@ -196,15 +196,17 @@ struct SaveStoreTests {
     }
 
     /// A slot named `farm.json` is the file `farm.json.json`. The folder lists it by that name, and the
-    /// listed name opens the same save.
-    @Test func aSlotEndingInJsonIsListedAndReopens() throws {
+    /// listed name opens the same save. `farm.bak1.json` holds a backup's ending inside it, but only the
+    /// end of the name counts, so it is a slot too.
+    @Test(arguments: ["farm.json", "farm.bak1.json"])
+    func aSlotEndingInJsonIsListedAndReopens(_ name: String) throws {
         let dir = tempDir()
         defer { try? FileManager.default.removeItem(at: dir) }
         let data = try sampleSave(8)
-        try SaveStore(directory: dir, slot: "farm.json").write(data)
-        #expect(FileManager.default.fileExists(atPath: dir.appendingPathComponent("farm.json.json").path))
-        #expect(SaveStore.slots(in: dir) == ["farm.json"])
-        #expect(try SaveStore(directory: dir, slot: "farm.json").read() == data)
+        try SaveStore(directory: dir, slot: name).write(data)
+        #expect(FileManager.default.fileExists(atPath: dir.appendingPathComponent("\(name).json").path))
+        #expect(SaveStore.slots(in: dir) == [name])
+        #expect(try SaveStore(directory: dir, slot: name).read() == data)
     }
 
     /// An older CLI took `--slot` as it was. A save already under such a name still opens, while a new
