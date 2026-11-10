@@ -14,11 +14,15 @@
 
 public struct Milestone: Identifiable, Sendable {
     public let id: String
+    /// False while no breed in the game can make this goal: the journal then says it waits for a new
+    /// breed, and gives no hint to chase. It is still reached if the keeper gets there anyway.
+    public let isAvailable: Bool
     /// True once the keeper has reached this goal, judged from the whole game state.
     public let isReached: @Sendable (GameState) -> Bool
 
-    public init(id: String, isReached: @escaping @Sendable (GameState) -> Bool) {
+    public init(id: String, isAvailable: Bool = true, isReached: @escaping @Sendable (GameState) -> Bool) {
         self.id = id
+        self.isAvailable = isAvailable
         self.isReached = isReached
     }
 }
@@ -27,6 +31,7 @@ public enum Milestones {
     /// The ladder, in order: early and easy first, then breeding and taming, then the show ring.
     /// Later goals are appended at the end.
     /// Every test reads only existing, player-visible state, so no milestone can leak hidden genes.
+    /// A goal no in-game breed can make yet is marked `isAvailable: false` (chocolate and white eggs).
     public static let all: [Milestone] = [
         Milestone(id: "firstEgg") { !$0.eggBook.isEmpty },
         Milestone(id: "firstHatch") { $0.chicksHatched >= 1 },
@@ -40,12 +45,19 @@ public enum Milestones {
         Milestone(id: "blueRibbon") { $0.firstPlaceRibbons >= 1 },
         Milestone(id: "lapChicken") { s in s.ownBirds.contains { $0.friendliness == .lapChicken } },
         Milestone(id: "storyteller") { s in s.stories.values.contains { $0.rewarded } },
-        Milestone(id: "elderHen") { s in s.ownBirds.contains { $0.isRetired(onDay: s.day, rules: s.rules) } },
-        Milestone(id: "chocolateEgg") { s in s.eggBook.contains { $0.colour == .chocolate } },
+        // A hen kept to `elderHenAgeDays`. Retirement itself comes much later (`retirementAgeDays`).
+        Milestone(id: "elderHen") { s in
+            s.ownBirds.contains { $0.revealed && $0.sex == .hen && $0.age(onDay: s.day) >= s.rules.elderHenAgeDays }
+        },
+        Milestone(id: "chocolateEgg", isAvailable: BreedTable.canLay(.chocolate)) { s in
+            s.eggBook.contains { $0.colour == .chocolate }
+        },
         Milestone(id: "greenEgg") { s in s.eggBook.contains { $0.colour == .green } },
         // Counted only on the morning the sex shows anyway, so it reveals nothing early.
         Milestone(id: "henOrRoo") { $0.sexGuessesRight >= 1 },
-        Milestone(id: "whiteEgg") { s in s.eggBook.contains { $0.colour == .white } },
+        Milestone(id: "whiteEgg", isAvailable: BreedTable.canLay(.white)) { s in
+            s.eggBook.contains { $0.colour == .white }
+        },
     ]
 }
 

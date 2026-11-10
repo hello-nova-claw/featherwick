@@ -25,10 +25,22 @@ struct FeatherwickApp: App {
         return GameStore()
     }
 
+    /// True in a Debug build launched by a UI test: the farm scene holds still for screenshots.
+    private static var freezesScene: Bool {
+        #if DEBUG
+            UITestLaunch.freezesScene(arguments: ProcessInfo.processInfo.arguments)
+        #else
+            false
+        #endif
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(store)
+                .sceneMotion(frozen: Self.freezesScene)
+                // The system shows the home indicator in some runs and not others, which changes every shot.
+                .persistentSystemOverlays(Self.freezesScene ? .hidden : .automatic)
                 // Painted part kits load off the main thread, before the first painted bird shows.
                 .task { await PartKit.preload() }
         }

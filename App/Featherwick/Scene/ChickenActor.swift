@@ -20,14 +20,14 @@ enum ChickenActivity: Hashable, Sendable {
 /// per-frame `TimelineView`; it is paused at all other times. (A steady redraw once made swiping between
 /// farm panels stutter.)
 ///
-/// Reduce Motion: no leg cycle, no peck, no glances. Blinks stay.
+/// Reduce Motion: no leg cycle, no peck, no glances. Blinks stay. Frozen for a UI test: no blinks either.
 struct AnimatedChicken: View {
     let colours: ChickenColours
     var height: CGFloat
     var facingRight: Bool
     var activity: ChickenActivity
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.sceneMotion) private var motion
     /// Blink and head turn. The task loop animates these; walking and pecking come on top.
     @State private var face: ChickenPose = .rest
     /// When the running peck began. Nil when no peck is running or settling.
@@ -48,18 +48,18 @@ struct AnimatedChicken: View {
         TimelineView(.animation(minimumInterval: nil, paused: !moving)) { context in
             ChickenView(colours: colours, pose: pose(at: context.date), facingRight: facingRight, height: height)
         }
-        .task(id: Cue(activity: activity, reduceMotion: reduceMotion)) { await live(activity) }
+        .task(id: Cue(activity: activity, motion: motion)) { await live(activity) }
     }
 
     /// The task restarts when either changes.
     private struct Cue: Hashable {
         let activity: ChickenActivity
-        let reduceMotion: Bool
+        let motion: SceneMotion
     }
 
     /// True while the legs or a peck need a new frame every display refresh.
     private var moving: Bool {
-        !reduceMotion
+        !motion.isStill
             && (activity == .walking || peckStart != nil || (ChickenView.rig(for: colours).painted && walk.easing))
     }
 
@@ -67,9 +67,9 @@ struct AnimatedChicken: View {
     /// leg angles depend on its leg lengths.
     private func pose(at date: Date) -> ChickenPose {
         let rig: SkeletonRig = ChickenView.rig(for: colours)
-        var pose: ChickenPose = motion(rig, at: date)
+        var pose: ChickenPose = bones(rig, at: date)
         if moving {
-            pose.sway = FluffFollow.sway(rig) { ago in motion(rig, at: date.addingTimeInterval(-ago)) }
+            pose.sway = FluffFollow.sway(rig) { ago in bones(rig, at: date.addingTimeInterval(-ago)) }
         }
         pose.headTurn = face.headTurn
         pose.blink = face.blink
@@ -78,8 +78,8 @@ struct AnimatedChicken: View {
 
     /// The bones alone at `date`: no face, no sway. A painted bird's walk eases in from standing and out to
     /// what comes next (`WalkEase`); the path rig starts and stops at once, as it always has.
-    private func motion(_ rig: SkeletonRig, at date: Date) -> ChickenPose {
-        guard !reduceMotion else { return stillMotion(rig, at: date) }
+    private func bones(_ rig: SkeletonRig, at date: Date) -> ChickenPose {
+        guard !motion.isStill else { return stillMotion(rig, at: date) }
         let walking: Bool = activity == .walking
         let share: Double = rig.painted ? walk.share(at: date, walking: walking, over: M.walkEase) : walking ? 1 : 0
         guard share > 0 else { return stillMotion(rig, at: date) }
@@ -93,7 +93,7 @@ struct AnimatedChicken: View {
         if activity == .sitting {
             // A pose, not a motion: it holds with Reduce Motion too. Sit down inside `withAnimation` to ease it.
             return ChickenMotion.sitting(rig)
-        } else if let peckStart, !reduceMotion {
+        } else if let peckStart, !motion.isStill {
             return ChickenMotion.peck(rig, progress: date.timeIntervalSince(peckStart) / M.peckDuration)
         }
         return .rest
@@ -107,11 +107,11 @@ struct AnimatedChicken: View {
         } else if walk.start != nil {
             walk.end(at: Date(), over: M.walkEase)
         }
-        let canLook: Bool = (activity == .idle || activity == .sitting) && !reduceMotion
+        let canLook: Bool = (activity == .idle || activity == .sitting) && !motion.isStill
         if !canLook && face.headTurn != 0 {
             withAnimation(.easeInOut(duration: M.lookDuration)) { face.headTurn = 0 }
         }
-        if activity == .pecking && !reduceMotion {
+        if activity == .pecking && !motion.isStill {
             peckStart = Date()
             // On past the peck until the loose parts settle: the last frame must have no sway in it.
             guard await pause(M.peckDuration + FluffFollow.settle) else { return }
@@ -122,6 +122,7 @@ struct AnimatedChicken: View {
             guard await pause(M.walkEase + FluffFollow.settle) else { return }
             walk.stop = nil
         }
+        guard motion.blinks else { return }
         await blinkAndLook(canLook: canLook)
     }
 
