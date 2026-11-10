@@ -62,6 +62,49 @@ import Testing
         #expect(abs(rig.motion.stepLength - 2 * 0.113 * tan(22 * Double.pi / 180)) < 1e-12)
         #expect(KitToken.implied(for: "leg", in: kit) == .legs)
         #expect(KitToken.implied(for: "body", in: kit) == .feathers)
+        // With one foot there is no pair to spread: it steps around where it is drawn.
+        let xs: [Double] = (0..<24).map { i in
+            let pose: ChickenPose = ChickenMotion.walk(rig, phase: Double(i) / 24)
+            return Double(Skeleton.place(CGPoint(x: 0.032, y: 0), on: .thighFront, rig: rig, pose: pose).x)
+        }
+        #expect(abs((xs.min()! + xs.max()!) / 2 - 0.032) < 0.002)
+    }
+
+    /// A kit drawn mid-stride, feet wide apart, still walks: its feet step around their middle, so they pass
+    /// each other. `footSpread` sets how far apart they step; standing keeps the drawn feet.
+    @Test func feetDrawnApartStillPassWhenWalking() throws {
+        let parts: String = """
+            {"thigh": {"bone": "thighBack", "pivot": [-0.06, 0.35]},
+             "shank": {"bone": "shankBack", "pivot": [-0.13, 0.19]},
+             "toes": {"bone": "toesBack", "pivot": [-0.10, 0.05]},
+             "body": {"bone": "body", "pivot": [-0.02, 0.36]},
+             "thigh2": {"bone": "thighFront", "pivot": [0.015, 0.35]},
+             "shank2": {"bone": "shankFront", "pivot": [0.04, 0.19]},
+             "toes2": {"bone": "toesFront", "pivot": [0.09, 0.05]}}
+            """
+        let order: [String] = ["thigh", "shank", "toes", "body", "thigh2", "shank2", "toes2"]
+        let rig: SkeletonRig = try spec(parts, order: order).skeleton
+        func gap(_ rig: SkeletonRig, _ phase: Double) -> Double {
+            let pose: ChickenPose = ChickenMotion.walk(rig, phase: phase)
+            let back: CGPoint = Skeleton.place(rig.feet[.back]!, on: .toesBack, rig: rig, pose: pose)
+            let front: CGPoint = Skeleton.place(rig.feet[.front]!, on: .toesFront, rig: rig, pose: pose)
+            return Double(front.x - back.x)
+        }
+        let gaps: [Double] = (0..<24).map { gap(rig, Double($0) / 24) }
+        #expect(gaps.min()! < 0 && gaps.max()! > 0)
+        let standing: CGPoint = Skeleton.place(rig.feet[.back]!, on: .toesBack, rig: rig, pose: .rest)
+        #expect(abs(standing.x - rig.feet[.back]!.x) < 1e-9 && abs(standing.y - rig.feet[.back]!.y) < 1e-9)
+        let wide: SkeletonRig = try spec(parts, order: order, motion: #"{"footSpread": 0.2}"#).skeleton
+        #expect(wide.motion.footSpread == 0.2)
+        #expect((0..<24).allSatisfy { gap(wide, Double($0) / 24) > 0 })
+        // A slower stride slides each foot further, so the bird keeps the scene's walking speed.
+        let slow: SkeletonRig = try spec(parts, order: order, motion: #"{"stride": 0.9}"#).skeleton
+        #expect(slow.motion.stride == 0.9)
+        #expect(abs(slow.motion.stepLength - rig.motion.stepLength * 0.9 / rig.motion.stride) < 1e-12)
+        // A leg swing sets the step; a stride then scales it, whatever order the keys are in.
+        let both: SkeletonRig = try spec(parts, order: order, motion: #"{"legSwing": 20, "stride": 0.9}"#).skeleton
+        let swung: Double = 2 * 0.35 * tan(20 * Double.pi / 180)
+        #expect(abs(both.motion.stepLength - swung * 0.9 / rig.motion.stride) < 1e-12)
     }
 
     /// An old kit (joints by `rotates`, parts by `ridesOn`) names no bones. It has no body joint, so it

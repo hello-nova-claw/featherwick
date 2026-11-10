@@ -315,15 +315,23 @@ public struct Recipe: Hashable, Sendable {
 ///
 /// Every bird bred outside the flock (a starter, a shop bird, a gift, a parent of a bought egg) is a
 /// purebred made from one of these. For each breed and sex: every colour variety of the breed, and
-/// every colour the shop's daily special can name on it, each with and without barring.
+/// every colour the shop's daily special can name on it, each with and without barring, and each with
+/// and without every hidden recessive the breed carries (`BreedDefinition.carried`).
 public enum RecipeTable {
     public static let all: [Recipe] = BreedTable.all.flatMap { def in
         let specials = FeatherColour.allCases.map { ShopSpecial.variety(for: $0, on: def.id) }
         var varieties: [ColourVariety] = []
         for v in def.varieties + specials where !varieties.contains(v) { varieties.append(v) }
+        // Each hidden recessive the breed carries: no copy, one copy, or two (then it shows).
+        let carriedSets = def.carried.reduce([[GeneSetting]()]) { sets, gene in
+            let both = GeneSetting(locus: gene.locus, first: gene.second, second: gene.second)
+            return sets + sets.map { $0 + [gene] } + sets.map { $0 + [both] }
+        }
         return Sex.allCases.flatMap { sex in
             varieties.flatMap { variety in
-                [false, true].map { barred in recipe(def.id, sex, variety, barred: barred) }
+                [false, true].flatMap { barred in
+                    carriedSets.map { carried in recipe(def.id, sex, variety, barred: barred, carried: carried) }
+                }
             }
         }
     }
@@ -341,8 +349,11 @@ public enum RecipeTable {
 
     private static let byBreedAndSex = Dictionary(grouping: all) { BreedAndSex(breed: $0.breed, sex: $0.sex) }
 
-    private static func recipe(_ breed: Breed, _ sex: Sex, _ variety: ColourVariety, barred: Bool) -> Recipe {
-        let made = breed.purebred(sex, variety: variety, barred: barred)
+    private static func recipe(
+        _ breed: Breed, _ sex: Sex, _ variety: ColourVariety, barred: Bool, carried: [GeneSetting]
+    ) -> Recipe {
+        var made = breed.purebred(sex, variety: variety, barred: barred)
+        for gene in carried { gene.apply(to: &made) }
         let p = Phenotype(made)
         let genotypes = GenotypeSpace.all.map { Genotype(made.alleles(at: $0.locus), at: $0.locus) }
         let masks = zip(GenotypeSpace.all, genotypes).map { space, g in

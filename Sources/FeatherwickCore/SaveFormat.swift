@@ -75,10 +75,85 @@ public enum SaveFormat {
         // Read before `fillNewSettings`, which would fill the key with an empty list.
         let hasLayRecords = (root["state"] as? [String: Any])?["layRecords"] != nil
         fillNewSettings(&root)
+        keepNumbersInBounds(&root)
         let current = try JSONSerialization.data(withJSONObject: root)
         guard var envelope = try? JSONDecoder().decode(Envelope.self, from: current) else { throw LoadError.notASave }
+        mendRules(&envelope.state)
         if !hasLayRecords { backFillLayRecords(&envelope.state) }
         return SaveGame(state: envelope.state, rng: envelope.rng)
+    }
+
+    // MARK: - Hand-edited saves
+
+    /// The largest number a rule may hold. Far above any real rule, and small enough that rules
+    /// multiplied together or added up every day never overflow an `Int`.
+    public static let maxRuleNumber = 1_000_000
+    /// The largest number (either sign) anywhere else in the state: coins, days, counts.
+    /// A game would take millions of years to reach it, so only a hand edit ever does.
+    public static let maxStateNumber = 1_000_000_000
+    /// The most rivals a show class may hold, and the most a judge may pick. Each rival is a whole bird
+    /// made on show day, so a hand-edited million would stall the show. Far above any real class.
+    public static let maxShowEntrants = 100
+    /// State keys whose numbers are seeds, not amounts. Their whole 64-bit range is real.
+    static let seedKeys: Set<String> = ["shopSeed"]
+    /// Counts that are never below 0 in play.
+    static let countKeys = [
+        "day", "coins", "treats", "premiumFeed", "perches", "nestBoxes", "brooderSize", "cartons",
+        "incubatorSize", "chicksHatched", "slotsUsed", "sexGuessesRight",
+    ]
+
+    /// A hand-edited save can hold any number, and the engine would trap on the next `+=` (coins at
+    /// `Int.max`). So every number is kept in bounds before the state is decoded: rules to
+    /// 0...`maxRuleNumber`, everything else to ±`maxStateNumber`, counts to 0 or more. A save written
+    /// by the game never holds a number out of bounds, so this changes nothing in it.
+    static func keepNumbersInBounds(_ root: inout [String: Any]) {
+        guard var state = root["state"] as? [String: Any] else { return }
+        for (key, value) in state where !seedKeys.contains(key) {
+            if key == "rules" {
+                state[key] = clampNumbers(in: value, to: 0...maxRuleNumber)
+            } else {
+                state[key] = clampNumbers(in: value, to: -maxStateNumber...maxStateNumber)
+            }
+        }
+        for key in countKeys {
+            if let number = state[key].flatMap(jsonNumber), number < 0 { state[key] = 0 }
+        }
+        root["state"] = state
+    }
+
+    /// Every JSON number in `value`, at any depth, kept in `bounds`. A number in bounds is left exactly as
+    /// it is (so a `Bool`, which JSON may read as 0 or 1, is never changed).
+    static func clampNumbers(in value: Any, to bounds: ClosedRange<Int>) -> Any {
+        if let object = value as? [String: Any] { return object.mapValues { clampNumbers(in: $0, to: bounds) } }
+        if let array = value as? [Any] { return array.map { clampNumbers(in: $0, to: bounds) } }
+        guard let number = jsonNumber(value) else { return value }
+        if number < Double(bounds.lowerBound) { return bounds.lowerBound }
+        if number > Double(bounds.upperBound) { return bounds.upperBound }
+        return value
+    }
+
+    /// A JSON number as a `Double`, near enough to compare with a bound. `as? Double` alone fails for a
+    /// whole number a `Double` cannot hold exactly, such as `Int.max`, so read the `NSNumber`.
+    static func jsonNumber(_ value: Any) -> Double? {
+        if value is String { return nil }
+        if let number = value as? NSNumber { return number.doubleValue }
+        if let number = value as? Int { return Double(number) }
+        return value as? Double
+    }
+
+    /// Rules that only make sense together. A hand edit can break them, and the engine would trap:
+    /// a random range with its max below its min, or a division by 0.
+    static func mendRules(_ state: inout GameState) {
+        var r = state.rules
+        r.lostDaysMax = max(r.lostDaysMin, r.lostDaysMax)
+        r.marketCardsMax = max(r.marketCardsMin, r.marketCardsMax)
+        r.marketBuyerMaxDays = max(r.marketBuyerMinDays, r.marketBuyerMaxDays)
+        r.daysPerSeason = max(1, r.daysPerSeason)
+        r.hensPerRooster = max(1, r.hensPerRooster)
+        r.showCompetitorsByKind = r.showCompetitorsByKind.mapValues { min($0, maxShowEntrants) }
+        r.showRivalPicks = r.showRivalPicks.mapValues { min($0, maxShowEntrants) }
+        r.winterChampionshipExtraPicks = min(r.winterChampionshipExtraPicks, maxShowEntrants)
+        state.rules = r
     }
 
     /// A save from before the record book has no `layRecords` key. Its egg history starts from the eggs

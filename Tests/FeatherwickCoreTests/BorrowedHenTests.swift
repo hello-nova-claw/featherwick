@@ -147,6 +147,66 @@ struct BorrowedHenTests {
         }
     }
 
+    /// Rule 7. At a recessive the breed carries, the chick's first copy comes from Marigold and its second
+    /// from her mate. So a starter with two speckle copies has two parents who could each give one.
+    @Test func herMateCanGiveTheStartersOtherCarriedCopy() throws {
+        let speckle = try #require(Loci.definition(Speckle.locus))
+        let plain = Speckle.plain.rawValue
+        let speckled = Speckle.speckled.rawValue
+        var rng = SeededRNG(seed: 5)
+        for breed in [Breed.orpington, .wyandotte] {
+            for copies in [[plain, plain], [plain, speckled], [speckled, plain], [speckled, speckled]] {
+                var chick = breed.purebred(.rooster)
+                chick.setAlleles(copies, at: speckle)
+                let mother = try #require(breed.motherGenome(of: chick, using: &rng))
+                let father = breed.fatherGenome(of: chick)
+                #expect(mother.alleles(at: speckle) == [copies[0], plain], "\(breed) \(copies)")
+                #expect(father.alleles(at: speckle) == [copies[1], plain], "\(breed) \(copies)")
+                // Outside the carried genes he is the breed's plain purebred rooster.
+                var usual = father
+                usual.setAlleles([plain, plain], at: speckle)
+                #expect(usual == breed.purebred(.rooster))
+            }
+        }
+    }
+
+    /// Rule 7. Her mate could have given the starter its second copy at every gene, not only at the
+    /// carried recessives: a colour other than the breed's first, barring on the Z, and the genes behind a
+    /// quantitative trait. A hen chick's one Z came from him.
+    @Test func herMateCouldHaveGivenEveryCopy() throws {
+        let autosomal = (Loci.mendelian + QuantitativeTrait.all.flatMap(\.loci)).filter { $0.inheritance == .autosomal }
+        var chicks: [(Breed, Genome)] = []
+        for breed in [Breed.orpington, .wyandotte] {
+            for variety in breed.definition.varieties {
+                for sex in [Sex.hen, .rooster] {
+                    for barred in [false, true] {
+                        var chick = breed.purebred(sex, variety: variety, barred: barred)
+                        // A quantitative gene where the chick's second copy is not the breed's usual one.
+                        let locus = try #require(QuantitativeTrait.all.first?.loci.first)
+                        let own = chick.alleles(at: locus)[1]
+                        let other = try #require(locus.alleles.first { $0 != own })
+                        chick.setAlleles([chick.alleles(at: locus)[0], other], at: locus)
+                        chicks.append((breed, chick))
+                    }
+                }
+            }
+        }
+        for (breed, chick) in chicks {
+            let father = breed.fatherGenome(of: chick)
+            #expect(father.sex == .rooster)
+            for locus in autosomal {
+                #expect(father.alleles(at: locus).contains(chick.alleles(at: locus)[1]), "\(breed) \(locus.id)")
+            }
+            for locus in Loci.zLinked {
+                let copy = try #require(chick.alleles(at: locus).last)
+                #expect(father.alleles(at: locus).contains(copy), "\(breed) \(locus.id)")
+            }
+        }
+        // A buff chick's father is a buff rooster of the breed, not a black one carrying buff.
+        let buff = Breed.orpington.purebred(.rooster, colour: .buff)
+        #expect(Phenotype(Breed.orpington.fatherGenome(of: buff)).colour == .buff)
+    }
+
     /// Rule 8. Marigold's look, and everything the keeper can work out, is the same for a hen starter and
     /// a rooster starter with the same look, until the sex shows. Barring is the trap: it is on the Z.
     @Test(arguments: [UInt64(1), 2, 3, 7, 42, 100])
@@ -323,7 +383,7 @@ struct BorrowedHenTests {
         #expect(s.lost.contains { $0.bird.id == hen.id })
         #expect(Self.marigold(s) != nil)  // still on loan while away
         s.rules.foxChance = 0
-        let back = Self.play(until: s.lost.first!.returnsOnDay, &s, &rng)
+        let back = Self.play(until: try #require(s.lost.first).returnsOnDay, &s, &rng)
         #expect(back.contains(.birdReturned(hen.id)))
         #expect(s.coop.contains { $0.id == hen.id && $0.loan?.tag == Self.tag })
 

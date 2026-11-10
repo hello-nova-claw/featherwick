@@ -72,6 +72,9 @@ final class GameStore {
     /// "seen", so the app keeps it (per save slot), and the farm gate stops saying "new in today".
     private(set) var seenNewStock: Set<Feature>
     private var store: SaveStore
+    /// The save version, when this slot holds a save from a newer game. The app then shows a note in place
+    /// of the farm and never writes, so the keeper's farm is safe for the newer build.
+    let saveTooNew: Int?
     private let seenStockKey: String
     /// The save slot, so per-slot notes kept outside the save (new stock seen, beta prompts) find theirs.
     let slot: String
@@ -80,20 +83,30 @@ final class GameStore {
     var state: GameState { save.state }
     var saveLocation: String { store.url.path }
 
-    init(directory: URL = GameStore.saveDirectory(), slot: String = SaveStore.defaultSlot) {
+    /// `newGameSeed` seeds the game an empty slot starts with. Tests pass one, so the same seed is the same game.
+    init(
+        directory: URL = GameStore.saveDirectory(), slot: String = SaveStore.defaultSlot, newGameSeed: UInt64? = nil
+    ) {
         // A local first: @Observable can't read `self.store` until every property is set.
         let store = SaveStore(directory: directory, slot: slot)
         self.store = store
-        self.slot = slot
-        save = Self.load(from: store) ?? Self.newSave(rules: .standard)
-        seenStockKey = "seenNewStock.\(slot)"
-        let seen = UserDefaults.standard.stringArray(forKey: seenStockKey) ?? []
+        self.slot = store.slot
+        let (loaded, recovery) = store.load()
+        if case .tooNew(let version) = recovery { saveTooNew = version } else { saveTooNew = nil }
+        save = loaded ?? Self.newSave(rules: .standard, seed: newGameSeed ?? .random(in: .min ... .max))
+        // Keyed by the cleaned slot, as the save is. A key under the raw name from before is read once.
+        seenStockKey = "seenNewStock.\(store.slot)"
+        let legacyKey = "seenNewStock.\(slot)"
+        let seen =
+            UserDefaults.standard.stringArray(forKey: seenStockKey)
+            ?? (legacyKey == seenStockKey ? nil : UserDefaults.standard.stringArray(forKey: legacyKey)) ?? []
         seenNewStock = Set(seen.compactMap(Feature.init(rawValue:)))
         if case .choosingStarter = state.phase {
             append("Welcome to Featherwick.")
         } else {
             append("Welcome back. It is day \(state.day).")
         }
+        if let words = recoveryText(recovery) { append(words) }
         noteEvening()
     }
 
@@ -105,19 +118,10 @@ final class GameStore {
         return dir
     }
 
-    nonisolated static func newSave(rules: Rules) -> SaveGame {
-        var rng = SeededRNG(seed: UInt64.random(in: .min ... .max))
+    nonisolated static func newSave(rules: Rules, seed: UInt64 = .random(in: .min ... .max)) -> SaveGame {
+        var rng = SeededRNG(seed: seed)
         let state = Engine.newGame(rules: rules, using: &rng)
         return SaveGame(state: state, rng: rng)
-    }
-
-    /// The main save, else the newest backup. An unreadable save is moved aside, never deleted.
-    private static func load(from store: SaveStore) -> SaveGame? {
-        if let data = try? store.read() {
-            if let save = try? SaveFormat.decode(data) { return save }
-            store.quarantine()
-        }
-        return store.newestBackupData().flatMap { try? SaveFormat.decode($0) }
     }
 
     // MARK: - Playing
@@ -469,7 +473,8 @@ final class GameStore {
     }
 
     private func persist() {
-        guard let data = try? SaveFormat.encode(save) else { return }
+        // A newer game's save is never written over.
+        guard saveTooNew == nil, let data = try? SaveFormat.encode(save) else { return }
         try? store.write(data)
     }
 }

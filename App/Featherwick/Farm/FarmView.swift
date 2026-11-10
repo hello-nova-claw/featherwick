@@ -511,13 +511,14 @@ struct PanelDots: View {
                     Button {
                         withAnimation { selection = p }
                     } label: {
-                        dot(for: p).frame(width: 44, height: 40)
+                        dot(for: p).frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                     .accessibilityLabel(([p.name] + (notices[p] ?? []).map(\.text)).joined(separator: ", "))
                     .accessibilityAddTraits(p == selection ? .isSelected : [])
+                    .accessibilityIdentifier("rail.dot")
                 }
             }
-            .padding(.vertical, Space.xs)
         }
         .padding(.top, Space.s)
     }
@@ -537,12 +538,14 @@ struct PanelDots: View {
     }
 }
 
-/// A box floating over the scene (white by day, dark by night): radius 10 and a soft shadow.
+/// A box floating over the scene (white by day, dark by night): radius 10 and a soft shadow. A button in it
+/// takes taps over the whole box, not only on its word or mark.
 struct FloatingBox<Content: View>: View {
     @Environment(\.palette) private var palette
     @ViewBuilder var content: Content
     var body: some View {
         content
+            .contentShape(RoundedRectangle(cornerRadius: Radius.control))
             .background(palette.floating, in: RoundedRectangle(cornerRadius: Radius.control))
             .shadow(color: Color(hex: 0x2A2320).opacity(0.35), radius: 7, y: 4)
     }
@@ -565,6 +568,7 @@ struct PlaceLabel: View {
             .padding(.horizontal, Space.l)
             .padding(.vertical, Space.s)
             .frame(minHeight: 44)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .background(palette.floating, in: RoundedRectangle(cornerRadius: Radius.control))

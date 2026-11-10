@@ -14,7 +14,7 @@ struct RigStressView: View {
 
     @State private var count: Int = 10
     /// The body shape whose painted kit the birds use. Nil, or a shape with no kit: the path rig.
-    @State private var build: BodyShape?
+    @State private var build: KitName?
     /// Bumped to put every bird back at its start.
     @State private var run = 0
 
@@ -41,9 +41,9 @@ struct RigStressView: View {
         VStack(alignment: .leading, spacing: Space.xs) {
             Stepper("Birds: \(count)", value: $count, in: 1...30)
             Picker("Painted kit", selection: $build) {
-                Text("None (path rig)").tag(BodyShape?.none)
-                ForEach(BodyShape.allCases, id: \.self) { shape in
-                    Text(shape.rawValue).tag(BodyShape?.some(shape))
+                Text("None (path rig)").tag(KitName?.none)
+                ForEach(KitName.all, id: \.self) { name in
+                    Text(name.folder).tag(KitName?.some(name))
                 }
             }
             Text(
@@ -74,7 +74,7 @@ struct RigStressView: View {
             c.pattern = .barring
             c.patternColour = Tone.white.artColour
         }
-        c.build = build
+        c.use(kit: build)
         return c
     }
 }

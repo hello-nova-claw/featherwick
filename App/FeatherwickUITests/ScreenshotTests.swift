@@ -20,7 +20,18 @@ final class ScreenshotTests: XCTestCase {
         for light in Farm.Light.allCases {
             dayOne(light, language)
             farm(light, language)
+            newerSave(light, language)
         }
+    }
+
+    /// The note in place of the farm for a save from a newer game.
+    private func newerSave(_ light: Farm.Light, _ language: Farm.Language) {
+        let app = Farm.launch(.newerSave, light: light, extra: language.arguments)
+        guard Farm.newerSaveNote(in: app).waitForExistence(timeout: 10) else {
+            XCTFail("The newer-save note did not open")
+            return
+        }
+        shoot(app, "newer-save", light, language)
     }
 
     /// Welcome, the starter choice and the tour.

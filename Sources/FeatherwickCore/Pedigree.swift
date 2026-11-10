@@ -42,11 +42,6 @@ public struct PedigreeRecord: Hashable, Codable, Sendable {
         hatchDay = b.hatchDay
         self.look = look
     }
-
-    /// "orpington hen", "cross rooster".
-    public var kind: String {
-        "\(purebred ? breed.rawValue : "cross") \(sex.rawValue)"
-    }
 }
 
 /// How closely related two birds are, as a keeper would say it.

@@ -58,8 +58,23 @@ struct TextTests {
     @Test(arguments: [UInt64(1), 2, 3, 4, 5])
     func everyEventHasWords(seed: UInt64) {
         for (event, state) in Self.play(seed: seed, days: 120) {
-            guard let words = eventText(event, state) else { continue }
+            guard let words = eventText(event, state) else {
+                #expect(Self.isSilent(event, state), "no words for \(event)")
+                continue
+            }
             #expect(!words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "\(event)")
+        }
+    }
+
+    /// The events that say nothing by design, because other words already tell them.
+    static func isSilent(_ event: GameEvent, _ s: GameState) -> Bool {
+        switch event {
+        case .grewUp: true  // the reveal and the look tell it
+        case .storyFinished: true  // the story's last step tells it
+        case .introduced(.shows): true  // the neighbour's show tip tells it
+        case .showPodium(_, let podium): podium.isEmpty
+        case .jobsSet: s.todaysJobs.isEmpty
+        default: false
         }
     }
 
@@ -163,6 +178,26 @@ struct TextTests {
             #expect(t.title != m.id, "\(m.id) has no title")
             #expect(!t.hint.isEmpty)
         }
+    }
+
+    /// A milestone no breed in the game can make yet sends the keeper after nothing: the journal says
+    /// it waits for a new breed instead of giving its hint. The others show their hint.
+    @Test func theJournalGivesNoHintForAnEggNoBreedLays() {
+        for m in Milestones.all {
+            if m.isAvailable {
+                #expect(milestoneHint(m) == milestoneText(m.id).hint)
+            } else {
+                #expect(milestoneHint(m) != milestoneText(m.id).hint, "\(m.id)")
+                #expect(milestoneHint(m).contains("new breed"))
+            }
+        }
+        var rng = SeededRNG(seed: 1)
+        var s = Engine.newGame(using: &rng)
+        _ = Engine.apply(.chooseStarter(index: 0, name: "Pip"), to: &s, using: &rng)
+        let journal = journalLines(s).joined(separator: "\n")
+        #expect(!journal.contains("Silkie sometimes"))
+        #expect(!journal.contains("chocolate-brown"))
+        #expect(journal.contains("Orpingtons and Wyandottes carry speckle"))
     }
 
     /// 4th, 5th and 6th used to show as "3rd" in the app. Every placing needs its own word.
