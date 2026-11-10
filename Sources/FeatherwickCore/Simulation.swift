@@ -24,6 +24,8 @@ public enum Simulation {
         public var chicksHatched: Int
         public var foxVisits: Int
         public var storiesFinished: Int
+        /// Goal-ladder milestones reached by the end.
+        public var milestones: Set<String> = []
 
         public var eggsPerDay: Double { days > 0 ? Double(eggsLaid) / Double(days) : 0 }
     }
@@ -58,6 +60,7 @@ public enum Simulation {
         r.breedBook = s.breedBook.count
         r.eggBook = s.eggBook.count
         r.storiesFinished = s.stories.values.count(where: \.rewarded)
+        r.milestones = s.milestonesReached
         return (s, r)
     }
 
@@ -233,6 +236,14 @@ public enum Simulation {
             \(line("market") { Double($0.coinsFromMarket) })
             \(line("hatched") { Double($0.chicksHatched) })
             \(line("fox visits") { Double($0.foxVisits) })
+            \(line("milestones") { Double($0.milestones.count) })
+            \(ladderLine(reports))
             """
+    }
+
+    /// How many games reached each milestone, in ladder order: "firstEgg 5, speckledEgg 1, …".
+    static func ladderLine(_ reports: [Report]) -> String {
+        let counts = Milestones.all.map { m in "\(m.id) \(reports.count(where: { $0.milestones.contains(m.id) }))" }
+        return "  reached in   " + counts.joined(separator: ", ")
     }
 }

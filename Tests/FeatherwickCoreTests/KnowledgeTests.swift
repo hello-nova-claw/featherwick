@@ -704,16 +704,20 @@ import Testing
 
     // MARK: - Origin
 
-    @Test func aLavenderOrpingtonFromTheShopIsPinnedEverywhere() {
+    @Test func aLavenderOrpingtonFromTheShopIsPinnedEverywhere() throws {
         var (s, rng) = startedGame(sex: .hen)
         let g = Breed.orpington.purebred(.hen, variety: .lavender)
         let b = Self.bird(g, .orpington, origin: "Speckle & Down", s, &rng, age: s.rules.growerAge)
         s.coop.append(b)
         let k = Knowledge.of(s)
-        for space in GenotypeSpace.all {
+        for space in GenotypeSpace.all where space.locus.id != Speckle.locus {
             #expect(k.state(b.id, space.locus.id) == .pinned, "\(space.locus.id)")
             #expect(k.candidates(b.id, space.locus.id) == [Self.truth(g, space)])
         }
+        // Speckle runs in some Orpington lines, unseen on a pullet: none, one or two copies.
+        let speckle = try #require(GenotypeSpace.all.first { $0.locus.id == Speckle.locus })
+        #expect(k.candidates(b.id, Speckle.locus).count == 3)
+        #expect(k.candidates(b.id, Speckle.locus).contains(Self.truth(g, speckle)))
         // Brown shell is pinned by the breed and not shown on a pullet: a carrier note from origin.
         #expect(
             k.provenHidden(b.id).contains {
@@ -734,12 +738,20 @@ import Testing
             let def = pullet.breed.definition
             let varieties =
                 def.varieties + FeatherColour.allCases.map { ShopSpecial.variety(for: $0, on: pullet.breed) }
+            // A recessive that runs in the breed: no copy, one, or two.
+            let carriedForms = def.carried.reduce([[GeneSetting]()]) { forms, gene in
+                let two = GeneSetting(locus: gene.locus, first: gene.second, second: gene.second)
+                return forms + forms.map { $0 + [gene] } + forms.map { $0 + [two] }
+            }
             var expected = GenotypeSpace.all.map { _ in Set<Genotype>() }
             for variety in varieties {
                 for barred in [false, true] {
-                    let g = pullet.breed.purebred(.hen, variety: variety, barred: barred)
-                    guard SeenLook(Phenotype(g), level: seen.level).coarse == seen.coarse else { continue }
-                    for (l, space) in GenotypeSpace.all.enumerated() { expected[l].insert(Self.truth(g, space)) }
+                    for carried in carriedForms {
+                        var g = pullet.breed.purebred(.hen, variety: variety, barred: barred)
+                        for gene in carried { gene.apply(to: &g) }
+                        guard SeenLook(Phenotype(g), level: seen.level).coarse == seen.coarse else { continue }
+                        for (l, space) in GenotypeSpace.all.enumerated() { expected[l].insert(Self.truth(g, space)) }
+                    }
                 }
             }
             let k = Knowledge.of(s)
@@ -759,9 +771,11 @@ import Testing
             g, .orpington, origin: Bird.homeOrigin, s, &rng, age: s.rules.growerAge, mother: hen.id, father: rooster.id)
         s.coop += [hen, rooster, chick]
         let k = Knowledge.of(s)
-        for space in GenotypeSpace.all {
+        // Speckle runs in some Orpington lines, so the parents' copies are open and the chick's too.
+        for space in GenotypeSpace.all where space.locus.id != Speckle.locus {
             #expect(k.candidates(chick.id, space.locus.id) == [Self.truth(g, space)], "\(space.locus.id)")
         }
+        #expect(k.candidates(chick.id, Speckle.locus).count == 3)
         // Brown shell: one copy from each parent, so the credit goes to both.
         #expect(
             k.provenHidden(chick.id).first { $0.locus == BrownShell.locus }?.evidence
