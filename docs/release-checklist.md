@@ -20,7 +20,7 @@ CI has no archive or upload step. The maintainer archives on her own Mac.
 
 1. Raise `CURRENT_PROJECT_VERSION` in `App/project.yml`. App Store Connect refuses a build number it has seen before, so every upload needs a new one. Commit the change.
 2. `cd App && xcodegen`. The project is generated, so a change to `project.yml` reaches Xcode only after this step.
-3. Copy `App/Config/Local.xcconfig.example` to `Local.xcconfig` and set the team ID, if that is not done yet. The file is git-ignored.
+3. From `App`, copy `Config/Local.xcconfig.example` to `Config/Local.xcconfig` and set the team ID, if that is not done yet. The file is git-ignored.
 4. In Xcode, choose the "Featherwick" scheme and "Any iOS Device (arm64)", then Product ▸ Archive. Never archive "Featherwick Beta" for the App Store: it compiles in the beta questions and the testing aids.
 5. In the Organizer, select the archive and choose Validate App. The report must list no missing icon and no missing privacy manifest reason.
 6. Choose Distribute App ▸ App Store Connect ▸ Upload.

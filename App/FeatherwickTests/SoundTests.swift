@@ -19,11 +19,13 @@ import Testing
         return try #require(Bundle(url: folder))
     }
 
+    /// No sound, or only files the game cannot play, keeps the switch hidden.
     @Test func noSoundFilesMeansNoSwitch() throws {
         #expect(!Sound.hasFiles(in: try bundle(with: [])))
         #expect(!Sound.hasFiles(in: try bundle(with: ["moo.caf", "cluck.wav"])))
     }
 
+    /// One `.caf` or `.m4a`, at the top or in `Sounds/`, shows the switch again.
     @Test func oneSoundFileBringsTheSwitchBack() throws {
         #expect(Sound.hasFiles(in: try bundle(with: ["cluck.caf"])))
         #expect(Sound.hasFiles(in: try bundle(with: ["coins.m4a"])))
