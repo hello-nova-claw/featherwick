@@ -238,6 +238,9 @@ def main(folder):
     spec["drawOrder"] = order
     # This fit's own motion numbers replace the skeleton fit's, one key at a time.
     spec["motion"] = {**spec.get("motion", {}), **fit.get("motion", {})}
+    # The skin (which bones bend the soft parts) is the skeleton fit's, unless this fit sets its own.
+    if "skin" in fit:
+        spec["skin"] = fit["skin"]
     with open(os.path.join(out, "kit.json"), "w") as f:
         json.dump(spec, f, indent=2)
         f.write("\n")

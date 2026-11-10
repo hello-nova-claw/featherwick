@@ -44,3 +44,66 @@ extension View {
         modifier(BoneEffect(bone: bone, rig: rig, pose: pose, height: height, follow: follow))
     }
 }
+
+/// Bends a run of a kit's soft parts (drawn at rest, filling the rig's frame) by its skin for a pose
+/// (`ChickenSkin`, `SkinMesh`, `ChickenSkin.metal`). Animatable like `BoneEffect`, so a pose set inside
+/// `withAnimation` bends smoothly, and a still bird does not redraw.
+///
+/// The CPU moves the mesh's few hundred corners; the shader draws each pixel from the triangle that holds
+/// it, with one transform and one sample. A shader that searched backwards for every pixel's paint made a
+/// large hen stall (#116).
+///
+/// A layer effect draws only inside its view, and SwiftUI draws that view to a surface of its own each
+/// frame. So the view is cut to just what the shader needs: the run's rest paint (it samples there) and
+/// where this pose puts it (it draws there). A pixel samples its paint's rest place, as far away as the
+/// paint moved (`SkinMesh.drift`), and that is the effect's sample offset: SwiftUI draws no further than
+/// the rest picture plus that offset, so with none a long peck lost its head at the frame's edge.
+struct SkinEffect: ViewModifier, Animatable {
+    let skin: ChickenSkin
+    let mesh: SkinMesh
+    let rig: SkeletonRig
+    /// A bone's sway after it moves (the tail). Bones not listed move exactly.
+    let follows: [Bone: Follow]
+    var pose: ChickenPose
+    let height: CGFloat
+
+    nonisolated var animatableData: PoseVector {
+        get { PoseVector(pose.vector) }
+        set { pose = ChickenPose(vector: newValue.values) }
+    }
+
+    func body(content: Content) -> some View {
+        let h: Double = Double(height)
+        let transforms: [Affine] = skin.bones.map { bone in
+            Skeleton.transform(of: bone.bone, rig: rig, pose: pose, height: h, follow: follows[bone.bone])
+        }
+        let moved: [CGPoint] = mesh.moved(transforms: transforms, height: h)
+        let rest: CGRect = mesh.restBounds(height: h)
+        // A point of slack keeps the edge pixels' soft paint.
+        let layer: CGRect = rest.union(mesh.reach(moved: moved)).insetBy(dx: -1, dy: -1).integral
+        let offset = CGPoint(x: -layer.minX, y: -layer.minY)
+        let packed: SkinMesh.Packed = mesh.packed(moved: moved, height: h, layer: layer, offset: offset)
+        let corner: CGPoint = mesh.rest(0, height: h)
+        // A point of slack, as for the layer.
+        let moves: CGSize = mesh.drift(moved: moved, height: h)
+        let drift = CGSize(width: (moves.width + 1).rounded(.up), height: (moves.height + 1).rounded(.up))
+        return
+            content
+            .offset(x: offset.x, y: offset.y)
+            .frame(width: layer.width, height: layer.height, alignment: .topLeading)
+            .layerEffect(
+                ShaderLibrary.chickenSkin(
+                    .floatArray(packed.triangles), .floatArray(packed.tiles), .floatArray(packed.items),
+                    .float4(
+                        Float(corner.x + offset.x), Float(corner.y + offset.y), Float(mesh.cell * h),
+                        Float(mesh.columns)),
+                    .float4(
+                        Float(packed.tileOrigin.x), Float(packed.tileOrigin.y), Float(packed.tile),
+                        Float(packed.across)),
+                    .float(Float(packed.down))),
+                maxSampleOffset: drift
+            )
+            .offset(x: layer.minX, y: layer.minY)
+            .frame(width: height * ChickenRigMetrics.widthRatio, height: height, alignment: .topLeading)
+    }
+}

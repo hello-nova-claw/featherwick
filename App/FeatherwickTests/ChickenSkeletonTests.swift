@@ -116,6 +116,79 @@ import Testing
         #expect(lifted)
     }
 
+    /// A painted bird's lifted thigh swings forward all the way, with its foot: the hock alone lifts the foot,
+    /// so the drumstick never kicks back as the foot steps forward.
+    @Test func aLiftedThighSwingsForward() {
+        var painted: SkeletonRig = adult
+        painted.painted = true
+        for (leg, offset) in [(Leg.back, 0.0), (Leg.front, 0.5)] {
+            var last: Double = .infinity
+            for i in 0...40 {
+                let u: Double = ChickenRigMetrics.stance + (1 - ChickenRigMetrics.stance) * Double(i) / 40
+                let pose: ChickenPose = ChickenMotion.walk(painted, phase: u - offset)
+                // Forward is counter-clockwise on screen: a falling angle.
+                #expect(pose[leg.thigh] <= last + 0.5, "\(leg) at \(u)")
+                last = pose[leg.thigh]
+            }
+        }
+    }
+
+    /// A leg drawn almost straight (hen-b's joints) still walks: the hip drops so no leg is pulled straight,
+    /// a planted foot stays on its ground, and no bone snaps between frames, at lift-off and touch-down
+    /// included. A leg drawn bent, as the path rig's, barely drops.
+    @Test func aStraightLegWalksWithoutSnapping() {
+        let joints: [Bone: CGPoint] = [
+            .body: CGPoint(x: -0.02, y: 0.361), .thighBack: CGPoint(x: -0.059, y: 0.352),
+            .shankBack: CGPoint(x: -0.127, y: 0.19), .toesBack: CGPoint(x: -0.098, y: 0.05),
+            .thighFront: CGPoint(x: 0.015, y: 0.352), .shankFront: CGPoint(x: 0.041, y: 0.19),
+            .toesFront: CGPoint(x: 0.093, y: 0.052),
+        ]
+        var motion: SkeletonMotion = .standard(hipHeight: 0.361)
+        motion.stepLength = 0.19
+        motion.footSpread = 0.06
+        motion.liftShare = 0.15
+        let rig = SkeletonRig(
+            joints: joints, feet: [.back: joints[.toesBack]!, .front: joints[.toesFront]!], motion: motion,
+            painted: true)
+        #expect(ChickenMotion.walkingSink(rig) > 0.02)
+        #expect(ChickenMotion.walkingSink(adult) < 0.01)
+        let legs: [Bone] = [.thighBack, .shankBack, .thighFront, .shankFront]
+        var last: ChickenPose = ChickenMotion.walk(rig, phase: 0)
+        for i in 1...240 {
+            let phase: Double = Double(i) / 240
+            let pose: ChickenPose = ChickenMotion.walk(rig, phase: phase)
+            for bone in legs {
+                #expect(abs(pose[bone] - last[bone]) < 3, "\(bone) at \(phase)")
+            }
+            for (leg, offset) in [(Leg.back, 0.0), (Leg.front, 0.5)] {
+                let u: Double = (phase + offset).truncatingRemainder(dividingBy: 1)
+                guard u < ChickenRigMetrics.stance else { continue }
+                let foot: CGPoint = rig.feet[leg]!
+                let placed: CGPoint = Skeleton.place(foot, on: leg.shank, rig: rig, pose: pose)
+                #expect(abs(placed.y - foot.y) < 1e-4, "planted \(leg) at \(phase)")
+            }
+            last = pose
+        }
+    }
+
+    /// The path rig walks as it always has (#116): its hip only bounces, never drops, and a lifted foot is
+    /// reached for directly. Only a painted kit sinks and blends a bent leg.
+    @Test func thePathRigWalksAsBefore() {
+        for i in 0..<64 {
+            let pose: ChickenPose = ChickenMotion.walk(adult, phase: Double(i) / 64)
+            #expect(pose.rise >= 0 && pose.rise <= adult.motion.bounce + 1e-9, "rise at \(i)/64")
+        }
+        // Mid-swing for the back leg: its foot is where the step puts it, reached for directly.
+        let u: Double = ChickenRigMetrics.stance + (1 - ChickenRigMetrics.stance) / 2
+        let pose: ChickenPose = ChickenMotion.walk(adult, phase: u)
+        var direct: ChickenPose = pose
+        let foot: CGPoint = adult.feet[.back]!
+        let placed: CGPoint = Skeleton.place(foot, on: Leg.back.shank, rig: adult, pose: pose)
+        ChickenMotion.solve(.back, target: placed, curl: 0, rig: adult, pose: &direct)
+        #expect(abs(direct[.thighBack] - pose[.thighBack]) < 1e-6)
+        #expect(abs(direct[.shankBack] - pose[.shankBack]) < 1e-6)
+    }
+
     /// Which side of the hip-to-foot line the hock is on (the sign of the cross product).
     private func side(_ hip: CGPoint, _ foot: CGPoint, _ hock: CGPoint) -> Double {
         Double((foot.x - hip.x) * (hock.y - hip.y) - (foot.y - hip.y) * (hock.x - hip.x))

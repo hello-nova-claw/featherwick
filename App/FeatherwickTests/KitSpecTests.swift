@@ -97,6 +97,10 @@ import Testing
         let wide: SkeletonRig = try spec(parts, order: order, motion: #"{"footSpread": 0.2}"#).skeleton
         #expect(wide.motion.footSpread == 0.2)
         #expect((0..<24).allSatisfy { gap(wide, Double($0) / 24) > 0 })
+        // A kit sets its own step height and toe curl; missing, the path rig's.
+        let low: SkeletonRig = try spec(parts, order: order, motion: #"{"stepLift": 0.15, "toeCurl": 30}"#).skeleton
+        #expect(low.motion.liftShare == 0.15 && low.motion.toeCurl == 30)
+        #expect(rig.motion.liftShare == ChickenRigMetrics.liftShare && rig.motion.toeCurl == ChickenRigMetrics.toeCurl)
         // A slower stride slides each foot further, so the bird keeps the scene's walking speed.
         let slow: SkeletonRig = try spec(parts, order: order, motion: #"{"stride": 0.9}"#).skeleton
         #expect(slow.motion.stride == 0.9)
