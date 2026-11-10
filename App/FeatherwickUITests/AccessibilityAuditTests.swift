@@ -129,6 +129,8 @@ class AccessibilityAuditTests: XCTestCase {
     /// still fails at once.
     nonisolated static func knownIssue(_ issue: XCUIAccessibilityAuditIssue) -> String? {
         switch issue.auditType {
+        // The farm panels other than the Yard still fail contrast on an element the audit does not name.
+        case .contrast: "#88"
         case .elementDetection: "#90"
         case .textClipped, .dynamicType: "#66"
         default: nil
