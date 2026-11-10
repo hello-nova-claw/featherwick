@@ -152,6 +152,8 @@ No shadows inside sheets.
 
 Components are in `Design/Components.swift` and `Design/Marks.swift`.
 
+Every control takes taps over at least 44×44pt. Where the word or mark is smaller, the whole frame takes the tap (`contentShape`), so the look does not change. A button in a white box over the farm takes taps anywhere in the box.
+
 **Primary button** (`.primary`): `ink` fill, `paper` Figtree 500 16pt label, radius 10, min height 52. Pressed: scale 0.97, fill at 85%. Only one per screen.
 
 **Secondary button** (`.secondary`): no fill, 1pt inset `hairline` outline, ink label, radius 10, min height 52.
@@ -201,7 +203,7 @@ All screens are 393×852 (iPhone 15/16). Sheets sit over the dimmed farm. The mo
 - HUD top-left and top-right (see Components), 58–62pt from top.
 - 4 panels to swipe between: Barn, Yard, Far yard, Shop. The Yard and the Far yard draw a placeholder 2.5D scene (see Farm scene). Until their paintings exist, the Barn and the Shop are a flat colour with a dashed "scene" box.
 - One place per panel: Barn: Coop. Yard: Yard. Far yard: Back fence. Shop: Farm gate. Its button sits in the bottom row after Today, so it never covers the scene, and it changes as you swipe. The Coop sheet holds the brooder, chicks with their mothers, broody hens and the incubator too (there is no separate potting shed).
-- Panel rail: a white box down the right side, under the HUD, with one dot per panel in swipe order. Tap a dot to go there. The current panel is an ink dot. A panel off screen with a notice gets a bigger dot in its notice colour (decision, then collect, then story) with a ring. Others are small `unknown` dots. VoiceOver reads the panel name and its notices.
+- Panel rail: a white box down the right side, under the HUD, with one dot per panel in swipe order. Tap a dot to go there; each dot takes taps over 44×44pt. The current panel is an ink dot. A panel off screen with a notice gets a bigger dot in its notice colour (decision, then collect, then story) with a ring. Others are small `unknown` dots. VoiceOver reads the panel name and its notices.
 - Bottom: "Books" (Caslon Display 23) bottom-left, then "Today", then the place of the panel on screen (Coop, Yard, Back fence or Farm gate), then "Rest a while" ("Sleep" when the last slot is spent; only after the daylight lesson, before it Sleep is in the Coop sheet), and a settings button "≡" bottom-right, all white boxes with radius 10, 56pt tall, 24pt above the home indicator.
 - Books appears when the early game introduces the Breed Book (the `breedBook` lesson, the morning the first chick's sex shows). Until then, an "added to the Breed Book" toast has no "View". "≡" is always there.
 - Today shows how many of today's jobs are left in a buff badge. When all are done, the badge goes: "Today" turns `inkMuted`, with an ink tick and "Done" (Figtree 13). VoiceOver reads "Today, all jobs done".
