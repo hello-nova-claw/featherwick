@@ -1,4 +1,5 @@
 import FeatherwickCore
+import Foundation
 
 // The words for the four village days: each day's scene, its gifts, Teddy's Midwinter note and the
 // Hatch-along. Core holds the IDs and the year; every one has its words here.
@@ -9,63 +10,137 @@ import FeatherwickCore
 /// A village day's short name, for notices ("Hatch-along in 3 days").
 public func villageDayShortName(_ v: VillageDay) -> String {
     switch v {
-    case .hatchAlong: "Hatch-along"
-    case .longestDay: "Longest Day"
-    case .moultWeek: "Moult Week"
-    case .midwinterLights: "Midwinter Lights"
+    case .hatchAlong:
+        String(
+            localized: "calendar.hatchAlong", defaultValue: "Hatch-along", bundle: .module,
+            comment: "A village day's short name: the spring egg swap.")
+    case .longestDay:
+        String(
+            localized: "calendar.longestDay", defaultValue: "Longest Day", bundle: .module,
+            comment: "A village day's short name: midsummer.")
+    case .moultWeek:
+        String(
+            localized: "calendar.moultWeek", defaultValue: "Moult Week", bundle: .module,
+            comment: "A village day's short name: the autumn moult.")
+    case .midwinterLights:
+        String(
+            localized: "calendar.midwinterLights", defaultValue: "Midwinter Lights", bundle: .module,
+            comment: "A village day's short name: the winter festival.")
     }
 }
 
 /// What a village day does for the keeper, in one line. Each line is a rule the engine keeps.
 public func villageDayEffectText(_ v: VillageDay) -> String {
     switch v {
-    case .hatchAlong: "Bring an egg you know is fertile in its week, and a surprise chick comes back."
-    case .longestDay: "The fox stays home that night."
-    case .moultWeek: "\(People.neighbour) brings mealworms for the moult."
-    case .midwinterLights: "The village gives its keepers a gift."
+    case .hatchAlong:
+        String(
+            localized: "calendar.effect.hatchAlong",
+            defaultValue: "Bring an egg you know is fertile in its week, and a surprise chick comes back.",
+            bundle: .module, comment: "Calendar: what the Hatch-along does.")
+    case .longestDay:
+        String(
+            localized: "calendar.effect.longestDay", defaultValue: "The fox stays home that night.", bundle: .module,
+            comment: "Calendar: what the Longest Day does.")
+    case .moultWeek:
+        String(
+            localized: "calendar.effect.moultWeek", defaultValue: "\(People.neighbour) brings mealworms for the moult.",
+            bundle: .module, comment: "Calendar: what Moult Week does. The placeholder is Hazel's name.")
+    case .midwinterLights:
+        String(
+            localized: "calendar.effect.midwinterLights", defaultValue: "The village gives its keepers a gift.",
+            bundle: .module, comment: "Calendar: what Midwinter Lights does.")
     }
 }
 
 /// The next village days with what each one does, one line each. For the CLI `calendar` and the app.
 public func villageCalendarLines(_ s: GameState, count: Int = 4) -> [String] {
-    zip(calendarLines(s, count: count), s.upcomingVillageDays(count)).map { "\($0) \(villageDayEffectText($1.day))" }
+    zip(calendarLines(s, count: count), s.upcomingVillageDays(count)).map { line, next in
+        String(
+            localized: "calendar.lineWithEffect", defaultValue: "\(line) \(villageDayEffectText(next.day))",
+            bundle: .module,
+            comment: "Calendar: one village day. The placeholders are its date line and what the day does.")
+    }
 }
 
 /// What a village day brings, in its year's words: year 0 explains, later years remember.
 public func villageDaySceneText(_ v: VillageDay, year: Int, _ s: GameState) -> String {
     let first = year == 0
     let nights = s.rules.hatchAlongReturnNights
+    let hazel = People.neighbour
     switch v {
     case .hatchAlong:
         return first
-            ? "\(People.neighbour) has her big incubator set up in the village hall. \"Everyone brings one egg "
-                + "they know is fertile, and everyone gets a chick back in \(nights) nights. Not your own egg's "
-                + "chick, mind: whichever the hatch sends you. That's the fun of it. You've all week.\""
-            : "The Hatch-along again. \(People.neighbour)'s incubator hums in the village hall, and the "
-                + "children have drawn name cards for the trays. One known-fertile egg this week, and a "
-                + "surprise chick comes home \(nights) nights later."
+            ? String(
+                localized: "calendar.scene.hatchAlong.first",
+                defaultValue: """
+                    \(hazel) has her big incubator set up in the village hall. "Everyone brings one egg \
+                    they know is fertile, and everyone gets a chick back in \(nights) nights. Not your own egg's \
+                    chick, mind: whichever the hatch sends you. That's the fun of it. You've all week."
+                    """,
+                bundle: .module,
+                comment:
+                    "The first Hatch-along. The placeholders are Hazel's name and the nights until the chick comes.")
+            : String(
+                localized: "calendar.scene.hatchAlong.later",
+                defaultValue: """
+                    The Hatch-along again. \(hazel)'s incubator hums in the village hall, and the \
+                    children have drawn name cards for the trays. One known-fertile egg this week, and a \
+                    surprise chick comes home \(nights) nights later.
+                    """,
+                bundle: .module,
+                comment: "A later Hatch-along. The placeholders are Hazel's name and the nights until the chick comes.")
     case .longestDay:
         return first
-            ? "The longest day of the year. The whole village is out on the green until the light goes. "
-                + "\"The fox never stirs tonight,\" \(People.neighbour) says. \"Too many people about. "
-                + "Leave the door open if you like: they can forage in peace.\""
-            : "Midsummer again. The lanes smell of elderflower, and the fox keeps to its den tonight. "
-                + "A safe night to leave the door open, if you like."
+            ? String(
+                localized: "calendar.scene.longestDay.first",
+                defaultValue: """
+                    The longest day of the year. The whole village is out on the green until the light goes. \
+                    "The fox never stirs tonight," \(hazel) says. "Too many people about. \
+                    Leave the door open if you like: they can forage in peace."
+                    """,
+                bundle: .module, comment: "The first Longest Day. The placeholder is Hazel's name.")
+            : String(
+                localized: "calendar.scene.longestDay.later",
+                defaultValue: """
+                    Midsummer again. The lanes smell of elderflower, and the fox keeps to its den tonight. \
+                    A safe night to leave the door open, if you like.
+                    """,
+                bundle: .module, comment: "A later Longest Day.")
     case .moultWeek:
         return first
-            ? "\(People.neighbour) leans on the fence. \"Don't fret if the coop looks like a pillow burst. "
-                + "It's the moult. Every autumn they drop their old feathers and grow new ones. They look a "
-                + "fright for a week or two, but nobody's poorly, and the judges know what season it is. "
-                + "Feathers are nearly all protein, so here: these help.\""
-            : "Moult Week again. Feathers drift round the yard like snow. \(People.neighbour) passes "
-                + "a bag over the fence. \"Same as last year, love. Protein in, new coats out.\""
+            ? String(
+                localized: "calendar.scene.moultWeek.first",
+                defaultValue: """
+                    \(hazel) leans on the fence. "Don't fret if the coop looks like a pillow burst. \
+                    It's the moult. Every autumn they drop their old feathers and grow new ones. They look a \
+                    fright for a week or two, but nobody's poorly, and the judges know what season it is. \
+                    Feathers are nearly all protein, so here: these help."
+                    """,
+                bundle: .module, comment: "The first Moult Week. The placeholder is Hazel's name.")
+            : String(
+                localized: "calendar.scene.moultWeek.later",
+                defaultValue: """
+                    Moult Week again. Feathers drift round the yard like snow. \(hazel) passes \
+                    a bag over the fence. "Same as last year, love. Protein in, new coats out."
+                    """,
+                bundle: .module, comment: "A later Moult Week. The placeholder is Hazel's name.")
     case .midwinterLights:
         return first
-            ? "Midwinter Lights. There's a lantern in every window down the lane, and \(People.shopkeeper) "
-                + "hangs a paper star over the shop door. The village keeps a little fund for its keepers, "
-                + "and this year you're one of them."
-            : "Midwinter Lights again. You know the way to the green now. The lanterns are lit, the "
-                + "kettle's on in the hall, and the keepers' fund comes round."
+            ? String(
+                localized: "calendar.scene.midwinterLights.first",
+                defaultValue: """
+                    Midwinter Lights. There's a lantern in every window down the lane, and \(People.shopkeeper) \
+                    hangs a paper star over the shop door. The village keeps a little fund for its keepers, \
+                    and this year you're one of them.
+                    """,
+                bundle: .module, comment: "The first Midwinter Lights. The placeholder is Wren's name.")
+            : String(
+                localized: "calendar.scene.midwinterLights.later",
+                defaultValue: """
+                    Midwinter Lights again. You know the way to the green now. The lanterns are lit, the \
+                    kettle's on in the hall, and the keepers' fund comes round.
+                    """,
+                bundle: .module, comment: "A later Midwinter Lights.")
     }
 }
 
@@ -75,22 +150,71 @@ func calendarEventText(_ e: GameEvent, _ s: GameState) -> String? {
     case .villageDayScene(let v, let year):
         return villageDaySceneText(v, year: year, s)
     case .villageDayGift(.moultWeek, _, let treats):
-        return "You're given \(treats) mealworm\(treats == 1 ? "" : "s"). You have \(s.treats) treats."
+        return treats == 1
+            ? String(
+                localized: "calendar.moultGift.one",
+                defaultValue: "You're given \(treats) mealworm. You have \(s.treats) treats.",
+                bundle: .module,
+                comment: """
+                    Moult Week: Hazel's gift, when treats == 1. The placeholders are the mealworms given and the \
+                    treats now held.
+                    """)
+            : String(
+                localized: "calendar.moultGift.other",
+                defaultValue: "You're given \(treats) mealworms. You have \(s.treats) treats.", bundle: .module,
+                comment: """
+                    Moult Week: Hazel's gift, a number of mealworms other than 1. The placeholders are the \
+                    mealworms given and the treats now held.
+                    """)
     case .villageDayGift(_, let coins, let treats):
-        let parts = [coins > 0 ? "\(coins) coins" : nil, treats > 0 ? "\(treats) mealworms" : nil].compactMap { $0 }
-        return parts.isEmpty ? nil : "The village gives you \(parts.joined(separator: " and "))."
+        switch (coins > 0, treats > 0) {
+        case (true, true):
+            return String(
+                localized: "calendar.gift.coinsAndMealworms",
+                defaultValue: "The village gives you \(coins) coins and \(treats) mealworms.", bundle: .module,
+                comment: "A village day's gift. The placeholders are the coins and the mealworms.")
+        case (true, false):
+            return String(
+                localized: "calendar.gift.coins", defaultValue: "The village gives you \(coins) coins.",
+                bundle: .module, comment: "A village day's gift. The placeholder is the coins.")
+        case (false, true):
+            return String(
+                localized: "calendar.gift.mealworms", defaultValue: "The village gives you \(treats) mealworms.",
+                bundle: .module, comment: "A village day's gift. The placeholder is the mealworms.")
+        case (false, false):
+            return nil
+        }
     case .hatchAlongEggGiven:
         let nights = s.rules.hatchAlongReturnNights
-        return "You hand \(People.neighbour) an egg you know is fertile. She pencils your name on the tray "
-            + "and tucks it in with the village's eggs. \"\(nights) nights, and a chick comes back to you.\""
+        return String(
+            localized: "calendar.hatchAlongEggGiven",
+            defaultValue: """
+                You hand \(People.neighbour) an egg you know is fertile. She pencils your name on the tray \
+                and tucks it in with the village's eggs. "\(nights) nights, and a chick comes back to you."
+                """,
+            bundle: .module,
+            comment:
+                "The keeper brings a Hatch-along egg. The placeholders are Hazel's name and the nights until the chick comes."
+        )
     case .hatchAlongChickWaiting:
-        return "\(People.neighbour) calls over the fence. \"Your Hatch-along chick is ready, but there's no "
-            + "room for it yet. It needs a place in the brooder, and a perch for when it's grown. It can "
-            + "stay with me until then. No hurry.\""
+        return String(
+            localized: "calendar.hatchAlongChickWaiting",
+            defaultValue: """
+                \(People.neighbour) calls over the fence. "Your Hatch-along chick is ready, but there's no \
+                room for it yet. It needs a place in the brooder, and a perch for when it's grown. It can \
+                stay with me until then. No hurry."
+                """,
+            bundle: .module, comment: "The Hatch-along chick waits with Hazel. The placeholder is Hazel's name.")
     case .hatchAlongChickArrived(let id):
-        return "\(People.neighbour) brings a chick home from the village hatch, cupped in her hands, and "
-            + "settles it under the heat lamp. What breed is it? You'll see when its feathers come in. "
-            + "\(birdName(id, s)) needs a name."
+        return String(
+            localized: "calendar.hatchAlongChickArrived",
+            defaultValue: """
+                \(People.neighbour) brings a chick home from the village hatch, cupped in her hands, and \
+                settles it under the heat lamp. What breed is it? You'll see when its feathers come in. \
+                \(birdName(id, s)) needs a name.
+                """,
+            bundle: .module,
+            comment: "The Hatch-along chick comes home. The placeholders are Hazel's name and the chick's name.")
     default:
         return nil
     }
@@ -100,27 +224,48 @@ func calendarEventText(_ e: GameEvent, _ s: GameState) -> String? {
 func hatchAlongRefusalText(_ why: HatchAlongRefusal) -> String {
     switch why {
     case .notThisWeek:
-        "The Hatch-along is in spring. Bring an egg in its week: the village calendar says when."
+        String(
+            localized: "calendar.refusal.notThisWeek",
+            defaultValue: "The Hatch-along is in spring. Bring an egg in its week: the village calendar says when.",
+            bundle: .module, comment: "The Hatch-along can't take an egg: it is not its week.")
     case .alreadyGiven:
-        "You've brought your Hatch-along egg this year. One each, \(People.neighbour) says. There's next spring."
+        String(
+            localized: "calendar.refusal.alreadyGiven",
+            defaultValue:
+                "You've brought your Hatch-along egg this year. One each, \(People.neighbour) says. There's next spring.",
+            bundle: .module,
+            comment: "The Hatch-along can't take an egg: one is given this year. The placeholder is Hazel's name.")
     case .noFertileEgg:
-        "The Hatch-along needs an egg you KNOW is fertile. Candle your eggs to find one, or buy a fertile "
-            + "egg at Speckle & Down: they come candled."
+        String(
+            localized: "calendar.refusal.noFertileEgg",
+            defaultValue: """
+                The Hatch-along needs an egg you KNOW is fertile. Candle your eggs to find one, or buy a fertile \
+                egg at Speckle & Down: they come candled.
+                """,
+            bundle: .module, comment: "The Hatch-along can't take an egg: none is known fertile.")
     }
 }
 
 /// The words for the notes the calendar sends (not from the post's pool). Nil for any other ID.
 func calendarNoteText(_ id: String, _ s: GameState) -> String? {
     // Words by the year the note came (it is in the ID). Rule 8: the drawing shows no bird in particular.
-    switch VillageDay.midwinterNoteYear(id) {
-    case .some(let year):
-        year == 0
-            ? "\"Mum says I can't have a chicken but I can draw one. This is yours. The yellow bit is the "
-                + "lights.\" A crayon drawing of a very round bird under a very big moon."
-            : "\"I drew all of them this year. The one in the hat is you.\" A crayon drawing of a lot of "
-                + "birds, a coop, and someone in a hat."
-    case .none: nil
+    guard let year = VillageDay.midwinterNoteYear(id) else { return nil }
+    if year == 0 {
+        return String(
+            localized: "calendar.midwinterNote.first",
+            defaultValue: """
+                "Mum says I can't have a chicken but I can draw one. This is yours. The yellow bit is the \
+                lights." A crayon drawing of a very round bird under a very big moon.
+                """,
+            bundle: .module, comment: "Teddy's first Midwinter note.")
     }
+    return String(
+        localized: "calendar.midwinterNote.later",
+        defaultValue: """
+            "I drew all of them this year. The one in the hat is you." A crayon drawing of a lot of \
+            birds, a coop, and someone in a hat.
+            """,
+        bundle: .module, comment: "Teddy's later Midwinter notes.")
 }
 
 /// The Hatch-along lines for the calendar: a chick on its way, and the week while an egg can still go.
@@ -131,12 +276,33 @@ public func hatchAlongLines(_ s: GameState) -> [String] {
     if due > 0 {
         out.append(
             due == 1
-                ? "Your Hatch-along chick is coming from \(People.neighbour)'s."
-                : "\(due) Hatch-along chicks are coming from \(People.neighbour)'s, one as each finds room.")
+                ? String(
+                    localized: "calendar.chicksComing.one",
+                    defaultValue: "Your Hatch-along chick is coming from \(People.neighbour)'s.", bundle: .module,
+                    comment: "Calendar: one Hatch-along chick on its way. The placeholder is Hazel's name.")
+                : String(
+                    localized: "calendar.chicksComing.other",
+                    defaultValue:
+                        "\(due) Hatch-along chicks are coming from \(People.neighbour)'s, one as each finds room.",
+                    bundle: .module,
+                    comment: """
+                        Calendar: Hatch-along chicks on their way, a number other than 1. The placeholders are the \
+                        number of chicks and Hazel's name.
+                        """))
     }
     switch s.hatchAlongRefusal() {
-    case nil: out.append("It's Hatch-along week. Bring \(People.neighbour) an egg you know is fertile.")
-    case .noFertileEgg: out.append("It's Hatch-along week. You need an egg you know is fertile to bring one.")
+    case nil:
+        out.append(
+            String(
+                localized: "calendar.hatchAlongWeek",
+                defaultValue: "It's Hatch-along week. Bring \(People.neighbour) an egg you know is fertile.",
+                bundle: .module, comment: "Calendar: the Hatch-along week is on. The placeholder is Hazel's name."))
+    case .noFertileEgg:
+        out.append(
+            String(
+                localized: "calendar.hatchAlongWeekNoEgg",
+                defaultValue: "It's Hatch-along week. You need an egg you know is fertile to bring one.",
+                bundle: .module, comment: "Calendar: the Hatch-along week is on, and no egg is known fertile."))
     case .notThisWeek, .alreadyGiven: break
     }
     return out
@@ -145,10 +311,28 @@ public func hatchAlongLines(_ s: GameState) -> [String] {
 /// A short notice for the farm gate: a village day coming soon, today, or the Hatch-along week. Nil
 /// when nothing is close.
 public func villageNotice(_ s: GameState) -> String? {
-    if s.hatchAlongRefusal() == nil { return "Hatch-along: bring an egg" }
+    if s.hatchAlongRefusal() == nil {
+        return String(
+            localized: "calendar.notice.hatchAlong", defaultValue: "Hatch-along: bring an egg", bundle: .module,
+            comment: "Farm gate notice in the Hatch-along week.")
+    }
     let next = s.nextVillageDay
     let days = next.date - s.day
     guard days <= s.rules.villageDayNoticeDays else { return nil }
     let name = villageDayShortName(next.day)
-    return days == 0 ? "\(name) today" : days == 1 ? "\(name) tomorrow" : "\(name) in \(days) days"
+    switch days {
+    case 0:
+        return String(
+            localized: "calendar.notice.today", defaultValue: "\(name) today", bundle: .module,
+            comment: "Farm gate notice: a village day is today. The placeholder is its short name.")
+    case 1:
+        return String(
+            localized: "calendar.notice.tomorrow", defaultValue: "\(name) tomorrow", bundle: .module,
+            comment: "Farm gate notice: a village day is tomorrow. The placeholder is its short name.")
+    default:
+        return String(
+            localized: "calendar.notice.inDays", defaultValue: "\(name) in \(days) days", bundle: .module,
+            comment:
+                "Farm gate notice: a village day soon. The placeholders are its short name and the days (2 or more).")
+    }
 }

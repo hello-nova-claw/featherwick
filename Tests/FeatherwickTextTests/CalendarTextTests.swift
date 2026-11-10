@@ -1,7 +1,8 @@
 import FeatherwickCore
-import FeatherwickText
 import Foundation
 import Testing
+
+@testable import FeatherwickText
 
 /// The village days' words: every event and refusal has words, later years read differently from the
 /// first, and nothing names a chick's sex or breed before it shows (rule 8).
@@ -80,6 +81,68 @@ struct CalendarTextTests {
         #expect(!hasMet(.teddy, s))
         s.notesSeen.insert(VillageDay.midwinterNote(year: 0))
         #expect(hasMet(.teddy, s))
+    }
+
+    /// Every calendar line reads the same after the words moved into the String Catalog (#58).
+    @Test func theCalendarWordsReadAsBefore() {
+        var s = Self.game()
+        let chick = s.brooder[0].id
+        #expect(
+            eventText(.villageDayGift(.moultWeek, coins: 0, treats: 1), s)
+                == "You're given 1 mealworm. You have 0 treats.")
+        #expect(
+            eventText(.villageDayGift(.midwinterLights, coins: 15, treats: 3), s)
+                == "The village gives you 15 coins and 3 mealworms.")
+        var lines: [String?] = []
+        for v in VillageDay.allCases {
+            lines += [
+                villageDayShortName(v), villageDayEffectText(v), villageDaySceneText(v, year: 0, s),
+                villageDaySceneText(v, year: 1, s),
+            ]
+        }
+        lines += villageCalendarLines(s)
+        var events: [GameEvent] = [
+            .hatchAlongEggGiven(returnsOnDay: 12), .hatchAlongChickWaiting, .hatchAlongChickArrived(chick),
+        ]
+        for treats in [0, 1, 4] {
+            for coins in [0, 15] {
+                events += [
+                    .villageDayGift(.moultWeek, coins: coins, treats: treats),
+                    .villageDayGift(.midwinterLights, coins: coins, treats: treats),
+                ]
+            }
+        }
+        for refusal in [HatchAlongRefusal.notThisWeek, .alreadyGiven, .noFertileEgg] {
+            events.append(.rejected(.hatchAlong(refusal)))
+        }
+        lines += events.map { eventText($0, s) }
+        lines += [0, 1, 2].map { postNoteText(VillageDay.midwinterNote(year: $0), s) }
+        lines += hatchAlongLines(s)
+        lines.append(villageNotice(s))
+        s.hatchAlongChickDays = [5]
+        lines += hatchAlongLines(s)
+        s.hatchAlongChickDays = [5, 6]
+        lines += hatchAlongLines(s)
+        let date = s.rules.date(of: .longestDay, inYear: 0)
+        for before in [3, 1, 0] {
+            s.day = date - before
+            lines.append(villageNotice(s))
+        }
+        s.day = s.rules.date(of: .hatchAlong, inYear: 1) + 1
+        lines += hatchAlongLines(s)
+        lines.append(villageNotice(s))
+        var rng = SeededRNG(seed: 1)
+        s.coins = 100
+        _ = Engine.apply(.buy(.fertileEgg), to: &s, using: &rng)
+        lines += hatchAlongLines(s)
+        lines.append(villageNotice(s))
+        let fingerprint = pin(lines)
+        #expect(fingerprint == "d6fc6d23453fae1f")
+    }
+
+    /// An event that is not the calendar's has no calendar words.
+    @Test func otherEventsHaveNoCalendarWords() {
+        #expect(calendarEventText(.marketBuyerLeft(.orpington), Self.game()) == nil)
     }
 
     @Test func theFarmGateNoticeFollowsTheCalendar() {

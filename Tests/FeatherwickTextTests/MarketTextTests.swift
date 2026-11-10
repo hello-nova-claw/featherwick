@@ -63,10 +63,106 @@ struct MarketTextTests {
         #expect(!notYetText(.marketBoard, s).isEmpty)
     }
 
+    /// A buyer who stays one day says "1 day", not "1 days".
+    @Test func aOneDayBuyerReadsInTheSingular() {
+        var s = Self.game()
+        s.rules.marketBuyerWaitDays = 1
+        let one = eventText(.marketBuyerCame(.orpington), s) ?? ""
+        #expect(one.contains("for 1 day. (see: board)"))
+        s.rules.marketBuyerWaitDays = 2
+        #expect(eventText(.marketBuyerCame(.orpington), s)?.contains("for 2 days.") == true)
+    }
+
     /// Rule 8: the refusal for a chick is about age, and names no sex.
     @Test func theTooYoungRefusalNamesNoSex() {
         let words = eventText(.rejected(.tooYoungForCard), Self.game()) ?? ""
         for word in ["hen", "rooster", "cockerel", "pullet", " she ", " he "] { #expect(!words.contains(word)) }
+    }
+
+    /// Every market line reads the same after the words moved into the String Catalog (#58).
+    @Test func theMarketWordsReadAsBefore() {
+        var s = Self.game()
+        var lines: [String?] = []
+        for friendliness in [nil, Friendliness.friendly, .lapChicken, .skittish] {
+            for sex in [nil, Sex.hen, .rooster] {
+                lines.append(marketWantText(.bird(MarketBirdAsk(sex: sex, friendliness: friendliness))))
+            }
+            lines.append(marketWantText(.bird(MarketBirdAsk(sex: .hen, friendliness: friendliness, laying: true))))
+        }
+        lines += [1, 3].map { marketWantText(.eggs(.olive, count: $0)) }
+        lines += MarketCards.pool.map { marketCardNote($0.id) }
+        let eggs = MarketCard(
+            id: "a", kind: "okafor-blue", from: .okafor, want: .eggs(.blue, count: 3), coins: 18, pinnedDay: s.day,
+            untilDay: s.day + 3)
+        let bird = MarketCard(
+            id: "b", kind: "teddy-calmHen", from: .teddy, want: .bird(MarketBirdAsk()), coins: 24,
+            pinnedDay: s.day, untilDay: s.day)
+        #expect(marketCardLine(eggs, s) == "3 blue eggs · until day \(s.day + 3)")
+        lines += [eggs, bird].flatMap { [marketCardText($0, s), marketCardLine($0, s)] }
+        let birdID = s.birdsAtHome[0].id
+        let events: [GameEvent] = [
+            .marketCardsPinned([eggs, bird]), .marketCardDown(eggs), .marketCardFilled(bird, coins: 24),
+            .marketCardPosted(.orpington), .marketBuyerCame(.orpington), .marketBuyerLeft(.orpington),
+            .soldToBuyer(birdID, coins: 12),
+        ]
+        let rejections: [Rejection] = [
+            .noSuchCard, .notEnoughEggsForCard(.blue, need: 3, have: 1),
+            .notEnoughEggsForCard(.brown, need: 1, have: 0),
+            .birdDoesNotFitCard, .tooYoungForCard, .keeperCardAlreadyUp, .noYoungBirdsForCard, .noBuyerYet,
+        ]
+        lines += (events + rejections.map { GameEvent.rejected($0) }).map { eventText($0, s) }
+        lines += marketBoardLines(s)
+        s.marketBoard.cards = [eggs, bird]
+        lines += marketBoardLines(s)
+        s.marketBoard.keeperCard = KeeperCard(
+            breed: .orpington, postedDay: s.day, buyerDay: s.day + 5, buyerLeavesDay: s.day + 8)
+        lines += marketBoardLines(s)
+        for leaves in [1, 2] {
+            s.marketBoard.keeperCard = KeeperCard(
+                breed: .silkie, postedDay: s.day, buyerDay: s.day, buyerLeavesDay: s.day + leaves)
+            lines += marketBoardLines(s)
+        }
+        let fingerprint = pin(lines)
+        #expect(fingerprint == "be42659ff9b2b7c4")
+    }
+
+    /// The board's rarer lines: a bird card the keeper can fill, the birds that fit it, and a buyer here
+    /// for the keeper's own card with the birds it would take.
+    @Test func theBoardReadsItsRarerLines() {
+        var s = Self.game()
+        let ids = ["00000000-0000-0000-0000-00000000C10E", "00000000-0000-0000-0000-00000000D01C"]
+        s.brooder = zip(["Clover", "Dulcie"], ids).map { name, id in
+            Bird(
+                id: UUID(uuidString: id)!, name: name, breed: .orpington,
+                genome: Breed.orpington.purebred(.hen, variety: .buff),
+                hatchDay: s.day, origin: "Speckle & Down", revealed: true)
+        }
+        s.coop = []
+        s.marketBoard.cards = [
+            MarketCard(
+                id: "b", kind: "bea-youngBird", from: .bea, want: .bird(MarketBirdAsk()), coins: 20, pinnedDay: s.day,
+                untilDay: s.day + 2)
+        ]
+        s.marketBoard.keeperCard = KeeperCard(
+            breed: .orpington, postedDay: s.day, buyerDay: s.day, buyerLeavesDay: s.day + 2)
+        let price = { (bird: Bird) in s.rules.marketBuyerPrice(rehomeValue: s.rehomeValue(of: bird)) }
+        #expect(
+            marketBoardLines(s) == [
+                "The market board by the bakery:",
+                "  1. Bea wants a young bird. 20 coins, until day \(s.day + 2).  ✓ you can fill this",
+                "     \"A young bird for a new keeper on the hill. Any breed at all.\"",
+                "     Fits: Clover, Dulcie",
+                "  Your card: young Orpingtons. A buyer is here for 2 more days.",
+                "     Clover: \(price(s.brooder[0])) coins (sell Clover)",
+                "     Dulcie: \(price(s.brooder[1])) coins (sell Dulcie)",
+                "Fill a card: fill <number> [bird name] · Pin your own: post <breed> · Sell to your buyer: sell <name>",
+            ])
+        #expect(
+            eventText(.soldToBuyer(s.brooder[0].id, coins: 12), s)
+                == "Clover goes to a new home with the buyer, who pays 12 coins. \"We'll take good care.\"")
+        // An event that is not the board's has no board words.
+        #expect(marketEventText(.hatchAlongChickWaiting, s) == nil)
+        #expect(marketRejectionText(.blankName, s) == nil)
     }
 
     @Test func theBoardPageListsCardsAndHowToFillThem() {

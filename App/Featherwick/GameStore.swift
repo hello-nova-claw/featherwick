@@ -83,16 +83,23 @@ final class GameStore {
     var state: GameState { save.state }
     var saveLocation: String { store.url.path }
 
-    init(directory: URL = GameStore.saveDirectory(), slot: String = SaveStore.defaultSlot) {
+    /// `newGameSeed` seeds the game an empty slot starts with. Tests pass one, so the same seed is the same game.
+    init(
+        directory: URL = GameStore.saveDirectory(), slot: String = SaveStore.defaultSlot, newGameSeed: UInt64? = nil
+    ) {
         // A local first: @Observable can't read `self.store` until every property is set.
         let store = SaveStore(directory: directory, slot: slot)
         self.store = store
-        self.slot = slot
+        self.slot = store.slot
         let (loaded, recovery) = store.load()
         if case .tooNew(let version) = recovery { saveTooNew = version } else { saveTooNew = nil }
-        save = loaded ?? Self.newSave(rules: .standard)
-        seenStockKey = "seenNewStock.\(slot)"
-        let seen = UserDefaults.standard.stringArray(forKey: seenStockKey) ?? []
+        save = loaded ?? Self.newSave(rules: .standard, seed: newGameSeed ?? .random(in: .min ... .max))
+        // Keyed by the cleaned slot, as the save is. A key under the raw name from before is read once.
+        seenStockKey = "seenNewStock.\(store.slot)"
+        let legacyKey = "seenNewStock.\(slot)"
+        let seen =
+            UserDefaults.standard.stringArray(forKey: seenStockKey)
+            ?? (legacyKey == seenStockKey ? nil : UserDefaults.standard.stringArray(forKey: legacyKey)) ?? []
         seenNewStock = Set(seen.compactMap(Feature.init(rawValue:)))
         if case .choosingStarter = state.phase {
             append("Welcome to Featherwick.")
@@ -111,8 +118,8 @@ final class GameStore {
         return dir
     }
 
-    nonisolated static func newSave(rules: Rules) -> SaveGame {
-        var rng = SeededRNG(seed: UInt64.random(in: .min ... .max))
+    nonisolated static func newSave(rules: Rules, seed: UInt64 = .random(in: .min ... .max)) -> SaveGame {
+        var rng = SeededRNG(seed: seed)
         let state = Engine.newGame(rules: rules, using: &rng)
         return SaveGame(state: state, rng: rng)
     }
