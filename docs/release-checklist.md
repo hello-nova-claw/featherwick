@@ -16,9 +16,9 @@ Follow these steps for each TestFlight or App Store build. CI never uploads a bu
 
 ### Manual App Store archive
 
-CI has no archive or upload step. The maintainer archives on her own Mac.
+CI has no archive or upload step. The maintainer archives on their own Mac.
 
-1. Raise `CURRENT_PROJECT_VERSION` in `App/project.yml`. App Store Connect refuses a build number it has seen before, so every upload needs a new one. Commit the change.
+1. Raise `CURRENT_PROJECT_VERSION` in `App/project.yml`. App Store Connect refuses a build number it has seen before, so every upload needs a new one. Merge the change into `main` in its own pull request, wait for every check to pass, then pull `main` and archive from it. Then `main` holds the number that was uploaded, and the next upload cannot reuse it.
 2. `cd App && xcodegen`. The project is generated, so a change to `project.yml` reaches Xcode only after this step.
 3. From `App`, copy `Config/Local.xcconfig.example` to `Config/Local.xcconfig`, if that is not done yet. Set the team ID, and set `PRODUCT_BUNDLE_IDENTIFIER` to the bundle ID of the app record in App Store Connect: the example's placeholder does not match it, and the upload then has no app to join. The file is git-ignored, so neither value is committed.
 4. In Xcode, choose the "Featherwick" scheme and "Any iOS Device (arm64)", then Product ▸ Archive. Never archive "Featherwick Beta" for the App Store: it compiles in the beta questions and the testing aids.
