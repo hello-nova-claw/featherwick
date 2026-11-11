@@ -250,8 +250,9 @@ cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Fea
 - CodeRabbit's approval is the required review. The PRs are opened from the maintainer's account, which
   cannot approve its own PRs. CodeRabbit does not review this repository by itself (it has under 10 stars):
   comment `@coderabbitai review`. It allows about 10 reviews an hour per repository and never reviews a
-  commit twice, so ask once, when CI is green and the PR is done. To review again with no new commit, use
-  `@coderabbitai full review`. When it says "Review paused", comment `@coderabbitai resume` first.
+  commit twice, so ask when CI is green and the PR is done. After a fix commit, ask again: nothing starts
+  a review by itself. To review again with no new commit, use `@coderabbitai full review`. When it says
+  "Review paused", comment `@coderabbitai resume` first.
 - An approval stays when new commits are pushed (branch protection keeps stale approvals).
 - Auto-merge (`gh pr merge <n> --auto --merge`) can land a PR while you are still fixing it. Run
   `gh pr view <n> --json state` and confirm it is `OPEN` before every push to its branch.
