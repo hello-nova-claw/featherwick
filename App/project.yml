@@ -24,7 +24,8 @@ targets:
     type: application
     platform: iOS
     # Every file under Featherwick/ is built in: Swift and Metal (Scene/SeasonRamp.metal, into the
-    # default shader library) as code, the rest (fonts, Sounds/*.caf, Art/Scene/*.png) as resources,
+    # default shader library) as code, the rest (fonts, Sounds/*.caf, Art/Scene/*.png, the privacy
+    # manifest PrivacyInfo.xcprivacy) as resources,
     # copied flat to the bundle root, so every file name must be unique. The READMEs are notes for people, so they stay out
     # (two README.md files at the bundle root would also clash).
     sources:
@@ -50,7 +51,9 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "6.0"
-        TARGETED_DEVICE_FAMILY: "1,2"
+        # iPhone only, portrait only: the farm scene art is cut for a portrait phone, and nothing in the app
+        # handles a wide size class yet. Add iPad (2) back when the scene does.
+        TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "0.1"
         CURRENT_PROJECT_VERSION: "1"
         CODE_SIGN_STYLE: Automatic
@@ -59,12 +62,17 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: >-
-          UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown
-          UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        # The game uses no encryption beyond what iOS itself provides, so App Store Connect asks no export
+        # compliance questions on each upload.
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
       configs:
+        # The old test screens (Featherwick/TestTools/) are Debug only: Settings opens them under `#if DEBUG`.
+        # Leaving the files out of Beta and Release keeps their code out of every shipped build.
+        Release:
+          EXCLUDED_SOURCE_FILE_NAMES: "$(SRCROOT)/Featherwick/TestTools/*"
         Beta:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BETA"
+          EXCLUDED_SOURCE_FILE_NAMES: "$(SRCROOT)/Featherwick/TestTools/*"
   # Unit tests for app-only logic (Swift Testing). Hosted in the app, so `@testable import Featherwick`
   # reaches its types. Run them with the Featherwick scheme's test action (Cmd-U).
   FeatherwickTests:
@@ -84,7 +92,7 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "6.0"
-        TARGETED_DEVICE_FAMILY: "1,2"
+        TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: dev.featherwick.app.tests
@@ -104,7 +112,7 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "6.0"
-        TARGETED_DEVICE_FAMILY: "1,2"
+        TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: dev.featherwick.app.uitests

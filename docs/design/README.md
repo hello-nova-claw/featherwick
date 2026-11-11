@@ -292,7 +292,7 @@ These screens exist in the app (`App/Featherwick/`) but not in the design file. 
 
 **Market board** (`Sheets/MarketBoardSheet.swift`, large). See 1a. Context "By the bakery", coin balance, title "Market board", a line in italic, "Wanted" cards split by stitches, then "Your card".
 
-**Settings** (≡, `SettingsSheet` in `Sheets/BooksView.swift`, medium and large). Title "Henhaven", the keeper's name field, "You owe" (see 6a), "Open test tools", Sound and Haptics switches, the Morning report switch, Time of day (Game, Day, Night), beta notes (beta builds only), Fast forward ("1 day", "7 days", and "To show day" or "To the show news"), and "Start a new game".
+**Settings** (≡, `SettingsSheet` in `Sheets/BooksView.swift`, medium and large). Title "Henhaven", the keeper's name field, "You owe" (see 6a), "Open test tools" (Debug builds only), Sound and Haptics switches, the Morning report switch, Time of day (Game, Day, Night), beta notes (beta builds only), Fast forward ("1 day", "7 days", and "To show day" or "To the show news"), and "Start a new game". Time of day and Fast forward show in Debug and Beta builds only. The App Store build (Release) has neither, and it ignores a pinned time of day. The Sound switch shows only when a sound file is in the bundle.
 
 ---
 
@@ -366,7 +366,7 @@ A grown hen, or a grown bird whose body shape has a kit, is drawn from painted p
 ### Sound and haptics
 Soft and few. Settings (≡) has a switch for each; both start on.
 - **Haptics:** light ticks while rubbing, a soft tap when a pet lands (a softer one when the bird only leans in), a light tap when opening a bird, a lighter tap for a ripple on the ground, success on egg collection, hatching, and coins earned or spent, a gentle warning when the game says no (not for running out of daylight).
-- **Sound:** a cluck for tapping or petting a bird; egg, hatch and coin sounds for those events (`Feedback/GameFeedback.swift`). At most one of each sound per action. The `.ambient` audio session obeys the silent switch. Until the sound files exist (`App/Featherwick/Sounds/README.md`), the game is silent.
+- **Sound:** a cluck for tapping or petting a bird; egg, hatch and coin sounds for those events (`Feedback/GameFeedback.swift`). At most one of each sound per action. The `.ambient` audio session obeys the silent switch. Until the sound files exist (`App/Featherwick/Sounds/README.md`), the game is silent and Settings hides the Sound switch.
 - **Unknown → known reveals** (breed, sex): show a toast ("Clover is a pullet", "Lavender … added to the Breed Book"). The design also animates the dashed outline to a filled state (~400ms); the app does not do this yet.
 - **Reduce Motion:** replace slides and scales with fades.
 - **VoiceOver:** every dab or dot group reads as text ("Friendliness: friendly, 3 of 4"). Carton cups read "Blue egg, fertile".
