@@ -247,13 +247,16 @@ cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Fea
 - Every PR needs an issue with all five template fields, a branch named `<issue>-<slug>`, and a changelog
   fragment `changelog/<issue>-<slug>.txt`, or the `no-changelog` label for docs and tooling only.
 - Commits use the repo-local Novaclaw git identity, in WordPress core style (see CONTRIBUTING.md).
-- CodeRabbit's approval is the required review. It allows about 10 reviews an hour per repository, so
-  batch fixes into one push. When it says "Review paused", comment `@coderabbitai resume`, then
-  `@coderabbitai review`.
+- CodeRabbit's approval is the required review. The PRs are opened from the maintainer's account, which
+  cannot approve its own PRs. CodeRabbit does not review this repository by itself (it has under 10 stars):
+  comment `@coderabbitai review`. It allows about 10 reviews an hour per repository and never reviews a
+  commit twice, so ask once, when CI is green and the PR is done. To review again with no new commit, use
+  `@coderabbitai full review`. When it says "Review paused", comment `@coderabbitai resume` first.
+- An approval stays when new commits are pushed (branch protection keeps stale approvals).
 - Auto-merge (`gh pr merge <n> --auto --merge`) can land a PR while you are still fixing it. Run
   `gh pr view <n> --json state` and confirm it is `OPEN` before every push to its branch.
 - Merge `main` into a branch only when it conflicts (GitHub says DIRTY). Being behind is not a reason:
-  every push dismisses the approval and restarts CI. Don't rebase.
+  every push restarts CI. Don't rebase.
 - Each push queues every CI job. GitHub Free runs 20 jobs at once, only 5 of them on macOS. A push queues
   2 macOS jobs (the two iOS tests), plus Screenshots when it touches UI. So keep at most 2 open PRs that
   touch the app; Linux-only PRs (docs, Core, tooling) are not limited by the macOS slots.

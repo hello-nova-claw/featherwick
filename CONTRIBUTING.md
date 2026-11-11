@@ -84,7 +84,7 @@ Comments explain why. Delete any comment that restates the line below it. Each t
 - Tests use Swift Testing (`import Testing`). No XCTest except for UI tests, which need it.
 - Game logic is tested without the app or the renderer. Pass a `SeededRNG` with a fixed seed. Never read the clock: game time is state.
 - No sleeps and no real network in tests.
-- Line coverage must not drop. CI fails below the figure in `.github/coverage-baseline` (Core and Text, on Linux); when your change raises coverage, raise the baseline in the same pull request.
+- Line coverage must not drop. CI fails below the figure in `.github/coverage-baseline` (Core and Text, on Linux). When coverage rises, CI passes and notes the new figure: you may raise the baseline in the same pull request. The release checklist raises it.
 - `Fixtures/save-v0.json` must always load. A change to the save shape needs a migration and a test.
 
 Run everything locally:
