@@ -1,0 +1,1 @@
+Featherwick is now an iPhone app in portrait, and the App Store build no longer shows the testing tools or a Sound switch with no sounds yet.
