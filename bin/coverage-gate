@@ -11,6 +11,7 @@ Usage:
 """
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -59,6 +60,10 @@ def main() -> int:
     # Compared unrounded: 94.515% rounds to 94.52% but is still below a 94.52 baseline.
     coverage = 100 * covered / total
     baseline = float(Path(baseline_path).read_text(encoding="utf-8").strip())
+    # "nan" parses, but every compare with it is false, so the gate would always pass.
+    if not math.isfinite(baseline):
+        print(f"::error::The baseline in {baseline_path} is not a number.")
+        return 1
     print(f"Line coverage {coverage:.3f}%, baseline {baseline:.2f}% ({baseline_path})")
 
     if coverage < baseline - TOLERANCE:
