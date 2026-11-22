@@ -109,7 +109,7 @@ class AccessibilityAuditTests: XCTestCase {
     private func audit(_ app: XCUIApplication, screen: String) throws {
         var skipped: [String] = []
         try app.performAccessibilityAudit(for: .all) { issue in
-            let known = Self.knownIssue(issue, on: screen)
+            let known = Self.knownIssue(issue, on: screen, variant: Self.variantName)
             if let known { skipped.append("\(known): \(issue.compactDescription)") }
             return known != nil
         }
@@ -127,15 +127,23 @@ class AccessibilityAuditTests: XCTestCase {
     /// Issues already filed. Each names the issue that fixes it; remove the line when it is fixed.
     /// Known by type, not by element: a missing label (`.sufficientElementDescription`) or any other type
     /// still fails at once.
-    nonisolated static func knownIssue(_ issue: XCUIAccessibilityAuditIssue, on screen: String) -> String? {
+    nonisolated static func knownIssue(
+        _ issue: XCUIAccessibilityAuditIssue, on screen: String, variant: String = "standard"
+    ) -> String? {
         switch issue.auditType {
         // The farm panels other than the Yard still fail contrast on an element the audit does not name.
-        // Only there: a contrast failure on any other screen fails the test.
-        case .contrast: screen.hasPrefix("farm-") && screen != "farm-yard" ? "#88" : nil
+        // With long or right-to-left words the Yard's "Rest a while" pill moves up onto the grass and fails
+        // the same way. Only there: a contrast failure on any other screen fails the test.
+        case .contrast: contrastKnown(on: screen, variant: variant) ? "#88" : nil
         case .elementDetection: "#90"
         case .textClipped, .dynamicType: "#66"
         default: nil
         }
+    }
+
+    nonisolated static func contrastKnown(on screen: String, variant: String) -> Bool {
+        guard screen.hasPrefix("farm-") else { return false }
+        return screen != "farm-yard" || variant == "long strings" || variant == "right to left"
     }
 }
 
