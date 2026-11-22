@@ -23,7 +23,7 @@ Featherwick is a cozy game with real genetics. Before you build anything, check 
    - Every other P0 and P1 issue is Ready.
 4. **One branch and one pull request per issue.** Name the branch `<issue number>-<short-slug>`, for example `58-string-catalog`.
 5. **Pull request.** Use the template. Link the issue with `Fixes #58`. Add a changelog fragment, `changelog/<issue>-<slug>.txt`, with one line a player would understand. Do not edit `CHANGELOG.md`: at release time `bin/changelog` folds every fragment in and deletes them. If the change has no effect a player can see, say so, and the maintainer adds the `no-changelog` label.
-6. **Review.** CodeRabbit reviews every pull request, and its approval is the required review. `main` is protected: no direct pushes, all checks green, stale approvals dismissed on push.
+6. **Review.** CodeRabbit's approval is the required review. CodeRabbit reviews a pull request only when asked: comment `@coderabbitai review`. `main` is protected: no direct pushes, all checks green. An approval stays when new commits are pushed.
 
 ## Licensing of contributions
 
@@ -84,7 +84,7 @@ Comments explain why. Delete any comment that restates the line below it. Each t
 - Tests use Swift Testing (`import Testing`). No XCTest except for UI tests, which need it.
 - Game logic is tested without the app or the renderer. Pass a `SeededRNG` with a fixed seed. Never read the clock: game time is state.
 - No sleeps and no real network in tests.
-- Line coverage must not drop. CI fails below the figure in `.github/coverage-baseline` (Core and Text, on Linux); when your change raises coverage, raise the baseline in the same pull request.
+- Line coverage must not drop. CI fails below the figure in `.github/coverage-baseline` (Core and Text, on Linux). When coverage rises, CI passes and notes the new figure: you may raise the baseline in the same pull request. The release checklist raises it.
 - `Fixtures/save-v0.json` must always load. A change to the save shape needs a migration and a test.
 
 Run everything locally:
