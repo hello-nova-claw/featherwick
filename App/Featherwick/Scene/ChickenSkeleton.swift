@@ -107,6 +107,12 @@ struct SkeletonRig: Equatable, Sendable {
     /// The foot (the top of the toes) of each leg at rest. Leg targets are set for this point.
     var feet: [Leg: CGPoint]
     var motion: SkeletonMotion
+    /// How far the hip drops to sit (rig units). Nil: `sitDrop` of the hip's height (the path rig). A
+    /// painted kit sets the height of its belly, so the belly rests on the ground.
+    var sitHeight: Double? = nil
+    /// Drawn with a painted kit. Only a painted bird drops its hip to walk, swings a bent leg forward and
+    /// eases into and out of a walk; the path rig walks as it always has (#116).
+    var painted: Bool = false
 
     /// The body's joint: the hip, where the body tilts.
     var hip: CGPoint { joints[.body] ?? .zero }
@@ -275,7 +281,8 @@ enum ChickenMotion {
         let p: Double = fraction(phase)
         var pose = ChickenPose()
         // Two bumps a stride, at the middle of each foot's stance (the back foot's is at 0.3).
-        pose.rise = m.bounce * 0.5 * (1 + cos(4 * Double.pi * (p - M.stance / 2)))
+        pose.rise =
+            m.bounce * 0.5 * (1 + cos(4 * Double.pi * (p - M.stance / 2))) - (rig.painted ? walkingSink(rig) : 0)
         pose[.body] = m.bodyBob * sin(4 * Double.pi * p)
         pose[.tail] = m.tailFlick * sin(4 * Double.pi * p + 1)
         for (leg, offset) in [(Leg.back, 0.0), (Leg.front, 0.5)] {
@@ -316,13 +323,13 @@ enum ChickenMotion {
         return pose
     }
 
-    /// Sitting (`amount` 1) or part way down: the hip drops by `sitDrop` of its height and the legs fold
-    /// under it, feet where they stood. A stiff leg squashes instead (see `Skeleton.transform`).
+    /// Sitting (`amount` 1) or part way down: the hip drops by `sitHeight` (or `sitDrop` of its height) and
+    /// the legs fold under it, feet where they stood. A stiff leg squashes instead (see `Skeleton.transform`).
     static func sitting(_ rig: SkeletonRig, amount: Double = 1) -> ChickenPose {
         let s: Double = min(1, max(0, amount))
         var pose = ChickenPose()
         pose.sit = s
-        pose.rise = -s * M.sitDrop * Double(rig.hip.y)
+        pose.rise = -s * (rig.sitHeight ?? M.sitDrop * Double(rig.hip.y))
         for leg in Leg.allCases {
             guard let foot = rig.feet[leg] else { continue }
             solve(leg, target: foot, curl: 0, rig: rig, pose: &pose)
@@ -332,30 +339,105 @@ enum ChickenMotion {
 
     // MARK: - Legs
 
-    /// A leg at `u` (0..<1) of its own cycle: planted and sliding back, then lifted and swinging forward.
-    private static func place(_ leg: Leg, at u: Double, rig: SkeletonRig, pose: inout ChickenPose) {
-        guard let drawn = rig.feet[leg] else { return }
+    /// Where a walking leg's foot steps about, and half its step. Nil: the leg has no foot.
+    private static func stepping(_ leg: Leg, rig: SkeletonRig) -> (foot: CGPoint, half: Double)? {
+        guard let drawn = rig.feet[leg] else { return nil }
         let m: SkeletonMotion = rig.motion
         let feet: [CGPoint] = Leg.allCases.compactMap { rig.feet[$0] }
         let middle: Double = feet.map { Double($0.x) }.reduce(0, +) / Double(feet.count)
         // One foot has no pair to step apart from, so it steps around where it is drawn.
         let spread: Double = feet.count > 1 ? m.footSpread : 0
         let foot = CGPoint(x: middle + (leg == .back ? -spread : spread), y: Double(drawn.y))
-        let half: Double = m.stepLength / 2
+        return (foot, m.stepLength / 2)
+    }
+
+    /// How far the hip drops while walking, so no leg straightens at the front or back of its step. A leg
+    /// pulled straight cannot reach its foot: the solver clamps it, the foot slips and the angles snap. A
+    /// leg drawn with room to bend needs no drop.
+    static func walkingSink(_ rig: SkeletonRig) -> Double {
+        var sink: Double = 0
+        for leg in Leg.allCases where rig.bends(leg) {
+            guard let (foot, half) = stepping(leg, rig: rig), let hip = rig.joints[leg.thigh],
+                let hock = rig.joints[leg.shank], let drawn = rig.feet[leg]
+            else { continue }
+            let reach: Double = M.legReach * (distance(hip, hock) + distance(hock, drawn))
+            for x in [Double(foot.x) - half, Double(foot.x) + half] {
+                let dx: Double = x - Double(hip.x)
+                guard reach > abs(dx) else { continue }
+                // The highest the hip may be over this foot, against where it is at the top of a bounce.
+                let highest: Double = Double(foot.y) + (reach * reach - dx * dx).squareRoot()
+                sink = max(sink, Double(hip.y) + rig.motion.bounce - highest)
+            }
+        }
+        return sink
+    }
+
+    /// A leg at `u` (0..<1) of its own cycle: planted and sliding back, then lifted and swinging forward.
+    private static func place(_ leg: Leg, at u: Double, rig: SkeletonRig, pose: inout ChickenPose) {
+        guard let (foot, half) = stepping(leg, rig: rig) else { return }
+        let m: SkeletonMotion = rig.motion
         let lift: Double = m.liftShare * Double(rig.hip.y)
-        let target: CGPoint
-        let curl: Double
         if u < M.stance {
             let s: Double = u / M.stance
-            target = CGPoint(x: Double(foot.x) + half - 2 * half * s, y: Double(foot.y))
-            curl = 0
-        } else {
-            let s: Double = (u - M.stance) / (1 - M.stance)
-            let arc: Double = sin(Double.pi * s)
-            target = CGPoint(x: Double(foot.x) - half + 2 * half * ease(s), y: Double(foot.y) + lift * arc)
-            curl = m.toeCurl * arc
+            let target = CGPoint(x: Double(foot.x) + half - 2 * half * s, y: Double(foot.y))
+            solve(leg, target: target, curl: 0, rig: rig, pose: &pose)
+            return
         }
-        solve(leg, target: target, curl: curl, rig: rig, pose: &pose)
+        let s: Double = (u - M.stance) / (1 - M.stance)
+        let arc: Double = sin(Double.pi * s)
+        let curl: Double = m.toeCurl * arc
+        let target = CGPoint(x: Double(foot.x) - half + 2 * half * ease(s), y: Double(foot.y) + lift * arc)
+        guard rig.painted, rig.bends(leg) else {
+            solve(leg, target: target, curl: curl, rig: rig, pose: &pose)
+            return
+        }
+        // Reaching for the lifted foot would fold the hock up and back, so the drumstick would swing back
+        // as the foot steps forward. Instead both bones blend from the planted leg at lift-off to the planted
+        // leg at touch-down, so the step starts and ends without a snap, and the thigh swings forward. On top,
+        // the hock folds as the foot rises and opens as it lands: by as much as lifts the foot to the top of
+        // its step at mid-swing, worked out once for the step, so nothing switches from frame to frame.
+        var off: ChickenPose = pose
+        solve(leg, target: CGPoint(x: Double(foot.x) - half, y: Double(foot.y)), curl: 0, rig: rig, pose: &off)
+        var on: ChickenPose = pose
+        solve(leg, target: CGPoint(x: Double(foot.x) + half, y: Double(foot.y)), curl: 0, rig: rig, pose: &on)
+        func blend(_ bone: Bone, _ t: Double) -> Double { off[bone] + t * (on[bone] - off[bone]) }
+        let top: Double = fold(
+            leg, thigh: blend(leg.thigh, 0.5), shank: blend(leg.shank, 0.5), to: Double(foot.y) + lift, rig: rig,
+            rise: pose.rise)
+        let e: Double = ease(s)
+        pose[leg.thigh] = blend(leg.thigh, e)
+        pose[leg.shank] = blend(leg.shank, e) + top * arc
+        // The toes stay level with the ground, then curl.
+        if rig.has(leg.toes) { pose[leg.toes] = -(pose[leg.thigh] + pose[leg.shank]) + curl }
+    }
+
+    /// How far (pose degrees) the hock must fold, from `shank`, to lift the foot to height `y` with the thigh
+    /// at `thigh`. Of the two shank angles that reach `y`, it keeps the one that bends the hock backwards, as
+    /// at rest, and nearest the unfolded shank. Too high to reach: the shank points as high as it can.
+    private static func fold(
+        _ leg: Leg, thigh: Double, shank: Double, to y: Double, rig: SkeletonRig, rise: Double
+    ) -> Double {
+        guard let hip0 = rig.joints[leg.thigh], let hock0 = rig.joints[leg.shank], let foot0 = rig.feet[leg] else {
+            return 0
+        }
+        let hip = CGPoint(x: hip0.x, y: hip0.y + CGFloat(rise))
+        let a: Double = distance(hip0, hock0)
+        let b: Double = distance(hock0, foot0)
+        let thighAngle: Double = angle(from: hip0, to: hock0) - radians(thigh)
+        let hock = CGPoint(x: Double(hip.x) + a * cos(thighAngle), y: Double(hip.y) + a * sin(thighAngle))
+        // The shank's angle on screen now, unfolded (a turn up is negative in pose degrees).
+        let now: Double = angle(from: hock0, to: foot0) - radians(thigh + shank)
+        let up: Double = asin(min(1, max(-1, (y - Double(hock.y)) / b)))
+        let rest: Double = cross(sub(foot0, hip0), sub(hock0, hip0))
+        let candidates: [Double] = [up, Double.pi - up]
+        let backwards: [Double] = candidates.filter { shankAngle in
+            let foot = CGPoint(x: Double(hock.x) + b * cos(shankAngle), y: Double(hock.y) + b * sin(shankAngle))
+            return cross(sub(foot, hip), sub(hock, hip)) * rest >= 0
+        }
+        let best: Double =
+            (backwards.isEmpty ? candidates : backwards)
+            .min { abs(wrap($0 - now)) < abs(wrap($1 - now)) } ?? up
+        return -degrees(wrap(best - now))
     }
 
     /// Sets the leg's angles so its foot reaches `target` (rig units) from the hip, lifted by `pose.rise`.
@@ -451,6 +533,8 @@ enum ChickenMotion {
 
     /// An angle in radians brought into -π...π, so a turn never goes the long way round.
     private static func wrap(_ a: Double) -> Double { remainder(a, 2 * Double.pi) }
+
+    private static func radians(_ degrees: Double) -> Double { degrees * Double.pi / 180 }
 
     private static func degrees(_ radians: Double) -> Double {
         var d: Double = radians * 180 / Double.pi
