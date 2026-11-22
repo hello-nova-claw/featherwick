@@ -12,6 +12,14 @@ enum Sound {
 
     static var isOn: Bool { FeedbackSettings.isOn(FeedbackSettings.soundKey) }
 
+    /// True when at least one cue has a file. Settings hides the Sound switch until then, so the
+    /// keeper never sees a switch that changes nothing.
+    static let isBundled = hasFiles(in: .main)
+
+    nonisolated static func hasFiles(in bundle: Bundle) -> Bool {
+        Cue.allCases.contains { url(for: $0, in: bundle) != nil }
+    }
+
     private static var players: [Cue: AVAudioPlayer] = [:]
     /// Cues with no file in the bundle. Looked up once, then skipped.
     private static var missing: Set<Cue> = []
@@ -27,7 +35,7 @@ enum Sound {
     private static func player(for cue: Cue) -> AVAudioPlayer? {
         if let player = players[cue] { return player }
         if missing.contains(cue) { return nil }
-        guard let url = url(for: cue), let player = try? AVAudioPlayer(contentsOf: url) else {
+        guard let url = url(for: cue, in: .main), let player = try? AVAudioPlayer(contentsOf: url) else {
             missing.insert(cue)
             return nil
         }
@@ -37,10 +45,10 @@ enum Sound {
     }
 
     /// XcodeGen copies the Sounds folder's files to the bundle root; a folder reference keeps the folder.
-    private static func url(for cue: Cue) -> URL? {
+    private nonisolated static func url(for cue: Cue, in bundle: Bundle) -> URL? {
         for ext in ["caf", "m4a"] {
-            if let url = Bundle.main.url(forResource: cue.rawValue, withExtension: ext) { return url }
-            if let url = Bundle.main.url(forResource: cue.rawValue, withExtension: ext, subdirectory: "Sounds") {
+            if let url = bundle.url(forResource: cue.rawValue, withExtension: ext) { return url }
+            if let url = bundle.url(forResource: cue.rawValue, withExtension: ext, subdirectory: "Sounds") {
                 return url
             }
         }
