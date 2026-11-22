@@ -23,7 +23,7 @@ Featherwick is a cozy game with real genetics. Before you build anything, check 
    - Every other P0 and P1 issue is Ready.
 4. **One branch and one pull request per issue.** Name the branch `<issue number>-<short-slug>`, for example `58-string-catalog`.
 5. **Pull request.** Use the template. Link the issue with `Fixes #58`. Add a changelog fragment, `changelog/<issue>-<slug>.txt`, with one line a player would understand. Do not edit `CHANGELOG.md`: at release time `bin/changelog` folds every fragment in and deletes them. If the change has no effect a player can see, say so, and the maintainer adds the `no-changelog` label.
-6. **Review.** CodeRabbit reviews every pull request, and its approval is the required review. `main` is protected: no direct pushes, all checks green, stale approvals dismissed on push.
+6. **Review.** CodeRabbit's approval is the required review. CodeRabbit reviews a pull request only when asked: comment `@coderabbitai review`. `main` is protected: no direct pushes, all checks green. An approval stays when new commits are pushed.
 
 ## Licensing of contributions
 
