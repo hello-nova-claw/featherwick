@@ -65,7 +65,14 @@ Underline and selected-tab stroke: `ink` at 50–75% opacity (`rgba(42,35,32,.5)
 | `floating` (place-label / HUD backing) | `rgba(27,24,23,0.88)` |
 | `toast` / `toastText` | background `#F3EEE6`, text `#1B1817` (inverts against the night scene) |
 
-Built as two `Palette` values (`Palette.day`, `Palette.night`) in `Design/Theme.swift`, read through the `\.palette` environment value. Game time picks the palette, not the system appearance; the app then sets the colour scheme to match. In the evening crossfade, `Palette.between` mixes the two palettes (it starts 10% of the way in) and counts as night past halfway.
+Built as two `Palette` values (`Palette.day`, `Palette.night`) in `Design/Theme.swift`, read through the `\.palette` environment value. Game time picks the palette, not the system appearance; the app then sets the colour scheme to match. In the evening crossfade, `Palette.between` goes from one palette to the other (it starts 10% of the way in) and counts as night past halfway.
+
+**Text stays readable through the fade.** `ink`, `inkSoft` and `inkMuted` on `paper` stay at or above 4.5:1 (WCAG AA) at every point of the crossfade, not only at day and night. A straight blend cannot do this: dark text on light paper and light text on dark paper meet in the middle, near 1:1. So:
+
+- The text tokens do not blend. They keep their day values until halfway, then take their night values.
+- `paper` and the other tokens blend, but only as far as the text allows. Before halfway, paper darkens until the weakest day text token is at 4.5:1. From halfway, paper starts at the lightest grey where the weakest night text token is at 4.5:1, then darkens to night.
+- At halfway the menus turn in one step. `RootView` animates the change (1.5 s), as iOS does for Dark Mode.
+- `PaletteFadeTests` samples the fade and checks this. A new text token or a new token value must keep it.
 
 Notice and speckle pigments (`Pigment`): decision dot buff `#DDAE6E`, collect dot brown `#A86E45`, egg speckles `#6B3E25`.
 
