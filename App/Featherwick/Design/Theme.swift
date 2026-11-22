@@ -85,6 +85,18 @@ struct Palette: Equatable, Sendable {
             coin: mix(a.coin, b.coin), floating: mix(a.floating, b.floating), toast: mix(a.toast, b.toast),
             toastText: mix(a.toastText, b.toastText), isNight: t >= 0.5)
     }
+
+    /// The WCAG 2 contrast ratio of two colours, from 1 (the same) to 21 (black on white). Opacity is ignored.
+    @MainActor
+    static func contrast(_ a: Color, _ b: Color) -> Double {
+        let env = EnvironmentValues()
+        func luminance(_ colour: Color) -> Double {
+            let c = colour.resolve(in: env)
+            return 0.2126 * Double(c.linearRed) + 0.7152 * Double(c.linearGreen) + 0.0722 * Double(c.linearBlue)
+        }
+        let (x, y) = (luminance(a), luminance(b))
+        return (max(x, y) + 0.05) / (min(x, y) + 0.05)
+    }
 }
 
 /// A tester setting (Settings ▸ Time of day): follow game time, or pin the farm to day or night.
