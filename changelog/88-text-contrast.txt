@@ -1,0 +1,1 @@
+Quiet labels are a little darker and easier to read, and the buttons along the bottom of the farm no longer squeeze their words onto one letter per line.

@@ -212,7 +212,7 @@ struct BreedTile: View {
                     ArtPlaceholder(label: "bird art")
                 } else {
                     RoundedRectangle(cornerRadius: Radius.tile).stroke(palette.unknownBox, style: Stitch.unknown)
-                    Text("?").font(Typeface.display(34)).foregroundStyle(palette.unknown)
+                    Text("?").font(Typeface.display(34)).foregroundStyle(palette.inkMuted)
                 }
             }
             .aspectRatio(1, contentMode: .fit)

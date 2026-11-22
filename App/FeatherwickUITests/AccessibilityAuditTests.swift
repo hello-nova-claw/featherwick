@@ -63,6 +63,7 @@ class AccessibilityAuditTests: XCTestCase {
         for (button, screen) in [("Books", "books"), ("Today", "today"), ("Settings", "settings")] {
             Farm.button(button, in: app).tap()
             XCTAssertTrue(Farm.button("Close", in: app).waitForExistence(timeout: 5), "\(button) did not open")
+            Farm.expandSheet(app)
             try audit(app, screen: screen)
             Farm.close(app)
         }
@@ -83,6 +84,7 @@ class AccessibilityAuditTests: XCTestCase {
             if place == "Yard" && Self.variant == Farm.Language.doubled.arguments {
                 XCTContext.runActivity(named: "Skipped the Yard sheet audit with doubled strings: #97") { _ in }
             } else {
+                Farm.expandSheet(app)
                 try audit(app, screen: "place-\(Farm.slug(place))")
             }
             // The Market board opens from the farm gate.
@@ -107,7 +109,7 @@ class AccessibilityAuditTests: XCTestCase {
     private func audit(_ app: XCUIApplication, screen: String) throws {
         var skipped: [String] = []
         try app.performAccessibilityAudit(for: .all) { issue in
-            let known = Self.knownIssue(issue)
+            let known = Self.knownIssue(issue, on: screen, variant: Self.variantName)
             if let known { skipped.append("\(known): \(issue.compactDescription)") }
             return known != nil
         }
@@ -125,13 +127,23 @@ class AccessibilityAuditTests: XCTestCase {
     /// Issues already filed. Each names the issue that fixes it; remove the line when it is fixed.
     /// Known by type, not by element: a missing label (`.sufficientElementDescription`) or any other type
     /// still fails at once.
-    nonisolated static func knownIssue(_ issue: XCUIAccessibilityAuditIssue) -> String? {
+    nonisolated static func knownIssue(
+        _ issue: XCUIAccessibilityAuditIssue, on screen: String, variant: String = "standard"
+    ) -> String? {
         switch issue.auditType {
-        case .contrast: "#88"
+        // The farm panels other than the Yard still fail contrast on an element the audit does not name.
+        // With long or right-to-left words the Yard's "Rest a while" pill moves up onto the grass and fails
+        // the same way. Only there: a contrast failure on any other screen fails the test.
+        case .contrast: contrastKnown(on: screen, variant: variant) ? "#88" : nil
         case .elementDetection: "#90"
         case .textClipped, .dynamicType: "#66"
         default: nil
         }
+    }
+
+    nonisolated static func contrastKnown(on screen: String, variant: String) -> Bool {
+        guard screen.hasPrefix("farm-") else { return false }
+        return screen != "farm-yard" || variant == "long strings" || variant == "right to left"
     }
 }
 
