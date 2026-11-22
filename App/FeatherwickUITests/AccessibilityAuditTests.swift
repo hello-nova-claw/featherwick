@@ -109,7 +109,7 @@ class AccessibilityAuditTests: XCTestCase {
     private func audit(_ app: XCUIApplication, screen: String) throws {
         var skipped: [String] = []
         try app.performAccessibilityAudit(for: .all) { issue in
-            let known = Self.knownIssue(issue)
+            let known = Self.knownIssue(issue, on: screen)
             if let known { skipped.append("\(known): \(issue.compactDescription)") }
             return known != nil
         }
@@ -127,10 +127,11 @@ class AccessibilityAuditTests: XCTestCase {
     /// Issues already filed. Each names the issue that fixes it; remove the line when it is fixed.
     /// Known by type, not by element: a missing label (`.sufficientElementDescription`) or any other type
     /// still fails at once.
-    nonisolated static func knownIssue(_ issue: XCUIAccessibilityAuditIssue) -> String? {
+    nonisolated static func knownIssue(_ issue: XCUIAccessibilityAuditIssue, on screen: String) -> String? {
         switch issue.auditType {
         // The farm panels other than the Yard still fail contrast on an element the audit does not name.
-        case .contrast: "#88"
+        // Only there: a contrast failure on any other screen fails the test.
+        case .contrast: screen.hasPrefix("farm-") && screen != "farm-yard" ? "#88" : nil
         case .elementDetection: "#90"
         case .textClipped, .dynamicType: "#66"
         default: nil
