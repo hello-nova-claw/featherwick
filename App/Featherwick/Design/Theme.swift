@@ -62,12 +62,53 @@ struct Palette: Equatable, Sendable {
         return between(.day, .night, dusk + (1 - dusk) * evening / crossfade)
     }
 
+    /// Text keeps at least this contrast on paper at every point of the evening fade (WCAG AA for body text).
+    static let textContrast = 4.5
+
     /// Partway from one palette to another: `t` 0 is `a`, 1 is `b`. Night once past halfway.
+    ///
+    /// Dark text on light paper and light text on dark paper meet in the middle of a straight blend, so
+    /// no blend of both stays readable. The text keeps `a`'s values until halfway, then takes `b`'s. The
+    /// paper and the other tokens blend only as far as that text stays at `textContrast`: before
+    /// halfway they go from `a` to as near `b` as `a`'s text allows, and after it from as near `a` as
+    /// `b`'s text allows to `b`. The step at halfway is animated where the palette is applied.
     @MainActor
     static func between(_ a: Palette, _ b: Palette, _ t: Double) -> Palette {
-        let t = Float(min(1, max(0, t)))
+        let t = min(1, max(0, t))
         if t == 0 { return a }
         if t == 1 { return b }
+        let turned = t >= 0.5
+        let text = turned ? b : a
+        let u = turned ? 1 - (1 - t) * 2 * reach(from: b, to: a) : t * 2 * reach(from: a, to: b)
+        var palette = blend(a, b, Float(u))
+        palette.ink = text.ink
+        palette.inkSoft = text.inkSoft
+        palette.inkMuted = text.inkMuted
+        palette.isNight = turned
+        return palette
+    }
+
+    /// How far, from 0 to 1, the paper can go from `a` towards `b` with `a`'s text still at `textContrast`.
+    @MainActor
+    private static func reach(from a: Palette, to b: Palette) -> Double {
+        // A hair over the floor, so rounding in the blend never drops a token under it.
+        let floor = textContrast + 0.01
+        func readable(_ u: Double) -> Bool {
+            let paper = blend(a, b, Float(u)).paper
+            return [a.ink, a.inkSoft, a.inkMuted].allSatisfy { contrast($0, paper) >= floor }
+        }
+        guard readable(0) else { return 0 }
+        var (low, high) = (0.0, 1.0)
+        for _ in 0..<20 {
+            let mid = (low + high) / 2
+            if readable(mid) { low = mid } else { high = mid }
+        }
+        return low
+    }
+
+    /// Every token mixed in a straight line in sRGB: `t` 0 is `a`, 1 is `b`.
+    @MainActor
+    private static func blend(_ a: Palette, _ b: Palette, _ t: Float) -> Palette {
         let env = EnvironmentValues()
         func mix(_ x: Color, _ y: Color) -> Color {
             let p = x.resolve(in: env)
