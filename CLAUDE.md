@@ -255,7 +255,8 @@ cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Fea
 - CodeRabbit's approval is the required review. The PRs are opened from the maintainer's account, which
   cannot approve its own PRs. CodeRabbit does not review this repository by itself (it has under 10 stars):
   comment `@coderabbitai review`. It allows about 10 reviews an hour per repository and never reviews a
-  commit twice, so ask when CI is green and the PR is done. After a fix commit, ask again: nothing starts
+  commit twice. Ask when you open the PR, not when CI goes green: the review takes about 5 minutes and
+  CI about 20, so asking at once runs them side by side. After a fix commit, ask again: nothing starts
   a review by itself. To review again with no new commit, use `@coderabbitai full review`. When it says
   "Review paused", comment `@coderabbitai resume` first.
 - An approval stays when new commits are pushed (branch protection keeps stale approvals).
