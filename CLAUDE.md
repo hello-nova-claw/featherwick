@@ -254,11 +254,12 @@ cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Fea
 - Commits use the repo-local Novaclaw git identity, in WordPress core style (see CONTRIBUTING.md).
 - CodeRabbit's approval is the required review. The PRs are opened from the maintainer's account, which
   cannot approve its own PRs. CodeRabbit does not review this repository by itself (it has under 10 stars):
-  comment `@coderabbitai review`. It allows about 10 reviews an hour per repository and never reviews a
-  commit twice. Ask when you open the PR, not when CI goes green: the review takes about 5 minutes and
-  CI about 20, so asking at once runs them side by side. After a fix commit, ask again: nothing starts
-  a review by itself. To review again with no new commit, use `@coderabbitai full review`. When it says
-  "Review paused", comment `@coderabbitai resume` first.
+  comment `@coderabbitai review`. The free plan includes about one review an hour for the whole
+  repository, and it never reviews the same commit twice, so ask only when CI is green and the PR is
+  done: a review spent on a commit you then change costs the next hour. For the same reason, keep one
+  PR waiting for review at a time. After a fix commit, ask again: nothing starts a review by itself.
+  To review again with no new commit, use `@coderabbitai full review`. When it says "Review paused",
+  comment `@coderabbitai resume` first.
 - An approval stays when new commits are pushed (branch protection keeps stale approvals).
 - Auto-merge (`gh pr merge <n> --auto --merge`) can land a PR while you are still fixing it. Run
   `gh pr view <n> --json state` and confirm it is `OPEN` before every push to its branch.
