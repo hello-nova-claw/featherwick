@@ -87,7 +87,7 @@ Show tab. For treats and birds, the shop shows a "not yet" line (`notYetText`) i
 | 3 | `coopDoor` (lesson) | Marigold, Hazel's hen, comes to stay. The coop door lesson is about her: the door, the fox, foraging. |
 | 4 | `laying` (lesson) | Marigold lays. Hazel's note: feed, collect, sell. |
 | 5 | `premiumFeed` | Speckle & Down sells premium feed. |
-| 7 | — | The sex shows (`growerAge`). A rooster starter gets the gift hen. |
+| 7 | — | The sex shows (`growerAge`). A rooster starter gets the neighbour's gift bird. |
 | 8 | `breedBook` (lesson) | The neighbour names the starter's breed and colour: the Breed Book. If Marigold came: "Marigold's chick, of course." |
 | 9 | `daylight` (lesson) | "There's only so much daylight." From now on, errands take a slot of the day. |
 | 10 | `birdShop` | Pullets, cockerels, fertile eggs, the daily special, story breeds. Hazel is home: send Marigold home, or keep her. |
@@ -104,6 +104,12 @@ Show tab. For treats and birds, the shop shows a "not yet" line (`notYetText`) i
 - No bought birds, perches, incubators or shows before the sex shows (`EarlyGameTests` checks this).
   Marigold is a loan, not a bird the keeper buys.
 - A save keeps its own `featureDays`. A game begun before this table keeps its old days (laying on 18).
+- **The gift bird** (`Engine.neighbourGiftIfNeeded`). If the starter turns out to be a rooster, the
+  neighbour gives a pullet of a starter breed, once (`GameState.giftHenGiven`). She is `giftHenAge`
+  (3) days old, so she is younger than the starter and still a chick. The neighbour tells the keeper
+  her breed and sex, so she arrives `revealed`: told evidence, not a leak (rule 8). She comes already
+  named. She goes in the brooder, else on a free perch, else the neighbour boards her, like any grown
+  bird with nowhere to go. Event: `.neighbourGaveHen`. The words still call her a young hen (#130).
 - **The show tip** (`Engine.showTip`). When the show opens, the neighbour names one of your birds and
   one class, by name: "Oh hey, I notice that Basil is a beautiful buff Orpington! … I think you
   should enter her in the Orpington class." She suggests the breed class if the bird places 1st to
