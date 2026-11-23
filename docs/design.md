@@ -1098,9 +1098,10 @@ The pool (`Notes.pool`, 72 notes). Each person writes about their own system:
 
 `VillageDay.swift`. Four village days a year: the Hatch-along (spring), the Longest Day (summer), Moult Week
 (autumn) and Midwinter Lights (winter). Each falls on a day of its season, every year
-(`Rules.villageDays`, counted from 1). `Rules.date(of:inYear:)` turns that into a game day: season
-day 1 is game day 0, so the game day is one lower than the day of the season. The game starts on
-day 1, so spring's day 1 never comes round in year 0.
+(`Rules.villageDays`, counted from 1). `Rules.date(of:inYear:)` turns that into a game day: the
+season's first game day, plus the day of the season, minus one. A season is `daysPerSeason` (28) days.
+Spring of year 0 starts at game day 0, and the game starts on day 1, so spring's day 1 never comes
+round in year 0.
 `villageDayNoticeDays` (7) mornings before, `.villageDayComing(day, inDays:)`. On the morning,
 `.villageDay(day)`, then `.villageDayScene(day, year:)`. The morning report shows them under "In the village".
 Nothing is missable: each day comes round again next year. `GameState.nextVillageDay` and
