@@ -1091,18 +1091,21 @@ The pool (`Notes.pool`, 72 notes). Each person writes about their own system:
 ### The village calendar
 
 `VillageDay.swift`. Four village days a year: the Hatch-along (spring), the Longest Day (summer), Moult Week
-(autumn) and Midwinter Lights (winter). Each falls on a day of its season (`Rules.villageDays`), every year.
+(autumn) and Midwinter Lights (winter). Each falls on a day of its season, every year
+(`Rules.villageDays`, counted from 1). `Rules.date(of:inYear:)` turns that into a game day: season
+day 1 is game day 0, so the game day is one lower than the day of the season. The game starts on
+day 1, so spring's day 1 never comes round in year 0.
 `villageDayNoticeDays` (7) mornings before, `.villageDayComing(day, inDays:)`. On the morning,
 `.villageDay(day)`, then `.villageDayScene(day, year:)`. The morning report shows them under "In the village".
 Nothing is missable: each day comes round again next year. `GameState.nextVillageDay` and
 `upcomingVillageDays(n)` give the dates. No day draws from the game RNG, except that the Longest Day skips one.
 
-| Day | When | What happens |
-| --- | --- | --- |
-| Hatch-along | spring, day 10 | Bring one known-fertile egg in its week. A surprise chick comes back 3 nights later. |
-| Longest Day | summer, day 14 | The fox stays home that night. An open door forages for free. |
-| Moult Week | autumn, day 1 | Hazel's lesson on the moult, and `moultWeekTreats` (4) mealworms. |
-| Midwinter Lights | winter, day 14 | The village gives `midwinterCoins` (15), and Teddy sends a note with a drawing. |
+| Day | Day of its season | Year 0 | What happens |
+| --- | --- | --- | --- |
+| Hatch-along | spring, 10 | day 9 | Bring one known-fertile egg in its week. A surprise chick comes back 3 nights later. |
+| Longest Day | summer, 14 | day 41 | The fox stays home that night. An open door forages for free. |
+| Moult Week | autumn, 1 | day 56 | Hazel's lesson on the moult, and `moultWeekTreats` (4) mealworms. |
+| Midwinter Lights | winter, 14 | day 97 | The village gives `midwinterCoins` (15), and Teddy sends a note with a drawing. |
 
 - **The Hatch-along** (`HatchAlong.swift`). The week is the day itself and the days after it:
   `hatchAlongWeekDays` (7) in all. The notice a week before gives time to find an egg. In the week the keeper
