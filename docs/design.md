@@ -1379,4 +1379,6 @@ Sleep waits until every slot is spent, and nothing is ever lost: a refused erran
 
 - Real genetics, but no lethal genes. Every fertile egg hatches.
 - Seeded random only, so every hatch can be replayed and tested.
-- V1 placeholder: a chick takes its mother's breed.
+- A chick takes its mother's breed (`Bird.breed`, from `Egg.motherBreed`). It is purebred only if
+  both parents are purebred and of that breed. A cross is shown by its cross name
+  (`Bird.crossName`, `Bird.varietyName`), never by its mother's breed.
