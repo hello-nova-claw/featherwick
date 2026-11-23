@@ -6,7 +6,11 @@ tone_instructions: >-
   section 2 as blocking.
 
 reviews:
-  profile: assertive
+  # Chill, not assertive: fewer small requests. Each round of them costs a
+  # push and another 20 minutes of CI, and CodeRabbit never reviews the same
+  # commit twice. The path instructions below still make a breach of a
+  # design principle blocking.
+  profile: chill
   # Its approval, once its comments are resolved, is the required review on
   # main, so it must be able to request changes.
   request_changes_workflow: true
@@ -16,7 +20,10 @@ reviews:
   collapse_walkthrough: true
   auto_review:
     enabled: true
-    drafts: false
+    # No effect yet: this repository has under 10 stars, so CodeRabbit reviews
+    # only when asked. Every pull request here opens as a draft, so without
+    # this, automatic review would stay off even once the stars are there.
+    drafts: true
   path_instructions:
     - path: "**/*"
       instructions: |
