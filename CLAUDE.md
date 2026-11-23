@@ -258,8 +258,9 @@ cd App && xcodegen && xcodebuild test -project Featherwick.xcodeproj -scheme Fea
   repository, and `@coderabbitai review` never reviews the same commit twice, so ask only when CI is
   green and the PR is done: a review spent on a commit you then change costs the next hour. For the
   same reason, keep one PR waiting for review at a time. After a fix commit, ask again: nothing
-  starts a review by itself. To review the same commit again, use `@coderabbitai full review`; never
-  push a commit just to start a review. When it says "Review paused", comment `@coderabbitai resume`
+  starts a review by itself. A refused ask is not a review: when the hour's limit refuses one, ask
+  again after it resets. To review the same commit again, use `@coderabbitai full review`; never push
+  a commit just to start a review. When it says "Review paused", comment `@coderabbitai resume`
   first.
 - An approval stays when new commits are pushed (branch protection keeps stale approvals).
 - Auto-merge (`gh pr merge <n> --auto --merge`) can land a PR while you are still fixing it. Run
