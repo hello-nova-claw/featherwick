@@ -87,7 +87,7 @@ Show tab. For treats and birds, the shop shows a "not yet" line (`notYetText`) i
 | 3 | `coopDoor` (lesson) | Marigold, Hazel's hen, comes to stay. The coop door lesson is about her: the door, the fox, foraging. |
 | 4 | `laying` (lesson) | Marigold lays. Hazel's note: feed, collect, sell. |
 | 5 | `premiumFeed` | Speckle & Down sells premium feed. |
-| 7 | — | The sex shows (`growerAge`). A rooster starter gets the gift hen. |
+| 7 | — | The sex shows (`growerAge`). A rooster starter gets the neighbour's gift bird. |
 | 8 | `breedBook` (lesson) | The neighbour names the starter's breed and colour: the Breed Book. If Marigold came: "Marigold's chick, of course." |
 | 9 | `daylight` (lesson) | "There's only so much daylight." From now on, errands take a slot of the day. |
 | 10 | `birdShop` | Pullets, cockerels, fertile eggs, the daily special, story breeds. Hazel is home: send Marigold home, or keep her. |
@@ -104,6 +104,12 @@ Show tab. For treats and birds, the shop shows a "not yet" line (`notYetText`) i
 - No bought birds, perches, incubators or shows before the sex shows (`EarlyGameTests` checks this).
   Marigold is a loan, not a bird the keeper buys.
 - A save keeps its own `featureDays`. A game begun before this table keeps its old days (laying on 18).
+- **The gift bird** (`Engine.neighbourGiftIfNeeded`). If the starter turns out to be a rooster, the
+  neighbour gives a pullet of a starter breed, once (`GameState.giftHenGiven`). She is `giftHenAge`
+  (3) days old, so she is younger than the starter and still a chick. The neighbour tells the keeper
+  her breed and sex, so she arrives `revealed`: told evidence, not a leak (rule 8). She comes already
+  named. She goes in the brooder, else on a free perch, else the neighbour boards her, like any grown
+  bird with nowhere to go. Event: `.neighbourGaveHen`. The words still call her a young hen (#130).
 - **The show tip** (`Engine.showTip`). When the show opens, the neighbour names one of your birds and
   one class, by name: "Oh hey, I notice that Basil is a beautiful buff Orpington! … I think you
   should enter her in the Orpington class." She suggests the breed class if the bird places 1st to
@@ -1091,18 +1097,22 @@ The pool (`Notes.pool`, 72 notes). Each person writes about their own system:
 ### The village calendar
 
 `VillageDay.swift`. Four village days a year: the Hatch-along (spring), the Longest Day (summer), Moult Week
-(autumn) and Midwinter Lights (winter). Each falls on a day of its season (`Rules.villageDays`), every year.
+(autumn) and Midwinter Lights (winter). Each falls on a day of its season, every year
+(`Rules.villageDays`, counted from 1). `Rules.date(of:inYear:)` turns that into a game day: the
+season's first game day, plus the day of the season, minus one. A season is `daysPerSeason` (28) days.
+Spring of year 0 starts at game day 0, and the game starts on day 1, so spring's day 1 never comes
+round in year 0.
 `villageDayNoticeDays` (7) mornings before, `.villageDayComing(day, inDays:)`. On the morning,
 `.villageDay(day)`, then `.villageDayScene(day, year:)`. The morning report shows them under "In the village".
 Nothing is missable: each day comes round again next year. `GameState.nextVillageDay` and
 `upcomingVillageDays(n)` give the dates. No day draws from the game RNG, except that the Longest Day skips one.
 
-| Day | When | What happens |
-| --- | --- | --- |
-| Hatch-along | spring, day 10 | Bring one known-fertile egg in its week. A surprise chick comes back 3 nights later. |
-| Longest Day | summer, day 14 | The fox stays home that night. An open door forages for free. |
-| Moult Week | autumn, day 1 | Hazel's lesson on the moult, and `moultWeekTreats` (4) mealworms. |
-| Midwinter Lights | winter, day 14 | The village gives `midwinterCoins` (15), and Teddy sends a note with a drawing. |
+| Day | Day of its season | Year 0 | What happens |
+| --- | --- | --- | --- |
+| Hatch-along | spring, 10 | day 9 | Bring one known-fertile egg in its week. A surprise chick comes back 3 nights later. |
+| Longest Day | summer, 14 | day 41 | The fox stays home that night. An open door forages for free. |
+| Moult Week | autumn, 1 | day 56 | Hazel's lesson on the moult, and `moultWeekTreats` (4) mealworms. |
+| Midwinter Lights | winter, 14 | day 97 | The village gives `midwinterCoins` (15), and Teddy sends a note with a drawing. |
 
 - **The Hatch-along** (`HatchAlong.swift`). The week is the day itself and the days after it:
   `hatchAlongWeekDays` (7) in all. The notice a week before gives time to find an egg. In the week the keeper
@@ -1370,4 +1380,6 @@ Sleep waits until every slot is spent, and nothing is ever lost: a refused erran
 
 - Real genetics, but no lethal genes. Every fertile egg hatches.
 - Seeded random only, so every hatch can be replayed and tested.
-- V1 placeholder: a chick takes its mother's breed.
+- A chick takes its mother's breed (`Bird.breed`, from `Egg.motherBreed`). It is purebred only if
+  both parents are purebred and of that breed. A cross is shown by its cross name
+  (`Bird.crossName`, `Bird.varietyName`), never by its mother's breed.
