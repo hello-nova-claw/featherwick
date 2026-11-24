@@ -109,7 +109,8 @@ Show tab. For treats and birds, the shop shows a "not yet" line (`notYetText`) i
   (3) days old, so she is younger than the starter and still a chick. The neighbour tells the keeper
   her breed and sex, so she arrives `revealed`: told evidence, not a leak (rule 8). She comes already
   named. She goes in the brooder, else on a free perch, else the neighbour boards her, like any grown
-  bird with nowhere to go. Event: `.neighbourGaveHen`. The words still call her a young hen (#130).
+  bird with nowhere to go. Event: `.neighbourGaveHen`. The words name her by her age (`kindWord`), so
+  they call her a chick (#130).
 - **The show tip** (`Engine.showTip`). When the show opens, the neighbour names one of your birds and
   one class, by name: "Oh hey, I notice that Basil is a beautiful buff Orpington! … I think you
   should enter her in the Orpington class." She suggests the breed class if the bird places 1st to

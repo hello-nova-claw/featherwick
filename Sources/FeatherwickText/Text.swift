@@ -1156,13 +1156,17 @@ public func eventText(_ e: GameEvent, _ s: GameState) -> String? {
         return "\(birdName(id, s)) is growing feathers: a \(variety) \(sex == .hen ? "pullet" : "cockerel")!"
     case .newBreedBookEntry(let entry): return "New Breed Book entry: \(entryText(entry))."
     case .neighbourGaveHen(let id):
-        // While Marigold stays, Hazel is at her sister's: the hen comes from there, with a note.
+        guard let gift = s.bird(id) else { return nil }
+        // She is `giftHenAge` days old, under `growerAge`, so she is still a chick. `kindWord` names
+        // her, so the words follow her age if that number ever changes. She stays "she": Hazel says
+        // what she is, so her sex is told and not leaked (rule 8).
+        let kind = kindWord(gift, s)
+        // While Marigold stays, Hazel is at her sister's: the bird comes from there, with a note.
         if s.hazelAway {
-            return "A young hen arrives from Hazel's sister's, with a note: \"He'll want some company.\" "
-                + "She is yours: \(birdLabel(s.bird(id)!, s))."
+            return "A \(kind) arrives from Hazel's sister's, with a note: \"He'll want some company.\" "
+                + "She is yours: \(birdLabel(gift, s))."
         }
-        return
-            "Hazel visits: \"He'll want some company.\" She gives you a young hen: \(birdLabel(s.bird(id)!, s))."
+        return "Hazel visits: \"He'll want some company.\" She gives you a \(kind): \(birdLabel(gift, s))."
     case .movedToCoop(let id): return "\(birdName(id, s)) is big enough to move from the brooder to the coop."
     case .needsHome(let id):
         return
